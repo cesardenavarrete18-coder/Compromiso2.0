@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Grupo Sur Automotores: propuestas comerciales para Volkswagen, Fiat y Peugeot. Consultá por tu próximo 0km." />
+    <title>Grupo Sur Automotores | Compromiso Mi 0km</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="#inicio" aria-label="Grupo Sur Automotores">
+        <img src="assets/logo-grupo-sur-dark.jpeg" alt="Grupo Sur Automotores" class="brand-logo" />
+        <span class="brand-text"><strong>Grupo Sur</strong><small>Automotores</small></span>
+      </a>
+      <nav class="nav">
+        <a href="#marcas">Marcas</a>
+        <a href="#modelos">Modelos</a>
+        <a href="#beneficios">Beneficios</a>
+        <a href="#contacto">Contacto</a>
+      </nav>
+      <a class="header-cta" target="_blank" rel="noopener" href="https://wa.me/5491141667220?text=Hola%2C%20quiero%20recibir%20una%20propuesta%20personalizada%20para%20acceder%20a%20un%200km%20con%20Grupo%20Sur%20Automotores.">WhatsApp</a>
+    </header>
+
+    <main id="inicio">
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">Volkswagen · Peugeot · Fiat</p>
+          <h1>Tu próximo 0km empieza con un compromiso.</h1>
+          <p class="lead">Recibí una propuesta personalizada para acceder a tu 0km con financiación en pesos, entrega pactada y asesoramiento comercial de Grupo Sur Automotores.</p>
+          <div class="hero-actions">
+            <a class="btn primary" target="_blank" rel="noopener" href="https://wa.me/5491141667220?text=Hola%2C%20quiero%20recibir%20una%20propuesta%20personalizada%20para%20acceder%20a%20un%200km%20con%20Grupo%20Sur%20Automotores.">Quiero mi propuesta por WhatsApp</a>
+            <a class="btn secondary" href="#modelos">Ver modelos disponibles</a>
+          </div>
+          <div class="trust-pills">
+            <span>Atención personalizada</span>
+            <span>Opciones con anticipo</span>
+            <span>Usado en parte de pago</span>
+          </div>
+        </div>
+
+        <form class="lead-form" id="leadForm">
+          <h2>Recibí tu propuesta</h2>
+          <p>Dejá tus datos y te derivamos con un asesor.</p>
+          <label>Nombre<input id="name" name="name" type="text" placeholder="Tu nombre" required /></label>
+          <label>WhatsApp<input id="phone" name="phone" type="tel" placeholder="Ej: 1123456789" required /></label>
+          <label>Marca
+            <select id="brandSelect" name="brand" required>
+              <option value="Volkswagen">Volkswagen</option>
+              <option value="Fiat">Fiat</option>
+              <option value="Peugeot">Peugeot</option>
+            </select>
+          </label>
+          <label>Modelo
+            <select id="modelSelect" name="model" required></select>
+          </label>
+          <button type="submit" class="btn form-btn">Enviar por WhatsApp</button>
+          <small>Respuesta rápida en horario comercial.</small>
+        </form>
+      </section>
+
+      <section class="brand-carousel" aria-label="Banners por marca">
+        <div class="carousel-track" id="carouselTrack">
+          <article class="slide vw active" data-brand="Volkswagen">
+            <div>
+              <span class="brand-chip">Volkswagen</span>
+              <h2>Volkswagen con propuestas comerciales vigentes</h2>
+              <p>Amarok, Taos, Nivus, T-Cross, Tera, Virtus y Polo. Consultá anticipo, cuota y disponibilidad.</p>
+              <a class="btn slide-btn" target="_blank" rel="noopener" href="https://wa.me/5491141667220?text=Hola%2C%20quiero%20consultar%20por%20Volkswagen%20en%20Grupo%20Sur%20Automotores.">Consultar Volkswagen</a>
+            </div>
+            <div class="vehicle-hero">VW</div>
+          </article>
+          <article class="slide fiat" data-brand="Fiat">
+            <div>
+              <span class="brand-chip">Fiat</span>
+              <h2>Fiat para cada necesidad</h2>
+              <p>Cronos, Titano, Argo, Pulse, Fastback, Strada, Fiorino y Mobi con opciones de financiación.</p>
+              <a class="btn slide-btn" target="_blank" rel="noopener" href="https://wa.me/5491141667220?text=Hola%2C%20quiero%20consultar%20por%20Fiat%20en%20Grupo%20Sur%20Automotores.">Consultar Fiat</a>
+            </div>
+            <div class="vehicle-hero">FIAT</div>
+          </article>
+          <article class="slide peugeot" data-brand="Peugeot">
+            <div>
+              <span class="brand-chip">Peugeot</span>
+              <h2>Peugeot: diseño, tecnología y financiación</h2>
+              <p>208, 2008, Partner y Expert. Recibí una propuesta personalizada según tu idea de compra.</p>
+              <a class="btn slide-btn" target="_blank" rel="noopener" href="https://wa.me/5491141667220?text=Hola%2C%20quiero%20consultar%20por%20Peugeot%20en%20Grupo%20Sur%20Automotores.">Consultar Peugeot</a>
+            </div>
+            <div class="vehicle-hero">PEUGEOT</div>
+          </article>
+        </div>
+        <div class="carousel-controls">
+          <button type="button" class="dot active" aria-label="Volkswagen"></button>
+          <button type="button" class="dot" aria-label="Fiat"></button>
+          <button type="button" class="dot" aria-label="Peugeot"></button>
+        </div>
+      </section>
+
+      <section class="brand-selector" id="marcas">
+        <p class="eyebrow center">Elegí tu marca</p>
+        <h2>Una landing, tres caminos comerciales.</h2>
+        <div class="brand-grid">
+          <button class="brand-card is-active" data-filter="Volkswagen">
+            <span class="brand-mark vw-mark">VW</span>
+            <strong>Volkswagen</strong>
+            <small>Tera, Amarok, Taos, Nivus y más</small>
+          </button>
+          <button class="brand-card" data-filter="Fiat">
+            <span class="brand-mark fiat-mark">FIAT</span>
+            <strong>Fiat</strong>
+            <small>Cronos, Titano, Strada y más</small>
+          </button>
+          <button class="brand-card" data-filter="Peugeot">
+            <span class="brand-mark peugeot-mark">PEUGEOT</span>
+            <strong>Peugeot</strong>
+            <small>208, 2008, Partner y Expert</small>
+          </button>
+        </div>
+      </section>
+
+      <section class="brand-zone vw-zone is-visible" data-zone="Volkswagen">
+        <div class="zone-copy">
+          <span class="brand-chip">Volkswagen</span>
+          <h2>Modelos Volkswagen disponibles para consultar</h2>
+          <p>Opciones para SUV, sedán y pick-up. Te informamos condiciones vigentes, financiación y disponibilidad.</p>
+        </div>
+        <div class="mini-models" id="vwMini"></div>
+      </section>
+      <section class="brand-zone fiat-zone" data-zone="Fiat">
+        <div class="zone-copy">
+          <span class="brand-chip">Fiat</span>
+          <h2>Gama Fiat para uso familiar, comercial y pick-up</h2>
+          <p>Consultá alternativas de anticipo, cuotas y disponibilidad sobre la gama Fiat.</p>
+        </div>
+        <div class="mini-models" id="fiatMini"></div>
+      </section>
+      <section class="brand-zone peugeot-zone" data-zone="Peugeot">
+        <div class="zone-copy">
+          <span class="brand-chip">Peugeot</span>
+          <h2>Peugeot 0km con asesoramiento personalizado</h2>
+          <p>Opciones comerciales para 208, 2008, Partner y Expert según cupos y condiciones vigentes.</p>
+        </div>
+        <div class="mini-models" id="peugeotMini"></div>
+      </section>
+
+      <section class="models" id="modelos">
+        <p class="eyebrow center">Modelos destacados</p>
+        <h2>Consultá anticipo, cuota y disponibilidad.</h2>
+        <div class="model-grid" id="featuredModels"></div>
+      </section>
+
+      <section class="benefits" id="beneficios">
+        <div>
+          <p class="eyebrow">Beneficios</p>
+          <h2>¿Por qué consultar en Grupo Sur Automotores?</h2>
+        </div>
+        <div class="benefit-grid">
+          <article><strong>Financiación en pesos</strong><span>Opciones comerciales según marca, modelo y disponibilidad.</span></article>
+          <article><strong>Entrega pactada</strong><span>Condiciones de retiro informadas por un asesor comercial.</span></article>
+          <article><strong>Usado en parte de pago</strong><span>Podés consultar alternativas entregando tu vehículo actual.</span></article>
+          <article><strong>Bancarizados</strong><span>Beneficios y condiciones especiales según perfil y campaña vigente.</span></article>
+        </div>
+      </section>
+
+      <section class="how">
+        <p class="eyebrow center">Cómo funciona</p>
+        <h2>Simple, rápido y orientado a WhatsApp.</h2>
+        <div class="steps">
+          <article><span>1</span><strong>Elegís marca y modelo</strong><p>Volkswagen, Fiat o Peugeot.</p></article>
+          <article><span>2</span><strong>Dejás tu WhatsApp</strong><p>Recibimos tu consulta al instante.</p></article>
+          <article><span>3</span><strong>Recibís una propuesta</strong><p>Te informan anticipo, cuota y disponibilidad.</p></article>
+          <article><span>4</span><strong>Avanzás con asesor</strong><p>Se formalizan condiciones y documentación.</p></article>
+        </div>
+      </section>
+
+      <section class="institutional">
+        <img src="assets/logo-grupo-sur-light.jpeg" alt="Grupo Sur 50 años junto a vos" />
+        <div>
+          <h2>Grupo Sur Automotores</h2>
+          <p>Una propuesta comercial multimarca para acercarte a tu próximo 0km.</p>
+          <a class="btn primary" target="_blank" rel="noopener" href="https://wa.me/5491141667220?text=Hola%2C%20quiero%20consultar%20por%20las%20propuestas%20de%20Grupo%20Sur%20Automotores.">Hablar ahora</a>
+        </div>
+      </section>
+    </main>
+
+    <footer id="contacto">
+      <div>
+        <strong>Grupo Sur Automotores</strong>
+        <p>Volkswagen · Peugeot · Fiat</p>
+      </div>
+      <p class="legal">Grupo Sur Automotores brinda asesoramiento comercial para la adquisición de vehículos 0km mediante propuestas comerciales disponibles para Volkswagen, Peugeot y Fiat. Las condiciones están sujetas a aprobación, disponibilidad, actualización de precios y documentación correspondiente. Las imágenes y representaciones son ilustrativas.</p>
+    </footer>
+
+    <a class="whatsapp-float" target="_blank" rel="noopener" href="https://wa.me/5491141667220?text=Hola%2C%20quiero%20recibir%20una%20propuesta%20personalizada%20para%20acceder%20a%20un%200km%20con%20Grupo%20Sur%20Automotores.">WhatsApp</a>
+
+    <script src="script.js"></script>
+  </body>
+</html>
