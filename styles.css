@@ -78,3 +78,168 @@ a{color:inherit;text-decoration:none}button,input,select{font:inherit}.site-head
     object-position:center center;
   }
 }
+
+
+/* V5.2 commercial brand cards */
+.brand-selector-v52{
+  position:relative;
+}
+
+.brand-selector-v52 .models-subtitle{
+  margin-top:-6px;
+  margin-bottom:28px;
+}
+
+.brand-grid-v52{
+  align-items:stretch;
+}
+
+.brand-grid-v52 .brand-card{
+  position:relative;
+  overflow:hidden;
+  min-height:310px;
+  display:flex;
+  flex-direction:column;
+  justify-content:flex-start;
+  gap:0;
+}
+
+.brand-grid-v52 .brand-card:before{
+  content:"";
+  position:absolute;
+  inset:-45% -25% auto auto;
+  width:240px;
+  height:240px;
+  border-radius:50%;
+  background:radial-gradient(circle, rgba(30,144,255,.28), rgba(30,144,255,0) 65%);
+  pointer-events:none;
+}
+
+.brand-grid-v52 .brand-card:after{
+  content:"";
+  position:absolute;
+  inset:auto 0 0;
+  height:42%;
+  background:linear-gradient(0deg, rgba(30,144,255,.12), transparent);
+  pointer-events:none;
+}
+
+.brand-grid-v52 .brand-card[data-filter="Fiat"]:before{
+  background:radial-gradient(circle, rgba(227,6,19,.27), rgba(227,6,19,0) 65%);
+}
+
+.brand-grid-v52 .brand-card[data-filter="Fiat"]:after{
+  background:linear-gradient(0deg, rgba(227,6,19,.12), transparent);
+}
+
+.brand-grid-v52 .brand-card[data-filter="Peugeot"]:before{
+  background:radial-gradient(circle, rgba(141,183,216,.24), rgba(141,183,216,0) 65%);
+}
+
+.brand-grid-v52 .brand-card[data-filter="Peugeot"]:after{
+  background:linear-gradient(0deg, rgba(141,183,216,.11), transparent);
+}
+
+.brand-card .brand-benefits{
+  position:relative;
+  z-index:1;
+  list-style:none;
+  padding:0;
+  margin:20px 0 0;
+  display:grid;
+  gap:10px;
+  color:#e2e8f0;
+  font-size:14px;
+  line-height:1.35;
+}
+
+.brand-card .brand-benefits li{
+  display:flex;
+  align-items:flex-start;
+  gap:9px;
+}
+
+.brand-card .brand-benefits li:before{
+  content:"";
+  width:7px;
+  height:7px;
+  border-radius:50%;
+  background:#38bdf8;
+  box-shadow:0 0 14px rgba(56,189,248,.75);
+  margin-top:6px;
+  flex:0 0 auto;
+}
+
+.brand-card[data-filter="Fiat"] .brand-benefits li:before{
+  background:#ef233c;
+  box-shadow:0 0 14px rgba(239,35,60,.75);
+}
+
+.brand-card[data-filter="Peugeot"] .brand-benefits li:before{
+  background:#b9d7ee;
+  box-shadow:0 0 14px rgba(185,215,238,.65);
+}
+
+.brand-card .brand-link{
+  position:relative;
+  z-index:1;
+  margin-top:auto;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:100%;
+  border-radius:999px;
+  padding:13px 16px;
+  background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.14);
+  color:#fff;
+  font-weight:900;
+}
+
+.brand-card.is-active .brand-link,
+.brand-card:hover .brand-link{
+  background:linear-gradient(135deg,#28a8ff,#0b6bff);
+  border-color:rgba(255,255,255,.22);
+}
+
+.brand-card[data-filter="Fiat"].is-active .brand-link,
+.brand-card[data-filter="Fiat"]:hover .brand-link{
+  background:linear-gradient(135deg,#ff3444,#c70012);
+}
+
+.brand-card[data-filter="Peugeot"].is-active .brand-link,
+.brand-card[data-filter="Peugeot"]:hover .brand-link{
+  background:linear-gradient(135deg,#d7e7f5,#8db7d8);
+  color:#07111f;
+}
+
+@media (max-width:900px){
+  .brand-grid-v52 .brand-card{
+    min-height:auto;
+    padding:30px;
+  }
+
+  .brand-card .brand-benefits{
+    margin-top:18px;
+    gap:9px;
+  }
+
+  .brand-card .brand-link{
+    margin-top:22px;
+  }
+}
+
+@media (max-width:560px){
+  .brand-grid-v52 .brand-card{
+    border-radius:28px;
+    padding:28px 24px;
+  }
+
+  .brand-card .brand-benefits{
+    font-size:14px;
+  }
+
+  .brand-card .brand-link{
+    font-size:14px;
+  }
+}

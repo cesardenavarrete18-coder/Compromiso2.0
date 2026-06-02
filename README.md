@@ -19,3 +19,6 @@ Landing estática lista para Vercel.
 
 ## V5.1
 - Corrección de banners en versión mobile para que no se recorten.
+
+## V5.2
+- Sección de marcas rediseñada con enfoque más comercial y menos vacía en mobile.
