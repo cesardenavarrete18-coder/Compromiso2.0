@@ -350,3 +350,149 @@ a{color:inherit;text-decoration:none}button,input,select{font:inherit}.site-head
     font-size:12px;
   }
 }
+
+
+/* V5.4 true mini brand banners */
+.brand-grid-v52 .brand-card .brand-banner{
+  min-height:74px;
+  padding:0;
+  margin-bottom:26px;
+  border-radius:20px;
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  overflow:hidden;
+  isolation:isolate;
+}
+
+.brand-grid-v52 .brand-card .brand-banner:before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:
+    linear-gradient(135deg, rgba(255,255,255,.10), rgba(255,255,255,.02) 42%, transparent 70%),
+    radial-gradient(circle at 18% 50%, rgba(255,255,255,.16), transparent 26%);
+  z-index:0;
+}
+
+.brand-grid-v52 .brand-card .brand-banner:after{
+  content:"";
+  position:absolute;
+  inset:auto 0 0;
+  height:1px;
+  background:linear-gradient(90deg, transparent, rgba(255,255,255,.38), transparent);
+  z-index:2;
+}
+
+.brand-grid-v52 .brand-card .brand-emblem{
+  position:relative;
+  z-index:3;
+  margin-left:18px;
+  min-width:72px;
+  height:48px;
+  border-radius:16px;
+  backdrop-filter:blur(8px);
+  background:rgba(255,255,255,.10);
+  border:1px solid rgba(255,255,255,.18);
+  box-shadow:
+    0 14px 32px rgba(0,0,0,.26),
+    inset 0 1px 0 rgba(255,255,255,.12);
+  font-size:18px;
+  letter-spacing:.06em;
+}
+
+.brand-grid-v52 .brand-card .banner-lines{
+  position:absolute;
+  inset:0;
+  z-index:1;
+  opacity:.95;
+  background:
+    linear-gradient(120deg, transparent 0 44%, rgba(255,255,255,.07) 44.4% 45.2%, transparent 45.6%),
+    linear-gradient(120deg, transparent 0 58%, rgba(255,255,255,.09) 58.2% 59.1%, transparent 59.5%),
+    linear-gradient(120deg, transparent 0 72%, rgba(255,255,255,.06) 72.2% 73%, transparent 73.4%);
+}
+
+.brand-grid-v52 .brand-card .banner-shine{
+  position:absolute;
+  right:-28px;
+  top:50%;
+  transform:translateY(-50%);
+  width:180px;
+  height:120px;
+  border-radius:50%;
+  z-index:0;
+  filter:blur(1px);
+}
+
+.brand-grid-v52 .brand-card .vw-banner{
+  background:
+    linear-gradient(135deg, rgba(8,58,104,.95), rgba(5,20,38,.96)),
+    linear-gradient(90deg, rgba(47,165,255,.18), transparent);
+  border-color:rgba(47,165,255,.32);
+}
+
+.brand-grid-v52 .brand-card .vw-banner .brand-emblem{
+  color:#d8f3ff;
+  text-shadow:0 0 22px rgba(56,189,248,.55);
+}
+
+.brand-grid-v52 .brand-card .vw-banner .banner-shine{
+  background:radial-gradient(circle, rgba(47,165,255,.55), rgba(47,165,255,0) 68%);
+}
+
+.brand-grid-v52 .brand-card .peugeot-banner{
+  background:
+    linear-gradient(135deg, rgba(70,89,108,.88), rgba(20,29,42,.96)),
+    linear-gradient(90deg, rgba(203,225,242,.17), transparent);
+  border-color:rgba(202,222,238,.26);
+}
+
+.brand-grid-v52 .brand-card .peugeot-banner .brand-emblem{
+  color:#f4fbff;
+  font-size:22px;
+  text-shadow:0 0 18px rgba(203,225,242,.42);
+}
+
+.brand-grid-v52 .brand-card .peugeot-banner .banner-shine{
+  background:radial-gradient(circle, rgba(203,225,242,.36), rgba(203,225,242,0) 68%);
+}
+
+.brand-grid-v52 .brand-card .fiat-banner{
+  background:
+    linear-gradient(135deg, rgba(93,25,43,.94), rgba(29,16,28,.98)),
+    linear-gradient(90deg, rgba(255,70,98,.18), transparent);
+  border-color:rgba(255,70,98,.28);
+}
+
+.brand-grid-v52 .brand-card .fiat-banner .brand-emblem{
+  color:#ffd5dc;
+  text-shadow:0 0 18px rgba(255,70,98,.50);
+}
+
+.brand-grid-v52 .brand-card .fiat-banner .banner-shine{
+  background:radial-gradient(circle, rgba(255,70,98,.46), rgba(255,70,98,0) 68%);
+}
+
+/* hide previous V5.3 copy styles if still present */
+.brand-grid-v52 .brand-card .brand-banner-copy{
+  display:none !important;
+}
+
+@media (max-width:560px){
+  .brand-grid-v52 .brand-card .brand-banner{
+    min-height:66px;
+    margin-bottom:22px;
+    border-radius:18px;
+  }
+
+  .brand-grid-v52 .brand-card .brand-emblem{
+    min-width:64px;
+    height:44px;
+    margin-left:14px;
+    font-size:16px;
+  }
+
+  .brand-grid-v52 .brand-card .peugeot-banner .brand-emblem{
+    font-size:20px;
+  }
+}

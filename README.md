@@ -25,3 +25,6 @@ Landing estática lista para Vercel.
 
 ## V5.3
 - Cards de marcas con mini banner visual superior y menos repetición textual.
+
+## V5.4
+- Mini banners superiores de marca más visuales, sin texto repetido ni sensación de badge grande.
