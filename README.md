@@ -28,3 +28,6 @@ Landing estática lista para Vercel.
 
 ## V5.4
 - Mini banners superiores de marca más visuales, sin texto repetido ni sensación de badge grande.
+
+## FINAL
+- Integración de mini banners reales de Volkswagen, Peugeot y Fiat en las cards de marcas.
