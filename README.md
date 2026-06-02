@@ -22,3 +22,6 @@ Landing estática lista para Vercel.
 
 ## V5.2
 - Sección de marcas rediseñada con enfoque más comercial y menos vacía en mobile.
+
+## V5.3
+- Cards de marcas con mini banner visual superior y menos repetición textual.

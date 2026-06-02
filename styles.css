@@ -243,3 +243,110 @@ a{color:inherit;text-decoration:none}button,input,select{font:inherit}.site-head
     font-size:14px;
   }
 }
+
+
+/* V5.3 brand banner refinement */
+.brand-grid-v52 .brand-card .brand-banner{
+  position:relative;
+  display:flex;
+  align-items:center;
+  gap:14px;
+  margin-bottom:22px;
+  padding:14px 16px;
+  border-radius:18px;
+  overflow:hidden;
+  background:linear-gradient(135deg, rgba(255,255,255,.08), rgba(255,255,255,.03));
+  border:1px solid rgba(255,255,255,.09);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+}
+.brand-grid-v52 .brand-card .brand-banner:before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:linear-gradient(90deg, rgba(255,255,255,.02), transparent 50%, rgba(255,255,255,.04));
+  pointer-events:none;
+}
+.brand-grid-v52 .brand-card .brand-emblem{
+  position:relative;
+  z-index:1;
+  min-width:68px;
+  height:48px;
+  border-radius:14px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  font-size:18px;
+  font-weight:900;
+  letter-spacing:.08em;
+  color:#fff;
+  background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.12);
+}
+.brand-grid-v52 .brand-card .brand-banner-copy{
+  position:relative;
+  z-index:1;
+  display:flex;
+  flex-direction:column;
+  gap:3px;
+  color:#e8eef9;
+}
+.brand-grid-v52 .brand-card .brand-banner-copy b{
+  font-size:12px;
+  letter-spacing:.09em;
+  text-transform:uppercase;
+}
+.brand-grid-v52 .brand-card .brand-banner-copy small{
+  font-size:13px;
+  color:#bdd0e8;
+  line-height:1.2;
+}
+.brand-grid-v52 .brand-card .brand-banner-glow{
+  position:absolute;
+  right:-18px;
+  top:50%;
+  transform:translateY(-50%);
+  width:120px;
+  height:120px;
+  border-radius:50%;
+  opacity:.45;
+  pointer-events:none;
+}
+.brand-grid-v52 .brand-card .vw-banner .brand-emblem{
+  background:linear-gradient(135deg, rgba(47,165,255,.25), rgba(16,109,255,.08));
+  color:#bce8ff;
+}
+.brand-grid-v52 .brand-card .vw-banner .brand-banner-glow{
+  background:radial-gradient(circle, rgba(47,165,255,.42), rgba(47,165,255,0) 68%);
+}
+.brand-grid-v52 .brand-card .peugeot-banner .brand-emblem{
+  background:linear-gradient(135deg, rgba(180,208,232,.24), rgba(110,141,171,.08));
+  color:#eff7ff;
+}
+.brand-grid-v52 .brand-card .peugeot-banner .brand-banner-glow{
+  background:radial-gradient(circle, rgba(180,208,232,.34), rgba(180,208,232,0) 68%);
+}
+.brand-grid-v52 .brand-card .fiat-banner .brand-emblem{
+  background:linear-gradient(135deg, rgba(255,70,98,.24), rgba(150,8,30,.1));
+  color:#ffd5dc;
+}
+.brand-grid-v52 .brand-card .fiat-banner .brand-banner-glow{
+  background:radial-gradient(circle, rgba(255,70,98,.38), rgba(255,70,98,0) 68%);
+}
+@media (max-width:560px){
+  .brand-grid-v52 .brand-card .brand-banner{
+    padding:12px 14px;
+    gap:12px;
+    margin-bottom:18px;
+  }
+  .brand-grid-v52 .brand-card .brand-emblem{
+    min-width:58px;
+    height:44px;
+    font-size:16px;
+  }
+  .brand-grid-v52 .brand-card .brand-banner-copy b{
+    font-size:11px;
+  }
+  .brand-grid-v52 .brand-card .brand-banner-copy small{
+    font-size:12px;
+  }
+}
