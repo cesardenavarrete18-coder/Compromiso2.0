@@ -47,3 +47,34 @@ a{color:inherit;text-decoration:none}button,input,select{font:inherit}.site-head
   border-color:rgba(115,198,255,.38);
   background:rgba(255,255,255,.105);
 }
+
+
+/* V5.1 mobile banner fix */
+@media (max-width:900px){
+  .brand-carousel{
+    padding-top:34px;
+  }
+
+  .carousel-shell{
+    aspect-ratio:16/9;
+    background:#020617;
+  }
+
+  .slide img{
+    object-fit:contain;
+    object-position:center center;
+    background:#020617;
+  }
+}
+
+@media (max-width:560px){
+  .carousel-shell{
+    aspect-ratio:16/9;
+    border-radius:20px;
+  }
+
+  .slide img{
+    object-fit:contain;
+    object-position:center center;
+  }
+}

@@ -16,3 +16,6 @@ Landing estática lista para Vercel.
 - Build Command: vacío
 - Output Directory: .
 - Install Command: vacío
+
+## V5.1
+- Corrección de banners en versión mobile para que no se recorten.
