@@ -1,26 +1,16 @@
-# Compromiso Mi 0km - Grupo Sur Automotores V3
+# Compromiso Mi 0km - V4
 
-Landing estática lista para Vercel.
+Landing estática para Grupo Sur Automotores.
 
-## Archivos a subir a GitHub
+## Incluye
+- Logo GS Grupo Sur Automotores
+- Carrusel por marca
+- Formulario con modelos dependientes por marca
+- Galería de modelos con imágenes individuales
+- Botones de WhatsApp con mensaje prearmado por modelo
 
-Subir el contenido de esta carpeta, no la carpeta contenedora:
-
-- `index.html`
-- `styles.css`
-- `script.js`
-- `README.md`
-- `assets/`
-
-No requiere npm, React ni build.
-
-## Configuración en Vercel
-
-- Framework Preset: Other
-- Build Command: vacío
-- Output Directory: `.`
-- Install Command: vacío
-
-## WhatsApp configurado
-
-`5491141667220`
+## Deploy en Vercel
+Framework Preset: Other  
+Build Command: vacío  
+Output Directory: .  
+Install Command: vacío
