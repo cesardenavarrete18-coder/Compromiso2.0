@@ -20,3 +20,30 @@ a{color:inherit;text-decoration:none}button,input,select{font:inherit}.site-head
 @media (max-width:900px){.nav{display:none}.site-header{padding:10px 16px}.header-cta{padding:12px 18px}.brand-logo{width:185px}.top-hero{padding-top:34px}.hero-main h1{font-size:54px}.lead-form{padding:22px}.brand-grid{grid-template-columns:1fr}.steps,.benefit-grid{grid-template-columns:1fr}.carousel-shell{border-radius:24px;aspect-ratio:1.45/1}.slide img{object-fit:cover;object-position:left center}.dot span{font-size:0}.dot{width:40px;height:12px;padding:0}.institutional{margin-left:18px;margin-right:18px}.whatsapp-float{left:18px;right:18px;text-align:center;justify-content:center;display:flex}.vehicle-card{min-height:330px}.vehicle-card img{min-height:330px}}
 @media (max-width:640px){.model-gallery{grid-template-columns:1fr}.vehicle-card{min-height:390px}.vehicle-card img{min-height:390px}}
 @media (max-width:560px){.brand-logo{width:156px}.lead-form{display:block}.lead-form label{margin:12px 0}.lead-form h2{margin:14px 0 8px}.lead-form p{margin-bottom:14px}.form-btn{margin-top:12px}.hero-actions .btn{width:100%}.hero-main h1{font-size:44px}.lead{font-size:17px}.brand-carousel,.brand-selector,.models,.how{padding-left:16px;padding-right:16px}.lead-form h2{font-size:34px}.institutional{padding:18px;grid-template-columns:1fr}.institutional h2{font-size:34px}footer{padding-bottom:100px}.carousel-shell{aspect-ratio:1/1}.slide img{object-position:left center}.trust-pills span{font-size:13px;padding:10px 13px}.vehicle-card{min-height:350px}.vehicle-card img{min-height:350px}.vehicle-card .card-action{flex-direction:column;align-items:flex-start}.vehicle-card .card-action span{width:100%}}
+
+
+/* V5 model-card polish */
+.vehicle-card{
+  background:#07111f;
+}
+.vehicle-card:after{
+  height:34%;
+  background:linear-gradient(0deg,rgba(2,6,18,.82),rgba(2,6,18,0));
+}
+.vehicle-card .card-action{
+  bottom:16px;
+}
+.vehicle-card .card-action strong{
+  text-shadow:0 2px 12px rgba(0,0,0,.55);
+}
+.vehicle-card .card-action span{
+  box-shadow:0 12px 28px rgba(0,0,0,.25);
+}
+.benefit-grid article{
+  transition:transform .22s ease,border-color .22s ease,background .22s ease;
+}
+.benefit-grid article:hover{
+  transform:translateY(-3px);
+  border-color:rgba(115,198,255,.38);
+  background:rgba(255,255,255,.105);
+}
