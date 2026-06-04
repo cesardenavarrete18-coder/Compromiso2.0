@@ -31,3 +31,10 @@ Landing estática lista para Vercel.
 
 ## FINAL
 - Integración de mini banners reales de Volkswagen, Peugeot y Fiat en las cards de marcas.
+
+
+## Pixel Meta configurado
+- Pixel ID: 1203270370917813
+- Evento base: PageView
+- Evento estándar en clics a WhatsApp: Contact
+- Evento personalizado en clics a WhatsApp: WhatsAppClick

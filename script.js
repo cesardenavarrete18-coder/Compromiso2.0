@@ -106,3 +106,30 @@ function setModelFilter(filter){
 }
 modelTabs.forEach(tab => tab.addEventListener('click', () => setModelFilter(tab.dataset.modelFilter)));
 setModelFilter('all');
+
+
+
+// Meta Pixel event tracking for WhatsApp clicks
+function trackWhatsAppClick(model = "", brand = "") {
+  if (typeof fbq === "function") {
+    fbq("track", "Contact", {
+      content_name: model || "WhatsApp",
+      content_category: brand || "General"
+    });
+    fbq("trackCustom", "WhatsAppClick", {
+      model: model || "General",
+      brand: brand || "General"
+    });
+  }
+}
+
+document.addEventListener("click", function (event) {
+  const link = event.target.closest("a[href*='wa.me'], a[href*='whatsapp']");
+  if (!link) return;
+
+  const card = link.closest("[data-brand], .vehicle-card, .model-card");
+  const brand = card?.dataset?.brand || link.dataset.brand || "";
+  const model = card?.dataset?.model || link.dataset.model || link.textContent.trim() || "";
+
+  trackWhatsAppClick(model, brand);
+});
