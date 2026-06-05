@@ -1,0 +1,204 @@
+/* Peugeot Partner V2 official/product-page refinements */
+.partner-page{
+  background:#fff !important;
+}
+.partner-header{
+  box-shadow:0 6px 18px rgba(15,23,42,.06);
+}
+.official-hero{
+  min-height:640px;
+  background:
+    linear-gradient(90deg,rgba(0,0,0,.82),rgba(0,0,0,.54) 42%,rgba(0,0,0,.10)),
+    url('assets/partner-hero-city.webp') !important;
+  background-size:cover !important;
+  background-position:center right !important;
+}
+.official-hero .partner-offer-card{
+  border-radius:18px;
+}
+.partner-benefit-strip article{
+  transition:transform .22s ease,box-shadow .22s ease,border-color .22s ease;
+}
+.partner-benefit-strip article:hover{
+  transform:translateY(-4px);
+  border-color:#b7d7ff;
+  box-shadow:0 18px 44px rgba(15,23,42,.08);
+}
+.partner-benefit-strip div{
+  overflow:hidden;
+  background:#fff;
+}
+.partner-benefit-strip div img{
+  width:42px;
+  height:42px;
+  object-fit:contain;
+  display:block;
+}
+.product-intro{
+  padding-top:70px;
+  padding-bottom:70px;
+}
+.product-clean{
+  background:#fff;
+  border:1px solid #eef2f7;
+  box-shadow:0 24px 70px rgba(15,23,42,.07);
+}
+.product-clean img{
+  object-fit:contain !important;
+  padding:22px;
+}
+.partner-copy-block h2,
+.wide-copy h2,
+.partner-final h2{
+  color:#080d19;
+}
+.partner-split{
+  max-width:1280px;
+  display:grid;
+  grid-template-columns:.72fr 1.28fr;
+  gap:28px;
+  align-items:stretch;
+  padding-top:34px;
+  padding-bottom:34px;
+}
+.partner-split.reverse{
+  grid-template-columns:1.22fr .78fr;
+}
+.partner-split > img{
+  width:100%;
+  min-height:430px;
+  height:100%;
+  object-fit:cover;
+  border-radius:22px;
+  box-shadow:0 18px 55px rgba(15,23,42,.08);
+}
+.official-split .wide-copy{
+  background:#f5f7fb;
+  border-radius:22px;
+  padding:48px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+}
+.official-split.reverse .wide-copy{
+  background:#fff;
+  border:1px solid #eef2f7;
+}
+.official-comfort{
+  max-width:none;
+  border-radius:0;
+  padding:80px clamp(18px,5vw,72px);
+  display:grid;
+  grid-template-columns:.7fr 1.3fr;
+  background:#fff;
+}
+.official-comfort .partner-copy-block{
+  max-width:540px;
+  align-self:center;
+}
+.official-mosaic{
+  display:grid;
+  grid-template-columns:1.25fr .75fr;
+  grid-template-rows:250px 250px;
+  gap:16px;
+}
+.official-mosaic img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  border-radius:20px;
+  box-shadow:0 14px 36px rgba(15,23,42,.08);
+}
+.official-mosaic img:first-child{
+  grid-row:1 / 3;
+}
+.official-capacity{
+  max-width:1280px;
+  display:grid;
+  grid-template-columns:.58fr 1.42fr;
+  gap:26px;
+  align-items:stretch;
+  padding-top:70px;
+  padding-bottom:70px;
+}
+.official-capacity .wide-copy{
+  background:#f5f7fb;
+  border-radius:22px;
+  padding:44px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+}
+.capacity-image-stack{
+  display:grid;
+  grid-template-columns:1.15fr .85fr;
+  gap:16px;
+}
+.capacity-image-stack img{
+  width:100%;
+  height:100%;
+  min-height:420px;
+  object-fit:cover;
+  border-radius:22px;
+  box-shadow:0 14px 36px rgba(15,23,42,.08);
+}
+.capacity-image-stack img:nth-child(2){
+  object-fit:contain;
+  background:#fff;
+  border:1px solid #eef2f7;
+  padding:18px;
+}
+.partner-final{
+  margin-top:50px;
+  margin-bottom:40px;
+  box-shadow:0 18px 50px rgba(15,23,42,.07);
+}
+@media (max-width:980px){
+  .official-hero{
+    min-height:auto;
+    background-position:center !important;
+  }
+  .partner-split,
+  .partner-split.reverse,
+  .official-comfort,
+  .official-capacity{
+    grid-template-columns:1fr;
+  }
+  .partner-split > img{
+    min-height:320px;
+  }
+  .official-mosaic,
+  .capacity-image-stack{
+    grid-template-columns:1fr;
+    grid-template-rows:auto;
+  }
+  .official-mosaic img:first-child{
+    grid-row:auto;
+  }
+  .official-mosaic img,
+  .capacity-image-stack img{
+    min-height:260px;
+  }
+}
+@media (max-width:560px){
+  .official-hero{
+    background:
+      linear-gradient(90deg,rgba(0,0,0,.86),rgba(0,0,0,.58)),
+      url('assets/partner-hero-city.webp') !important;
+    background-size:cover !important;
+    background-position:center right !important;
+  }
+  .official-split .wide-copy,
+  .official-capacity .wide-copy{
+    padding:28px;
+  }
+  .product-clean img{
+    padding:10px;
+  }
+  .official-comfort,
+  .official-capacity,
+  .product-intro{
+    padding-top:36px;
+    padding-bottom:36px;
+  }
+}
