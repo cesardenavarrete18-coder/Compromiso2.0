@@ -1,0 +1,46 @@
+{
+  "instrucciones": "Subir estos archivos a la carpeta assets/ del repositorio Compromiso2.0. La página /peugeot/partner/ ya referencia los nombres principales.",
+  "requeridos_por_la_pagina_actual": [
+    "partner-hero-city.webp",
+    "partner-side.webp",
+    "partner-cargo-wide.webp",
+    "partner-cockpit-wide.webp",
+    "partner-cargo-boxes.webp",
+    "partner-screen.webp",
+    "partner-seats.webp",
+    "partner-product-front.webp",
+    "partner-industrial.webp",
+    "partner-icon-van.webp",
+    "partner-icon-weight.webp",
+    "partner-icon-length.webp",
+    "ficha_tecnica_partner.pdf"
+  ],
+  "extras_incluidos": [
+    "partner-cockpit-detail.webp",
+    "partner-interior-wide.webp",
+    "partner-modularity.webp",
+    "partner-security.webp",
+    "partner-front-clean.webp",
+    "partner-rear-load.webp"
+  ],
+  "mapeo_origen": {
+    "partner-hero-city.webp": "partner-hero-city.avif",
+    "partner-side.webp": "partner-1-dk.avif",
+    "partner-cargo-wide.webp": "partner-carga1-dk.jpg",
+    "partner-cockpit-wide.webp": "partner-confort1-dk2.avif",
+    "partner-cargo-boxes.webp": "partner-ventajas-2.webp",
+    "partner-screen.webp": "partner-ventajas-4.avif",
+    "partner-seats.webp": "partner-ventajas-1.avif",
+    "partner-product-front.webp": "partner-versiones-dk.avif",
+    "partner-industrial.webp": "partner-motorizacion1-dk3.webp",
+    "partner-icon-van.webp": "ICON_VEHICLE.avif",
+    "partner-icon-weight.webp": "charge_utile.avif",
+    "partner-icon-length.webp": "longueur_utile.avif",
+    "partner-cockpit-detail.webp": "partner-ventajas-5.avif",
+    "partner-interior-wide.webp": "partner-3-dk.avif",
+    "partner-modularity.webp": "partner-modularidad2-dk.avif",
+    "partner-security.webp": "partner-seguridad1-dk2.avif",
+    "partner-front-clean.webp": "partner-diseno1-dk.avif",
+    "partner-rear-load.webp": "partner-2-dk.jpg"
+  }
+}
