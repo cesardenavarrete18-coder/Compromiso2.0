@@ -39,7 +39,7 @@
       url('assets/partner-hero-mobile-v48.webp') !important;
     background-repeat: no-repeat !important;
     background-size: 100% 100%, auto 114% !important;
-    background-position: center center, center 42% !important;
+    background-position: center center, 58% 42% !important;
     border-bottom-left-radius: 26px !important;
     border-bottom-right-radius: 26px !important;
     overflow: hidden !important;
@@ -151,10 +151,10 @@
     font-weight: 700 !important;
   }
 
-  .partner-pills span:nth-child(1)::before { content: '▣'; }
-  .partner-pills span:nth-child(1)::after { content: 'Retira en cuota 2, 4 y 6'; }
+  .partner-pills span:nth-child(1)::before { content: '\25A3'; }
+  .partner-pills span:nth-child(1)::after { content: 'Retira en Cuota 2, 4 y 6 con el 30%'; }
   .partner-pills span:nth-child(2)::before { content: '%'; }
-  .partner-pills span:nth-child(2)::after { content: 'Con el 30%'; }
+  .partner-pills span:nth-child(2)::after { content: 'Con tu usado o anticipo'; }
   .partner-pills span:nth-child(3)::before { content: '$'; }
   .partner-pills span:nth-child(3)::after { content: 'Cuotas desde $500.000'; }
   .partner-pills span:nth-child(4) { display: none !important; }
@@ -186,7 +186,7 @@
   }
 
   .partner-hero-copy .partner-lead::after {
-    content: '□';
+    content: '\1F381';
     position: absolute !important;
     left: 0 !important;
     top: 50% !important;
@@ -254,7 +254,7 @@
   .official-hero {
     min-height: 790px !important;
     background-size: 100% 100%, auto 116% !important;
-    background-position: center center, center 44% !important;
+    background-position: center center, 58% 44% !important;
   }
 
   .official-hero .partner-hero-copy {
@@ -292,7 +292,7 @@
   }
 
   .partner-pills span::after {
-    font-size: .92rem !important;
+    font-size: .88rem !important;
   }
 
   .partner-hero-copy .partner-lead {
