@@ -104,8 +104,8 @@
       linear-gradient(180deg, rgba(3,8,18,.88) 0%, rgba(3,8,18,.58) 21%, rgba(3,8,18,.10) 43%, rgba(3,8,18,.12) 58%, rgba(3,8,18,.66) 78%, rgba(3,8,18,.96) 100%),
       url('assets/volkswagen-tera-hero-mobile.webp') !important;
     background-repeat: no-repeat !important;
-    background-size: 100% 100%, auto 113% !important;
-    background-position: center center, 52% 46% !important;
+    background-size: 100% 100%, auto 108% !important;
+    background-position: center center, 52% 47% !important;
     border-bottom-left-radius: 26px !important;
     border-bottom-right-radius: 26px !important;
     overflow: hidden !important;
@@ -306,7 +306,8 @@
   .tera-page .official-hero {
     min-height: 824px !important;
     padding-top: 0 !important;
-    background-position: center center, 52% 46% !important;
+    background-size: 100% 100%, auto 108% !important;
+    background-position: center center, 52% 47% !important;
   }
 
   .tera-page .partner-hero h1 {
@@ -322,8 +323,8 @@
 @media (max-width: 430px) {
   .tera-page .official-hero {
     min-height: 812px !important;
-    background-size: 100% 100%, auto 116% !important;
-    background-position: center center, 52% 46% !important;
+    background-size: 100% 100%, auto 111% !important;
+    background-position: center center, 52% 47% !important;
   }
 
   .tera-page .partner-hero-copy h1 {
