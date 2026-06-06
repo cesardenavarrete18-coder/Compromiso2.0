@@ -1,19 +1,13 @@
-Paquete de actualización Partner V4
+Paquete Partner V4.1
 
 Reemplazar en GitHub, rama feature/peugeot-partner:
 
-1) /partner-v2.css
-2) /peugeot/partner/index.html
+1) /assets/partner-hero-city.webp
+2) /partner-v2.css
+3) /peugeot/partner/index.html
 
-Cambio principal:
-- Reemplazo del recuadro comercial del hero por el nuevo proceso:
-  01 Cotizá tu Nueva Partner
-  02 Reservala
-  03 Retirá con anticipo o tu usado
-  04 Disfrutá tu compañera de trabajo
-
-También mantiene:
-- logo con contenedor oscuro,
-- botón de WhatsApp visible,
-- footer con ventas@grupo-sur.com,
-- fotos no repetidas en la sección capacidad.
+Cambios:
+- Incluye la nueva imagen partner-hero-city.webp que subiste.
+- Ajusta el CSS para centrar el hero con background-position:center center.
+- Mantiene el bloque comercial V4.
+- Mantiene botón de WhatsApp visible y footer con ventas@grupo-sur.com.
