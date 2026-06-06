@@ -1,0 +1,353 @@
+/* Fiat Cronos landing visual layer */
+.fiat-cronos-page {
+  --model-blue: #0072ce;
+  --model-ink: #07111f;
+  --model-muted: #5d6675;
+}
+
+.fiat-cronos-page .official-hero {
+  min-height: 640px !important;
+  background:
+    linear-gradient(90deg, rgba(3, 8, 18, .88), rgba(3, 8, 18, .58) 42%, rgba(3, 8, 18, .12)),
+    url('assets/fiat-cronos-hero-desktop.webp') !important;
+  background-size: cover !important;
+  background-position: center center !important;
+}
+
+.fiat-cronos-page .partner-kicker.blue,
+.fiat-cronos-page .partner-kicker,
+.fiat-cronos-page .partner-benefit-strip div,
+.fiat-cronos-page .partner-checks li:before {
+  color: var(--model-blue) !important;
+}
+
+.fiat-cronos-page .partner-btn.primary,
+.fiat-cronos-page .partner-wa,
+.fiat-cronos-page .partner-nav a.is-active:after {
+  background: var(--model-blue) !important;
+}
+
+.fiat-cronos-page .partner-pills {
+  grid-template-columns: repeat(3, max-content) !important;
+}
+
+.fiat-cronos-page .partner-pills span {
+  width: auto !important;
+  min-width: 150px !important;
+  height: 54px !important;
+  padding: 0 20px !important;
+  border-radius: 999px !important;
+  font-size: 14px !important;
+  background: rgba(255, 255, 255, .1) !important;
+  backdrop-filter: blur(12px);
+}
+
+.fiat-cronos-page .model-media-slot {
+  border: 0 !important;
+  color: transparent !important;
+  overflow: hidden;
+  background-size: cover !important;
+  background-position: center !important;
+  box-shadow: 0 22px 60px rgba(15, 23, 42, .12);
+}
+
+.fiat-cronos-page .model-main-photo {
+  background-image: url('assets/fiat-cronos-main.webp') !important;
+}
+
+.fiat-cronos-page .model-interior-photo {
+  background-image: url('assets/fiat-cronos-interior.webp') !important;
+}
+
+.fiat-cronos-page .model-driving-photo {
+  background-image: url('assets/fiat-cronos-hero-desktop.webp') !important;
+}
+
+.fiat-cronos-page .partner-benefit-strip article,
+.fiat-cronos-page .partner-final {
+  border-style: solid !important;
+}
+
+.fiat-cronos-page .partner-offer-card {
+  border: 1px solid rgba(255, 255, 255, .16);
+}
+
+@media (max-width: 980px) {
+  .fiat-cronos-page .official-hero {
+    min-height: 720px !important;
+    align-items: start !important;
+    background:
+      linear-gradient(180deg, rgba(3, 8, 18, .86), rgba(3, 8, 18, .48) 42%, rgba(3, 8, 18, .2)),
+      url('assets/fiat-cronos-hero-mobile.webp') !important;
+    background-size: cover !important;
+    background-position: center bottom !important;
+  }
+
+  .fiat-cronos-page .partner-pills {
+    grid-template-columns: 1fr !important;
+    max-width: 420px;
+  }
+
+  .fiat-cronos-page .partner-pills span {
+    justify-content: flex-start !important;
+    width: 100% !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .fiat-cronos-page .official-hero {
+    position: relative !important;
+    min-height: 842px !important;
+    padding: 0 !important;
+    display: block !important;
+    background:
+      linear-gradient(180deg, rgba(3,8,18,.88) 0%, rgba(3,8,18,.58) 21%, rgba(3,8,18,.10) 43%, rgba(3,8,18,.12) 58%, rgba(3,8,18,.66) 78%, rgba(3,8,18,.96) 100%),
+      url('assets/fiat-cronos-hero-mobile.webp') !important;
+    background-repeat: no-repeat !important;
+    background-size: 100% 100%, auto 109% !important;
+    background-position: center center, 50% 47% !important;
+    border-bottom-left-radius: 26px !important;
+    border-bottom-right-radius: 26px !important;
+    overflow: hidden !important;
+  }
+
+  .fiat-cronos-page .official-hero .partner-hero-copy {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 16px !important;
+    display: block !important;
+    z-index: 2 !important;
+  }
+
+  .fiat-cronos-page .partner-kicker {
+    position: absolute !important;
+    top: 34px !important;
+    left: 16px !important;
+    right: 16px !important;
+    margin: 0 !important;
+    color: var(--model-blue) !important;
+    font-size: .78rem !important;
+    line-height: 1.15 !important;
+    letter-spacing: .2em !important;
+    text-shadow: 0 8px 20px rgba(2,6,23,.36) !important;
+  }
+
+  .fiat-cronos-page .partner-hero-copy h1 {
+    position: absolute !important;
+    top: 72px !important;
+    left: 16px !important;
+    right: 16px !important;
+    max-width: 11ch !important;
+    margin: 0 !important;
+    color: #fff !important;
+    font-size: 2.72rem !important;
+    line-height: 1.04 !important;
+    letter-spacing: 0 !important;
+    text-wrap: balance !important;
+    text-shadow: 0 10px 26px rgba(2,6,23,.46) !important;
+  }
+
+  .fiat-cronos-page .partner-hero-copy h1::after {
+    content: 'Diseño, eficiencia y comodidad para todos los días.';
+    display: block !important;
+    max-width: 22ch !important;
+    margin-top: 12px !important;
+    color: rgba(255,255,255,.92) !important;
+    font-size: .98rem !important;
+    line-height: 1.3 !important;
+    font-weight: 500 !important;
+    text-shadow: 0 8px 22px rgba(2,6,23,.34) !important;
+  }
+
+  .fiat-cronos-page .partner-pills {
+    position: absolute !important;
+    top: 242px !important;
+    left: 16px !important;
+    right: 16px !important;
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 9px !important;
+    max-width: none !important;
+    margin: 0 !important;
+  }
+
+  .fiat-cronos-page .partner-pills span {
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 50px !important;
+    height: auto !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 12px !important;
+    padding: 10px 14px !important;
+    border-radius: 999px !important;
+    border: 1px solid rgba(255,255,255,.76) !important;
+    background: rgba(7,17,31,.28) !important;
+    color: #fff !important;
+    font-size: 0 !important;
+    line-height: 0 !important;
+    font-weight: 700 !important;
+    text-align: left !important;
+    backdrop-filter: blur(5px) !important;
+    box-shadow: 0 10px 24px rgba(2,6,23,.16) !important;
+  }
+
+  .fiat-cronos-page .partner-pills span::before {
+    width: 28px !important;
+    height: 28px !important;
+    flex: 0 0 28px !important;
+    border-radius: 999px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    color: var(--model-blue) !important;
+    font-size: 1rem !important;
+    line-height: 1 !important;
+    font-weight: 900 !important;
+    border: 1px solid rgba(0,114,206,.52) !important;
+    background: rgba(0,114,206,.12) !important;
+  }
+
+  .fiat-cronos-page .partner-pills span::after {
+    display: block !important;
+    color: #fff !important;
+    font-size: .98rem !important;
+    line-height: 1.22 !important;
+    font-weight: 700 !important;
+  }
+
+  .fiat-cronos-page .partner-pills span:nth-child(1)::before { content: '\25A3'; }
+  .fiat-cronos-page .partner-pills span:nth-child(1)::after { content: 'Retiralo desde Cuota 2 con anticipo'; }
+  .fiat-cronos-page .partner-pills span:nth-child(2)::before { content: '%'; }
+  .fiat-cronos-page .partner-pills span:nth-child(2)::after { content: 'Con tu usado o anticipo'; }
+  .fiat-cronos-page .partner-pills span:nth-child(3)::before { content: '$'; }
+  .fiat-cronos-page .partner-pills span:nth-child(3)::after { content: 'Cuotas a medida'; }
+
+  .fiat-cronos-page .partner-hero-copy .partner-lead {
+    display: none !important;
+  }
+
+  .fiat-cronos-page .official-hero .partner-hero-copy::before {
+    content: 'Consultá bonificaciones vigentes';
+    position: absolute !important;
+    left: 32px !important;
+    right: 32px !important;
+    bottom: 126px !important;
+    min-height: 64px !important;
+    padding: 15px 18px 15px 58px !important;
+    border: 1px solid rgba(255,255,255,.2) !important;
+    border-radius: 18px !important;
+    background: rgba(7,17,31,.58) !important;
+    color: #fff !important;
+    display: flex !important;
+    align-items: center !important;
+    font-size: 1rem !important;
+    line-height: 1.25 !important;
+    font-weight: 700 !important;
+    box-shadow: 0 16px 32px rgba(2,6,23,.22) !important;
+    backdrop-filter: blur(5px) !important;
+    text-shadow: 0 8px 22px rgba(2,6,23,.34) !important;
+  }
+
+  .fiat-cronos-page .official-hero .partner-hero-copy::after {
+    content: '\1F381';
+    position: absolute !important;
+    left: 50px !important;
+    bottom: 146px !important;
+    z-index: 3 !important;
+    font-size: 1.08rem !important;
+    line-height: 1 !important;
+  }
+
+  .fiat-cronos-page .partner-actions .ghost,
+  .fiat-cronos-page .official-hero .partner-offer-card {
+    display: none !important;
+  }
+
+  .fiat-cronos-page .partner-actions {
+    position: absolute !important;
+    left: 16px !important;
+    right: 16px !important;
+    bottom: 40px !important;
+    width: auto !important;
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 0 !important;
+    margin: 0 !important;
+  }
+
+  .fiat-cronos-page .partner-actions .primary {
+    width: 100% !important;
+    min-height: 64px !important;
+    padding: 16px 18px !important;
+    border-radius: 16px !important;
+    justify-content: center !important;
+    color: transparent !important;
+    font-size: 0 !important;
+    line-height: 0 !important;
+    box-shadow: 0 20px 42px rgba(0,114,206,.32) !important;
+  }
+
+  .fiat-cronos-page .partner-actions .primary::after {
+    content: 'Cotizalo ahora';
+    color: #fff !important;
+    font-size: 1.12rem !important;
+    line-height: 1.1 !important;
+    font-weight: 800 !important;
+    letter-spacing: 0 !important;
+  }
+}
+
+@media (max-width: 560px) {
+  .fiat-cronos-page .official-hero {
+    min-height: 824px !important;
+    padding-top: 0 !important;
+    background-size: 100% 100%, auto 109% !important;
+    background-position: center center, 50% 47% !important;
+  }
+
+  .fiat-cronos-page .partner-hero h1 {
+    font-size: 2.6rem !important;
+  }
+
+  .fiat-cronos-page .partner-pills span {
+    min-height: 50px !important;
+    font-size: 0 !important;
+  }
+}
+
+@media (max-width: 430px) {
+  .fiat-cronos-page .official-hero {
+    min-height: 812px !important;
+    background-size: 100% 100%, auto 112% !important;
+    background-position: center center, 50% 47% !important;
+  }
+
+  .fiat-cronos-page .partner-hero-copy h1 {
+    top: 70px !important;
+    font-size: 2.5rem !important;
+  }
+
+  .fiat-cronos-page .partner-pills {
+    top: 236px !important;
+  }
+
+  .fiat-cronos-page .partner-pills span::after {
+    font-size: .93rem !important;
+  }
+
+  .fiat-cronos-page .official-hero .partner-hero-copy::before {
+    left: 28px !important;
+    right: 28px !important;
+    bottom: 122px !important;
+  }
+
+  .fiat-cronos-page .official-hero .partner-hero-copy::after {
+    left: 46px !important;
+    bottom: 142px !important;
+  }
+}
