@@ -1,13 +1,13 @@
-Paquete Partner V4.1
+Paquete Partner V4.2
 
 Reemplazar en GitHub, rama feature/peugeot-partner:
 
-1) /assets/partner-hero-city.webp
-2) /partner-v2.css
-3) /peugeot/partner/index.html
+1) /partner-v2.css
+2) /peugeot/partner/index.html
+3) /assets/partner-hero-city.webp  (solo si querés mantener la versión V4.1 ya incluida)
 
-Cambios:
-- Incluye la nueva imagen partner-hero-city.webp que subiste.
-- Ajusta el CSS para centrar el hero con background-position:center center.
-- Mantiene el bloque comercial V4.
-- Mantiene botón de WhatsApp visible y footer con ventas@grupo-sur.com.
+Cambios V4.2:
+- Se unificó el bloque de Capacidad para dejar una sola foto (partner-cargo-wide.webp).
+- Se ajustó la sección “Conocé más de la Nueva Partner” para equilibrar mejor imagen y texto.
+- Se reemplazó el botón flotante por “Consultar por Bonificaciones”.
+- Se agregó el ícono de WhatsApp al botón flotante.
