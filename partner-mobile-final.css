@@ -39,7 +39,7 @@
       url('assets/partner-hero-mobile-v48.webp') !important;
     background-repeat: no-repeat !important;
     background-size: 100% 100%, auto 114% !important;
-    background-position: center center, 58% 42% !important;
+    background-position: center center, 64% 42% !important;
     border-bottom-left-radius: 26px !important;
     border-bottom-right-radius: 26px !important;
     overflow: hidden !important;
@@ -161,8 +161,8 @@
 
   .partner-hero-copy .partner-lead {
     position: absolute !important;
-    left: 16px !important;
-    right: 16px !important;
+    left: 24px !important;
+    right: 24px !important;
     bottom: 126px !important;
     margin: 0 !important;
     font-size: 0 !important;
@@ -177,7 +177,7 @@
     align-items: center !important;
     gap: 11px !important;
     width: 100% !important;
-    padding-left: 30px !important;
+    padding-left: 38px !important;
     color: #fff !important;
     font-size: 1rem !important;
     line-height: 1.25 !important;
@@ -188,7 +188,7 @@
   .partner-hero-copy .partner-lead::after {
     content: '\1F381';
     position: absolute !important;
-    left: 0 !important;
+    left: 8px !important;
     top: 50% !important;
     transform: translateY(-50%) !important;
     color: #0a7cff !important;
@@ -254,7 +254,7 @@
   .official-hero {
     min-height: 790px !important;
     background-size: 100% 100%, auto 116% !important;
-    background-position: center center, 58% 44% !important;
+    background-position: center center, 64% 44% !important;
   }
 
   .official-hero .partner-hero-copy {
@@ -296,8 +296,8 @@
   }
 
   .partner-hero-copy .partner-lead {
-    left: 14px !important;
-    right: 14px !important;
+    left: 24px !important;
+    right: 24px !important;
     bottom: 121px !important;
   }
 
