@@ -56,3 +56,96 @@
 .official-single{display:block}
 .official-single img{width:100%;height:100%;min-height:420px;object-fit:cover;border-radius:20px;box-shadow:0 14px 36px rgba(15,23,42,.08)}
 @media(max-width:980px){.official-single img{min-height:280px}}
+
+
+/* Partner V4.4 - Ajustes finos mobile */
+@media (max-width: 768px) {
+  body.partner-page {
+    padding-bottom: 96px;
+  }
+
+  .official-hero {
+    min-height: 880px !important;
+    background:
+      linear-gradient(90deg, rgba(0,0,0,.88), rgba(0,0,0,.62) 48%, rgba(0,0,0,.25)),
+      url('assets/partner-hero-city.webp') !important;
+    background-size: cover !important;
+    background-position: 72% center !important;
+    align-items: start !important;
+  }
+
+  .official-hero .partner-hero-copy {
+    padding-top: 34px !important;
+  }
+
+  .official-hero .partner-offer-card {
+    margin-top: 24px !important;
+    width: 100% !important;
+    max-width: none !important;
+    justify-self: stretch !important;
+    transform: none !important;
+  }
+
+  .official-capacity {
+    display: flex !important;
+    flex-direction: column !important;
+    grid-template-columns: 1fr !important;
+    gap: 22px !important;
+    overflow: visible !important;
+  }
+
+  .official-capacity .wide-copy {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .capacity-image-single {
+    width: 100% !important;
+    display: block !important;
+  }
+
+  .capacity-image-single img {
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    aspect-ratio: 16 / 10 !important;
+    object-fit: cover !important;
+    object-position: center center !important;
+    display: block !important;
+  }
+
+  .bonus-float {
+    left: 16px !important;
+    right: 16px !important;
+    bottom: 16px !important;
+    width: auto !important;
+    max-width: none !important;
+    justify-content: center !important;
+  }
+}
+
+@media (max-width: 430px) {
+  .official-hero {
+    min-height: 920px !important;
+    background-position: 74% center !important;
+  }
+
+  .partner-hero-copy h1 {
+    font-size: clamp(3.15rem, 14vw, 4.4rem) !important;
+  }
+
+  .partner-hero-copy .partner-lead {
+    font-size: 1.16rem !important;
+    line-height: 1.55 !important;
+  }
+
+  .official-capacity .wide-copy {
+    padding: 30px 26px !important;
+  }
+
+  .capacity-image-single img {
+    aspect-ratio: 4 / 3 !important;
+  }
+}
