@@ -104,8 +104,8 @@
       linear-gradient(180deg, rgba(3,8,18,.82) 0%, rgba(3,8,18,.52) 21%, rgba(3,8,18,.08) 43%, rgba(3,8,18,.12) 58%, rgba(3,8,18,.66) 78%, rgba(3,8,18,.96) 100%),
       url('assets/peugeot-208-hero-mobile.webp') !important;
     background-repeat: no-repeat !important;
-    background-size: 100% 100%, auto 103% !important;
-    background-position: center center, 50% 48% !important;
+    background-size: 100% 100%, auto 98% !important;
+    background-position: center center, 46% 49% !important;
     border-bottom-left-radius: 26px !important;
     border-bottom-right-radius: 26px !important;
     overflow: hidden !important;
@@ -306,8 +306,8 @@
   .peugeot-208-page .official-hero {
     min-height: 824px !important;
     padding-top: 0 !important;
-    background-size: 100% 100%, auto 103% !important;
-    background-position: center center, 50% 48% !important;
+    background-size: 100% 100%, auto 98% !important;
+    background-position: center center, 46% 49% !important;
   }
 
   .peugeot-208-page .partner-hero h1 {
@@ -323,8 +323,8 @@
 @media (max-width: 430px) {
   .peugeot-208-page .official-hero {
     min-height: 812px !important;
-    background-size: 100% 100%, auto 106% !important;
-    background-position: center center, 50% 48% !important;
+    background-size: 100% 100%, auto 101% !important;
+    background-position: center center, 46% 49% !important;
   }
 
   .peugeot-208-page .partner-hero-copy h1 {
