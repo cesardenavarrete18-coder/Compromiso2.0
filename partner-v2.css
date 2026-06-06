@@ -50,3 +50,9 @@
 
 @media(max-width:980px){.product-intro{grid-template-columns:1fr;gap:28px}.capacity-image-single img{min-height:320px}}
 @media(max-width:560px){.partner-intro .partner-copy-block h2{font-size:clamp(2rem,10vw,3rem)}.partner-intro .partner-copy-block p{font-size:1rem;line-height:1.55}.partner-intro .partner-copy-block .partner-checks li{font-size:1rem}.product-clean{min-height:290px;padding:10px}.product-clean img{max-height:290px}.bonus-float{gap:10px;padding:12px 16px!important;font-size:13px!important;right:12px;bottom:12px}.bonus-float .wa-badge,.bonus-float svg{width:20px;height:20px}}
+
+
+/* Partner V4.3 - unificación bloque de equipamiento */
+.official-single{display:block}
+.official-single img{width:100%;height:100%;min-height:420px;object-fit:cover;border-radius:20px;box-shadow:0 14px 36px rgba(15,23,42,.08)}
+@media(max-width:980px){.official-single img{min-height:280px}}
