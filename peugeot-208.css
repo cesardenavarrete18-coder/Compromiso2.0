@@ -104,8 +104,8 @@
       linear-gradient(180deg, rgba(3,8,18,.82) 0%, rgba(3,8,18,.52) 21%, rgba(3,8,18,.08) 43%, rgba(3,8,18,.12) 58%, rgba(3,8,18,.66) 78%, rgba(3,8,18,.96) 100%),
       url('assets/peugeot-208-hero-mobile.webp') !important;
     background-repeat: no-repeat !important;
-    background-size: 100% 100%, auto 114% !important;
-    background-position: center center, 51% 46% !important;
+    background-size: 100% 100%, auto 103% !important;
+    background-position: center center, 50% 48% !important;
     border-bottom-left-radius: 26px !important;
     border-bottom-right-radius: 26px !important;
     overflow: hidden !important;
@@ -221,11 +221,11 @@
   }
 
   .peugeot-208-page .partner-pills span:nth-child(1)::before { content: '\25A3'; }
-  .peugeot-208-page .partner-pills span:nth-child(1)::after { content: 'Retiralo en cuota 2, 4 y 6 con el 30%'; }
+  .peugeot-208-page .partner-pills span:nth-child(1)::after { content: 'Retiralo desde Cuota 2 con $3.800.000'; }
   .peugeot-208-page .partner-pills span:nth-child(2)::before { content: '%'; }
   .peugeot-208-page .partner-pills span:nth-child(2)::after { content: 'Con tu usado o anticipo'; }
   .peugeot-208-page .partner-pills span:nth-child(3)::before { content: '$'; }
-  .peugeot-208-page .partner-pills span:nth-child(3)::after { content: 'Cuotas desde $500.000 pesos'; }
+  .peugeot-208-page .partner-pills span:nth-child(3)::after { content: 'Cuotas desde $400.000'; }
 
   .peugeot-208-page .partner-hero-copy .partner-lead {
     display: none !important;
@@ -306,7 +306,8 @@
   .peugeot-208-page .official-hero {
     min-height: 824px !important;
     padding-top: 0 !important;
-    background-position: center center, 51% 46% !important;
+    background-size: 100% 100%, auto 103% !important;
+    background-position: center center, 50% 48% !important;
   }
 
   .peugeot-208-page .partner-hero h1 {
@@ -322,8 +323,8 @@
 @media (max-width: 430px) {
   .peugeot-208-page .official-hero {
     min-height: 812px !important;
-    background-size: 100% 100%, auto 116% !important;
-    background-position: center center, 51% 46% !important;
+    background-size: 100% 100%, auto 106% !important;
+    background-position: center center, 50% 48% !important;
   }
 
   .peugeot-208-page .partner-hero-copy h1 {
