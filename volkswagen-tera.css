@@ -1,0 +1,117 @@
+/* Volkswagen Tera landing visual layer */
+.tera-page {
+  --tera-blue: #0072ce;
+  --tera-ink: #07111f;
+  --tera-muted: #5d6675;
+}
+
+.tera-page .official-hero {
+  min-height: 640px !important;
+  background:
+    linear-gradient(90deg, rgba(3, 8, 18, .88), rgba(3, 8, 18, .58) 42%, rgba(3, 8, 18, .12)),
+    url('assets/volkswagen-tera-hero-desktop.webp') !important;
+  background-size: cover !important;
+  background-position: center center !important;
+}
+
+.tera-page .partner-kicker.blue,
+.tera-page .partner-kicker,
+.tera-page .partner-benefit-strip div,
+.tera-page .partner-checks li:before {
+  color: var(--tera-blue) !important;
+}
+
+.tera-page .partner-btn.primary,
+.tera-page .partner-wa,
+.tera-page .partner-nav a.is-active:after {
+  background: var(--tera-blue) !important;
+}
+
+.tera-page .partner-pills {
+  grid-template-columns: repeat(3, max-content) !important;
+}
+
+.tera-page .partner-pills span {
+  width: auto !important;
+  min-width: 150px !important;
+  height: 54px !important;
+  padding: 0 20px !important;
+  border-radius: 999px !important;
+  font-size: 14px !important;
+  background: rgba(255, 255, 255, .1) !important;
+  backdrop-filter: blur(12px);
+}
+
+.tera-page .model-media-slot {
+  border: 0 !important;
+  color: transparent !important;
+  overflow: hidden;
+  background-size: cover !important;
+  background-position: center !important;
+  box-shadow: 0 22px 60px rgba(15, 23, 42, .12);
+}
+
+.tera-page .model-main-photo {
+  background-image: url('assets/volkswagen-tera-main.webp') !important;
+}
+
+.tera-page .model-interior-photo {
+  background-image: url('assets/volkswagen-tera-interior.webp') !important;
+}
+
+.tera-page .model-driving-photo {
+  background-image: url('assets/volkswagen-tera-hero-desktop.webp') !important;
+}
+
+.tera-page .partner-benefit-strip article,
+.tera-page .partner-final {
+  border-style: solid !important;
+}
+
+.tera-page .partner-offer-card {
+  border: 1px solid rgba(255, 255, 255, .16);
+}
+
+@media (max-width: 980px) {
+  .tera-page .official-hero {
+    min-height: 720px !important;
+    align-items: start !important;
+    background:
+      linear-gradient(180deg, rgba(3, 8, 18, .86), rgba(3, 8, 18, .48) 42%, rgba(3, 8, 18, .2)),
+      url('assets/volkswagen-tera-hero-mobile.webp') !important;
+    background-size: cover !important;
+    background-position: center bottom !important;
+  }
+
+  .tera-page .partner-pills {
+    grid-template-columns: 1fr !important;
+    max-width: 420px;
+  }
+
+  .tera-page .partner-pills span {
+    justify-content: flex-start !important;
+    width: 100% !important;
+  }
+}
+
+@media (max-width: 560px) {
+  .tera-page .official-hero {
+    min-height: 760px !important;
+    padding-top: 42px !important;
+    background-position: center bottom !important;
+  }
+
+  .tera-page .partner-hero h1 {
+    font-size: 3rem !important;
+  }
+
+  .tera-page .partner-lead {
+    max-width: 280px;
+    font-size: 1rem !important;
+  }
+
+  .tera-page .partner-pills span {
+    min-height: 48px !important;
+    font-size: 13px !important;
+  }
+}
