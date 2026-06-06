@@ -1,4 +1,4 @@
-/* Peugeot Partner V4.1 refinements with centered hero image */
+/* Peugeot Partner V2 official/product-page refinements */
 .partner-page{background:#fff!important}
 .partner-header{box-shadow:0 6px 18px rgba(15,23,42,.06)}
 .partner-wordmark{display:flex;align-items:center;min-width:210px;font-size:0!important;letter-spacing:0!important}
@@ -7,7 +7,7 @@
 .partner-wa{display:inline-flex!important;visibility:visible!important;opacity:1!important;align-items:center;justify-content:center;min-width:210px;z-index:90}
 .whatsapp-float{display:inline-flex!important;visibility:visible!important;opacity:1!important;z-index:120}
 .partner-footer-logo{display:block;width:190px;max-height:46px;object-fit:contain;margin-bottom:12px}
-.official-hero{min-height:640px;grid-template-columns:minmax(0,.9fr) minmax(300px,.36fr)!important;gap:24px!important;background:linear-gradient(90deg,rgba(0,0,0,.84),rgba(0,0,0,.57) 39%,rgba(0,0,0,.12)),url('assets/partner-hero-city.webp')!important;background-size:cover!important;background-position:center center!important}
+.official-hero{min-height:640px;grid-template-columns:minmax(0,.9fr) minmax(300px,.36fr)!important;gap:24px!important;background:linear-gradient(90deg,rgba(0,0,0,.84),rgba(0,0,0,.57) 39%,rgba(0,0,0,.12)),url('assets/partner-hero-city.webp')!important;background-size:cover!important;background-position:56% center!important}
 .official-hero .partner-offer-card{border-radius:18px;max-width:365px!important;justify-self:end!important;transform:translateX(18px);padding:18px!important}
 .official-hero .partner-offer-card article{grid-template-columns:40px 1fr;gap:10px}
 .official-hero .partner-offer-card span{width:36px;height:36px}
@@ -28,124 +28,9 @@
 .partner-final{margin-top:50px;margin-bottom:40px;box-shadow:0 18px 50px rgba(15,23,42,.07)}
 .partner-footer-v2{align-items:center;background:#07111f!important;color:#fff!important;border-top:0!important}.partner-footer-v2 .footer-brand-block p{margin:8px 0 0;color:#cbd5e1}.partner-footer-v2 .footer-contact-block{display:grid;gap:8px;text-align:right}.partner-footer-v2 .footer-contact-block a{color:#66c7ff}.partner-footer-v2 .footer-contact-block span{color:#94a3b8;max-width:680px}
 @media(max-width:1200px){.official-hero .partner-offer-card{transform:none}}
-@media(max-width:980px){.partner-logo{width:145px}.partner-logo-shell{padding:8px 12px}.partner-wa{min-width:auto}.official-hero{min-height:auto;grid-template-columns:1fr!important;background-position:center center!important}.official-hero .partner-offer-card{max-width:100%!important}.partner-split,.partner-split.reverse,.official-comfort,.official-capacity{grid-template-columns:1fr}.partner-split>img{min-height:320px}.official-mosaic,.capacity-image-stack{grid-template-columns:1fr;grid-template-rows:auto}.official-mosaic img:first-child{grid-row:auto}.official-mosaic img,.capacity-image-stack img{min-height:260px}.partner-footer-v2{flex-direction:column;text-align:left;align-items:flex-start}.partner-footer-v2 .footer-contact-block{text-align:left}}
-@media(max-width:560px){.partner-wordmark{min-width:118px}.partner-logo{width:118px}.partner-logo-shell{padding:7px 9px;border-radius:10px}.partner-wa{display:inline-flex!important;font-size:12px!important;padding:10px 11px!important}.official-hero{background:linear-gradient(90deg,rgba(0,0,0,.86),rgba(0,0,0,.58)),url('assets/partner-hero-city.webp')!important;background-size:cover!important;background-position:center center!important}.partner-pills span{min-height:38px;font-size:12px!important;padding:9px 12px}.official-split .wide-copy,.official-capacity .wide-copy{padding:28px}.product-clean img{padding:10px}.official-comfort,.official-capacity,.product-intro{padding-top:36px;padding-bottom:36px}.partner-checks.two-cols{grid-template-columns:1fr!important}.partner-checks-aligned li{min-height:auto}}
+@media(max-width:980px){.partner-logo{width:145px}.partner-logo-shell{padding:8px 12px}.partner-wa{min-width:auto}.official-hero{min-height:auto;grid-template-columns:1fr!important;background-position:52% center!important}.official-hero .partner-offer-card{max-width:100%!important}.partner-split,.partner-split.reverse,.official-comfort,.official-capacity{grid-template-columns:1fr}.partner-split>img{min-height:320px}.official-mosaic,.capacity-image-stack{grid-template-columns:1fr;grid-template-rows:auto}.official-mosaic img:first-child{grid-row:auto}.official-mosaic img,.capacity-image-stack img{min-height:260px}.partner-footer-v2{flex-direction:column;text-align:left;align-items:flex-start}.partner-footer-v2 .footer-contact-block{text-align:left}}
 
-
-/* Peugeot Partner V4.2 */
-.product-intro{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:42px;align-items:center}
-.product-clean{display:flex;align-items:center;justify-content:center;min-height:430px;padding:18px}
-.product-clean img{width:min(100%,520px)!important;max-width:100%;max-height:385px;object-fit:contain!important;padding:0!important}
-.partner-intro .partner-copy-block{max-width:620px}.partner-intro .partner-copy-block p{font-size:1.15rem;line-height:1.65}.partner-intro .partner-copy-block .partner-checks{margin-top:18px}.partner-intro .partner-copy-block .partner-checks li{font-size:1.1rem;line-height:1.4}
-.partner-intro .partner-copy-block h2{font-size:clamp(2.4rem,4vw,4.2rem);line-height:.98;letter-spacing:-.035em}
-
-.official-capacity{grid-template-columns:minmax(320px,.58fr) minmax(0,1.42fr)}
-.capacity-image-single{display:block}
-.capacity-image-single img{width:100%;height:100%;min-height:520px;object-fit:cover;border-radius:22px;box-shadow:0 14px 36px rgba(15,23,42,.08)}
-
-.bonus-float{display:inline-flex!important;align-items:center;gap:12px;padding:14px 22px!important;max-width:none!important;background:linear-gradient(180deg,#25D366,#1ebe57)!important;color:#fff!important;font-weight:800!important;font-size:15px!important;letter-spacing:-.01em;text-decoration:none;box-shadow:0 18px 44px rgba(16,185,129,.34)}
-.bonus-float .wa-badge{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;flex:0 0 24px}
-.bonus-float svg{display:block;width:24px;height:24px}
-.bonus-float span:last-child{white-space:nowrap}
-
-@media(max-width:980px){.product-intro{grid-template-columns:1fr;gap:28px}.capacity-image-single img{min-height:320px}}
-@media(max-width:560px){.partner-intro .partner-copy-block h2{font-size:clamp(2rem,10vw,3rem)}.partner-intro .partner-copy-block p{font-size:1rem;line-height:1.55}.partner-intro .partner-copy-block .partner-checks li{font-size:1rem}.product-clean{min-height:290px;padding:10px}.product-clean img{max-height:290px}.bonus-float{gap:10px;padding:12px 16px!important;font-size:13px!important;right:12px;bottom:12px}.bonus-float .wa-badge,.bonus-float svg{width:20px;height:20px}}
-
-
-/* Partner V4.3 - unificación bloque de equipamiento */
-.official-single{display:block}
-.official-single img{width:100%;height:100%;min-height:420px;object-fit:cover;border-radius:20px;box-shadow:0 14px 36px rgba(15,23,42,.08)}
-@media(max-width:980px){.official-single img{min-height:280px}}
-
-
-/* Partner V4.4 - Ajustes finos mobile */
-@media (max-width: 768px) {
-  body.partner-page {
-    padding-bottom: 96px;
-  }
-
-  .official-hero {
-    min-height: 880px !important;
-    background:
-      linear-gradient(90deg, rgba(0,0,0,.88), rgba(0,0,0,.62) 48%, rgba(0,0,0,.25)),
-      url('assets/partner-hero-city.webp') !important;
-    background-size: cover !important;
-    background-position: 72% center !important;
-    align-items: start !important;
-  }
-
-  .official-hero .partner-hero-copy {
-    padding-top: 34px !important;
-  }
-
-  .official-hero .partner-offer-card {
-    margin-top: 24px !important;
-    width: 100% !important;
-    max-width: none !important;
-    justify-self: stretch !important;
-    transform: none !important;
-  }
-
-  .official-capacity {
-    display: flex !important;
-    flex-direction: column !important;
-    grid-template-columns: 1fr !important;
-    gap: 22px !important;
-    overflow: visible !important;
-  }
-
-  .official-capacity .wide-copy {
-    width: 100% !important;
-    max-width: 100% !important;
-    box-sizing: border-box !important;
-  }
-
-  .capacity-image-single {
-    width: 100% !important;
-    display: block !important;
-  }
-
-  .capacity-image-single img {
-    width: 100% !important;
-    height: auto !important;
-    min-height: 0 !important;
-    max-height: none !important;
-    aspect-ratio: 16 / 10 !important;
-    object-fit: cover !important;
-    object-position: center center !important;
-    display: block !important;
-  }
-
-  .bonus-float {
-    left: 16px !important;
-    right: 16px !important;
-    bottom: 16px !important;
-    width: auto !important;
-    max-width: none !important;
-    justify-content: center !important;
-  }
+@media(max-width:767px){
+.official-hero{background:linear-gradient(180deg,rgba(0,0,0,.84) 0%,rgba(0,0,0,.62) 34%,rgba(0,0,0,.48) 100%),url('assets/partner-hero-mobile.webp')!important;background-size:cover!important;background-position:center center!important}
 }
-
-@media (max-width: 430px) {
-  .official-hero {
-    min-height: 920px !important;
-    background-position: 74% center !important;
-  }
-
-  .partner-hero-copy h1 {
-    font-size: clamp(3.15rem, 14vw, 4.4rem) !important;
-  }
-
-  .partner-hero-copy .partner-lead {
-    font-size: 1.16rem !important;
-    line-height: 1.55 !important;
-  }
-
-  .official-capacity .wide-copy {
-    padding: 30px 26px !important;
-  }
-
-  .capacity-image-single img {
-    aspect-ratio: 4 / 3 !important;
-  }
-}
+@media(max-width:560px){.partner-wordmark{min-width:118px}.partner-logo{width:118px}.partner-logo-shell{padding:7px 9px;border-radius:10px}.partner-wa{display:inline-flex!important;font-size:12px!important;padding:10px 11px!important}.official-hero{background:linear-gradient(180deg,rgba(0,0,0,.86) 0%,rgba(0,0,0,.64) 34%,rgba(0,0,0,.50) 100%),url('assets/partner-hero-mobile.webp')!important;background-size:cover!important;background-position:center center!important}.partner-pills span{min-height:38px;font-size:12px!important;padding:9px 12px}.official-split .wide-copy,.official-capacity .wide-copy{padding:28px}.product-clean img{padding:10px}.official-comfort,.official-capacity,.product-intro{padding-top:36px;padding-bottom:36px}.partner-checks.two-cols{grid-template-columns:1fr!important}.partner-checks-aligned li{min-height:auto}}
