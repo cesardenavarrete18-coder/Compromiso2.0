@@ -61,6 +61,7 @@
 
 .fiat-cronos-page .model-driving-photo {
   background-image: url('assets/fiat-cronos-hero-desktop.webp') !important;
+  background-position: 43% center !important;
 }
 
 .fiat-cronos-page .partner-benefit-strip article,
@@ -104,8 +105,8 @@
       linear-gradient(180deg, rgba(3,8,18,.88) 0%, rgba(3,8,18,.58) 21%, rgba(3,8,18,.10) 43%, rgba(3,8,18,.12) 58%, rgba(3,8,18,.66) 78%, rgba(3,8,18,.96) 100%),
       url('assets/fiat-cronos-hero-mobile.webp') !important;
     background-repeat: no-repeat !important;
-    background-size: 100% 100%, auto 109% !important;
-    background-position: center center, 50% 47% !important;
+    background-size: 100% 100%, auto 104% !important;
+    background-position: center center, 50% 49% !important;
     border-bottom-left-radius: 26px !important;
     border-bottom-right-radius: 26px !important;
     overflow: hidden !important;
@@ -124,7 +125,7 @@
 
   .fiat-cronos-page .partner-kicker {
     position: absolute !important;
-    top: 34px !important;
+    top: 24px !important;
     left: 16px !important;
     right: 16px !important;
     margin: 0 !important;
@@ -137,7 +138,7 @@
 
   .fiat-cronos-page .partner-hero-copy h1 {
     position: absolute !important;
-    top: 72px !important;
+    top: 62px !important;
     left: 16px !important;
     right: 16px !important;
     max-width: 11ch !important;
@@ -164,7 +165,7 @@
 
   .fiat-cronos-page .partner-pills {
     position: absolute !important;
-    top: 242px !important;
+    top: 224px !important;
     left: 16px !important;
     right: 16px !important;
     display: grid !important;
@@ -306,8 +307,8 @@
   .fiat-cronos-page .official-hero {
     min-height: 824px !important;
     padding-top: 0 !important;
-    background-size: 100% 100%, auto 109% !important;
-    background-position: center center, 50% 47% !important;
+    background-size: 100% 100%, auto 104% !important;
+    background-position: center center, 50% 49% !important;
   }
 
   .fiat-cronos-page .partner-hero h1 {
@@ -323,17 +324,17 @@
 @media (max-width: 430px) {
   .fiat-cronos-page .official-hero {
     min-height: 812px !important;
-    background-size: 100% 100%, auto 112% !important;
-    background-position: center center, 50% 47% !important;
+    background-size: 100% 100%, auto 106% !important;
+    background-position: center center, 50% 49% !important;
   }
 
   .fiat-cronos-page .partner-hero-copy h1 {
-    top: 70px !important;
+    top: 60px !important;
     font-size: 2.5rem !important;
   }
 
   .fiat-cronos-page .partner-pills {
-    top: 236px !important;
+    top: 218px !important;
   }
 
   .fiat-cronos-page .partner-pills span::after {
