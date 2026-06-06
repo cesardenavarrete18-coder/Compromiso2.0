@@ -1,14 +1,13 @@
-ACTUALIZACION HERO MOBILE - PEUGEOT PARTNER
+Paquete Partner V4.2
 
-Contenido de este ZIP:
-- partner-v2.css
-- assets/partner-hero-mobile.webp
+Reemplazar en GitHub, rama feature/peugeot-partner:
 
-Que hacer:
-1. Subir / reemplazar el archivo: assets/partner-hero-mobile.webp
-2. Reemplazar el archivo: partner-v2.css
+1) /partner-v2.css
+2) /peugeot/partner/index.html
+3) /assets/partner-hero-city.webp  (solo si querés mantener la versión V4.1 ya incluida)
 
-Que cambia:
-- El hero en mobile ahora usa una imagen dedicada vertical.
-- Se mantiene el hero desktop actual.
-- Se mejora el encuadre del fondo en pantallas chicas.
+Cambios V4.2:
+- Se unificó el bloque de Capacidad para dejar una sola foto (partner-cargo-wide.webp).
+- Se ajustó la sección “Conocé más de la Nueva Partner” para equilibrar mejor imagen y texto.
+- Se reemplazó el botón flotante por “Consultar por Bonificaciones”.
+- Se agregó el ícono de WhatsApp al botón flotante.
