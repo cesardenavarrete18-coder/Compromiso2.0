@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="../../styles.css" />
     <link rel="stylesheet" href="../../partner.css" />
     <link rel="stylesheet" href="../../partner-v2.css" />
-    <link rel="stylesheet" href="../../partner-mobile-final.css" />
+    <link rel="stylesheet" href="../../partner-mobile-final.css?v=20260606-2" />
 
     <!-- Meta Pixel Code -->
     <script>
@@ -217,7 +217,7 @@
       function partnerWaLink(message){ return `https://wa.me/${partnerWhatsAppNumber}?text=${encodeURIComponent(message)}`; }
       function trackPartnerContact(label){
         if (typeof fbq === 'function') {
-          fbq('track', 'Contact', {content_name: label || 'Peugeot Partner', content_category: 'Peugeot'});
+          fbq('track', 'Contact', {content_name: label || 'Peugeot Partner', content_category:'Peugeot'});
           fbq('trackCustom', 'WhatsAppClick', {model:'Partner', brand:'Peugeot', source: label || 'partner_page'});
         }
       }
