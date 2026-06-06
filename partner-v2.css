@@ -7,8 +7,8 @@
 .partner-wa{display:inline-flex!important;visibility:visible!important;opacity:1!important;align-items:center;justify-content:center;min-width:210px;z-index:90}
 .whatsapp-float{display:inline-flex!important;visibility:visible!important;opacity:1!important;z-index:120}
 .partner-footer-logo{display:block;width:190px;max-height:46px;object-fit:contain;margin-bottom:12px}
-.official-hero{min-height:640px;grid-template-columns:minmax(0,.9fr) minmax(290px,.34fr)!important;gap:22px!important;background:linear-gradient(90deg,rgba(0,0,0,.84),rgba(0,0,0,.57) 39%,rgba(0,0,0,.12)),url('assets/partner-hero-city.webp')!important;background-size:cover!important;background-position:56% center!important}
-.official-hero .partner-offer-card{border-radius:18px;max-width:335px!important;justify-self:end!important;transform:translateX(20px);padding:18px!important}
+.official-hero{min-height:640px;grid-template-columns:minmax(0,.9fr) minmax(300px,.36fr)!important;gap:24px!important;background:linear-gradient(90deg,rgba(0,0,0,.84),rgba(0,0,0,.57) 39%,rgba(0,0,0,.12)),url('assets/partner-hero-city.webp')!important;background-size:cover!important;background-position:56% center!important}
+.official-hero .partner-offer-card{border-radius:18px;max-width:365px!important;justify-self:end!important;transform:translateX(18px);padding:18px!important}
 .official-hero .partner-offer-card article{grid-template-columns:40px 1fr;gap:10px}
 .official-hero .partner-offer-card span{width:36px;height:36px}
 .official-hero .partner-offer-card strong{font-size:14.5px}.official-hero .partner-offer-card small{font-size:12.5px}.official-hero .partner-hero-copy{max-width:760px}
