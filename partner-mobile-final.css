@@ -2,42 +2,45 @@
 @media (min-width: 769px) {
   .official-hero {
     min-height: 660px !important;
-    grid-template-columns: minmax(0, .82fr) minmax(300px, .38fr) !important;
+    grid-template-columns: minmax(0, .78fr) minmax(300px, .38fr) !important;
     background:
-      linear-gradient(90deg, rgba(2,6,23,.84) 0%, rgba(2,6,23,.58) 38%, rgba(2,6,23,.18) 68%, rgba(2,6,23,.05) 100%),
+      linear-gradient(90deg, rgba(2,6,23,.84) 0%, rgba(2,6,23,.54) 34%, rgba(2,6,23,.14) 66%, rgba(2,6,23,.05) 100%),
       url('assets/partner-hero-city.webp') !important;
     background-size: cover !important;
     background-position: center center !important;
   }
 
   .official-hero .partner-hero-copy {
-    max-width: 640px !important;
+    max-width: 560px !important;
   }
 
   .partner-hero h1 {
-    max-width: 11ch;
+    max-width: 9ch;
+    font-size: clamp(3.4rem, 5vw, 4.75rem) !important;
+    line-height: 1 !important;
     letter-spacing: 0 !important;
     text-wrap: balance;
   }
 
   .partner-lead {
-    max-width: 560px;
+    max-width: 500px;
+    font-size: clamp(1.05rem, 1.5vw, 1.25rem) !important;
   }
 }
 
 @media (max-width: 768px) {
   .official-hero {
     position: relative !important;
-    min-height: 720px !important;
-    padding: 18px 16px 26px !important;
+    min-height: 760px !important;
+    padding: 18px 16px 24px !important;
     display: flex !important;
     flex-direction: column !important;
-    justify-content: flex-start !important;
+    justify-content: flex-end !important;
     background:
-      linear-gradient(180deg, rgba(2,6,23,.88) 0%, rgba(2,6,23,.62) 26%, rgba(2,6,23,.10) 50%, rgba(2,6,23,.18) 70%, rgba(2,6,23,.62) 100%),
+      linear-gradient(180deg, rgba(2,6,23,.18) 0%, rgba(2,6,23,.05) 36%, rgba(2,6,23,.22) 58%, rgba(2,6,23,.86) 82%, rgba(2,6,23,.96) 100%),
       url('assets/partner-hero-mobile-v48.webp') !important;
     background-size: cover !important;
-    background-position: center bottom !important;
+    background-position: center top !important;
     border-bottom-left-radius: 26px !important;
     border-bottom-right-radius: 26px !important;
     overflow: hidden !important;
@@ -45,8 +48,9 @@
 
   .official-hero .partner-hero-copy {
     width: 100% !important;
-    max-width: 360px !important;
-    padding-top: 2px !important;
+    max-width: 100% !important;
+    margin-top: auto !important;
+    padding-top: 0 !important;
     display: flex !important;
     flex-direction: column !important;
     gap: 10px !important;
@@ -59,14 +63,14 @@
     font-size: .72rem !important;
     line-height: 1.15 !important;
     letter-spacing: .14em !important;
-    color: rgba(255,255,255,.88) !important;
+    color: rgba(255,255,255,.86) !important;
   }
 
   .partner-hero-copy h1 {
-    max-width: 9ch !important;
+    max-width: 100% !important;
     margin: 0 !important;
-    font-size: 3rem !important;
-    line-height: 1.02 !important;
+    font-size: 2.7rem !important;
+    line-height: 1.03 !important;
     letter-spacing: 0 !important;
     text-wrap: balance !important;
     text-shadow: 0 10px 26px rgba(2,6,23,.34) !important;
@@ -84,11 +88,11 @@
     content: 'Retirala con 30% de anticipo\A Cuotas desde $500.000';
     white-space: pre-line !important;
     display: block !important;
-    width: fit-content !important;
+    width: 100% !important;
     max-width: 100% !important;
     padding: 12px 14px !important;
     border-radius: 14px !important;
-    background: rgba(7,17,31,.56) !important;
+    background: rgba(7,17,31,.58) !important;
     border: 1px solid rgba(255,255,255,.16) !important;
     color: #fff !important;
     font-size: .98rem !important;
@@ -108,7 +112,7 @@
   }
 
   .partner-actions {
-    width: min(100%, 320px) !important;
+    width: 100% !important;
     display: grid !important;
     grid-template-columns: 1fr !important;
     margin-top: 0 !important;
@@ -139,7 +143,7 @@
   .official-hero .partner-hero-copy::after {
     content: 'Asesoramiento personalizado, disponibilidad y bonificaciones vigentes por WhatsApp.';
     display: block !important;
-    max-width: 28ch !important;
+    max-width: 100% !important;
     color: rgba(255,255,255,.9) !important;
     font-size: .9rem !important;
     line-height: 1.42 !important;
@@ -158,36 +162,31 @@
 
 @media (max-width: 430px) {
   .official-hero {
-    min-height: 690px !important;
-    padding: 16px 14px 24px !important;
+    min-height: 720px !important;
+    padding: 16px 14px 22px !important;
   }
 
   .official-hero .partner-hero-copy {
-    max-width: 330px !important;
     gap: 9px !important;
   }
 
   .partner-hero-copy h1 {
-    font-size: 2.58rem !important;
+    font-size: 2.35rem !important;
   }
 
   .partner-hero-copy .partner-lead::before {
     font-size: .92rem !important;
     padding: 11px 13px !important;
   }
-
-  .partner-actions {
-    width: min(100%, 300px) !important;
-  }
 }
 
 @media (max-width: 360px) {
   .official-hero {
-    min-height: 650px !important;
+    min-height: 690px !important;
   }
 
   .partner-hero-copy h1 {
-    font-size: 2.28rem !important;
+    font-size: 2.08rem !important;
   }
 
   .partner-hero-copy .partner-lead::before,
