@@ -1,0 +1,122 @@
+/* Peugeot model scaffold placeholders */
+.placeholder-page .official-hero {
+  min-height: 620px !important;
+  background:
+    linear-gradient(90deg, rgba(2,6,23,.9), rgba(2,6,23,.68) 42%, rgba(2,6,23,.28)),
+    linear-gradient(135deg, #0b1220 0%, #111827 48%, #1f2937 100%) !important;
+  background-size: cover !important;
+  background-position: center !important;
+}
+
+.placeholder-page .partner-hero h1,
+.placeholder-page .partner-copy-block h2,
+.placeholder-page .wide-copy h2,
+.placeholder-page .partner-final h2 {
+  letter-spacing: 0 !important;
+}
+
+.placeholder-page .placeholder-note,
+.placeholder-page .placeholder-copy {
+  color: rgba(255,255,255,.78);
+}
+
+.placeholder-page .placeholder-chip {
+  border: 1px dashed rgba(255,255,255,.36) !important;
+  background: rgba(255,255,255,.08) !important;
+  color: rgba(255,255,255,.82) !important;
+}
+
+.placeholder-page .model-media-slot,
+.placeholder-page .model-hero-slot {
+  min-height: 360px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 22px;
+  background:
+    linear-gradient(135deg, rgba(15,23,42,.04), rgba(15,23,42,.09)),
+    #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  font-weight: 800;
+  text-align: center;
+  padding: 28px;
+}
+
+.placeholder-page .model-hero-slot {
+  min-height: 430px;
+  background: rgba(255,255,255,.10);
+  border-color: rgba(255,255,255,.32);
+  color: rgba(255,255,255,.82);
+  box-shadow: 0 24px 75px rgba(0,0,0,.24);
+}
+
+.placeholder-page .partner-offer-card article small,
+.placeholder-page .partner-copy-block p,
+.placeholder-page .partner-final p {
+  color: #64748b;
+}
+
+.placeholder-page .partner-benefit-strip article {
+  border-style: dashed;
+}
+
+.placeholder-page .partner-benefit-strip div {
+  background: #f8fafc;
+}
+
+.placeholder-page .placeholder-list li {
+  color: #475569;
+}
+
+.placeholder-page .partner-photo-single,
+.placeholder-page .capacity-image-single {
+  display: block;
+}
+
+.placeholder-page .partner-photo-single .model-media-slot,
+.placeholder-page .capacity-image-single .model-media-slot,
+.placeholder-page .partner-split .model-media-slot {
+  width: 100%;
+  height: 100%;
+  min-height: 430px;
+}
+
+@media (max-width: 980px) {
+  .placeholder-page .official-hero {
+    min-height: auto !important;
+    grid-template-columns: 1fr !important;
+  }
+
+  .placeholder-page .model-hero-slot,
+  .placeholder-page .model-media-slot,
+  .placeholder-page .partner-photo-single .model-media-slot,
+  .placeholder-page .capacity-image-single .model-media-slot,
+  .placeholder-page .partner-split .model-media-slot {
+    min-height: 280px;
+  }
+}
+
+@media (max-width: 560px) {
+  .placeholder-page .official-hero {
+    padding: 34px 16px !important;
+  }
+
+  .placeholder-page .partner-hero h1 {
+    font-size: 2.7rem !important;
+    line-height: 1.02 !important;
+  }
+
+  .placeholder-page .partner-pills {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+
+  .placeholder-page .partner-pills span {
+    min-height: 38px !important;
+    height: auto !important;
+    width: auto !important;
+    padding: 9px 12px !important;
+  }
+}
