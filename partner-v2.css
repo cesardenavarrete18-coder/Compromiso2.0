@@ -322,3 +322,127 @@
     height: 20px !important;
   }
 }
+
+
+/* Partner V4.7 - Mobile hero simplificado y más visual */
+.partner-hero-helper,
+.partner-hero-vehicle-mobile{display:none}
+
+@media (max-width: 768px) {
+  .official-hero {
+    min-height: auto !important;
+    padding: 26px 16px 22px !important;
+    background:
+      linear-gradient(180deg, rgba(0,0,0,.88) 0%, rgba(0,0,0,.68) 38%, rgba(0,0,0,.44) 100%),
+      url('assets/partner-hero-mobile.webp') !important;
+    background-size: cover !important;
+    background-position: center center !important;
+  }
+
+  .official-hero .partner-hero-copy {
+    padding-top: 10px !important;
+  }
+
+  .partner-kicker {
+    margin-bottom: 12px !important;
+  }
+
+  .partner-hero-copy h1 {
+    font-size: clamp(2.9rem, 14vw, 4.35rem) !important;
+    line-height: .93 !important;
+    letter-spacing: -0.045em !important;
+    margin-bottom: 14px !important;
+    max-width: 8ch !important;
+  }
+
+  .partner-hero-copy .partner-lead {
+    font-size: 1.02rem !important;
+    line-height: 1.5 !important;
+    max-width: none !important;
+    margin-bottom: 18px !important;
+  }
+
+  .partner-pills,
+  .official-hero .partner-offer-card,
+  .partner-actions .ghost {
+    display: none !important;
+  }
+
+  .partner-actions {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 0 !important;
+    margin-top: 0 !important;
+  }
+
+  .partner-actions .primary {
+    width: 100% !important;
+    justify-content: center !important;
+    min-height: 58px !important;
+    font-size: 1.12rem !important;
+    font-weight: 800 !important;
+  }
+
+  .partner-hero-helper {
+    display: block !important;
+    margin: 12px 0 0 !important;
+    color: rgba(255,255,255,.84) !important;
+    font-size: .95rem !important;
+    line-height: 1.45 !important;
+    max-width: 30ch !important;
+  }
+
+  .partner-hero-vehicle-mobile {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: flex-end !important;
+    margin-top: 18px !important;
+    padding: 0 6px !important;
+  }
+
+  .partner-hero-vehicle-mobile img {
+    width: min(100%, 325px) !important;
+    height: auto !important;
+    object-fit: contain !important;
+    display: block !important;
+    filter: drop-shadow(0 18px 26px rgba(0,0,0,.35));
+  }
+
+  .partner-benefit-strip {
+    margin-top: 16px !important;
+  }
+
+  .official-single,
+  .capacity-image-single {
+    background: #f4f7fb !important;
+    border-radius: 20px !important;
+    padding: 10px !important;
+  }
+
+  .official-single img,
+  .capacity-image-single img {
+    width: 100% !important;
+    height: auto !important;
+    max-height: none !important;
+    min-height: 0 !important;
+    aspect-ratio: auto !important;
+    object-fit: contain !important;
+    object-position: center center !important;
+    border-radius: 16px !important;
+    background: transparent !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .partner-hero-copy h1 {
+    font-size: clamp(2.7rem, 13.5vw, 3.8rem) !important;
+  }
+
+  .partner-hero-copy .partner-lead {
+    font-size: .98rem !important;
+  }
+
+  .partner-hero-vehicle-mobile img {
+    width: min(100%, 300px) !important;
+  }
+}
