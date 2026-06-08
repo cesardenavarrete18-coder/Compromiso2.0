@@ -6,7 +6,7 @@
 }
 
 .amarok-page .official-hero {
-  min-height: 660px !important;
+  min-height: 720px !important;
   background:
     linear-gradient(90deg, rgba(3, 8, 18, .86), rgba(3, 8, 18, .56) 42%, rgba(3, 8, 18, .12)),
     url('assets/volkswagen-amarok-hero-desktop.webp') !important;
@@ -79,6 +79,13 @@
 }
 
 @media (min-width: 981px) {
+  .amarok-page .official-hero {
+    min-height: 760px !important;
+    padding-top: 96px !important;
+    padding-bottom: 126px !important;
+    align-items: center !important;
+  }
+
   .amarok-page .official-hero .partner-hero-copy {
     transform: translateY(-58px) !important;
   }
