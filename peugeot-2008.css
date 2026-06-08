@@ -257,11 +257,11 @@
   }
 
   .peugeot-2008-page .partner-pills span:nth-child(1)::before { content: '\25A3'; }
-  .peugeot-2008-page .partner-pills span:nth-child(1)::after { content: 'Diseño que impone presencia'; }
-  .peugeot-2008-page .partner-pills span:nth-child(2)::before { content: '\25CE'; }
-  .peugeot-2008-page .partner-pills span:nth-child(2)::after { content: 'Tecnología Peugeot i-Cockpit'; }
+  .peugeot-2008-page .partner-pills span:nth-child(1)::after { content: 'Retiro Pactado en Cuota 2 con $5.000.000'; }
+  .peugeot-2008-page .partner-pills span:nth-child(2)::before { content: '%'; }
+  .peugeot-2008-page .partner-pills span:nth-child(2)::after { content: 'Cubrilo con Anticipo o Usado'; }
   .peugeot-2008-page .partner-pills span:nth-child(3)::before { content: '$'; }
-  .peugeot-2008-page .partner-pills span:nth-child(3)::after { content: 'Conectividad y asistencia avanzada'; }
+  .peugeot-2008-page .partner-pills span:nth-child(3)::after { content: 'Cuotas desde $500.000 pesos'; }
 
   .peugeot-2008-page .partner-hero-copy .partner-lead {
     display: none !important;
