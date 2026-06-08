@@ -77,6 +77,10 @@
 .peugeot-2008-page .product-intro .model-main-photo {
   min-height: 430px !important;
   border-radius: 16px !important;
+  background-size: contain !important;
+  background-repeat: no-repeat !important;
+  background-position: center center !important;
+  background-color: #f5f6f8 !important;
 }
 
 .peugeot-2008-page .product-intro .partner-checks {
