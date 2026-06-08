@@ -78,6 +78,65 @@
   display: none;
 }
 
+@media (min-width: 981px) {
+  .amarok-page .product-intro {
+    grid-template-columns: minmax(520px, .98fr) minmax(0, 1.02fr) !important;
+    gap: clamp(34px, 4.2vw, 64px) !important;
+    align-items: center !important;
+    max-width: 1180px !important;
+    padding-top: 76px !important;
+    padding-bottom: 76px !important;
+  }
+
+  .amarok-page .product-intro .model-main-photo {
+    min-height: 340px !important;
+    width: 100% !important;
+    border-radius: 18px !important;
+    background-size: cover !important;
+    background-position: 50% center !important;
+  }
+
+  .amarok-page .product-intro .partner-copy-block {
+    max-width: 590px !important;
+  }
+
+  .amarok-page .product-intro .partner-kicker {
+    margin-bottom: 14px !important;
+    font-size: 14px !important;
+  }
+
+  .amarok-page .product-intro h2 {
+    max-width: 13.5ch !important;
+    font-size: clamp(42px, 4.2vw, 58px) !important;
+    line-height: 1.02 !important;
+    letter-spacing: 0 !important;
+    margin-bottom: 20px !important;
+  }
+
+  .amarok-page .product-intro .partner-copy-block > p:not(.partner-kicker) {
+    max-width: 580px !important;
+    font-size: 16px !important;
+    line-height: 1.65 !important;
+  }
+
+  .amarok-page .product-intro .partner-checks {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 9px 22px !important;
+    margin-top: 18px !important;
+  }
+
+  .amarok-page .product-intro .partner-checks li {
+    font-size: 14px !important;
+    line-height: 1.42 !important;
+    padding-left: 24px !important;
+  }
+
+  .amarok-page .product-intro .partner-inline-actions {
+    margin-top: 22px !important;
+  }
+}
+
 @media (max-width: 980px) {
   .amarok-page .official-hero {
     min-height: 720px !important;
