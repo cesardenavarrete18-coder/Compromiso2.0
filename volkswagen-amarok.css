@@ -97,7 +97,7 @@
   }
 
   .amarok-page .product-intro .partner-copy-block {
-    max-width: 590px !important;
+    max-width: 640px !important;
   }
 
   .amarok-page .product-intro .partner-kicker {
@@ -106,15 +106,15 @@
   }
 
   .amarok-page .product-intro h2 {
-    max-width: 13.5ch !important;
-    font-size: clamp(42px, 4.2vw, 58px) !important;
-    line-height: 1.02 !important;
+    max-width: 620px !important;
+    font-size: clamp(38px, 3.6vw, 50px) !important;
+    line-height: 1.05 !important;
     letter-spacing: 0 !important;
     margin-bottom: 20px !important;
   }
 
   .amarok-page .product-intro .partner-copy-block > p:not(.partner-kicker) {
-    max-width: 580px !important;
+    max-width: 620px !important;
     font-size: 16px !important;
     line-height: 1.65 !important;
   }
