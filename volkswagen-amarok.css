@@ -79,6 +79,28 @@
 }
 
 @media (min-width: 981px) {
+  .amarok-page .official-hero .partner-hero-copy {
+    transform: translateY(-58px) !important;
+  }
+
+  .amarok-page .official-hero .partner-kicker {
+    margin-bottom: 22px !important;
+  }
+
+  .amarok-page .official-hero h1 {
+    margin-bottom: 24px !important;
+  }
+
+  .amarok-page .official-hero .partner-lead {
+    max-width: 720px !important;
+  }
+
+  .amarok-page .official-hero .partner-pills span {
+    min-width: 0 !important;
+    padding-left: 24px !important;
+    padding-right: 24px !important;
+  }
+
   .amarok-page .product-intro {
     grid-template-columns: minmax(680px, 1.18fr) minmax(500px, .82fr) !important;
     gap: clamp(26px, 3vw, 46px) !important;
