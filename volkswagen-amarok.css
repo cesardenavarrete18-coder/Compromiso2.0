@@ -80,16 +80,16 @@
 
 @media (min-width: 981px) {
   .amarok-page .product-intro {
-    grid-template-columns: minmax(520px, .98fr) minmax(0, 1.02fr) !important;
-    gap: clamp(34px, 4.2vw, 64px) !important;
+    grid-template-columns: minmax(680px, 1.18fr) minmax(500px, .82fr) !important;
+    gap: clamp(26px, 3vw, 46px) !important;
     align-items: center !important;
-    max-width: 1180px !important;
+    max-width: 1360px !important;
     padding-top: 76px !important;
     padding-bottom: 76px !important;
   }
 
   .amarok-page .product-intro .model-main-photo {
-    min-height: 340px !important;
+    min-height: 430px !important;
     width: 100% !important;
     border-radius: 18px !important;
     background-size: cover !important;
@@ -97,7 +97,7 @@
   }
 
   .amarok-page .product-intro .partner-copy-block {
-    max-width: 640px !important;
+    max-width: 620px !important;
   }
 
   .amarok-page .product-intro .partner-kicker {
