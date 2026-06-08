@@ -1,0 +1,391 @@
+/* Peugeot 2008 landing visual layer */
+.peugeot-2008-page {
+  --model-blue: #0072ce;
+  --model-ink: #07111f;
+  --model-muted: #5d6675;
+  --model-line: rgba(7, 17, 31, .12);
+}
+
+.peugeot-2008-page .official-hero {
+  min-height: 660px !important;
+  background:
+    linear-gradient(90deg, rgba(3, 8, 18, .9), rgba(3, 8, 18, .6) 42%, rgba(3, 8, 18, .12)),
+    url('assets/peugeot-2008-hero-desktop.webp') !important;
+  background-size: cover !important;
+  background-position: center center !important;
+}
+
+.peugeot-2008-page .partner-kicker.blue,
+.peugeot-2008-page .partner-kicker,
+.peugeot-2008-page .partner-benefit-strip div,
+.peugeot-2008-page .partner-checks li:before {
+  color: var(--model-blue) !important;
+}
+
+.peugeot-2008-page .partner-btn.primary,
+.peugeot-2008-page .partner-wa,
+.peugeot-2008-page .partner-nav a.is-active:after {
+  background: var(--model-blue) !important;
+}
+
+.peugeot-2008-page .partner-pills {
+  grid-template-columns: repeat(3, max-content) !important;
+}
+
+.peugeot-2008-page .partner-pills span {
+  width: auto !important;
+  min-width: 168px !important;
+  height: 54px !important;
+  padding: 0 20px !important;
+  border-radius: 999px !important;
+  font-size: 14px !important;
+  background: rgba(255, 255, 255, .12) !important;
+  backdrop-filter: blur(12px);
+}
+
+.peugeot-2008-page .model-media-slot {
+  border: 0 !important;
+  color: transparent !important;
+  overflow: hidden;
+  background-size: cover !important;
+  background-position: center !important;
+  box-shadow: 0 22px 60px rgba(15, 23, 42, .12);
+}
+
+.peugeot-2008-page .model-main-photo {
+  background-image: url('assets/peugeot-2008-main.webp') !important;
+}
+
+.peugeot-2008-page .model-design-photo {
+  background-image: url('assets/peugeot-2008-design.webp') !important;
+}
+
+.peugeot-2008-page .model-interior-photo {
+  background-image: url('assets/peugeot-2008-interior.webp') !important;
+}
+
+.peugeot-2008-page .model-driving-photo {
+  background-image: url('assets/peugeot-2008-rear.webp') !important;
+}
+
+.peugeot-2008-page .product-intro {
+  max-width: 1360px !important;
+  grid-template-columns: minmax(560px, 1.08fr) minmax(500px, .92fr) !important;
+  gap: clamp(44px, 5vw, 78px) !important;
+}
+
+.peugeot-2008-page .product-intro .model-main-photo {
+  min-height: 430px !important;
+  border-radius: 16px !important;
+}
+
+.peugeot-2008-page .product-intro .partner-checks {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 26px !important;
+}
+
+.peugeot-2008-page .partner-benefit-strip article,
+.peugeot-2008-page .partner-final {
+  border-style: solid !important;
+}
+
+.peugeot-2008-page .partner-offer-card {
+  border: 1px solid rgba(255, 255, 255, .16);
+}
+
+.peugeot-2008-page .partner-inline-actions {
+  flex-wrap: wrap;
+}
+
+@media (max-width: 1120px) {
+  .peugeot-2008-page .product-intro {
+    grid-template-columns: 1fr !important;
+  }
+
+  .peugeot-2008-page .product-intro .partner-checks {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 980px) {
+  .peugeot-2008-page .official-hero {
+    min-height: 720px !important;
+    align-items: start !important;
+    background:
+      linear-gradient(180deg, rgba(3, 8, 18, .84), rgba(3, 8, 18, .46) 42%, rgba(3, 8, 18, .18)),
+      url('assets/peugeot-2008-hero-mobile.webp') !important;
+    background-size: cover !important;
+    background-position: center bottom !important;
+  }
+
+  .peugeot-2008-page .partner-pills {
+    grid-template-columns: 1fr !important;
+    max-width: 420px;
+  }
+
+  .peugeot-2008-page .partner-pills span {
+    justify-content: flex-start !important;
+    width: 100% !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .peugeot-2008-page .official-hero {
+    position: relative !important;
+    min-height: 842px !important;
+    padding: 0 !important;
+    display: block !important;
+    background:
+      linear-gradient(180deg, rgba(3,8,18,.86) 0%, rgba(3,8,18,.54) 22%, rgba(3,8,18,.12) 43%, rgba(3,8,18,.12) 58%, rgba(3,8,18,.66) 79%, rgba(3,8,18,.96) 100%),
+      url('assets/peugeot-2008-hero-mobile.webp') !important;
+    background-repeat: no-repeat !important;
+    background-size: 100% 100%, auto 103% !important;
+    background-position: center center, 50% 49% !important;
+    border-bottom-left-radius: 26px !important;
+    border-bottom-right-radius: 26px !important;
+    overflow: hidden !important;
+  }
+
+  .peugeot-2008-page .official-hero .partner-hero-copy {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 16px !important;
+    display: block !important;
+    z-index: 2 !important;
+  }
+
+  .peugeot-2008-page .partner-kicker {
+    position: absolute !important;
+    top: 34px !important;
+    left: 16px !important;
+    right: 16px !important;
+    margin: 0 !important;
+    color: var(--model-blue) !important;
+    font-size: .78rem !important;
+    line-height: 1.15 !important;
+    letter-spacing: .2em !important;
+    text-shadow: 0 8px 20px rgba(2,6,23,.36) !important;
+  }
+
+  .peugeot-2008-page .partner-hero-copy h1 {
+    position: absolute !important;
+    top: 72px !important;
+    left: 16px !important;
+    right: 16px !important;
+    max-width: 12ch !important;
+    margin: 0 !important;
+    color: #fff !important;
+    font-size: 2.66rem !important;
+    line-height: 1.04 !important;
+    letter-spacing: 0 !important;
+    text-wrap: balance !important;
+    text-shadow: 0 10px 26px rgba(2,6,23,.46) !important;
+  }
+
+  .peugeot-2008-page .partner-hero-copy h1::after {
+    content: 'El SUV compacto que reinventa las reglas.';
+    display: block !important;
+    max-width: 22ch !important;
+    margin-top: 12px !important;
+    color: rgba(255,255,255,.92) !important;
+    font-size: .98rem !important;
+    line-height: 1.3 !important;
+    font-weight: 500 !important;
+    text-shadow: 0 8px 22px rgba(2,6,23,.34) !important;
+  }
+
+  .peugeot-2008-page .partner-pills {
+    position: absolute !important;
+    top: 252px !important;
+    left: 16px !important;
+    right: 16px !important;
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 9px !important;
+    max-width: none !important;
+    margin: 0 !important;
+  }
+
+  .peugeot-2008-page .partner-pills span {
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 50px !important;
+    height: auto !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 12px !important;
+    padding: 10px 14px !important;
+    border-radius: 999px !important;
+    border: 1px solid rgba(255,255,255,.76) !important;
+    background: rgba(7,17,31,.28) !important;
+    color: #fff !important;
+    font-size: 0 !important;
+    line-height: 0 !important;
+    font-weight: 700 !important;
+    text-align: left !important;
+    backdrop-filter: blur(5px) !important;
+    box-shadow: 0 10px 24px rgba(2,6,23,.16) !important;
+  }
+
+  .peugeot-2008-page .partner-pills span::before {
+    width: 28px !important;
+    height: 28px !important;
+    flex: 0 0 28px !important;
+    border-radius: 999px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    color: var(--model-blue) !important;
+    font-size: 1rem !important;
+    line-height: 1 !important;
+    font-weight: 900 !important;
+    border: 1px solid rgba(0,114,206,.52) !important;
+    background: rgba(0,114,206,.12) !important;
+  }
+
+  .peugeot-2008-page .partner-pills span::after {
+    display: block !important;
+    color: #fff !important;
+    font-size: .96rem !important;
+    line-height: 1.22 !important;
+    font-weight: 700 !important;
+  }
+
+  .peugeot-2008-page .partner-pills span:nth-child(1)::before { content: '\25A3'; }
+  .peugeot-2008-page .partner-pills span:nth-child(1)::after { content: 'Diseño que impone presencia'; }
+  .peugeot-2008-page .partner-pills span:nth-child(2)::before { content: '\25CE'; }
+  .peugeot-2008-page .partner-pills span:nth-child(2)::after { content: 'Tecnología Peugeot i-Cockpit'; }
+  .peugeot-2008-page .partner-pills span:nth-child(3)::before { content: '$'; }
+  .peugeot-2008-page .partner-pills span:nth-child(3)::after { content: 'Conectividad y asistencia avanzada'; }
+
+  .peugeot-2008-page .partner-hero-copy .partner-lead {
+    display: none !important;
+  }
+
+  .peugeot-2008-page .official-hero .partner-hero-copy::before {
+    content: 'Consultá bonificaciones vigentes';
+    position: absolute !important;
+    left: 32px !important;
+    right: 32px !important;
+    bottom: 126px !important;
+    min-height: 64px !important;
+    padding: 15px 18px 15px 58px !important;
+    border: 1px solid rgba(255,255,255,.2) !important;
+    border-radius: 18px !important;
+    background: rgba(7,17,31,.58) !important;
+    color: #fff !important;
+    display: flex !important;
+    align-items: center !important;
+    font-size: .98rem !important;
+    line-height: 1.2 !important;
+    font-weight: 700 !important;
+    white-space: nowrap !important;
+    box-shadow: 0 16px 32px rgba(2,6,23,.22) !important;
+    backdrop-filter: blur(5px) !important;
+    text-shadow: 0 8px 22px rgba(2,6,23,.34) !important;
+  }
+
+  .peugeot-2008-page .official-hero .partner-hero-copy::after {
+    content: '\1F381';
+    position: absolute !important;
+    left: 50px !important;
+    bottom: 146px !important;
+    z-index: 3 !important;
+    font-size: 1.08rem !important;
+    line-height: 1 !important;
+  }
+
+  .peugeot-2008-page .partner-actions .ghost,
+  .peugeot-2008-page .official-hero .partner-offer-card {
+    display: none !important;
+  }
+
+  .peugeot-2008-page .partner-actions {
+    position: absolute !important;
+    left: 16px !important;
+    right: 16px !important;
+    bottom: 40px !important;
+    width: auto !important;
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 0 !important;
+    margin: 0 !important;
+  }
+
+  .peugeot-2008-page .partner-actions .primary {
+    width: 100% !important;
+    min-height: 64px !important;
+    padding: 16px 18px !important;
+    border-radius: 16px !important;
+    justify-content: center !important;
+    color: transparent !important;
+    font-size: 0 !important;
+    line-height: 0 !important;
+    box-shadow: 0 20px 42px rgba(0,114,206,.32) !important;
+  }
+
+  .peugeot-2008-page .partner-actions .primary::after {
+    content: 'Cotizala ahora';
+    color: #fff !important;
+    font-size: 1.12rem !important;
+    line-height: 1.1 !important;
+    font-weight: 800 !important;
+    letter-spacing: 0 !important;
+  }
+}
+
+@media (max-width: 560px) {
+  .peugeot-2008-page .official-hero {
+    min-height: 824px !important;
+    padding-top: 0 !important;
+    background-size: 100% 100%, auto 105% !important;
+    background-position: center center, 50% 49% !important;
+  }
+
+  .peugeot-2008-page .partner-hero h1 {
+    font-size: 2.52rem !important;
+  }
+
+  .peugeot-2008-page .partner-pills span {
+    min-height: 50px !important;
+  }
+}
+
+@media (max-width: 430px) {
+  .peugeot-2008-page .official-hero {
+    min-height: 812px !important;
+    background-size: 100% 100%, auto 107% !important;
+    background-position: center center, 50% 49% !important;
+  }
+
+  .peugeot-2008-page .partner-hero-copy h1 {
+    top: 70px !important;
+    font-size: 2.42rem !important;
+  }
+
+  .peugeot-2008-page .partner-pills {
+    top: 244px !important;
+  }
+
+  .peugeot-2008-page .partner-pills span::after {
+    font-size: .91rem !important;
+  }
+
+  .peugeot-2008-page .official-hero .partner-hero-copy::before {
+    left: 28px !important;
+    right: 28px !important;
+    bottom: 122px !important;
+    padding-left: 54px !important;
+    font-size: .9rem !important;
+  }
+
+  .peugeot-2008-page .official-hero .partner-hero-copy::after {
+    left: 46px !important;
+    bottom: 142px !important;
+  }
+}
