@@ -79,6 +79,7 @@
   }
 
   .amarok-page .official-hero .partner-actions .partner-btn.primary {
+    position: relative !important;
     width: 100% !important;
     max-width: 100% !important;
     min-width: 0 !important;
@@ -89,9 +90,28 @@
     align-items: center !important;
     justify-content: center !important;
     text-align: center !important;
-    font-size: 20px !important;
+    color: transparent !important;
+    font-size: 0 !important;
+    line-height: 0 !important;
     padding-left: 18px !important;
     padding-right: 18px !important;
+  }
+
+  .amarok-page .official-hero .partner-actions .partner-btn.primary::after {
+    content: 'Cotizala ahora' !important;
+    position: absolute !important;
+    inset: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100% !important;
+    height: 100% !important;
+    color: #fff !important;
+    font-size: 20px !important;
+    line-height: 1 !important;
+    font-weight: 800 !important;
+    text-align: center !important;
+    pointer-events: none !important;
   }
 }
 
