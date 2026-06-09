@@ -330,8 +330,8 @@
 /* Partner image framing retouches */
 @media (max-width: 768px) {
   body.partner-page .official-hero {
-    background-size: 100% 100%, auto 110% !important;
-    background-position: center center, 54% 44% !important;
+    background-size: 100% 100%, 126% auto !important;
+    background-position: center center, 86% 47% !important;
   }
 
   body.partner-page .partner-split.reverse > img {
@@ -348,8 +348,8 @@
 
 @media (max-width: 430px) {
   body.partner-page .official-hero {
-    background-size: 100% 100%, auto 112% !important;
-    background-position: center center, 54% 45% !important;
+    background-size: 100% 100%, 130% auto !important;
+    background-position: center center, 88% 47% !important;
   }
 
   body.partner-page .partner-split.reverse > img {
