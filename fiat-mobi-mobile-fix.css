@@ -1,0 +1,74 @@
+/* Fiat Mobi mobile hero corrections */
+@media (max-width: 768px) {
+  .fiat-mobi-page .official-hero {
+    min-height: 812px !important;
+    background-size: 100% 100%, auto 98% !important;
+    background-position: center center, 50% 54% !important;
+  }
+
+  .fiat-mobi-page .official-hero .partner-hero-copy::after {
+    content: none !important;
+    display: none !important;
+  }
+
+  .fiat-mobi-page .partner-kicker {
+    top: 26px !important;
+  }
+
+  .fiat-mobi-page .partner-hero-copy h1 {
+    top: 66px !important;
+  }
+
+  .fiat-mobi-page .partner-pills {
+    top: 252px !important;
+  }
+
+  .fiat-mobi-page .partner-pills span:nth-child(1)::after {
+    content: 'Retiro Pactado en Cuota 2 y 4 con $5.500.000' !important;
+  }
+
+  .fiat-mobi-page .partner-pills span:nth-child(2)::after {
+    content: 'Cubrilo con anticipo o usado' !important;
+  }
+
+  .fiat-mobi-page .partner-pills span:nth-child(3)::after {
+    content: 'Cuotas desde $300.000 pesos' !important;
+  }
+
+  .fiat-mobi-page .partner-pills span::after {
+    font-size: .9rem !important;
+  }
+
+  .fiat-mobi-page .model-mobile-bonus {
+    bottom: 120px !important;
+  }
+}
+
+@media (max-width: 430px) {
+  .fiat-mobi-page .official-hero {
+    min-height: 812px !important;
+    background-size: 100% 100%, auto 101% !important;
+    background-position: center center, 50% 54% !important;
+  }
+
+  .fiat-mobi-page .partner-kicker {
+    top: 24px !important;
+  }
+
+  .fiat-mobi-page .partner-hero-copy h1 {
+    top: 62px !important;
+  }
+
+  .fiat-mobi-page .partner-pills {
+    top: 246px !important;
+  }
+
+  .fiat-mobi-page .partner-pills span::after {
+    font-size: .82rem !important;
+  }
+
+  .fiat-mobi-page .model-mobile-bonus {
+    bottom: 118px !important;
+    font-size: .86rem !important;
+  }
+}
