@@ -33,7 +33,7 @@
 
   .nivus-page .partner-pills span:nth-child(1)::after,
   .tcross-page .partner-pills span:nth-child(1)::after {
-    content: 'Retiro Pactado en Cuota 2, 6 y 8\Acon $6.000.000' !important;
+    content: 'Retiro Pactado en Cuota 2, 6 y 8\A con $6.000.000' !important;
     white-space: pre-line !important;
   }
 
