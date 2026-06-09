@@ -1,0 +1,44 @@
+/* Fiat Cronos mobile corrections */
+@media (max-width: 768px) {
+  .fiat-cronos-page .partner-pills span:nth-child(1)::after {
+    content: 'Retiro en Cuota 2, 4 y 6 con $4.000.000' !important;
+  }
+
+  .fiat-cronos-page .partner-pills span:nth-child(2)::after {
+    content: 'Cubrilo con tu usado o anticipo' !important;
+  }
+
+  .fiat-cronos-page .partner-pills span:nth-child(3)::after {
+    content: 'Cuotas desde $350.000' !important;
+  }
+
+  .fiat-cronos-page .partner-pills span::after {
+    font-size: .9rem !important;
+  }
+
+  .fiat-cronos-page .model-driving-photo,
+  .fiat-cronos-page .model-main-photo {
+    background-position: 0% center !important;
+  }
+}
+
+@media (max-width: 560px) {
+  .fiat-cronos-page .official-hero {
+    background-position: center center, 0% 49% !important;
+  }
+
+  .fiat-cronos-page .partner-pills span::after {
+    font-size: .84rem !important;
+  }
+
+  .fiat-cronos-page .model-driving-photo,
+  .fiat-cronos-page .model-main-photo {
+    background-position: 0% center !important;
+  }
+}
+
+@media (max-width: 430px) {
+  .fiat-cronos-page .partner-pills span::after {
+    font-size: .8rem !important;
+  }
+}
