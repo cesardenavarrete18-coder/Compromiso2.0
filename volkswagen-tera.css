@@ -351,3 +351,33 @@
     bottom: 142px !important;
   }
 }
+
+/* Volkswagen Tera mobile commercial and image framing corrections */
+@media (max-width: 768px) {
+  .tera-page .partner-pills span:nth-child(3)::after {
+    content: 'Cuotas desde $350.000' !important;
+  }
+
+  .tera-page .official-hero {
+    background-size: 100% 100%, auto 101% !important;
+    background-position: center center, 50% 49% !important;
+  }
+
+  .tera-page .model-driving-photo {
+    background-size: contain !important;
+    background-repeat: no-repeat !important;
+    background-position: center center !important;
+    background-color: #f4f7fb !important;
+  }
+}
+
+@media (max-width: 430px) {
+  .tera-page .official-hero {
+    background-size: 100% 100%, auto 103% !important;
+    background-position: center center, 50% 49% !important;
+  }
+
+  .tera-page .partner-pills span:nth-child(3)::after {
+    content: 'Cuotas desde $350.000' !important;
+  }
+}
