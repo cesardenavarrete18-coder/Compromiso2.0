@@ -10,10 +10,25 @@
     display: none !important;
   }
 
+  .nivus-page .partner-kicker {
+    font-size: 0 !important;
+  }
+
+  .nivus-page .partner-kicker::after {
+    content: 'Volkswagen · SUVW' !important;
+    display: inline-block !important;
+    color: #0784f6 !important;
+    font-size: .82rem !important;
+    font-weight: 900 !important;
+    line-height: 1.1 !important;
+    letter-spacing: .18em !important;
+    text-transform: uppercase !important;
+  }
+
   .nivus-page .partner-pills span,
   .tcross-page .partner-pills span {
-    min-height: 58px !important;
-    padding-right: 14px !important;
+    min-height: 60px !important;
+    padding-right: 12px !important;
   }
 
   .nivus-page .partner-pills span:nth-child(1)::after,
@@ -35,22 +50,22 @@
   .nivus-page .partner-pills span::after,
   .tcross-page .partner-pills span::after {
     min-width: 0 !important;
-    max-width: calc(100% - 44px) !important;
-    overflow-wrap: anywhere !important;
-    font-size: .88rem !important;
-    line-height: 1.12 !important;
+    max-width: calc(100% - 56px) !important;
+    overflow-wrap: normal !important;
+    font-size: .84rem !important;
+    line-height: 1.14 !important;
   }
 }
 
 @media (max-width: 430px) {
   .nivus-page .partner-pills span,
   .tcross-page .partner-pills span {
-    min-height: 60px !important;
+    min-height: 62px !important;
   }
 
   .nivus-page .partner-pills span::after,
   .tcross-page .partner-pills span::after {
-    font-size: .78rem !important;
+    font-size: .74rem !important;
     line-height: 1.12 !important;
   }
 }
