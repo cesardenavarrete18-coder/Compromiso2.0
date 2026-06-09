@@ -85,6 +85,10 @@
     min-height: 66px !important;
     box-sizing: border-box !important;
     border-radius: 12px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
     font-size: 20px !important;
     padding-left: 18px !important;
     padding-right: 18px !important;
