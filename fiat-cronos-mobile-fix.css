@@ -24,7 +24,8 @@
 
 @media (max-width: 560px) {
   .fiat-cronos-page .official-hero {
-    background-position: center center, 100% 49% !important;
+    background-size: 100% 100%, auto 98% !important;
+    background-position: center center, 92% 52% !important;
   }
 
   .fiat-cronos-page .partner-pills span::after {
@@ -38,6 +39,11 @@
 }
 
 @media (max-width: 430px) {
+  .fiat-cronos-page .official-hero {
+    background-size: 100% 100%, auto 96% !important;
+    background-position: center center, 90% 52% !important;
+  }
+
   .fiat-cronos-page .partner-pills span::after {
     font-size: .8rem !important;
   }
