@@ -103,6 +103,13 @@
 }
 
 @media (max-width: 768px) {
+  .taos-page .partner-hero-helper,
+  .taos-page .official-hero .partner-hero-copy::before,
+  .taos-page .official-hero .partner-hero-copy::after {
+    content: none !important;
+    display: none !important;
+  }
+
   .taos-page .official-hero {
     position: relative !important;
     min-height: 842px !important;
@@ -185,7 +192,7 @@
   .taos-page .partner-pills span {
     width: 100% !important;
     min-width: 0 !important;
-    min-height: 50px !important;
+    min-height: 58px !important;
     height: auto !important;
     display: flex !important;
     align-items: center !important;
@@ -222,18 +229,23 @@
 
   .taos-page .partner-pills span::after {
     display: block !important;
+    min-width: 0 !important;
+    max-width: calc(100% - 56px) !important;
     color: #fff !important;
-    font-size: .94rem !important;
-    line-height: 1.22 !important;
+    font-size: .84rem !important;
+    line-height: 1.14 !important;
     font-weight: 700 !important;
   }
 
   .taos-page .partner-pills span:nth-child(1)::before { content: '\25A3'; }
-  .taos-page .partner-pills span:nth-child(1)::after { content: 'Retiro pactado en Cuota 2'; }
+  .taos-page .partner-pills span:nth-child(1)::after {
+    content: 'Retiro Pactado en Cuota 5 y 8\A con 40%';
+    white-space: pre-line !important;
+  }
   .taos-page .partner-pills span:nth-child(2)::before { content: '%'; }
   .taos-page .partner-pills span:nth-child(2)::after { content: 'Cubrilo con anticipo o usado'; }
   .taos-page .partner-pills span:nth-child(3)::before { content: '$'; }
-  .taos-page .partner-pills span:nth-child(3)::after { content: 'Cuotas a medida'; }
+  .taos-page .partner-pills span:nth-child(3)::after { content: 'Cuotas desde $550.000 pesos'; }
 
   .taos-page .partner-hero-copy .partner-lead {
     display: none !important;
@@ -325,7 +337,8 @@
   }
 
   .taos-page .partner-pills span::after {
-    font-size: .89rem !important;
+    font-size: .78rem !important;
+    line-height: 1.12 !important;
   }
 
   .taos-page .model-mobile-bonus {
