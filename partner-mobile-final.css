@@ -326,3 +326,33 @@
     font-size: .84rem !important;
   }
 }
+
+/* Partner image framing retouches */
+@media (max-width: 768px) {
+  body.partner-page .official-hero {
+    background-size: 100% 100%, auto 110% !important;
+    background-position: center center, 54% 44% !important;
+  }
+
+  body.partner-page .partner-split.reverse > img {
+    width: 100% !important;
+    aspect-ratio: 16 / 10 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    object-fit: contain !important;
+    object-position: center center !important;
+    background: #f4f7fb !important;
+    border-radius: 18px !important;
+  }
+}
+
+@media (max-width: 430px) {
+  body.partner-page .official-hero {
+    background-size: 100% 100%, auto 112% !important;
+    background-position: center center, 54% 45% !important;
+  }
+
+  body.partner-page .partner-split.reverse > img {
+    object-position: center center !important;
+  }
+}
