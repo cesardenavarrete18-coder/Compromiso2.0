@@ -1,0 +1,40 @@
+/* Final mobile corrections shared by Volkswagen Nivus and T-Cross */
+@media (max-width: 768px) {
+  .nivus-page .partner-hero-helper,
+  .tcross-page .partner-hero-helper,
+  .nivus-page .official-hero .partner-hero-copy::before,
+  .nivus-page .official-hero .partner-hero-copy::after,
+  .tcross-page .official-hero .partner-hero-copy::before,
+  .tcross-page .official-hero .partner-hero-copy::after {
+    content: none !important;
+    display: none !important;
+  }
+
+  .nivus-page .partner-pills span:nth-child(1)::after,
+  .tcross-page .partner-pills span:nth-child(1)::after {
+    content: 'Retiro Pactado en Cuota 2, 6 y 8 con $6.000.000' !important;
+  }
+
+  .nivus-page .partner-pills span:nth-child(2)::after,
+  .tcross-page .partner-pills span:nth-child(2)::after {
+    content: 'Cubrilo con anticipo o usado' !important;
+  }
+
+  .nivus-page .partner-pills span:nth-child(3)::after,
+  .tcross-page .partner-pills span:nth-child(3)::after {
+    content: 'Cuotas desde $400.000 pesos' !important;
+  }
+
+  .nivus-page .partner-pills span::after,
+  .tcross-page .partner-pills span::after {
+    font-size: .9rem !important;
+    line-height: 1.18 !important;
+  }
+}
+
+@media (max-width: 430px) {
+  .nivus-page .partner-pills span::after,
+  .tcross-page .partner-pills span::after {
+    font-size: .82rem !important;
+  }
+}
