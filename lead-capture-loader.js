@@ -6,7 +6,7 @@
 
   const stylesheet = document.createElement('link');
   stylesheet.rel = 'stylesheet';
-  stylesheet.href = new URL('lead-capture.css?v=20260610-5', baseUrl).href;
+  stylesheet.href = new URL('lead-capture.css?v=20260610-6', baseUrl).href;
   document.head.appendChild(stylesheet);
 
   const config = document.createElement('script');
