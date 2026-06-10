@@ -35,9 +35,7 @@
   let leadContext = 'landing_cta';
 
   const track = (eventName, params) => {
-    if (typeof window.fbq === 'function') {
-      window.fbq('track', eventName, params);
-    }
+    if (typeof window.fbq === 'function') window.fbq('track', eventName, params);
   };
 
   const getUtm = () => {
@@ -59,12 +57,8 @@
           <h2 id="leadModalTitle">Solicitá una propuesta</h2>
           <p class="lead-modal__intro">Dejanos tus datos y un asesor comercial se pondrá en contacto para informarte condiciones y disponibilidad.</p>
           <form class="lead-form" novalidate>
-            <label>Nombre
-              <input name="name" type="text" autocomplete="name" required />
-            </label>
-            <label>WhatsApp
-              <input name="phone" type="tel" inputmode="tel" autocomplete="tel" required />
-            </label>
+            <label>Nombre<input name="name" type="text" autocomplete="name" required /></label>
+            <label>WhatsApp<input name="phone" type="tel" inputmode="tel" autocomplete="tel" required /></label>
             <fieldset>
               <legend>Forma de compra</legend>
               <label class="lead-form__choice"><input name="purchaseMethod" type="radio" value="anticipo" required /> Anticipo</label>
@@ -125,7 +119,6 @@
     const form = event.currentTarget;
     const status = form.querySelector('.lead-form__status');
     const button = form.querySelector('.lead-form__submit');
-
     if (!form.reportValidity()) return;
 
     const data = new FormData(form);
@@ -169,7 +162,6 @@
       } else {
         whatsapp.hidden = true;
       }
-
       form.reset();
     } catch (error) {
       console.error('[Lead capture] No se pudo enviar el lead:', error);
@@ -188,12 +180,24 @@
     });
   };
 
+  const updateCtaLabel = (link) => {
+    if (link.classList.contains('partner-wa')) link.textContent = 'Quiero que me contacten';
+    if (link.classList.contains('ghost')) link.textContent = 'Consultar condiciones vigentes';
+    if (link.classList.contains('primary') && link.closest('.partner-hero')) link.textContent = 'Solicitar propuesta';
+    if (link.closest('.partner-offer-card')) link.textContent = 'Solicitar propuesta';
+    if (link.classList.contains('whatsapp-float')) {
+      const label = link.querySelector('span:last-child');
+      if (label) label.textContent = 'Consultar condiciones vigentes';
+    }
+  };
+
   const prepareCtas = () => {
-    document.querySelectorAll("a[href*='wa.me'], a[href*='api.whatsapp.com']").forEach((link) => {
+    document.querySelectorAll("a[href*='wa.me'], a[href*='api.whatsapp.com'], a[href='#solicitar-propuesta']").forEach((link) => {
       link.dataset.leadOriginalLabel = link.textContent.trim();
       link.href = '#solicitar-propuesta';
       link.removeAttribute('target');
       link.removeAttribute('rel');
+      updateCtaLabel(link);
       link.addEventListener('click', (event) => {
         event.preventDefault();
         const source = link.classList.contains('partner-wa') ? 'header_cta'
