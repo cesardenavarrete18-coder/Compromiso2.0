@@ -1,0 +1,74 @@
+/* Desktop refinement for Fiat Cronos and Titano quick spec sections */
+@media (min-width: 981px) {
+  .fiat-cronos-page .product-intro,
+  .fiat-titano-page .product-intro {
+    max-width: 1480px !important;
+    grid-template-columns: minmax(560px, 1.08fr) minmax(620px, .92fr) !important;
+    gap: 54px !important;
+    align-items: center !important;
+    padding-left: clamp(42px, 5vw, 96px) !important;
+    padding-right: clamp(42px, 5vw, 96px) !important;
+  }
+
+  .fiat-cronos-page .product-intro .product-clean,
+  .fiat-titano-page .product-intro .product-clean {
+    min-height: 470px !important;
+    padding: 0 !important;
+    border-radius: 22px !important;
+  }
+
+  .fiat-cronos-page .product-intro .model-main-photo,
+  .fiat-titano-page .product-intro .model-main-photo {
+    min-height: 470px !important;
+    background-size: cover !important;
+    background-position: center center !important;
+  }
+
+  .fiat-cronos-page .partner-intro .partner-copy-block,
+  .fiat-titano-page .partner-intro .partner-copy-block {
+    max-width: 720px !important;
+  }
+
+  .fiat-cronos-page .partner-intro .partner-copy-block h2,
+  .fiat-titano-page .partner-intro .partner-copy-block h2 {
+    max-width: 760px !important;
+    font-size: clamp(3rem, 3.85vw, 4.15rem) !important;
+    line-height: 1 !important;
+    letter-spacing: 0 !important;
+    text-wrap: balance !important;
+  }
+
+  .fiat-cronos-page .partner-intro .partner-copy-block p,
+  .fiat-titano-page .partner-intro .partner-copy-block p {
+    max-width: 700px !important;
+    font-size: 1.16rem !important;
+    line-height: 1.56 !important;
+  }
+
+  .fiat-cronos-page .partner-intro .partner-checks,
+  .fiat-titano-page .partner-intro .partner-checks {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    column-gap: 28px !important;
+    row-gap: 12px !important;
+  }
+
+  .fiat-cronos-page .partner-intro .partner-checks li,
+  .fiat-titano-page .partner-intro .partner-checks li {
+    font-size: 1rem !important;
+    line-height: 1.32 !important;
+  }
+}
+
+@media (min-width: 981px) and (max-width: 1280px) {
+  .fiat-cronos-page .product-intro,
+  .fiat-titano-page .product-intro {
+    grid-template-columns: minmax(480px, 1fr) minmax(520px, 1fr) !important;
+    gap: 42px !important;
+  }
+
+  .fiat-cronos-page .partner-intro .partner-copy-block h2,
+  .fiat-titano-page .partner-intro .partner-copy-block h2 {
+    font-size: clamp(2.65rem, 3.8vw, 3.55rem) !important;
+  }
+}
