@@ -43,11 +43,12 @@
 
   const getUtm = () => {
     const params = new URLSearchParams(window.location.search);
-    return ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'].reduce((utm, key) => {
-      const value = params.get(key);
-      if (value) utm[key] = value;
-      return utm;
-    }, {});
+    return {
+      utm_source: params.get('utm_source') || '',
+      utm_campaign: params.get('utm_campaign') || '',
+      utm_content: params.get('utm_content') || '',
+      utm_medium: params.get('utm_medium') || ''
+    };
   };
 
   const getModalMarkup = () => `
@@ -125,16 +126,19 @@
     if (!form.reportValidity()) return;
 
     const data = new FormData(form);
+    const timestamp = new Date().toISOString();
     const lead = {
       name: String(data.get('name') || '').trim(),
       phone: String(data.get('phone') || '').trim(),
       brand,
       model,
-      purchaseMethod: String(data.get('purchaseMethod') || ''),
-      origin: leadContext,
+      purchaseIntent: String(data.get('purchaseMethod') || ''),
+      source: leadContext,
       url: window.location.href,
-      utm: getUtm(),
-      date: new Date().toISOString()
+      ...getUtm(),
+      userAgent: window.navigator.userAgent,
+      date: timestamp,
+      fecha: timestamp
     };
 
     button.disabled = true;
@@ -145,10 +149,21 @@
       if (config.LEAD_WEBHOOK_URL) {
         const response = await fetch(config.LEAD_WEBHOOK_URL, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify(lead)
         });
-        if (!response.ok) throw new Error(`Webhook respondió ${response.status}`);
+
+        let result;
+        try {
+          result = await response.json();
+        } catch (parseError) {
+          throw new Error(`El servidor respondió con un formato inválido (${response.status})`);
+        }
+
+        if (!response.ok || result?.ok !== true) {
+          const detail = result?.error || result?.message || `HTTP ${response.status}`;
+          throw new Error(`El servidor no confirmó el lead: ${detail}`);
+        }
       } else {
         console.info('[Lead capture] LEAD_WEBHOOK_URL vacío. Lead registrado localmente:', lead);
       }
@@ -167,8 +182,8 @@
       }
       form.reset();
     } catch (error) {
-      console.error('[Lead capture] No se pudo enviar el lead:', error);
-      status.textContent = 'No pudimos enviar la consulta. Por favor, intentá nuevamente.';
+      console.error('[Lead capture] No se pudo guardar el lead:', { error, lead });
+      status.textContent = 'No pudimos guardar tu consulta. Revisá tu conexión e intentá nuevamente.';
     } finally {
       button.disabled = false;
       button.textContent = 'Quiero que me contacten';
