@@ -83,6 +83,7 @@ body.lead-modal-open {
 .lead-form {
   display: grid;
   gap: 15px;
+  text-align: left !important;
 }
 
 .lead-form label,
@@ -111,22 +112,45 @@ body.lead-modal-open {
   margin: 0;
   padding: 0;
   border: 0;
+  text-align: left !important;
 }
 
 .lead-form__choice,
 .lead-form__consent {
-  display: flex;
-  align-items: flex-start;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: flex-start !important;
+  justify-content: flex-start !important;
   gap: 10px;
+  text-align: left !important;
   font-weight: 500 !important;
   line-height: 1.35;
 }
 
 .lead-form__choice input,
 .lead-form__consent input {
-  flex: 0 0 auto;
-  margin-top: 3px;
+  position: static !important;
+  inset: auto !important;
+  display: inline-block !important;
+  float: none !important;
+  flex: 0 0 18px !important;
+  width: 18px !important;
+  min-width: 18px !important;
+  max-width: 18px !important;
+  height: 18px !important;
+  min-height: 18px !important;
+  max-height: 18px !important;
+  margin: 2px 0 0 !important;
+  padding: 0 !important;
+  transform: none !important;
   accent-color: #0878d1;
+}
+
+.lead-form__consent span {
+  display: block !important;
+  flex: 1 1 auto;
+  min-width: 0;
+  text-align: left !important;
 }
 
 .lead-form__submit,
@@ -228,6 +252,8 @@ body.lead-modal-open {
   .lead-form fieldset {
     display: grid !important;
     grid-template-columns: minmax(0, 1fr) !important;
+    justify-items: stretch !important;
+    align-items: start !important;
     gap: 10px;
   }
 
@@ -236,8 +262,9 @@ body.lead-modal-open {
     margin-bottom: 10px;
   }
 
-  .lead-form__choice {
+  .lead-modal .lead-form fieldset > .lead-form__choice {
     display: flex !important;
+    flex-direction: row !important;
     align-items: center !important;
     justify-content: flex-start !important;
     width: 100%;
@@ -246,14 +273,19 @@ body.lead-modal-open {
     text-align: left;
   }
 
-  .lead-form__choice input {
+  .lead-modal .lead-form fieldset > .lead-form__choice > input[type='radio'] {
+    position: static !important;
+    display: inline-block !important;
+    flex: 0 0 18px !important;
     width: 18px !important;
     height: 18px !important;
     margin: 0 !important;
+    padding: 0 !important;
   }
 
-  .lead-form__consent {
+  .lead-modal .lead-form > .lead-form__consent {
     display: flex !important;
+    flex-direction: row !important;
     align-items: flex-start !important;
     justify-content: flex-start !important;
     margin: 0 !important;
@@ -261,15 +293,21 @@ body.lead-modal-open {
     text-align: left;
   }
 
-  .lead-form__consent input {
+  .lead-modal .lead-form > .lead-form__consent > input[type='checkbox'] {
+    position: static !important;
+    display: inline-block !important;
+    flex: 0 0 18px !important;
     width: 18px !important;
     height: 18px !important;
     margin: 2px 0 0 !important;
+    padding: 0 !important;
   }
 
-  .lead-form__consent span {
+  .lead-modal .lead-form > .lead-form__consent > span {
+    display: block !important;
     flex: 1 1 auto;
     min-width: 0;
+    text-align: left !important;
   }
 
   .lead-form__submit {
@@ -362,8 +400,9 @@ body.lead-modal-open {
     margin: 0 !important;
   }
 
-  .lead-form__consent {
+  .lead-form > label.lead-form__consent {
     display: flex !important;
+    flex-direction: row !important;
     grid-column: 1 / -1 !important;
     align-items: flex-start !important;
     justify-content: flex-start !important;
