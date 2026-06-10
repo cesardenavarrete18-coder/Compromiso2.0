@@ -20,7 +20,10 @@
     '/fiat/mobi': ['Fiat', 'Mobi']
   };
 
-  const normalizePath = (value) => value.replace(/\/+$/, '').toLowerCase();
+  const normalizePath = (value) => value
+    .replace(/\/index\.html$/i, '')
+    .replace(/\/+$/, '')
+    .toLowerCase();
   const currentPath = normalizePath(window.location.pathname);
   const matchedPath = Object.keys(pathModels).find((path) => currentPath.endsWith(path));
   const pageData = matchedPath ? pathModels[matchedPath] : null;
@@ -34,8 +37,8 @@
   let previousFocus;
   let leadContext = 'landing_cta';
 
-  const track = (eventName, params) => {
-    if (typeof window.fbq === 'function') window.fbq('track', eventName, params);
+  const track = (eventName, params, custom = false) => {
+    if (typeof window.fbq === 'function') window.fbq(custom ? 'trackCustom' : 'track', eventName, params);
   };
 
   const getUtm = () => {
@@ -89,7 +92,7 @@
     modal.querySelectorAll('[data-lead-close]').forEach((element) => element.addEventListener('click', closeModal));
     modal.querySelector('.lead-form').addEventListener('submit', submitLead);
     modal.querySelector('[data-lead-whatsapp]').addEventListener('click', () => {
-      track('WhatsAppClick', { content_name: model, content_category: brand });
+      track('WhatsAppClick', { content_name: model, content_category: brand }, true);
     });
     return modal;
   };
