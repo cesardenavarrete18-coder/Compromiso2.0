@@ -60,45 +60,47 @@
   }
 
   .fiat-titano-page .product-intro {
-    grid-template-columns: minmax(620px, 1.02fr) minmax(680px, .98fr) !important;
-    gap: 46px !important;
+    max-width: 1580px !important;
+    grid-template-columns: minmax(660px, 1.04fr) minmax(700px, .96fr) !important;
+    gap: 42px !important;
     align-items: center !important;
-    padding-top: 58px !important;
-    padding-bottom: 58px !important;
+    padding-top: 64px !important;
+    padding-bottom: 64px !important;
   }
 
   .fiat-titano-page .product-intro .product-clean,
   .fiat-titano-page .product-intro .model-main-photo {
-    min-height: 500px !important;
+    min-height: 520px !important;
   }
 
   .fiat-titano-page .partner-intro .partner-copy-block {
-    max-width: 820px !important;
-    transform: translateY(18px) !important;
+    max-width: 780px !important;
+    transform: translateY(30px) !important;
   }
 
   .fiat-titano-page .partner-intro .partner-copy-block h2 {
-    max-width: 820px !important;
-    font-size: clamp(2.72rem, 3.35vw, 3.65rem) !important;
-    line-height: 1.02 !important;
-  }
-
-  .fiat-titano-page .partner-intro .partner-copy-block p {
-    max-width: 800px !important;
-    font-size: 1.08rem !important;
-    line-height: 1.48 !important;
+    max-width: 780px !important;
+    font-size: clamp(2.45rem, 3vw, 3.25rem) !important;
+    line-height: 1.03 !important;
     margin-bottom: 18px !important;
   }
 
+  .fiat-titano-page .partner-intro .partner-copy-block p {
+    max-width: 760px !important;
+    font-size: 1.03rem !important;
+    line-height: 1.45 !important;
+    margin-bottom: 16px !important;
+  }
+
   .fiat-titano-page .partner-intro .partner-checks {
-    column-gap: 24px !important;
-    row-gap: 10px !important;
+    column-gap: 22px !important;
+    row-gap: 9px !important;
   }
 
   .fiat-titano-page .partner-intro .partner-checks li {
-    font-size: .92rem !important;
-    line-height: 1.26 !important;
-    padding-left: 26px !important;
+    font-size: .88rem !important;
+    line-height: 1.24 !important;
+    padding-left: 24px !important;
   }
 }
 
