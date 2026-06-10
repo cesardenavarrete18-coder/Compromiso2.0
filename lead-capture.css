@@ -2,6 +2,13 @@ body.lead-modal-open {
   overflow: hidden;
 }
 
+.lead-modal,
+.lead-modal *,
+.lead-modal *::before,
+.lead-modal *::after {
+  box-sizing: border-box;
+}
+
 .lead-modal[hidden] {
   display: none !important;
 }
