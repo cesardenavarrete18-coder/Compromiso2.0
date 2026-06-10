@@ -1,0 +1,64 @@
+name: Install lead capture module
+
+on:
+  push:
+    branches:
+      - feature/lead-capture-modal
+    paths:
+      - .github/workflows/install-lead-capture.yml
+
+permissions:
+  contents: write
+
+jobs:
+  install:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/lead-capture-modal
+          fetch-depth: 0
+
+      - name: Update exact model pages
+        shell: python
+        run: |
+          import re
+          from pathlib import Path
+
+          paths = [
+              'volkswagen/amarok/index.html',
+              'volkswagen/tera/index.html',
+              'volkswagen/taos/index.html',
+              'volkswagen/nivus/index.html',
+              'volkswagen/tcross/index.html',
+              'peugeot/partner/index.html',
+              'peugeot/208/index.html',
+              'peugeot/2008/index.html',
+              'fiat/cronos/index.html',
+              'fiat/titano/index.html',
+              'fiat/mobi/index.html',
+          ]
+          loader = '    <script src="../../lead-capture-loader.js?v=20260610-1" defer></script>\n'
+          whatsapp_href = re.compile(r'href="https://(?:wa\.me|api\.whatsapp\.com)/[^"]*"')
+          legacy_script = re.compile(
+              r'\n\s*<script>\s*const\s+(?:model|partner)WhatsAppNumber\b.*?</script>\s*',
+              re.DOTALL,
+          )
+
+          for file_name in paths:
+              path = Path(file_name)
+              text = path.read_text(encoding='utf-8')
+              if 'lead-capture-loader.js' not in text:
+                  text = text.replace('  </head>', loader + '  </head>', 1)
+              text = whatsapp_href.sub('href="#solicitar-propuesta"', text)
+              text = legacy_script.sub('\n', text)
+              path.write_text(text, encoding='utf-8', newline='\n')
+
+      - name: Remove one-time workflow and commit
+        run: |
+          rm .github/workflows/install-lead-capture.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add volkswagen/amarok/index.html volkswagen/tera/index.html volkswagen/taos/index.html volkswagen/nivus/index.html volkswagen/tcross/index.html peugeot/partner/index.html peugeot/208/index.html peugeot/2008/index.html fiat/cronos/index.html fiat/titano/index.html fiat/mobi/index.html .github/workflows/install-lead-capture.yml
+          git commit -m "Connect model CTAs to shared lead capture modal"
+          git push origin HEAD:feature/lead-capture-modal
