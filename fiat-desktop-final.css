@@ -102,6 +102,42 @@
     line-height: 1.24 !important;
     padding-left: 24px !important;
   }
+
+  .fiat-titano-page .partner-split.official-split {
+    max-width: 1480px !important;
+    grid-template-columns: minmax(440px, .78fr) minmax(720px, 1.22fr) !important;
+    gap: 44px !important;
+    align-items: center !important;
+    padding-left: clamp(42px, 5vw, 96px) !important;
+    padding-right: clamp(42px, 5vw, 96px) !important;
+  }
+
+  .fiat-titano-page .partner-split.official-split .wide-copy {
+    max-width: 520px !important;
+  }
+
+  .fiat-titano-page .partner-split.official-split .wide-copy h2 {
+    max-width: 520px !important;
+    font-size: clamp(2.35rem, 3vw, 3.35rem) !important;
+    line-height: 1.04 !important;
+    margin-bottom: 26px !important;
+    text-wrap: balance !important;
+  }
+
+  .fiat-titano-page .partner-split.official-split .wide-copy p {
+    max-width: 500px !important;
+    font-size: 1.08rem !important;
+    line-height: 1.55 !important;
+  }
+
+  .fiat-titano-page .partner-split.official-split .model-design-photo {
+    min-height: 560px !important;
+    border-radius: 22px !important;
+    background-size: contain !important;
+    background-repeat: no-repeat !important;
+    background-position: center center !important;
+    background-color: #f3f6f9 !important;
+  }
 }
 
 @media (min-width: 981px) and (max-width: 1280px) {
@@ -118,5 +154,9 @@
 
   .fiat-titano-page .partner-intro .partner-copy-block {
     transform: none !important;
+  }
+
+  .fiat-titano-page .partner-split.official-split {
+    grid-template-columns: minmax(420px, .9fr) minmax(520px, 1.1fr) !important;
   }
 }
