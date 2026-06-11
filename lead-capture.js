@@ -5,6 +5,7 @@
     LEAD_WEBHOOK_URL: '',
     WHATSAPP_FALLBACK_NUMBER: ''
   }, window.LEAD_CAPTURE_CONFIG || {});
+  const META_PIXEL_ID = '1203270370917813';
 
   const pathModels = {
     '/volkswagen/amarok': ['Volkswagen', 'Amarok'],
@@ -33,12 +34,54 @@
 
   if (!brand || !model) return;
 
+  const contentName = `${brand} ${model}`;
+  const contentId = contentName
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
+  const vehicleContent = {
+    content_name: contentName,
+    content_category: brand,
+    content_type: 'vehicle',
+    content_ids: [contentId]
+  };
+
   let modal;
   let previousFocus;
   let leadContext = 'landing_cta';
 
   const track = (eventName, params, custom = false) => {
     if (typeof window.fbq === 'function') window.fbq(custom ? 'trackCustom' : 'track', eventName, params);
+  };
+
+  const initializeMetaPixel = () => {
+    if (window.__MODEL_META_PIXEL_INITIALIZED__) return;
+    window.__MODEL_META_PIXEL_INITIALIZED__ = true;
+
+    if (typeof window.fbq !== 'function') {
+      !function(f,b,e,v,n,t,s) {
+        if (f.fbq) return;
+        n = f.fbq = function() {
+          n.callMethod ? n.callMethod.apply(n, arguments) : n.queue.push(arguments);
+        };
+        if (!f._fbq) f._fbq = n;
+        n.push = n;
+        n.loaded = true;
+        n.version = '2.0';
+        n.queue = [];
+        t = b.createElement(e);
+        t.async = true;
+        t.src = v;
+        s = b.getElementsByTagName(e)[0];
+        s.parentNode.insertBefore(t, s);
+      }(window, document, 'script', 'https://connect.facebook.net/en_US/fbevents.js');
+    }
+
+    window.fbq('init', META_PIXEL_ID);
+    window.fbq('track', 'PageView');
+    window.fbq('track', 'ViewContent', vehicleContent);
   };
 
   const getUtm = () => {
@@ -93,7 +136,10 @@
     modal.querySelectorAll('[data-lead-close]').forEach((element) => element.addEventListener('click', closeModal));
     modal.querySelector('.lead-form').addEventListener('submit', submitLead);
     modal.querySelector('[data-lead-whatsapp]').addEventListener('click', () => {
-      track('WhatsAppClick', { content_name: model, content_category: brand }, true);
+      track('WhatsAppClick', {
+        ...vehicleContent,
+        source: 'post_lead_success'
+      }, true);
     });
     return modal;
   };
@@ -108,7 +154,10 @@
     element.querySelector('.lead-modal__success').hidden = true;
     element.querySelector('.lead-form__status').textContent = '';
     element.querySelector('input[name="name"]').focus();
-    track('Contact', { content_name: model, content_category: brand, source: leadContext });
+    track('Contact', {
+      ...vehicleContent,
+      source: 'lead_modal_open'
+    });
   }
 
   function closeModal() {
@@ -145,6 +194,8 @@
     button.textContent = 'Enviando...';
     status.textContent = '';
 
+    let webhookConfirmed = false;
+
     try {
       if (config.LEAD_WEBHOOK_URL) {
         const response = await fetch(config.LEAD_WEBHOOK_URL, {
@@ -164,11 +215,17 @@
           const detail = result?.error || result?.message || `HTTP ${response.status}`;
           throw new Error(`El servidor no confirmó el lead: ${detail}`);
         }
+        webhookConfirmed = true;
       } else {
         console.info('[Lead capture] LEAD_WEBHOOK_URL vacío. Lead registrado localmente:', lead);
       }
 
-      track('Lead', { content_name: model, content_category: brand });
+      if (webhookConfirmed) {
+        track('Lead', {
+          ...vehicleContent,
+          lead_source: 'google_sheets_form'
+        });
+      }
       modal.querySelector('.lead-modal__form-view').hidden = true;
       modal.querySelector('.lead-modal__success').hidden = false;
 
@@ -233,6 +290,7 @@
     if (event.key === 'Escape' && modal && !modal.hidden) closeModal();
   });
 
+  initializeMetaPixel();
   prepareCtas();
   replaceInlineForms();
 })();
