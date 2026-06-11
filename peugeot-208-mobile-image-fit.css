@@ -1,0 +1,44 @@
+/* Peugeot 208 mobile image fit corrections */
+@media (max-width: 768px) {
+  .peugeot-208-page .product-intro .model-main-photo,
+  .peugeot-208-page .official-split .model-driving-photo,
+  .peugeot-208-page .official-comfort .model-interior-photo {
+    background-size: contain !important;
+    background-repeat: no-repeat !important;
+    background-position: center center !important;
+    background-color: #f4f7fb !important;
+    border-radius: 18px !important;
+  }
+
+  .peugeot-208-page .product-intro .model-main-photo {
+    min-height: 330px !important;
+    aspect-ratio: 16 / 10 !important;
+  }
+
+  .peugeot-208-page .official-split .model-driving-photo {
+    min-height: 300px !important;
+    aspect-ratio: 16 / 10 !important;
+  }
+
+  .peugeot-208-page .official-comfort .model-interior-photo {
+    min-height: 300px !important;
+    aspect-ratio: 16 / 10 !important;
+  }
+
+  .peugeot-208-page .partner-photo-single.official-single {
+    background: #f4f7fb !important;
+    border-radius: 20px !important;
+    padding: 10px !important;
+  }
+}
+
+@media (max-width: 430px) {
+  .peugeot-208-page .product-intro .model-main-photo {
+    min-height: 300px !important;
+  }
+
+  .peugeot-208-page .official-split .model-driving-photo,
+  .peugeot-208-page .official-comfort .model-interior-photo {
+    min-height: 270px !important;
+  }
+}

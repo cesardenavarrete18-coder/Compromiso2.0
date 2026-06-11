@@ -1,0 +1,149 @@
+/* Volkswagen Amarok mobile hero refinements */
+@media (max-width: 768px) {
+  .amarok-page .official-hero::before,
+  .amarok-page .official-hero::after,
+  .amarok-page .official-hero .partner-hero-copy::before,
+  .amarok-page .official-hero .partner-hero-copy::after {
+    content: none !important;
+    display: none !important;
+  }
+
+  .amarok-page .official-hero {
+    min-height: 900px !important;
+    background-size: 100% 100%, auto 98% !important;
+    background-position: center center, 52% 62% !important;
+  }
+
+  .amarok-page .official-hero .partner-kicker {
+    top: 22px !important;
+  }
+
+  .amarok-page .official-hero h1 {
+    top: 58px !important;
+  }
+
+  .amarok-page .official-hero h1::after {
+    content: 'Fuerza que nació para el campo.' !important;
+    display: block !important;
+    max-width: 230px !important;
+    margin-top: 16px !important;
+    font-size: 17px !important;
+    line-height: 1.14 !important;
+  }
+
+  .amarok-page .official-hero .partner-pills {
+    top: 286px !important;
+    left: 14px !important;
+    right: 14px !important;
+    gap: 11px !important;
+  }
+
+  .amarok-page .official-hero .partner-pills span {
+    min-height: 56px !important;
+    padding: 12px 12px 12px 64px !important;
+    font-size: 14.5px !important;
+    line-height: 1.16 !important;
+  }
+
+  .amarok-page .official-hero .partner-pills span::before {
+    left: 16px !important;
+    width: 32px !important;
+    height: 32px !important;
+  }
+
+  .amarok-page .model-mobile-bonus {
+    left: 16px !important;
+    right: 16px !important;
+    bottom: 104px !important;
+    min-height: 58px !important;
+    padding: 12px 14px !important;
+    gap: 12px !important;
+    font-size: clamp(13px, 3.7vw, 15px) !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+    justify-content: center !important;
+  }
+
+  .amarok-page .model-mobile-bonus::before {
+    font-size: 20px !important;
+  }
+
+  .amarok-page .official-hero .partner-actions {
+    left: 12px !important;
+    right: auto !important;
+    bottom: 22px !important;
+    width: calc(100vw - 24px) !important;
+    max-width: calc(100vw - 24px) !important;
+    box-sizing: border-box !important;
+    overflow: visible !important;
+  }
+
+  .amarok-page .official-hero .partner-actions .partner-btn.primary {
+    position: relative !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    min-height: 66px !important;
+    box-sizing: border-box !important;
+    border-radius: 12px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    color: transparent !important;
+    font-size: 0 !important;
+    line-height: 0 !important;
+    padding-left: 18px !important;
+    padding-right: 18px !important;
+  }
+
+  .amarok-page .official-hero .partner-actions .partner-btn.primary::after {
+    content: 'Cotizala ahora' !important;
+    position: absolute !important;
+    inset: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100% !important;
+    height: 100% !important;
+    color: #fff !important;
+    font-size: 20px !important;
+    line-height: 1 !important;
+    font-weight: 800 !important;
+    text-align: center !important;
+    pointer-events: none !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .amarok-page .official-hero {
+    min-height: 900px !important;
+    background-size: 100% 100%, auto 100% !important;
+    background-position: center center, 52% 62% !important;
+  }
+
+  .amarok-page .official-hero .partner-pills {
+    top: 282px !important;
+    left: 14px !important;
+    right: 14px !important;
+  }
+
+  .amarok-page .official-hero .partner-pills span {
+    font-size: 13.8px !important;
+    padding-left: 62px !important;
+  }
+
+  .amarok-page .model-mobile-bonus {
+    left: 16px !important;
+    right: 16px !important;
+    bottom: 104px !important;
+    font-size: 13.5px !important;
+  }
+
+  .amarok-page .official-hero .partner-actions {
+    left: 12px !important;
+    bottom: 22px !important;
+    width: calc(100vw - 24px) !important;
+    max-width: calc(100vw - 24px) !important;
+  }
+}

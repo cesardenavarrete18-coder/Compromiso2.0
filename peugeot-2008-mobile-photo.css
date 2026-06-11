@@ -1,0 +1,33 @@
+/* Mobile framing for the Peugeot 2008 quick-spec product image */
+@media (max-width: 768px) {
+  .peugeot-2008-page .product-intro {
+    gap: 26px !important;
+    padding-top: 48px !important;
+  }
+
+  .peugeot-2008-page .product-intro .model-main-photo {
+    width: 100% !important;
+    min-height: min(760px, 150vw) !important;
+    aspect-ratio: 9 / 14 !important;
+    border-radius: 18px !important;
+    background-size: contain !important;
+    background-repeat: no-repeat !important;
+    background-position: center center !important;
+    background-color: #f5f6f8 !important;
+  }
+
+  .peugeot-2008-page .product-intro .partner-copy-block {
+    margin-top: 0 !important;
+  }
+}
+
+@media (max-width: 430px) {
+  .peugeot-2008-page .product-intro {
+    gap: 22px !important;
+    padding-top: 42px !important;
+  }
+
+  .peugeot-2008-page .product-intro .model-main-photo {
+    min-height: min(720px, 148vw) !important;
+  }
+}

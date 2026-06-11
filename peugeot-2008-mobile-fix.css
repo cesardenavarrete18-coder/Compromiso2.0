@@ -1,0 +1,40 @@
+/* Peugeot 2008 mobile hero text spacing */
+@media (max-width: 768px) {
+  .peugeot-2008-page .partner-pills span {
+    gap: 9px !important;
+    padding: 10px 16px 10px 12px !important;
+  }
+
+  .peugeot-2008-page .partner-pills span::before {
+    width: 26px !important;
+    height: 26px !important;
+    flex-basis: 26px !important;
+    font-size: .95rem !important;
+  }
+
+  .peugeot-2008-page .partner-pills span::after {
+    font-size: .88rem !important;
+    line-height: 1.18 !important;
+  }
+
+  .peugeot-2008-page .partner-pills span:nth-child(1)::after {
+    font-size: .82rem !important;
+  }
+}
+
+@media (max-width: 430px) {
+  .peugeot-2008-page .partner-pills span {
+    gap: 8px !important;
+    padding: 10px 14px 10px 10px !important;
+  }
+
+  .peugeot-2008-page .partner-pills span::before {
+    width: 25px !important;
+    height: 25px !important;
+    flex-basis: 25px !important;
+  }
+
+  .peugeot-2008-page .partner-pills span:nth-child(1)::after {
+    font-size: .78rem !important;
+  }
+}

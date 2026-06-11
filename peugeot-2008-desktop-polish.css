@@ -1,0 +1,56 @@
+/* Desktop polish for Peugeot 2008 quick-spec section */
+@media (min-width: 769px) {
+  .peugeot-2008-page .product-intro {
+    max-width: 1320px !important;
+    grid-template-columns: minmax(360px, 480px) minmax(560px, 1fr) !important;
+    align-items: center !important;
+    gap: clamp(56px, 6vw, 96px) !important;
+  }
+
+  .peugeot-2008-page .product-intro .model-main-photo {
+    width: min(100%, 460px) !important;
+    min-height: 0 !important;
+    aspect-ratio: 9 / 14 !important;
+    justify-self: center !important;
+    border-radius: 18px !important;
+    background-size: contain !important;
+    background-repeat: no-repeat !important;
+    background-position: center center !important;
+    background-color: #f5f6f8 !important;
+    box-shadow: 0 24px 58px rgba(15, 23, 42, .12) !important;
+  }
+
+  .peugeot-2008-page .product-intro .partner-copy-block {
+    max-width: 720px !important;
+  }
+
+  .peugeot-2008-page .product-intro .partner-copy-block h2 {
+    max-width: 13.5ch !important;
+    font-size: clamp(3.1rem, 4.15vw, 4.8rem) !important;
+    line-height: .98 !important;
+    letter-spacing: 0 !important;
+  }
+
+  .peugeot-2008-page .product-intro .partner-copy-block p {
+    max-width: 680px !important;
+    font-size: 1.05rem !important;
+    line-height: 1.65 !important;
+  }
+
+  .peugeot-2008-page .product-intro .partner-checks {
+    grid-template-columns: repeat(2, minmax(230px, 1fr)) !important;
+    gap: 14px 34px !important;
+    margin-top: 20px !important;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1180px) {
+  .peugeot-2008-page .product-intro {
+    grid-template-columns: minmax(320px, 410px) minmax(480px, 1fr) !important;
+    gap: 44px !important;
+  }
+
+  .peugeot-2008-page .product-intro .partner-copy-block h2 {
+    font-size: clamp(2.75rem, 4vw, 3.8rem) !important;
+  }
+}
