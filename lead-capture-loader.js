@@ -13,7 +13,7 @@
   config.src = new URL('lead-capture-config.js?v=20260610-3', baseUrl).href;
   config.onload = () => {
     const behavior = document.createElement('script');
-    behavior.src = new URL('lead-capture.js?v=20260611-1', baseUrl).href;
+    behavior.src = new URL('lead-capture.js?v=20260612-1', baseUrl).href;
     document.head.appendChild(behavior);
   };
   document.head.appendChild(config);
