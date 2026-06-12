@@ -52,9 +52,17 @@
   let previousFocus;
   let leadContext = 'landing_cta';
 
-  const track = (eventName, params, custom = false) => {
-    if (typeof window.fbq === 'function') window.fbq(custom ? 'trackCustom' : 'track', eventName, params);
+  const track = (eventName, params, custom = false, options) => {
+    if (typeof window.fbq !== 'function') return;
+    const command = custom ? 'trackCustom' : 'track';
+    if (options) {
+      window.fbq(command, eventName, params, options);
+    } else {
+      window.fbq(command, eventName, params);
+    }
   };
+
+  const createLeadEventId = () => `lead_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
 
   const initializeMetaPixel = () => {
     if (window.__MODEL_META_PIXEL_INITIALIZED__) return;
@@ -221,9 +229,12 @@
       }
 
       if (webhookConfirmed) {
+        const leadEventId = createLeadEventId();
         track('Lead', {
           ...vehicleContent,
           lead_source: 'google_sheets_form'
+        }, false, {
+          eventID: leadEventId
         });
       }
       modal.querySelector('.lead-modal__form-view').hidden = true;
