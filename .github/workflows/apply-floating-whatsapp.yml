@@ -1,0 +1,183 @@
+name: Apply floating WhatsApp button
+
+on:
+  push:
+    branches:
+      - feature/model-whatsapp-floating-button
+    paths:
+      - .github/workflows/apply-floating-whatsapp.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/model-whatsapp-floating-button
+      - name: Apply centralized WhatsApp button
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          js_path = Path('lead-capture.js')
+          js = js_path.read_text(encoding='utf-8')
+          js = js.replace("source: 'post_lead_success'", "source: 'post_lead_whatsapp'")
+
+          marker = "  const prepareCtas = () => {"
+          addition = r'''  const createFloatingWhatsAppButton = () => {
+    if (!config.WHATSAPP_FALLBACK_NUMBER || window.__MODEL_WHATSAPP_FLOAT_INITIALIZED__) return;
+    window.__MODEL_WHATSAPP_FLOAT_INITIALIZED__ = true;
+
+    const message = `Hola, quiero consultar por ${brand} ${model}. ¿Me pasan una propuesta?`;
+    const button = document.createElement('a');
+    button.className = 'model-whatsapp-float';
+    button.href = `https://wa.me/${config.WHATSAPP_FALLBACK_NUMBER}?text=${encodeURIComponent(message)}`;
+    button.target = '_blank';
+    button.rel = 'noopener';
+    button.setAttribute('aria-label', `Consultar por WhatsApp sobre ${brand} ${model}`);
+    button.innerHTML = `
+      <svg class="model-whatsapp-float__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M20.5 11.8a8.4 8.4 0 0 1-12.4 7.4L4 20.5l1.3-4a8.4 8.4 0 1 1 15.2-4.7Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M9 8.2c.2-.5.4-.5.8-.5h.3c.2 0 .4.1.5.4l.8 1.8c.1.3 0 .5-.2.7l-.6.7c-.2.2-.1.4 0 .6.5.9 1.2 1.6 2.1 2.1.2.1.4.2.6 0l.8-1c.2-.2.4-.3.7-.2l1.8.9c.3.1.4.3.4.5 0 .4-.2 1.2-.6 1.6-.4.5-1.2.8-2 .8-1.1 0-2.5-.5-4.2-2-2-1.7-3.1-3.9-3-5.1 0-.5.2-1 .5-1.3.2-.2.3-.3.4-.3Z" fill="currentColor"/>
+      </svg>
+      <span class="model-whatsapp-float__label">WhatsApp</span>`;
+    button.addEventListener('click', () => {
+      track('WhatsAppClick', {
+        ...vehicleContent,
+        source: 'floating_whatsapp_button'
+      }, true);
+    });
+    document.body.appendChild(button);
+  };
+
+'''
+          if 'const createFloatingWhatsAppButton' not in js:
+              js = js.replace(marker, addition + marker)
+          js = js.replace("  replaceInlineForms();\n})();", "  replaceInlineForms();\n  createFloatingWhatsAppButton();\n})();")
+          js_path.write_text(js, encoding='utf-8')
+
+          css_path = Path('lead-capture.css')
+          css = css_path.read_text(encoding='utf-8')
+          floating_css = r'''
+
+.model-whatsapp-float,
+.model-whatsapp-float * {
+  box-sizing: border-box;
+}
+
+.model-whatsapp-float {
+  position: fixed;
+  right: max(22px, env(safe-area-inset-right));
+  bottom: max(22px, env(safe-area-inset-bottom));
+  z-index: 9000;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 54px;
+  padding: 0 20px;
+  border: 1px solid rgba(255, 255, 255, .3);
+  border-radius: 999px;
+  background: #128c55;
+  color: #fff;
+  box-shadow: 0 12px 30px rgba(2, 8, 23, .3);
+  font-family: Inter, Arial, sans-serif;
+  font-size: .95rem;
+  font-weight: 800;
+  line-height: 1;
+  text-decoration: none;
+  transition: transform .2s ease, background-color .2s ease, box-shadow .2s ease, opacity .2s ease;
+}
+
+.model-whatsapp-float:hover {
+  background: #0f7a49;
+  box-shadow: 0 16px 34px rgba(2, 8, 23, .36);
+  transform: translateY(-2px);
+}
+
+.model-whatsapp-float:focus-visible {
+  outline: 3px solid rgba(18, 140, 85, .35);
+  outline-offset: 3px;
+}
+
+.model-whatsapp-float__icon {
+  width: 25px;
+  height: 25px;
+  flex: 0 0 25px;
+}
+
+body.lead-modal-open .model-whatsapp-float {
+  pointer-events: none;
+  opacity: 0;
+}
+
+@media (max-width: 640px) {
+  .model-whatsapp-float {
+    right: max(14px, env(safe-area-inset-right));
+    bottom: max(16px, env(safe-area-inset-bottom));
+    width: 58px;
+    min-width: 58px;
+    height: 58px;
+    min-height: 58px;
+    padding: 0;
+    border-radius: 50%;
+  }
+
+  .model-whatsapp-float__icon {
+    width: 27px;
+    height: 27px;
+    flex-basis: 27px;
+  }
+
+  .model-whatsapp-float__label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+}
+'''
+          if '.model-whatsapp-float {' not in css:
+              css += floating_css
+          css_path.write_text(css, encoding='utf-8')
+
+          loader_path = Path('lead-capture-loader.js')
+          loader = loader_path.read_text(encoding='utf-8')
+          loader = loader.replace('lead-capture.css?v=20260610-6', 'lead-capture.css?v=20260612-7')
+          loader = loader.replace('lead-capture.js?v=20260612-1', 'lead-capture.js?v=20260612-2')
+          loader_path.write_text(loader, encoding='utf-8')
+
+          model_files = [
+              'volkswagen/amarok/index.html',
+              'volkswagen/tera/index.html',
+              'volkswagen/taos/index.html',
+              'volkswagen/nivus/index.html',
+              'volkswagen/tcross/index.html',
+              'peugeot/partner/index.html',
+              'peugeot/208/index.html',
+              'peugeot/2008/index.html',
+              'fiat/cronos/index.html',
+              'fiat/titano/index.html',
+              'fiat/mobi/index.html',
+          ]
+          for filename in model_files:
+              path = Path(filename)
+              html = path.read_text(encoding='utf-8')
+              html = html.replace('lead-capture-loader.js?v=20260610-6', 'lead-capture-loader.js?v=20260612-7')
+              path.write_text(html, encoding='utf-8')
+          PY
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add lead-capture.js lead-capture.css lead-capture-loader.js volkswagen peugeot fiat
+          git commit -m "feat: agregar WhatsApp flotante por modelo"
+          git push origin HEAD:feature/model-whatsapp-floating-button
