@@ -38,7 +38,7 @@ jobs:
           for file in "${files[@]}"; do
             sed -i 's#../../assets/fichas/#../../assets/#g' "$file"
           done
-          sed -i 's#href="../../assets/fichas/fiat-mobi.pdf" download#href="#" hidden aria-hidden="true" tabindex="-1"#g' fiat/mobi/index.html
+          sed -i 's|href="../../assets/fichas/fiat-mobi.pdf" download|href="#" hidden aria-hidden="true" tabindex="-1"|g' fiat/mobi/index.html
 
           if git diff --quiet; then
             echo "No changes required."
