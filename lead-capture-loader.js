@@ -12,9 +12,14 @@
   const config = document.createElement('script');
   config.src = new URL('lead-capture-config.js?v=20260610-3', baseUrl).href;
   config.onload = () => {
-    const behavior = document.createElement('script');
-    behavior.src = new URL('lead-capture.js?v=20260612-2', baseUrl).href;
-    document.head.appendChild(behavior);
+    const validation = document.createElement('script');
+    validation.src = new URL('lead-capture-validation.js?v=20260613-1', baseUrl).href;
+    validation.onload = () => {
+      const behavior = document.createElement('script');
+      behavior.src = new URL('lead-capture.js?v=20260612-2', baseUrl).href;
+      document.head.appendChild(behavior);
+    };
+    document.head.appendChild(validation);
   };
   document.head.appendChild(config);
 })();
