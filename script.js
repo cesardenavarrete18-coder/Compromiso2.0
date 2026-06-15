@@ -1,135 +1,188 @@
-const whatsappNumber = '5491141667220';
+(function () {
+  "use strict";
 
-const modelsByBrand = {
-  Volkswagen: ['Amarok', 'Taos', 'Nivus', 'T-Cross', 'Tera', 'Virtus', 'Polo'],
-  Peugeot: ['208', '2008', 'Partner', 'Expert'],
-  Fiat: ['Cronos', 'Titano', 'Argo', 'Pulse', 'Fastback', 'Strada', 'Fiorino', 'Mobi', 'Toro']
-};
+  var config = window.LEAD_CAPTURE_CONFIG || {};
+  var webhookUrl = String(config.LEAD_WEBHOOK_URL || "").trim();
+  var whatsappNumber = String(config.WHATSAPP_FALLBACK_NUMBER || "").replace(/\D/g, "");
+  var form = document.getElementById("homeLeadForm");
+  var message = document.getElementById("homeFormMessage");
+  var success = document.getElementById("homeFormSuccess");
+  var postLeadWhatsapp = document.getElementById("homePostLeadWhatsapp");
+  var floatingWhatsapp = document.getElementById("homeFloatingWhatsapp");
 
-const modelCards = [
-  { brand:'Volkswagen', model:'Tera', img:'assets/vw-tera.webp' },
-  { brand:'Volkswagen', model:'Virtus', img:'assets/vw-virtus.webp' },
-  { brand:'Volkswagen', model:'Nivus', img:'assets/vw-nivus.webp' },
-  { brand:'Volkswagen', model:'T-Cross', img:'assets/vw-tcross.webp' },
-  { brand:'Volkswagen', model:'Taos', img:'assets/vw-taos.webp' },
-  { brand:'Volkswagen', model:'Amarok', img:'assets/vw-amarok.webp' },
-  { brand:'Peugeot', model:'208', img:'assets/peugeot-208.webp' },
-  { brand:'Peugeot', model:'2008', img:'assets/peugeot-2008.webp' },
-  { brand:'Peugeot', model:'Partner', img:'assets/peugeot-partner.webp' },
-  { brand:'Peugeot', model:'Expert', img:'assets/peugeot-expert.webp' },
-  { brand:'Fiat', model:'Titano', img:'assets/fiat-titano.webp' },
-  { brand:'Fiat', model:'Cronos', img:'assets/fiat-cronos.webp' },
-  { brand:'Fiat', model:'Pulse', img:'assets/fiat-pulse.webp' },
-  { brand:'Fiat', model:'Mobi', img:'assets/fiat-mobi.webp' },
-  { brand:'Fiat', model:'Argo', img:'assets/fiat-argo.webp' },
-  { brand:'Fiat', model:'Fastback', img:'assets/fiat-fastback.webp' },
-  { brand:'Fiat', model:'Fiorino', img:'assets/fiat-fiorino.webp' },
-  { brand:'Fiat', model:'Strada', img:'assets/fiat-strada.webp' },
-  { brand:'Fiat', model:'Toro', img:'assets/fiat-toro.webp' }
-];
+  var modelsByBrand = {
+    Volkswagen: ["Amarok", "Tera", "Taos", "Nivus", "T-Cross"],
+    Peugeot: ["Partner", "208", "2008"],
+    Fiat: ["Cronos", "Titano", "Mobi"]
+  };
 
-const brandSelect = document.getElementById('brandSelect');
-const modelSelect = document.getElementById('modelSelect');
+  function track() {
+    if (typeof window.fbq === "function") {
+      window.fbq.apply(window, arguments);
+    }
+  }
 
-function waLink(message){
-  return `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
-}
+  function slugify(value) {
+    return String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  }
 
-function fillModels(){
-  const brand = brandSelect.value;
-  modelSelect.innerHTML = '';
-  modelsByBrand[brand].forEach(model => {
-    const option = document.createElement('option');
-    option.value = model;
-    option.textContent = model;
-    modelSelect.appendChild(option);
-  });
-}
+  function buildWhatsAppUrl(text) {
+    if (!whatsappNumber) return "#";
+    return "https://wa.me/" + whatsappNumber + "?text=" + encodeURIComponent(text);
+  }
 
-brandSelect.addEventListener('change', fillModels);
-fillModels();
-
-document.getElementById('leadForm').addEventListener('submit', (event)=>{
-  event.preventDefault();
-  const name = document.getElementById('name').value.trim();
-  const phone = document.getElementById('phone').value.trim();
-  const brand = brandSelect.value;
-  const model = modelSelect.value;
-  const purchaseIdea = document.getElementById('purchaseIdea').value;
-  const message = `Hola, soy ${name}. Quiero recibir una propuesta personalizada de Grupo Sur Automotores. Mi WhatsApp es ${phone}. Me interesa ${brand} ${model}. ${purchaseIdea}.`;
-  window.open(waLink(message), '_blank');
-});
-
-const dots = Array.from(document.querySelectorAll('.dot'));
-const slides = Array.from(document.querySelectorAll('.slide'));
-let slideIndex = 0;
-let sliderTimer;
-function setSlide(index){
-  slideIndex = index;
-  slides.forEach((slide,i)=>slide.classList.toggle('active', i === index));
-  dots.forEach((dot,i)=>dot.classList.toggle('active', i === index));
-}
-function startSlider(){
-  clearInterval(sliderTimer);
-  sliderTimer = setInterval(()=> setSlide((slideIndex + 1) % slides.length), 6000);
-}
-dots.forEach((dot,i)=> dot.addEventListener('click', ()=> { setSlide(i); startSlider(); }));
-startSlider();
-
-const brandCards = Array.from(document.querySelectorAll('.brand-card'));
-brandCards.forEach(card => {
-  card.addEventListener('click', () => {
-    const brand = card.dataset.filter;
-    brandCards.forEach(c => c.classList.toggle('is-active', c === card));
-    brandSelect.value = brand;
-    fillModels();
-    setModelFilter(brand);
-    document.getElementById('modelos').scrollIntoView({behavior:'smooth', block:'start'});
-  });
-});
-
-const gallery = document.getElementById('modelGallery');
-gallery.innerHTML = modelCards.map((item, index) => {
-  const message = `Hola, quiero recibir información sobre ${item.brand} ${item.model} en Grupo Sur Automotores. Quisiera consultar anticipo, cuota y disponibilidad.`;
-  return `<a class="vehicle-card" data-brand="${item.brand}" target="_blank" rel="noopener" href="${waLink(message)}">
-    <img src="${item.img}" alt="${item.brand} ${item.model} - Grupo Sur Automotores" loading="${index < 3 ? 'eager' : 'lazy'}" />
-    <div class="card-action"><strong>${item.brand} ${item.model}</strong><span>Consultar este modelo</span></div>
-  </a>`;
-}).join('');
-
-const modelTabs = Array.from(document.querySelectorAll('.model-tab'));
-function setModelFilter(filter){
-  modelTabs.forEach(tab => tab.classList.toggle('is-active', tab.dataset.modelFilter === filter || (filter === 'all' && tab.dataset.modelFilter === 'all')));
-  document.querySelectorAll('.vehicle-card').forEach(card => {
-    card.classList.toggle('is-hidden', filter !== 'all' && card.dataset.brand !== filter);
-  });
-}
-modelTabs.forEach(tab => tab.addEventListener('click', () => setModelFilter(tab.dataset.modelFilter)));
-setModelFilter('all');
-
-
-
-// Meta Pixel event tracking for WhatsApp clicks
-function trackWhatsAppClick(model = "", brand = "") {
-  if (typeof fbq === "function") {
-    fbq("track", "Contact", {
-      content_name: model || "WhatsApp",
-      content_category: brand || "General"
-    });
-    fbq("trackCustom", "WhatsAppClick", {
-      model: model || "General",
-      brand: brand || "General"
+  function configureWhatsappLink(link, source, text) {
+    if (!link) return;
+    if (!whatsappNumber) {
+      link.hidden = true;
+      return;
+    }
+    link.href = buildWhatsAppUrl(text);
+    link.addEventListener("click", function () {
+      track("trackCustom", "WhatsAppClick", {
+        content_name: "Home Compromiso Mi 0km",
+        content_category: "Home",
+        content_type: "vehicle",
+        source: source
+      });
     });
   }
-}
 
-document.addEventListener("click", function (event) {
-  const link = event.target.closest("a[href*='wa.me'], a[href*='whatsapp']");
-  if (!link) return;
+  configureWhatsappLink(floatingWhatsapp, "home_floating_whatsapp", "Hola, quiero conocer las propuestas disponibles para un 0km.");
 
-  const card = link.closest("[data-brand], .vehicle-card, .model-card");
-  const brand = card?.dataset?.brand || link.dataset.brand || "";
-  const model = card?.dataset?.model || link.dataset.model || link.textContent.trim() || "";
+  function updateModels() {
+    var brand = form.elements.brand.value;
+    var modelSelect = form.elements.model;
+    modelSelect.innerHTML = "";
+    (modelsByBrand[brand] || []).forEach(function (model) {
+      var option = document.createElement("option");
+      option.value = model;
+      option.textContent = model;
+      modelSelect.appendChild(option);
+    });
+  }
 
-  trackWhatsAppClick(model, brand);
-});
+  function normalizeName(value) {
+    return String(value || "").trim().replace(/\s+/g, " ");
+  }
+
+  function validateLead(data) {
+    var blockedNames = /^(john doe|jane doe|test|prueba|nn|n\/n|asdf|qwerty|nombre|sin nombre)$/i;
+    var phoneDigits = data.phone.replace(/\D/g, "");
+
+    if (data.name.length < 2 || blockedNames.test(data.name)) return "Ingresá tu nombre real para poder contactarte.";
+    if (phoneDigits.length < 8 || phoneDigits.length > 15 || phoneDigits === whatsappNumber || /^(\d)\1+$/.test(phoneDigits) || phoneDigits === "12345678" || phoneDigits === "1123456789") {
+      return "Ingresá un WhatsApp válido para enviarte la propuesta.";
+    }
+    if (!form.elements.consent.checked) return "Necesitamos tu autorización para que un asesor pueda contactarte.";
+    return "";
+  }
+
+  function collectUtm() {
+    var params = new URLSearchParams(window.location.search);
+    return {
+      utm_source: params.get("utm_source") || "",
+      utm_campaign: params.get("utm_campaign") || "",
+      utm_content: params.get("utm_content") || "",
+      utm_medium: params.get("utm_medium") || ""
+    };
+  }
+
+  function createLead() {
+    var now = new Date();
+    var utm = collectUtm();
+    return {
+      name: normalizeName(form.elements.name.value),
+      phone: String(form.elements.phone.value || "").trim(),
+      brand: form.elements.brand.value,
+      model: form.elements.model.value,
+      purchaseIntent: form.elements.purchaseIntent.value,
+      source: "home_form",
+      url: window.location.href,
+      utm_source: utm.utm_source,
+      utm_campaign: utm.utm_campaign,
+      utm_content: utm.utm_content,
+      utm_medium: utm.utm_medium,
+      userAgent: navigator.userAgent,
+      date: now.toISOString(),
+      fecha: now.toISOString()
+    };
+  }
+
+  function showError(text) {
+    message.textContent = text;
+    message.classList.remove("is-success");
+  }
+
+  function setSubmitting(isSubmitting) {
+    var button = form.querySelector('button[type="submit"]');
+    button.disabled = isSubmitting;
+    button.textContent = isSubmitting ? "Enviando..." : "Solicitar propuesta";
+  }
+
+  var contactTracked = false;
+  form.addEventListener("focusin", function () {
+    if (contactTracked) return;
+    contactTracked = true;
+    track("track", "Contact", {
+      content_name: "Formulario Home",
+      content_category: "Home",
+      content_type: "vehicle",
+      source: "home_form_start"
+    });
+  });
+
+  form.elements.brand.addEventListener("change", updateModels);
+  updateModels();
+
+  form.addEventListener("submit", async function (event) {
+    event.preventDefault();
+    showError("");
+
+    var lead = createLead();
+    var validationError = validateLead(lead);
+    if (validationError) {
+      showError(validationError);
+      return;
+    }
+
+    if (!webhookUrl) {
+      console.error("Home lead capture: LEAD_WEBHOOK_URL no está configurado.", lead);
+      showError("No pudimos enviar tu consulta. Intentá nuevamente en unos minutos.");
+      return;
+    }
+
+    setSubmitting(true);
+
+    try {
+      var response = await fetch(webhookUrl, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify(lead)
+      });
+      var result = await response.json();
+
+      if (!response.ok || result.ok !== true) throw new Error("Apps Script no confirmó ok:true");
+
+      var leadEventId = "lead_home_" + Date.now() + "_" + Math.random().toString(36).slice(2, 10);
+      var contentName = lead.brand + " " + lead.model;
+
+      track("track", "Lead", {
+        content_name: contentName,
+        content_category: lead.brand,
+        content_type: "vehicle",
+        content_ids: [slugify(contentName)],
+        lead_source: "google_sheets_home_form"
+      }, { eventID: leadEventId });
+
+      configureWhatsappLink(postLeadWhatsapp, "home_post_lead_whatsapp", "Hola, ya envié mis datos y quiero consultar por " + contentName + ".");
+      form.hidden = true;
+      success.hidden = false;
+    } catch (error) {
+      console.error("Home lead capture: error al enviar el lead.", error, lead);
+      showError("No pudimos enviar tu consulta. Revisá tu conexión e intentá nuevamente.");
+    } finally {
+      setSubmitting(false);
+    }
+  });
+}());
