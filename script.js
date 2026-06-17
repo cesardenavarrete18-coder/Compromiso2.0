@@ -23,16 +23,25 @@
   }
 
   function slugify(value) {
-    return String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    return String(value || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "");
   }
 
   function buildWhatsAppUrl(text) {
-    if (!whatsappNumber) return "#";
+    if (!whatsappNumber) {
+      return "#";
+    }
     return "https://wa.me/" + whatsappNumber + "?text=" + encodeURIComponent(text);
   }
 
   function configureWhatsappLink(link, source, text) {
-    if (!link) return;
+    if (!link) {
+      return;
+    }
     if (!whatsappNumber) {
       link.hidden = true;
       return;
@@ -48,7 +57,11 @@
     });
   }
 
-  configureWhatsappLink(floatingWhatsapp, "home_floating_whatsapp", "Hola, quiero conocer las propuestas disponibles para un 0km.");
+  configureWhatsappLink(
+    floatingWhatsapp,
+    "home_floating_whatsapp",
+    "Hola, quiero conocer las propuestas disponibles para un 0km."
+  );
 
   function updateModels() {
     var brand = form.elements.brand.value;
@@ -70,11 +83,21 @@
     var blockedNames = /^(john doe|jane doe|test|prueba|nn|n\/n|asdf|qwerty|nombre|sin nombre)$/i;
     var phoneDigits = data.phone.replace(/\D/g, "");
 
-    if (data.name.length < 2 || blockedNames.test(data.name)) return "Ingresá tu nombre real para poder contactarte.";
-    if (phoneDigits.length < 8 || phoneDigits.length > 15 || phoneDigits === whatsappNumber || /^(\d)\1+$/.test(phoneDigits) || phoneDigits === "12345678" || phoneDigits === "1123456789") {
+    if (data.name.length < 2 || blockedNames.test(data.name)) {
+      return "Ingresá tu nombre real para poder contactarte.";
+    }
+
+    if (
+      phoneDigits.length < 8 ||
+      phoneDigits.length > 15 ||
+      phoneDigits === whatsappNumber ||
+      /^(\d)\1+$/.test(phoneDigits) ||
+      phoneDigits === "12345678" ||
+      phoneDigits === "1123456789"
+    ) {
       return "Ingresá un WhatsApp válido para enviarte la propuesta.";
     }
-    if (!form.elements.consent.checked) return "Necesitamos tu autorización para que un asesor pueda contactarte.";
+
     return "";
   }
 
@@ -122,7 +145,9 @@
 
   var contactTracked = false;
   form.addEventListener("focusin", function () {
-    if (contactTracked) return;
+    if (contactTracked) {
+      return;
+    }
     contactTracked = true;
     track("track", "Contact", {
       content_name: "Formulario Home",
@@ -162,7 +187,9 @@
       });
       var result = await response.json();
 
-      if (!response.ok || result.ok !== true) throw new Error("Apps Script no confirmó ok:true");
+      if (!response.ok || result.ok !== true) {
+        throw new Error("Apps Script no confirmó ok:true");
+      }
 
       var leadEventId = "lead_home_" + Date.now() + "_" + Math.random().toString(36).slice(2, 10);
       var contentName = lead.brand + " " + lead.model;
@@ -173,9 +200,16 @@
         content_type: "vehicle",
         content_ids: [slugify(contentName)],
         lead_source: "google_sheets_home_form"
-      }, { eventID: leadEventId });
+      }, {
+        eventID: leadEventId
+      });
 
-      configureWhatsappLink(postLeadWhatsapp, "home_post_lead_whatsapp", "Hola, ya envié mis datos y quiero consultar por " + contentName + ".");
+      configureWhatsappLink(
+        postLeadWhatsapp,
+        "home_post_lead_whatsapp",
+        "Hola, ya envié mis datos y quiero consultar por " + contentName + "."
+      );
+
       form.hidden = true;
       success.hidden = false;
     } catch (error) {
