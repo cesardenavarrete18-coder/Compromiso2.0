@@ -102,6 +102,77 @@
     };
   };
 
+  const invalidNames = new Set([
+    'john doe',
+    'jane doe',
+    'test',
+    'prueba',
+    'nn',
+    'n/n',
+    'asdf',
+    'qwerty',
+    'nombre',
+    'sin nombre'
+  ]);
+  const nameValidationMessage = 'Ingresá tu nombre real para poder contactarte.';
+  const phoneValidationMessage = 'Ingresá un WhatsApp válido para enviarte la propuesta.';
+
+  const normalizeText = (value) => String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, ' ');
+
+  const isSequentialPhone = (digits) => {
+    if (digits.length < 8) return false;
+    return '01234567890123456789'.includes(digits)
+      || '98765432109876543210'.includes(digits);
+  };
+
+  const validateLeadFields = (form, status) => {
+    const nameInput = form.elements.name;
+    const phoneInput = form.elements.phone;
+    const normalizedName = normalizeText(nameInput.value);
+    const rawPhone = String(phoneInput.value || '').trim();
+    const phoneDigits = rawPhone.replace(/\D/g, '');
+    const fallbackDigits = String(config.WHATSAPP_FALLBACK_NUMBER || '').replace(/\D/g, '');
+
+    nameInput.setCustomValidity('');
+    phoneInput.setCustomValidity('');
+
+    if (normalizedName.length < 2 || invalidNames.has(normalizedName)) {
+      nameInput.setCustomValidity(nameValidationMessage);
+      status.textContent = nameValidationMessage;
+      nameInput.focus();
+      nameInput.reportValidity();
+      return false;
+    }
+
+    const hasReasonableCharacters = /^\+?[\d\s().-]+$/.test(rawPhone);
+    const isRepeatedDigit = /^(\d)\1+$/.test(phoneDigits);
+    const isKnownTestNumber = phoneDigits === '1123456789';
+    const matchesFallback = Boolean(fallbackDigits) && phoneDigits === fallbackDigits;
+
+    if (
+      !hasReasonableCharacters
+      || phoneDigits.length < 8
+      || phoneDigits.length > 15
+      || isRepeatedDigit
+      || isSequentialPhone(phoneDigits)
+      || isKnownTestNumber
+      || matchesFallback
+    ) {
+      phoneInput.setCustomValidity(phoneValidationMessage);
+      status.textContent = phoneValidationMessage;
+      phoneInput.focus();
+      phoneInput.reportValidity();
+      return false;
+    }
+
+    return true;
+  };
+
   const getModalMarkup = () => `
     <div class="lead-modal" hidden>
       <div class="lead-modal__backdrop" data-lead-close></div>
@@ -120,10 +191,6 @@
               <label class="lead-form__choice"><input name="purchaseMethod" type="radio" value="usado_en_parte_de_pago" /> Usado en parte de pago</label>
               <label class="lead-form__choice"><input name="purchaseMethod" type="radio" value="quiero_asesoramiento" /> Quiero asesoramiento</label>
             </fieldset>
-            <label class="lead-form__consent">
-              <input name="consent" type="checkbox" required />
-              <span>Acepto ser contactado por un asesor comercial para recibir información sobre vehículos, financiación, disponibilidad, cuotas y condiciones vigentes.</span>
-            </label>
             <button class="lead-form__submit" type="submit">Quiero que me contacten</button>
             <p class="lead-form__status" role="status" aria-live="polite"></p>
           </form>
@@ -142,7 +209,14 @@
     document.body.insertAdjacentHTML('beforeend', getModalMarkup());
     modal = document.querySelector('.lead-modal');
     modal.querySelectorAll('[data-lead-close]').forEach((element) => element.addEventListener('click', closeModal));
-    modal.querySelector('.lead-form').addEventListener('submit', submitLead);
+    const form = modal.querySelector('.lead-form');
+    form.addEventListener('submit', submitLead);
+    form.querySelectorAll('input[name="name"], input[name="phone"]').forEach((input) => {
+      input.addEventListener('input', () => {
+        input.setCustomValidity('');
+        form.querySelector('.lead-form__status').textContent = '';
+      });
+    });
     modal.querySelector('[data-lead-whatsapp]').addEventListener('click', () => {
       track('WhatsAppClick', {
         ...vehicleContent,
@@ -180,7 +254,7 @@
     const form = event.currentTarget;
     const status = form.querySelector('.lead-form__status');
     const button = form.querySelector('.lead-form__submit');
-    if (!form.reportValidity()) return;
+    if (!validateLeadFields(form, status) || !form.reportValidity()) return;
 
     const data = new FormData(form);
     const timestamp = new Date().toISOString();
