@@ -6,7 +6,7 @@
 
   const stylesheet = document.createElement('link');
   stylesheet.rel = 'stylesheet';
-  stylesheet.href = new URL('lead-capture.css?v=20260612-7', baseUrl).href;
+  stylesheet.href = new URL('lead-capture.css?v=20260617-1', baseUrl).href;
   document.head.appendChild(stylesheet);
 
   const config = document.createElement('script');
@@ -16,7 +16,7 @@
     validation.src = new URL('lead-capture-validation.js?v=20260613-1', baseUrl).href;
     validation.onload = () => {
       const behavior = document.createElement('script');
-      behavior.src = new URL('lead-capture.js?v=20260612-2', baseUrl).href;
+      behavior.src = new URL('lead-capture.js?v=20260617-1', baseUrl).href;
       document.head.appendChild(behavior);
     };
     document.head.appendChild(validation);
