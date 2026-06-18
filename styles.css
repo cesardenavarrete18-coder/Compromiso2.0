@@ -15,7 +15,7 @@
   --content: 1180px;
   --font-main: "Inter", Arial, sans-serif;
   --home-hero-desktop: url("/assets/banner-volkswagen.webp");
-  --home-hero-mobile: url("/assets/banner-volkswagen.webp");
+  --home-hero-mobile: url("/assets/banner-home-mobile.webp");
   --shadow: 0 22px 56px rgba(5, 20, 38, 0.14);
   --soft-shadow: 0 18px 44px rgba(5, 20, 38, 0.1);
 }
@@ -802,7 +802,8 @@ a {
     background:
       linear-gradient(180deg, rgba(5, 11, 22, 0.04) 0%, rgba(5, 11, 22, 0.38) 31%, rgba(5, 11, 22, 0.92) 66%, var(--navy-950) 100%),
       linear-gradient(90deg, rgba(5, 11, 22, 0.72) 0%, rgba(5, 11, 22, 0.2) 70%),
-      var(--home-hero-mobile) 68% top / cover no-repeat;
+      var(--home-hero-mobile) 68% top / cover no-repeat,
+      var(--home-hero-desktop) 68% top / cover no-repeat;
   }
 
   .hero-content {
