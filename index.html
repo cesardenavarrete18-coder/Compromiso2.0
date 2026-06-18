@@ -1,224 +1,358 @@
 <!doctype html>
 <html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Grupo Sur Automotores: propuestas comerciales para Volkswagen, Peugeot y Fiat. Dejá tu WhatsApp y recibí una propuesta para tu próximo 0km." />
-    <meta name="theme-color" content="#07111f" />
-    <title>Grupo Sur Automotores | Compromiso Mi 0km</title>
-    <link rel="icon" type="image/png" href="assets/favicon.png" />
-    <link rel="preload" as="image" href="assets/banner-volkswagen.webp" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css" />
-  
-    <!-- Meta Pixel Code -->
-    <script>
-      !function(f,b,e,v,n,t,s)
-      {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-      n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-      if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-      n.queue=[];t=b.createElement(e);t.async=!0;
-      t.src=v;s=b.getElementsByTagName(e)[0];
-      s.parentNode.insertBefore(t,s)}(window, document,'script',
-      'https://connect.facebook.net/en_US/fbevents.js');
-      fbq('init', '1203270370917813');
-      fbq('track', 'PageView');
-    </script>
-    <noscript>
-      <img height="1" width="1" style="display:none"
-        src="https://www.facebook.com/tr?id=1203270370917813&ev=PageView&noscript=1"/>
-    </noscript>
-    <!-- End Meta Pixel Code -->
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Elegí tu próximo Volkswagen, Peugeot o Fiat y recibí una propuesta personalizada de Grupo Sur Automotores.">
+  <title>Compromiso Mi 0km | Grupo Sur Automotores</title>
+  <link rel="icon" href="/assets/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css?v=20260618-2">
 
-  </head>
-  <body>
-    <header class="site-header">
-      <a class="brand" href="#inicio" aria-label="Grupo Sur Automotores">
-        <img src="assets/logo-header.webp" alt="Grupo Sur Automotores" class="brand-logo" />
-      </a>
-      <nav class="nav" aria-label="Navegación principal">
-        <a href="#marcas">Marcas</a>
-        <a href="#modelos">Modelos</a>
-        <a href="#beneficios">Beneficios</a>
-        <a href="#contacto">Contacto</a>
-      </nav>
-      <a class="header-cta" target="_blank" rel="noopener" href="https://wa.me/5491141667220?text=Hola%2C%20quiero%20recibir%20una%20propuesta%20personalizada%20para%20acceder%20a%20un%200km%20con%20Grupo%20Sur%20Automotores.">WhatsApp</a>
-    </header>
+  <script>
+    !function(f,b,e,v,n,t,s)
+    {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+    n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+    if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+    n.queue=[];t=b.createElement(e);t.async=!0;
+    t.src=v;s=b.getElementsByTagName(e)[0];
+    s.parentNode.insertBefore(t,s)}(window, document,'script',
+    'https://connect.facebook.net/en_US/fbevents.js');
+    fbq('init', '1203270370917813');
+    fbq('track', 'PageView');
+  </script>
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand-logo" href="/" aria-label="Compromiso Mi 0km - Inicio">
+      <img src="/assets/logo-header.webp" alt="Grupo Sur Automotores">
+    </a>
+    <nav class="desktop-nav" aria-label="Navegación principal">
+      <a href="#beneficios">Beneficios</a>
+      <a href="#marcas">Marcas</a>
+      <a href="#modelos">Modelos</a>
+      <a href="#como-funciona">Cómo funciona</a>
+    </nav>
+    <a class="button button-small button-outline" href="#propuesta">Solicitar propuesta</a>
+  </header>
 
-    <main id="inicio">
-      <section class="top-hero">
-        <div class="hero-main">
-          <p class="eyebrow">Volkswagen · Peugeot · Fiat</p>
-          <h1>Tu próximo 0km empieza con una decisión.</h1>
-          <p class="lead">Dejá tu WhatsApp y recibí una propuesta personalizada de Grupo Sur Automotores, con opciones comerciales vigentes para Volkswagen, Peugeot y Fiat.</p>
-          <div class="hero-actions">
-            <a class="btn primary" target="_blank" rel="noopener" href="https://wa.me/5491141667220?text=Hola%2C%20quiero%20recibir%20una%20propuesta%20personalizada%20para%20acceder%20a%20un%200km%20con%20Grupo%20Sur%20Automotores.">Quiero mi propuesta por WhatsApp</a>
-            <a class="btn secondary" href="#modelos">Ver modelos disponibles</a>
-          </div>
-          <div class="trust-pills" aria-label="Beneficios rápidos">
-            <span>Atención personalizada</span>
-            <span>Opciones con anticipo</span>
-            <span>Usado en parte de pago</span>
-          </div>
+  <main>
+    <section class="home-hero" aria-labelledby="hero-title">
+      <div class="hero-overlay"></div>
+      <div class="hero-content">
+        <p class="eyebrow">Volkswagen · Peugeot · Fiat</p>
+        <h1 id="hero-title">Tu próximo 0km empieza con una buena propuesta.</h1>
+        <p class="hero-copy">
+          Elegí marca y modelo, completá tus datos y recibí una propuesta personalizada
+          con condiciones comerciales vigentes.
+        </p>
+        <div class="hero-actions">
+          <a class="button button-primary" href="#marcas">Ver modelos disponibles</a>
+          <a class="button button-ghost" href="#propuesta">Solicitar propuesta</a>
         </div>
-
-        <form class="lead-form" id="leadForm">
-          <span class="form-badge">Respuesta rápida</span>
-          <h2>Recibí tu propuesta</h2>
-          <p>Completá tus datos y te derivamos con un asesor.</p>
-          <label>Nombre<input id="name" name="name" type="text" placeholder="Tu nombre" required /></label>
-          <label>WhatsApp<input id="phone" name="phone" type="tel" placeholder="Ej: 1123456789" required /></label>
-          <label>Marca
-            <select id="brandSelect" name="brand" required>
-              <option value="Volkswagen">Volkswagen</option>
-              <option value="Peugeot">Peugeot</option>
-              <option value="Fiat">Fiat</option>
-            </select>
-          </label>
-          <label>Modelo
-            <select id="modelSelect" name="model" required></select>
-          </label>
-          <label>Idea de compra
-            <select id="purchaseIdea" name="purchaseIdea">
-              <option value="Quiero consultar anticipo y cuota">Quiero consultar anticipo y cuota</option>
-              <option value="Tengo anticipo">Tengo anticipo</option>
-              <option value="Tengo usado en parte de pago">Tengo usado en parte de pago</option>
-              <option value="Quiero que me asesoren">Quiero que me asesoren</option>
-            </select>
-          </label>
-          <button type="submit" class="btn form-btn">Enviar por WhatsApp</button>
-          <small>El formulario abre WhatsApp con tu consulta lista para enviar.</small>
-        </form>
-      </section>
-
-      <section class="brand-carousel" aria-label="Banners por marca">
-        <div class="carousel-shell">
-          <article class="slide active" data-brand="Volkswagen">
-            <img src="assets/banner-volkswagen.webp" alt="Volkswagen Amarok, Tera y Taos - Grupo Sur Automotores" />
-            <a class="slide-hotspot" target="_blank" rel="noopener" href="https://wa.me/5491141667220?text=Hola%2C%20quiero%20consultar%20por%20Volkswagen%20en%20Grupo%20Sur%20Automotores.%20Me%20interesa%20recibir%20opciones%20de%20financiaci%C3%B3n%20y%20disponibilidad." aria-label="Consultar por mi Nuevo Volkswagen"></a>
-          </article>
-          <article class="slide" data-brand="Peugeot">
-            <img src="assets/banner-peugeot.webp" alt="Peugeot 208 y 2008 - Grupo Sur Automotores" />
-            <a class="slide-hotspot" target="_blank" rel="noopener" href="https://wa.me/5491141667220?text=Hola%2C%20quiero%20consultar%20por%20Peugeot%20en%20Grupo%20Sur%20Automotores.%20Me%20interesa%20recibir%20opciones%20de%20financiaci%C3%B3n%20y%20disponibilidad." aria-label="Consultar por mi Nuevo Peugeot"></a>
-          </article>
-          <article class="slide" data-brand="Fiat">
-            <img src="assets/banner-fiat.webp" alt="Fiat Cronos y Titano - Grupo Sur Automotores" />
-            <a class="slide-hotspot" target="_blank" rel="noopener" href="https://wa.me/5491141667220?text=Hola%2C%20quiero%20consultar%20por%20Fiat%20en%20Grupo%20Sur%20Automotores.%20Me%20interesa%20recibir%20opciones%20de%20financiaci%C3%B3n%20y%20disponibilidad." aria-label="Consultar por mi Nuevo Fiat"></a>
-          </article>
+        <div class="hero-trust" aria-label="Propuesta comercial">
+          <span>Atención personalizada</span>
+          <span>Opciones de financiación</span>
+          <span>Asesoramiento sin compromiso</span>
         </div>
-        <div class="carousel-controls" role="tablist" aria-label="Seleccionar marca">
-          <button type="button" class="dot active" aria-label="Volkswagen" data-index="0"><span>Volkswagen</span></button>
-          <button type="button" class="dot" aria-label="Peugeot" data-index="1"><span>Peugeot</span></button>
-          <button type="button" class="dot" aria-label="Fiat" data-index="2"><span>Fiat</span></button>
-        </div>
-      </section>
-
-      <section class="brand-selector brand-selector-v52" id="marcas">
-        <p class="eyebrow center">Elegí tu marca</p>
-        <h2>Ofertas multimarca para avanzar hoy.</h2>
-        <p class="models-subtitle">Seleccioná una marca y te mostramos los modelos disponibles para consultar directo por WhatsApp.</p>
-        <div class="brand-grid brand-grid-v52">
-          <button class="brand-card is-active" data-filter="Volkswagen">
-            <div class="brand-banner image-banner" aria-hidden="true">
-              <img src="assets/brand-mini-vw.webp" alt="" loading="lazy" decoding="async">
-            </div>
-            <strong>Volkswagen</strong>
-            <small>Amarok, Taos, Nivus, T-Cross, Tera, Virtus y Polo</small>
-            <ul class="brand-benefits">
-              <li>Entregas pactadas</li>
-              <li>Planes y créditos según campaña</li>
-              <li>Bonificaciones por cupos vigentes</li>
-            </ul>
-            <span class="brand-link">Ver modelos Volkswagen</span>
-          </button>
-          <button class="brand-card" data-filter="Peugeot">
-            <div class="brand-banner image-banner" aria-hidden="true">
-              <img src="assets/brand-mini-peugeot.webp" alt="" loading="lazy" decoding="async">
-            </div>
-            <strong>Peugeot</strong>
-            <small>208, 2008, Partner y Expert</small>
-            <ul class="brand-benefits">
-              <li>Oportunidades para gama urbana</li>
-              <li>Utilitarios para trabajo</li>
-              <li>Beneficios para clientes bancarizados</li>
-            </ul>
-            <span class="brand-link">Ver modelos Peugeot</span>
-          </button>
-          <button class="brand-card" data-filter="Fiat">
-            <div class="brand-banner image-banner" aria-hidden="true">
-              <img src="assets/brand-mini-fiat.webp" alt="" loading="lazy" decoding="async">
-            </div>
-            <strong>Fiat</strong>
-            <small>Cronos, Titano, Pulse, Mobi, Argo, Fastback, Fiorino, Strada y Toro</small>
-            <ul class="brand-benefits">
-              <li>Liquidaciones semanales</li>
-              <li>Tomamos tu usado</li>
-              <li>Accesorios bonificados en operaciones plus</li>
-            </ul>
-            <span class="brand-link">Ver modelos Fiat</span>
-          </button>
-        </div>
-      </section>
-
-      <section class="models models-v4" id="modelos">
-        <p class="eyebrow center">Modelos disponibles</p>
-        <h2>Elegí el modelo que querés consultar.</h2>
-        <p class="models-subtitle">Filtrá por marca y consultá con un mensaje automático preparado para WhatsApp.</p>
-        <div class="model-tabs" aria-label="Filtrar modelos por marca">
-          <button type="button" class="model-tab is-active" data-model-filter="all">Todos</button>
-          <button type="button" class="model-tab" data-model-filter="Volkswagen">Volkswagen</button>
-          <button type="button" class="model-tab" data-model-filter="Peugeot">Peugeot</button>
-          <button type="button" class="model-tab" data-model-filter="Fiat">Fiat</button>
-        </div>
-        <div class="model-gallery" id="modelGallery"></div>
-      </section>
-
-      <section class="benefits" id="beneficios">
-        <div>
-          <p class="eyebrow">Beneficios</p>
-          <h2>Grupo Sur: oportunidades reales para llegar a tu 0km.</h2>
-        </div>
-        <div class="benefit-grid">
-          <article><strong>Liquidaciones semanales</strong><span>Aprovechá oportunidades comerciales que se actualizan cada semana.</span></article>
-          <article><strong>Descuentos para clientes bancarizados</strong><span>Consultá beneficios exclusivos y condiciones preferenciales.</span></article>
-          <article><strong>Mejoramos la toma de tu usado</strong><span>Si entregás un usado de la misma marca, podemos mejorar su valuación.</span></article>
-          <article><strong>Accesorios bonificados para clientes plus</strong><span>Sumá beneficios extra y accesorios seleccionados en operaciones calificadas.</span></article>
-        </div>
-      </section>
-
-      <section class="how">
-        <p class="eyebrow center">Cómo funciona</p>
-        <h2>Simple, rápido y orientado a WhatsApp.</h2>
-        <div class="steps">
-          <article><span>1</span><strong>Elegís marca y modelo</strong><p>Volkswagen, Peugeot o Fiat.</p></article>
-          <article><span>2</span><strong>Dejás tu WhatsApp</strong><p>Recibimos tu consulta con el modelo de interés.</p></article>
-          <article><span>3</span><strong>Te contacta un asesor</strong><p>Te informamos anticipo, cuotas y disponibilidad.</p></article>
-          <article><span>4</span><strong>Avanzás con tu propuesta</strong><p>Según condiciones vigentes y tu objetivo comercial.</p></article>
-        </div>
-      </section>
-
-      <section class="institutional" id="contacto">
-        <img src="assets/logo-light.webp" alt="Grupo Sur Automotores" loading="lazy" />
-        <div>
-          <h2>Atención multimarca con foco comercial.</h2>
-          <p>Grupo Sur Automotores reúne opciones de Volkswagen, Peugeot y Fiat para ayudarte a encontrar una propuesta acorde a tu próximo 0km.</p>
-          <a class="btn primary" target="_blank" rel="noopener" href="https://wa.me/5491141667220?text=Hola%2C%20quiero%20hablar%20con%20un%20asesor%20de%20Grupo%20Sur%20Automotores.">Hablar con un asesor</a>
-        </div>
-      </section>
-    </main>
-
-    <footer>
-      <div class="footer-logo-wrap"><img src="assets/logo-header.webp" alt="Grupo Sur Automotores" /></div>
-      <div>
-        <strong>Grupo Sur Automotores</strong>
-        <p>Volkswagen · Peugeot · Fiat</p>
-        <p class="legal">La información comercial está sujeta a disponibilidad, aprobación, cupos y condiciones vigentes de cada marca/modelo. Esta landing tiene finalidad informativa y de contacto comercial.</p>
       </div>
-    </footer>
+    </section>
 
-    <a class="whatsapp-float" target="_blank" rel="noopener" href="https://wa.me/5491141667220?text=Hola%2C%20quiero%20recibir%20una%20propuesta%20personalizada%20de%20Grupo%20Sur%20Automotores.">WhatsApp</a>
-    <script src="script.js"></script>
-  </body>
+    <section class="section section-compact" id="beneficios" aria-labelledby="benefits-title">
+      <div class="section-heading">
+        <p class="eyebrow">Una propuesta para vos</p>
+        <h2 id="benefits-title">Más opciones para llegar a tu 0km</h2>
+      </div>
+      <div class="benefit-grid">
+        <article class="benefit-card">
+          <span class="benefit-number">01</span>
+          <h3>Opciones con anticipo o usado</h3>
+          <p>Evaluamos alternativas según tu punto de partida.</p>
+        </article>
+        <article class="benefit-card">
+          <span class="benefit-number">02</span>
+          <h3>Financiación y cuotas vigentes</h3>
+          <p>Conocé las condiciones disponibles para cada modelo.</p>
+        </article>
+        <article class="benefit-card">
+          <span class="benefit-number">03</span>
+          <h3>Entrega pactada según modelo</h3>
+          <p>Elegí una propuesta que acompañe tus tiempos.</p>
+        </article>
+        <article class="benefit-card">
+          <span class="benefit-number">04</span>
+          <h3>Asesoramiento personalizado</h3>
+          <p>Un asesor te acompaña para encontrar la mejor opción.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section brand-section" id="marcas" aria-labelledby="brands-title">
+      <div class="section-heading section-heading-light">
+        <p class="eyebrow">Elegí tu marca</p>
+        <h2 id="brands-title">Tres marcas, un recorrido simple</h2>
+        <p>Explorá los modelos destacados y encontrá una propuesta a tu medida.</p>
+      </div>
+      <div class="brand-grid">
+        <a class="brand-card brand-volkswagen" href="#volkswagen-modelos">
+          <span>Volkswagen</span>
+          <strong>Ver modelos</strong>
+        </a>
+        <a class="brand-card brand-peugeot" href="#peugeot-modelos">
+          <span>Peugeot</span>
+          <strong>Ver modelos</strong>
+        </a>
+        <a class="brand-card brand-fiat" href="#fiat-modelos">
+          <span>Fiat</span>
+          <strong>Ver modelos</strong>
+        </a>
+      </div>
+    </section>
+
+    <section class="section models-section" id="modelos" aria-labelledby="models-title">
+      <div class="section-heading">
+        <p class="eyebrow">Modelos destacados</p>
+        <h2 id="models-title">Encontrá el vehículo que estás buscando</h2>
+        <p>Ingresá a cada modelo para conocer equipamiento, condiciones y opciones disponibles.</p>
+      </div>
+
+      <div class="model-group" id="volkswagen-modelos">
+        <div class="model-group-title">
+          <h3>Volkswagen</h3>
+          <span>SUVW y pick-up</span>
+        </div>
+        <div class="model-grid">
+          <article class="model-card model-card-amarok">
+            <img src="/assets/vw-amarok.webp" alt="Volkswagen Amarok" loading="lazy">
+            <div class="model-card-content">
+              <span>Volkswagen</span>
+              <h4>Amarok</h4>
+              <p>Cuotas desde $500.000</p>
+              <a class="button button-card" href="/volkswagen/amarok">Ver propuesta</a>
+            </div>
+          </article>
+          <article class="model-card model-card-tera">
+            <img src="/assets/vw-tera.webp" alt="Volkswagen Tera" loading="lazy">
+            <div class="model-card-content">
+              <span>Volkswagen</span>
+              <h4>Tera</h4>
+              <p>Retiro pactado en cuota 2, 5 y 8</p>
+              <a class="button button-card" href="/volkswagen/tera">Ver propuesta</a>
+            </div>
+          </article>
+          <article class="model-card model-card-taos">
+            <img src="/assets/vw-taos.webp" alt="Volkswagen Taos" loading="lazy">
+            <div class="model-card-content">
+              <span>Volkswagen</span>
+              <h4>Taos</h4>
+              <p>Retiro pactado en cuota 5</p>
+              <a class="button button-card" href="/volkswagen/taos">Ver propuesta</a>
+            </div>
+          </article>
+        </div>
+      </div>
+
+      <div class="model-group" id="peugeot-modelos">
+        <div class="model-group-title">
+          <h3>Peugeot</h3>
+          <span>Hatchback, SUV y utilitario</span>
+        </div>
+        <div class="model-grid">
+          <article class="model-card model-card-208">
+            <img src="/assets/peugeot-208.webp" alt="Peugeot 208" loading="lazy">
+            <div class="model-card-content">
+              <span>Peugeot</span>
+              <h4>208</h4>
+              <p>Cuotas desde $350.000</p>
+              <a class="button button-card" href="/peugeot/208">Ver propuesta</a>
+            </div>
+          </article>
+          <article class="model-card model-card-2008">
+            <img src="/assets/peugeot-2008.webp" alt="Peugeot 2008" loading="lazy">
+            <div class="model-card-content">
+              <span>Peugeot</span>
+              <h4>2008</h4>
+              <p>Retiro pactado en cuota 2</p>
+              <a class="button button-card" href="/peugeot/2008">Ver propuesta</a>
+            </div>
+          </article>
+          <article class="model-card model-card-partner">
+            <img src="/assets/peugeot-partner.webp" alt="Peugeot Partner" loading="lazy">
+            <div class="model-card-content">
+              <span>Peugeot</span>
+              <h4>Partner</h4>
+              <p>Cuotas desde $500.000</p>
+              <a class="button button-card" href="/peugeot/partner">Ver propuesta</a>
+            </div>
+          </article>
+        </div>
+      </div>
+
+      <div class="model-group" id="fiat-modelos">
+        <div class="model-group-title">
+          <h3>Fiat</h3>
+          <span>Urbano, sedán y pick-up</span>
+        </div>
+        <div class="model-grid">
+          <article class="model-card model-card-cronos">
+            <img src="/assets/fiat-cronos.webp" alt="Fiat Cronos" loading="lazy">
+            <div class="model-card-content">
+              <span>Fiat</span>
+              <h4>Cronos</h4>
+              <p>Cuotas desde $370.000</p>
+              <a class="button button-card" href="/fiat/cronos">Ver propuesta</a>
+            </div>
+          </article>
+          <article class="model-card model-card-mobi">
+            <img src="/assets/fiat-mobi.webp" alt="Fiat Mobi" loading="lazy">
+            <div class="model-card-content">
+              <span>Fiat</span>
+              <h4>Mobi</h4>
+              <p>Cuotas desde $300.000</p>
+              <a class="button button-card" href="/fiat/mobi">Ver propuesta</a>
+            </div>
+          </article>
+          <article class="model-card model-card-titano">
+            <img src="/assets/fiat-titano.webp" alt="Fiat Titano" loading="lazy">
+            <div class="model-card-content">
+              <span>Fiat</span>
+              <h4>Titano</h4>
+              <p>Consultá condiciones vigentes</p>
+              <a class="button button-card" href="/fiat/titano">Ver propuesta</a>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section process-section" id="como-funciona" aria-labelledby="process-title">
+      <div class="section-heading section-heading-light">
+        <p class="eyebrow">Cómo funciona</p>
+        <h2 id="process-title">De la elección a una propuesta concreta</h2>
+      </div>
+      <ol class="process-grid">
+        <li>
+          <span>01</span>
+          <h3>Elegís marca y modelo</h3>
+          <p>Compará las propuestas disponibles.</p>
+        </li>
+        <li>
+          <span>02</span>
+          <h3>Completás tus datos</h3>
+          <p>Contanos qué vehículo te interesa.</p>
+        </li>
+        <li>
+          <span>03</span>
+          <h3>Recibís una propuesta</h3>
+          <p>Preparamos opciones personalizadas.</p>
+        </li>
+        <li>
+          <span>04</span>
+          <h3>Te acompaña un asesor</h3>
+          <p>Resolvemos tus dudas durante el proceso.</p>
+        </li>
+      </ol>
+    </section>
+
+    <section class="section proposal-section" id="propuesta" aria-labelledby="proposal-title">
+      <div class="proposal-copy">
+        <p class="eyebrow">Empezá tu consulta</p>
+        <h2 id="proposal-title">Recibí una propuesta personalizada</h2>
+        <p>
+          Completá tus datos y un asesor te contacta con opciones según la marca
+          y el modelo que te interesa.
+        </p>
+        <ul>
+          <li>Condiciones comerciales vigentes</li>
+          <li>Alternativas con anticipo o usado</li>
+          <li>Atención personalizada</li>
+        </ul>
+      </div>
+
+      <div class="proposal-panel">
+        <form id="homeLeadForm" novalidate>
+          <div class="field-row">
+            <label>
+              Nombre
+              <input type="text" name="name" autocomplete="name" required placeholder="Tu nombre">
+            </label>
+            <label>
+              WhatsApp
+              <input type="tel" name="phone" autocomplete="tel" inputmode="tel" required placeholder="Ej. 11 3456 7890">
+            </label>
+          </div>
+          <div class="field-row">
+            <label>
+              Marca
+              <select name="brand" required>
+                <option value="Volkswagen">Volkswagen</option>
+                <option value="Peugeot">Peugeot</option>
+                <option value="Fiat">Fiat</option>
+              </select>
+            </label>
+            <label>
+              Modelo
+              <select name="model" required></select>
+            </label>
+          </div>
+          <label>
+            ¿Cómo pensás comprarlo?
+            <select name="purchaseIntent" required>
+              <option value="anticipo">Con anticipo</option>
+              <option value="usado">Con usado en parte de pago</option>
+              <option value="asesoramiento">Quiero asesoramiento</option>
+            </select>
+          </label>
+          <p class="form-message" id="homeFormMessage" role="status" aria-live="polite"></p>
+          <button class="button button-primary button-full" type="submit">Solicitar propuesta</button>
+        </form>
+
+        <div class="form-success" id="homeFormSuccess" hidden>
+          <span class="success-mark" aria-hidden="true">✓</span>
+          <h3>Gracias por tu consulta</h3>
+          <p>Recibimos tus datos. Un asesor va a contactarte con una propuesta personalizada.</p>
+          <a class="button button-whatsapp" id="homePostLeadWhatsapp" href="#" target="_blank" rel="noopener">
+            Escribir también por WhatsApp
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <section class="final-cta" aria-labelledby="final-title">
+      <div>
+        <p class="eyebrow">Tu próximo paso</p>
+        <h2 id="final-title">¿Ya sabés qué modelo te interesa?</h2>
+        <p>Explorá las propuestas disponibles y solicitá asesoramiento personalizado.</p>
+      </div>
+      <div class="final-actions">
+        <a class="button button-primary" href="#modelos">Ver modelos</a>
+        <a class="button button-ghost" href="#propuesta">Solicitar propuesta</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <img src="/assets/logo-light.webp" alt="Grupo Sur Automotores">
+    <p>Volkswagen · Peugeot · Fiat</p>
+    <small>Las imágenes y condiciones son ilustrativas. Consultá disponibilidad y condiciones vigentes.</small>
+  </footer>
+
+  <a class="floating-whatsapp" id="homeFloatingWhatsapp" href="#" target="_blank" rel="noopener" aria-label="Contactar por WhatsApp" title="Contactar por WhatsApp">
+    <span aria-hidden="true">
+      <svg viewBox="0 0 32 32" focusable="false" aria-hidden="true">
+        <path d="M16.02 3.2c-7.02 0-12.73 5.64-12.73 12.58 0 2.2.58 4.35 1.68 6.24L3.2 28.8l6.96-1.74a12.85 12.85 0 0 0 5.86 1.47c7.02 0 12.73-5.64 12.73-12.58S23.04 3.2 16.02 3.2Zm0 22.95c-1.86 0-3.67-.5-5.24-1.43l-.38-.22-4.13 1.03 1.05-4.02-.25-.41a10.2 10.2 0 0 1-1.48-5.32c0-5.63 4.68-10.21 10.43-10.21 5.75 0 10.43 4.58 10.43 10.21 0 5.78-4.58 10.37-10.43 10.37Zm5.72-7.65c-.31-.15-1.85-.9-2.14-1-.29-.1-.5-.15-.71.15-.21.31-.82 1-.99 1.2-.18.2-.36.23-.67.08-.31-.16-1.31-.48-2.5-1.52-.92-.82-1.54-1.83-1.72-2.14-.18-.31-.02-.48.13-.63.14-.14.31-.36.46-.54.15-.18.2-.31.31-.51.1-.2.05-.38-.03-.53-.08-.15-.71-1.69-.97-2.31-.25-.6-.51-.52-.71-.53h-.61c-.21 0-.54.08-.82.38-.28.31-1.08 1.04-1.08 2.53s1.11 2.94 1.26 3.14c.15.2 2.18 3.29 5.29 4.61.74.32 1.32.51 1.77.65.74.23 1.42.2 1.95.12.6-.09 1.85-.75 2.11-1.47.26-.72.26-1.34.18-1.47-.08-.13-.28-.2-.59-.35Z"/>
+      </svg>
+    </span>
+    <strong>WhatsApp</strong>
+  </a>
+
+  <noscript>
+    <img height="1" width="1" style="display:none" alt=""
+      src="https://www.facebook.com/tr?id=1203270370917813&ev=PageView&noscript=1">
+  </noscript>
+  <script src="/lead-capture-config.js"></script>
+  <script src="/script.js?v=20260618-2"></script>
+</body>
 </html>
