@@ -52,7 +52,9 @@
         content_name: "Home Compromiso Mi 0km",
         content_category: "Home",
         content_type: "vehicle",
-        source: source
+        source: source,
+        value: 1,
+        currency: "ARS"
       });
     });
   }
