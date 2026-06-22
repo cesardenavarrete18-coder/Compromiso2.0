@@ -147,3 +147,38 @@
     max-width: calc(100vw - 24px) !important;
   }
 }
+
+
+/* Amarok mobile image-only hero */
+@media (max-width: 768px) {
+  .amarok-page .official-hero {
+    min-height: max(720px, calc(100svh - 70px)) !important;
+    background-image: url('assets/volkswagen-amarok-hero-mobile.webp') !important;
+    background-size: cover !important;
+    background-position: center center !important;
+    background-repeat: no-repeat !important;
+  }
+
+  .amarok-page .official-hero .amarok-hero-actions-only {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .amarok-page .official-hero .amarok-hero-actions-only .partner-actions {
+    left: 12px !important;
+    right: 12px !important;
+    bottom: 18px !important;
+    width: auto !important;
+    max-width: none !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .amarok-page .official-hero {
+    min-height: max(700px, calc(100svh - 70px)) !important;
+  }
+}
