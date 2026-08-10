@@ -1271,6 +1271,13 @@ a {
   font-weight: 750;
 }
 
+#resultBonus,
+#resultBenefits {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+}
+
 .approval-footer {
   display: grid;
   align-items: center;
