@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Portal interno de precalificaciones comerciales de Grupo Sur Automotores.">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Portal de vendedores | Grupo Sur Automotores</title>
+  <link rel="icon" href="../assets/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <main class="login-page" id="loginPage">
+    <section class="login-showcase" aria-label="Portal comercial Grupo Sur">
+      <a href="/" class="showcase-logo" aria-label="Volver a Compromiso Mi 0km">
+        <img src="../assets/logo-light.webp" alt="Grupo Sur Automotores">
+      </a>
+      <div class="showcase-copy">
+        <p class="eyebrow">Herramientas comerciales</p>
+        <h1>Precalificaciones claras para avanzar con cada cliente.</h1>
+        <p>Seleccioná una campaña, validá los datos iniciales y presentá una constancia comercial profesional en pocos minutos.</p>
+      </div>
+      <div class="showcase-points" aria-label="Características del portal">
+        <span>Volkswagen</span>
+        <span>Peugeot</span>
+        <span>Fiat</span>
+      </div>
+    </section>
+
+    <section class="login-panel">
+      <form class="login-card" id="loginForm" novalidate>
+        <div class="login-heading">
+          <span class="secure-badge">Acceso interno</span>
+          <h2>Bienvenido</h2>
+          <p>Ingresá con tu código de vendedor y contraseña.</p>
+        </div>
+
+        <label class="field-label" for="sellerCode">Código de vendedor</label>
+        <input class="text-input" id="sellerCode" name="sellerCode" type="text" autocomplete="username" placeholder="Ej. GS001" required>
+
+        <label class="field-label" for="sellerPassword">Contraseña</label>
+        <div class="password-field">
+          <input class="text-input" id="sellerPassword" name="sellerPassword" type="password" autocomplete="current-password" placeholder="Ingresá tu contraseña" required>
+          <button class="password-toggle" id="passwordToggle" type="button" aria-label="Mostrar contraseña">Ver</button>
+        </div>
+
+        <p class="form-error" id="loginError" role="alert" aria-live="polite"></p>
+        <button class="primary-button login-button" type="submit">Ingresar al portal</button>
+
+        <div class="demo-access">
+          <strong>Acceso de demostración</strong>
+          <span>Código: GS001 · Contraseña: demo2026</span>
+        </div>
+        <small class="security-note">Este prototipo no almacena datos reales ni realiza consultas crediticias.</small>
+      </form>
+    </section>
+  </main>
+
+  <div class="portal" id="portal" hidden>
+    <aside class="sidebar">
+      <a class="sidebar-logo" href="/" aria-label="Compromiso Mi 0km">
+        <img src="../assets/logo-light.webp" alt="Grupo Sur Automotores">
+      </a>
+
+      <nav class="sidebar-nav" aria-label="Navegación del portal">
+        <button class="nav-item is-active" type="button" data-action="home">
+          <span class="nav-icon" aria-hidden="true">⌂</span>
+          Nueva precalificación
+        </button>
+        <button class="nav-item" type="button" data-action="history">
+          <span class="nav-icon" aria-hidden="true">◷</span>
+          Actividad reciente
+        </button>
+      </nav>
+
+      <div class="seller-card">
+        <div class="seller-avatar" id="sellerAvatar">AD</div>
+        <div>
+          <strong id="sidebarSellerName">Asesor Demo</strong>
+          <span id="sidebarSellerCode">Código GS001</span>
+        </div>
+      </div>
+      <button class="logout-button" id="logoutButton" type="button">Cerrar sesión</button>
+    </aside>
+
+    <section class="workspace">
+      <header class="portal-header">
+        <div>
+          <p class="header-kicker" id="headerKicker">Portal comercial</p>
+          <h1 id="pageTitle">Nueva precalificación</h1>
+        </div>
+        <div class="header-actions">
+          <span class="demo-pill">Entorno de demostración</span>
+          <time id="currentDate"></time>
+        </div>
+      </header>
+
+      <div class="workspace-content">
+        <ol class="stepper" id="stepper" aria-label="Progreso de la precalificación">
+          <li class="is-current" data-step="brand"><span>1</span> Marca</li>
+          <li data-step="model"><span>2</span> Modelo</li>
+          <li data-step="client"><span>3</span> Cliente</li>
+          <li data-step="result"><span>4</span> Resultado</li>
+        </ol>
+
+        <section class="view is-active" id="brandView" aria-labelledby="brandTitle">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow dark">Paso 1 de 4</p>
+              <h2 id="brandTitle">Elegí la marca</h2>
+              <p>Seleccioná la marca consultada por el cliente para ver sus campañas activas.</p>
+            </div>
+            <span class="campaign-status"><i></i> Campañas actualizadas</span>
+          </div>
+          <div class="brand-options" id="brandOptions"></div>
+        </section>
+
+        <section class="view" id="modelView" aria-labelledby="modelTitle">
+          <div class="section-heading">
+            <div>
+              <button class="back-link" type="button" data-action="back-to-brands">← Volver a marcas</button>
+              <p class="eyebrow dark">Paso 2 de 4</p>
+              <h2 id="modelTitle">Seleccioná un modelo</h2>
+              <p id="modelViewCopy">Campañas comerciales disponibles.</p>
+            </div>
+            <div class="selected-brand" id="selectedBrandBadge"></div>
+          </div>
+          <div class="model-options" id="modelOptions"></div>
+        </section>
+
+        <section class="view" id="clientView" aria-labelledby="clientTitle">
+          <div class="section-heading compact-heading">
+            <div>
+              <button class="back-link" type="button" data-action="back-to-models">← Cambiar modelo</button>
+              <p class="eyebrow dark">Paso 3 de 4</p>
+              <h2 id="clientTitle">Datos del cliente</h2>
+              <p>Completá los datos junto al cliente para iniciar la validación preliminar.</p>
+            </div>
+          </div>
+
+          <div class="form-layout">
+            <form class="client-form" id="clientForm" novalidate>
+              <div class="form-section-title">
+                <span>01</span>
+                <div>
+                  <h3>Información personal</h3>
+                  <p>Todos los campos son obligatorios.</p>
+                </div>
+              </div>
+
+              <div class="form-grid">
+                <label class="field-group field-wide">
+                  <span>Nombre y apellido</span>
+                  <input class="text-input" name="fullName" type="text" autocomplete="name" placeholder="Ej. Martín González" required>
+                </label>
+                <label class="field-group">
+                  <span>Teléfono</span>
+                  <input class="text-input" name="phone" type="tel" autocomplete="tel" inputmode="tel" placeholder="Ej. 11 3456 7890" required>
+                </label>
+                <label class="field-group">
+                  <span>Correo electrónico</span>
+                  <input class="text-input" name="email" type="email" autocomplete="email" placeholder="cliente@email.com" required>
+                </label>
+                <label class="field-group field-wide">
+                  <span>CUIL</span>
+                  <input class="text-input" name="cuil" type="text" inputmode="numeric" placeholder="XX-XXXXXXXX-X" maxlength="13" required>
+                  <small>Se mostrará parcialmente oculto en la constancia.</small>
+                </label>
+              </div>
+
+              <label class="consent-box">
+                <input name="consent" type="checkbox" required>
+                <span>
+                  <strong>Consentimiento del cliente</strong>
+                  El cliente confirma que los datos son correctos y autoriza su uso para esta precalificación comercial y el contacto posterior de un asesor.
+                </span>
+              </label>
+
+              <p class="form-error" id="clientError" role="alert" aria-live="polite"></p>
+              <button class="primary-button" type="submit">Iniciar precalificación</button>
+            </form>
+
+            <aside class="selection-summary" id="selectionSummary" aria-label="Resumen del vehículo elegido"></aside>
+          </div>
+        </section>
+
+        <section class="view" id="resultView" aria-labelledby="resultTitle">
+          <div class="result-toolbar">
+            <button class="back-link" type="button" data-action="new-request">← Nueva precalificación</button>
+            <button class="secondary-button" id="printButton" type="button">Imprimir constancia</button>
+          </div>
+
+          <article class="approval-card">
+            <div class="approval-hero" id="approvalHero">
+              <div class="approval-image-wrap">
+                <img id="resultVehicleImage" src="" alt="">
+              </div>
+              <div class="approval-copy">
+                <span class="approval-badge"><i>✓</i> Precalificación aprobada</span>
+                <p class="result-brand" id="resultBrand"></p>
+                <h2 id="resultTitle"></h2>
+                <p id="resultIntro"></p>
+                <div class="validity-card">
+                  <span>Vigencia de esta constancia</span>
+                  <strong id="countdown">24:00:00</strong>
+                  <small id="validUntil"></small>
+                </div>
+              </div>
+            </div>
+
+            <div class="approval-details">
+              <section>
+                <p class="detail-label">Cliente</p>
+                <h3 id="resultClientName"></h3>
+                <dl class="detail-list">
+                  <div><dt>CUIL</dt><dd id="resultCuil"></dd></div>
+                  <div><dt>Teléfono</dt><dd id="resultPhone"></dd></div>
+                  <div><dt>Correo</dt><dd id="resultEmail"></dd></div>
+                </dl>
+              </section>
+              <section>
+                <p class="detail-label">Condición preliminar</p>
+                <h3 id="resultCampaign"></h3>
+                <dl class="detail-list">
+                  <div><dt>Anticipo estimado</dt><dd id="resultAdvance"></dd></div>
+                  <div><dt>Cuota estimada</dt><dd id="resultInstallment"></dd></div>
+                  <div><dt>Disponibilidad</dt><dd id="resultAvailability"></dd></div>
+                </dl>
+              </section>
+              <section class="advisor-detail">
+                <p class="detail-label">Asesor responsable</p>
+                <h3 id="resultSellerName"></h3>
+                <dl class="detail-list">
+                  <div><dt>Código</dt><dd id="resultSellerCode"></dd></div>
+                  <div><dt>Contacto</dt><dd id="resultSellerPhone"></dd></div>
+                  <div><dt>Constancia</dt><dd id="resultRequestId"></dd></div>
+                </dl>
+              </section>
+            </div>
+
+            <footer class="approval-footer">
+              <img src="../assets/logo-header.webp" alt="Grupo Sur Automotores">
+              <p>Resultado comercial preliminar y no vinculante. No constituye una aprobación financiera definitiva. Sujeto a validación documental, análisis crediticio, disponibilidad y condiciones vigentes.</p>
+            </footer>
+          </article>
+        </section>
+
+        <section class="view" id="historyView" aria-labelledby="historyTitle">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow dark">Seguimiento</p>
+              <h2 id="historyTitle">Actividad reciente</h2>
+              <p>Las demostraciones completadas durante esta sesión aparecen acá sin almacenar CUIL completos.</p>
+            </div>
+            <button class="primary-button compact-button" type="button" data-action="home">Nueva precalificación</button>
+          </div>
+          <div class="history-list" id="historyList"></div>
+        </section>
+      </div>
+    </section>
+  </div>
+
+  <div class="processing-overlay" id="processingOverlay" hidden aria-live="polite" aria-busy="true">
+    <div class="processing-card">
+      <div class="spinner" aria-hidden="true"></div>
+      <p class="eyebrow dark">Precalificación en curso</p>
+      <h2 id="processingTitle">Validando los datos ingresados…</h2>
+      <p id="processingCopy">Este proceso puede demorar unos segundos.</p>
+      <div class="processing-progress"><span id="processingBar"></span></div>
+      <small>No cierres esta ventana.</small>
+    </div>
+  </div>
+
+  <script src="./app.js"></script>
+</body>
+</html>
