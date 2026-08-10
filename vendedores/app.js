@@ -10,6 +10,8 @@
     }
   };
 
+  var CAMPAIGN_STORAGE_KEY = "grupoSurCampaignConfigV1";
+
   var BRANDS = {
     Volkswagen: {
       image: "../assets/brand-mini-vw.webp",
@@ -198,7 +200,8 @@
     client: null,
     validUntil: null,
     history: [],
-    countdownTimer: null
+    countdownTimer: null,
+    visibleModels: []
   };
 
   var loginPage = document.getElementById("loginPage");
@@ -221,6 +224,51 @@
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;")
       .replace(/'/g, "&#039;");
+  }
+
+  function readCampaignOverrides() {
+    try {
+      return JSON.parse(localStorage.getItem(CAMPAIGN_STORAGE_KEY) || "{}") || {};
+    } catch (error) {
+      return {};
+    }
+  }
+
+  function campaignKey(brandName, modelName) {
+    return brandName + "::" + modelName;
+  }
+
+  function resolveModelConfig(brandName, model) {
+    var overrides = readCampaignOverrides();
+    var configured = overrides[campaignKey(brandName, model.name)] || {};
+    var hasConfiguredSlots = Object.prototype.hasOwnProperty.call(configured, "slots");
+    var result = Object.assign({
+      active: true,
+      benefits: ["Asesoramiento personalizado", "Condiciones sujetas a disponibilidad"],
+      bonus: "Consultar bonificación vigente",
+      slots: null,
+      validFrom: "",
+      validTo: ""
+    }, model, configured);
+
+    if (result.slots !== null && result.slots !== "" && Number.isFinite(Number(result.slots))) {
+      result.availability = Number(result.slots) === 1
+        ? "1 cupo disponible"
+        : Number(result.slots) + " cupos disponibles";
+    } else if (hasConfiguredSlots) {
+      result.availability = "Disponibilidad a confirmar";
+    }
+    result.validityHours = Math.max(1, Number(result.validityHours) || 24);
+    return result;
+  }
+
+  function isCampaignActive(model) {
+    var now = Date.now();
+    var startsAt = model.validFrom ? new Date(model.validFrom + "T00:00:00").getTime() : null;
+    var endsAt = model.validTo ? new Date(model.validTo + "T23:59:59").getTime() : null;
+    return model.active !== false &&
+      (!startsAt || now >= startsAt) &&
+      (!endsAt || now <= endsAt);
   }
 
   function initials(name) {
@@ -283,9 +331,16 @@
   function renderModels() {
     var brand = BRANDS[state.brand];
     var container = document.getElementById("modelOptions");
+    state.visibleModels = brand.models
+      .map(function (model) { return resolveModelConfig(state.brand, model); })
+      .filter(isCampaignActive);
     document.getElementById("selectedBrandBadge").textContent = state.brand;
-    document.getElementById("modelViewCopy").textContent = brand.models.length + " modelos con condiciones comerciales cargadas.";
-    container.innerHTML = brand.models.map(function (model, index) {
+    document.getElementById("modelViewCopy").textContent = state.visibleModels.length + " modelos con condiciones comerciales cargadas.";
+    if (!state.visibleModels.length) {
+      container.innerHTML = '<div class="history-empty"><strong>No hay campañas activas</strong>El administrador debe activar al menos un modelo para esta marca.</div>';
+      return;
+    }
+    container.innerHTML = state.visibleModels.map(function (model, index) {
       return "" +
         '<button class="model-option" type="button" data-model-index="' + index + '">' +
           '<span class="model-option-image"><img src="' + model.image + '" alt="' + escapeHtml(state.brand + " " + model.name) + '"></span>' +
@@ -312,6 +367,9 @@
           '<li><span>Anticipo estimado</span><strong>' + escapeHtml(model.advance) + '</strong></li>' +
           '<li><span>Cuota estimada</span><strong>' + escapeHtml(model.installment) + '</strong></li>' +
           '<li><span>Disponibilidad</span><strong>' + escapeHtml(model.availability) + '</strong></li>' +
+          '<li><span>Bonificación</span><strong>' + escapeHtml(model.bonus) + '</strong></li>' +
+          '<li><span>Beneficios</span><strong>' + escapeHtml((model.benefits || []).join(" · ")) + '</strong></li>' +
+          '<li><span>Temporizador</span><strong>' + escapeHtml(model.validityHours) + ' horas</strong></li>' +
         '</ul>' +
       '</div>';
   }
@@ -371,8 +429,7 @@
   }
 
   function selectModel(index) {
-    var models = BRANDS[state.brand] && BRANDS[state.brand].models;
-    var model = models && models[index];
+    var model = state.visibleModels[index];
     if (!model) {
       return;
     }
@@ -492,6 +549,8 @@
     document.getElementById("resultAdvance").textContent = model.advance;
     document.getElementById("resultInstallment").textContent = model.installment;
     document.getElementById("resultAvailability").textContent = model.availability;
+    document.getElementById("resultBonus").textContent = model.bonus;
+    document.getElementById("resultBenefits").textContent = (model.benefits || []).join(" · ");
     document.getElementById("resultSellerName").textContent = seller.name;
     document.getElementById("resultSellerCode").textContent = seller.code;
     document.getElementById("resultSellerPhone").textContent = seller.phone;
@@ -645,6 +704,18 @@
 
   document.getElementById("printButton").addEventListener("click", function () {
     window.print();
+  });
+
+  window.addEventListener("storage", function (event) {
+    if (event.key === CAMPAIGN_STORAGE_KEY && state.brand && !state.model) {
+      renderModels();
+    }
+  });
+
+  window.addEventListener("focus", function () {
+    if (state.brand && !state.model) {
+      renderModels();
+    }
   });
 
   formatCurrentDate();
