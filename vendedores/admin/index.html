@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Administración de campañas del portal de vendedores de Grupo Sur Automotores.">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Administración de campañas | Grupo Sur Automotores</title>
+  <link rel="icon" href="/assets/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/vendedores/admin/admin.css?v=20260810-1">
+</head>
+<body>
+  <main class="admin-login" id="adminLogin">
+    <section class="login-showcase">
+      <a href="/" class="showcase-logo" aria-label="Volver a Compromiso Mi 0km">
+        <img src="/assets/logo-light.webp" alt="Grupo Sur Automotores">
+      </a>
+      <div class="showcase-copy">
+        <p class="eyebrow">Administración comercial</p>
+        <h1>Las campañas, siempre bajo tu control.</h1>
+        <p>Actualizá condiciones, vigencias, cupos y temporizadores para que el equipo trabaje con información consistente.</p>
+      </div>
+      <div class="showcase-foot">Acceso reservado a administradores</div>
+    </section>
+
+    <section class="login-panel">
+      <form class="login-card" id="adminLoginForm" novalidate>
+        <span class="secure-badge">Panel de administración</span>
+        <h2>Ingresar</h2>
+        <p>Usá tus credenciales de administrador.</p>
+
+        <label for="adminCode">Usuario</label>
+        <input id="adminCode" name="adminCode" type="text" autocomplete="username" placeholder="Ej. ADMIN" required>
+
+        <label for="adminPassword">Contraseña</label>
+        <div class="password-field">
+          <input id="adminPassword" name="adminPassword" type="password" autocomplete="current-password" placeholder="Ingresá tu contraseña" required>
+          <button id="passwordToggle" type="button" aria-label="Mostrar contraseña">Ver</button>
+        </div>
+
+        <p class="form-error" id="loginError" role="alert" aria-live="polite"></p>
+        <button class="primary-button" type="submit">Ingresar al panel</button>
+
+        <div class="demo-access">
+          <strong>Acceso de demostración</strong>
+          <span>Usuario: ADMIN · Contraseña: admin2026</span>
+        </div>
+        <small>Este prototipo guarda la configuración únicamente en este navegador.</small>
+      </form>
+    </section>
+  </main>
+
+  <div class="admin-app" id="adminApp" hidden>
+    <aside class="sidebar">
+      <a href="/" class="sidebar-logo" aria-label="Compromiso Mi 0km">
+        <img src="/assets/logo-light.webp" alt="Grupo Sur Automotores">
+      </a>
+
+      <nav aria-label="Navegación de administración">
+        <button class="nav-item is-active" type="button">
+          <span aria-hidden="true">▦</span>
+          Campañas
+        </button>
+        <a class="nav-item" href="/vendedores/" target="_blank" rel="noopener">
+          <span aria-hidden="true">↗</span>
+          Portal vendedores
+        </a>
+      </nav>
+
+      <div class="sidebar-info">
+        <span class="admin-avatar">AD</span>
+        <div><strong>Administrador</strong><small>Acceso demo</small></div>
+      </div>
+      <button class="logout-button" id="logoutButton" type="button">Cerrar sesión</button>
+    </aside>
+
+    <main class="workspace">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow dark">Gestión comercial</p>
+          <h1>Administración de campañas</h1>
+        </div>
+        <div class="topbar-meta">
+          <span class="demo-pill">Entorno de demostración</span>
+          <time id="currentDate"></time>
+        </div>
+      </header>
+
+      <div class="workspace-content">
+        <div class="local-notice" role="note">
+          <span aria-hidden="true">i</span>
+          <div><strong>Configuración de prueba</strong><p>Los cambios se verán en el portal de vendedores abierto en este mismo navegador. En la versión productiva quedarán centralizados para todos los equipos.</p></div>
+        </div>
+
+        <section class="stats" aria-label="Resumen de campañas">
+          <article><span>Campañas activas</span><strong id="activeCount">0</strong><small>Dentro de vigencia</small></article>
+          <article><span>Cupos informados</span><strong id="slotCount">0</strong><small>Actualización manual</small></article>
+          <article><span>Temporizador promedio</span><strong id="timerAverage">0 h</strong><small>Desde cada aprobación</small></article>
+        </section>
+
+        <section class="campaign-section">
+          <div class="section-heading">
+            <div><h2>Modelos y ofertas</h2><p>Seleccioná un modelo para editar la campaña que verá el vendedor.</p></div>
+            <div class="brand-filters" id="brandFilters" aria-label="Filtrar por marca"></div>
+          </div>
+
+          <div class="campaign-layout">
+            <div class="campaign-list" id="campaignList" aria-label="Listado de campañas"></div>
+
+            <form class="editor" id="campaignForm" novalidate>
+              <header class="editor-header">
+                <div class="editor-vehicle">
+                  <img id="editorImage" src="" alt="">
+                  <div><span id="editorBrand"></span><h2 id="editorModel"></h2><p id="editorCampaign"></p></div>
+                </div>
+                <label class="switch-row">
+                  <span><strong>Campaña activa</strong><small>Visible si también está vigente</small></span>
+                  <span class="switch"><input id="campaignActive" name="active" type="checkbox"><i></i></span>
+                </label>
+              </header>
+
+              <div class="editor-grid">
+                <label class="field field-wide">
+                  <span>Bonificación destacada</span>
+                  <input id="campaignBonus" name="bonus" type="text" maxlength="120" placeholder="Ej. Bonificación especial de lanzamiento">
+                  <small>Se muestra en el resumen y en la constancia.</small>
+                </label>
+
+                <label class="field field-wide">
+                  <span>Beneficios de la oferta</span>
+                  <textarea id="campaignBenefits" name="benefits" rows="4" placeholder="Escribí un beneficio por línea"></textarea>
+                  <small>Un beneficio por línea.</small>
+                </label>
+
+                <label class="field">
+                  <span>Cupos disponibles</span>
+                  <input id="campaignSlots" name="slots" type="number" min="0" max="9999" step="1" inputmode="numeric">
+                  <small>Se modifica solo manualmente.</small>
+                </label>
+
+                <label class="field">
+                  <span>Duración del temporizador</span>
+                  <div class="input-suffix"><input id="campaignHours" name="validityHours" type="number" min="1" max="720" step="1" required><span>horas</span></div>
+                  <small>Comienza con cada aprobación.</small>
+                </label>
+
+                <label class="field">
+                  <span>Vigente desde</span>
+                  <input id="campaignValidFrom" name="validFrom" type="date">
+                  <small>Vacío: sin fecha de inicio.</small>
+                </label>
+
+                <label class="field">
+                  <span>Vigente hasta</span>
+                  <input id="campaignValidTo" name="validTo" type="date">
+                  <small>Vacío: sin vencimiento.</small>
+                </label>
+              </div>
+
+              <section class="offer-preview" aria-labelledby="previewTitle">
+                <div><span>Vista previa</span><h3 id="previewTitle"></h3><p id="previewBonus"></p></div>
+                <dl>
+                  <div><dt>Cupos</dt><dd id="previewSlots"></dd></div>
+                  <div><dt>Contador</dt><dd id="previewHours"></dd></div>
+                  <div><dt>Estado</dt><dd id="previewStatus"></dd></div>
+                </dl>
+              </section>
+
+              <p class="form-message" id="formMessage" role="status" aria-live="polite"></p>
+              <footer class="editor-actions">
+                <button class="secondary-button" id="resetButton" type="button">Restaurar valores</button>
+                <button class="primary-button" type="submit">Guardar cambios</button>
+              </footer>
+            </form>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script src="/vendedores/admin/admin.js?v=20260810-1"></script>
+</body>
+</html>
