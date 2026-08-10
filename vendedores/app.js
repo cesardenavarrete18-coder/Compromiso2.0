@@ -401,23 +401,11 @@
 
   function isValidCuil(value) {
     var clean = digits(value);
-    var weights = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2];
-    var sum = 0;
-    var check;
-    var i;
+    var personalPrefix = /^(20|23|24|25|26|27)/;
 
-    if (clean.length !== 11 || /^(\d)\1+$/.test(clean)) {
-      return false;
-    }
-
-    for (i = 0; i < 10; i += 1) {
-      sum += Number(clean.charAt(i)) * weights[i];
-    }
-    check = (11 - (sum % 11)) % 11;
-    if (check === 10) {
-      return false;
-    }
-    return check === Number(clean.charAt(10));
+    return clean.length === 11 &&
+      !/^(\d)\1+$/.test(clean) &&
+      personalPrefix.test(clean);
   }
 
   function validateClient(data) {
@@ -434,7 +422,7 @@
       return "Ingresá un correo electrónico válido.";
     }
     if (!isValidCuil(data.cuil)) {
-      return "Revisá el CUIL ingresado. El dígito verificador no es válido.";
+      return "Ingresá un CUIL de 11 dígitos con un prefijo personal válido.";
     }
     if (!data.consent) {
       return "El cliente debe leer y aceptar el consentimiento para continuar.";
