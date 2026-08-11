@@ -193,7 +193,11 @@
     history: [],
     countdownTimer: null,
     visibleModels: [],
-    userId: ""
+    userId: "",
+    requestId: "",
+    prequalificationId: "",
+    applicationId: "",
+    application: null
   };
 
   var loginPage = document.getElementById("loginPage");
@@ -208,6 +212,11 @@
   var processingTitle = document.getElementById("processingTitle");
   var processingCopy = document.getElementById("processingCopy");
   var processingBar = document.getElementById("processingBar");
+  var applicationButton = document.getElementById("applicationButton");
+  var applicationForm = document.getElementById("applicationForm");
+  var applicationError = document.getElementById("applicationError");
+  var applicationSubmitButton = document.getElementById("applicationSubmitButton");
+  var minutePrint = document.getElementById("minutePrint");
 
   function escapeHtml(value) {
     return String(value || "")
@@ -436,7 +445,8 @@
     var stepOrder = ["brand", "model", "client", "result"];
     var activeIndex = stepOrder.indexOf(viewName);
     var isHistory = viewName === "history";
-    document.getElementById("stepper").hidden = isHistory;
+    var isApplication = viewName === "application";
+    document.getElementById("stepper").hidden = isHistory || isApplication;
 
     document.querySelectorAll("#stepper li").forEach(function (item, index) {
       item.classList.toggle("is-current", index === activeIndex);
@@ -448,6 +458,7 @@
       model: "Selección de propuesta",
       client: "Validación del cliente",
       result: "Constancia comercial",
+      application: "Solicitud comercial",
       history: "Gestiones recientes"
     };
     document.getElementById("pageTitle").textContent = titles[viewName] || "Portal comercial";
@@ -462,6 +473,10 @@
     state.model = null;
     state.client = null;
     state.validUntil = null;
+    state.requestId = "";
+    state.prequalificationId = "";
+    state.applicationId = "";
+    state.application = null;
     portal.removeAttribute("data-brand-theme");
     if (state.countdownTimer) {
       window.clearInterval(state.countdownTimer);
@@ -469,6 +484,10 @@
     }
     clientForm.reset();
     clientError.textContent = "";
+    applicationForm.reset();
+    applicationError.textContent = "";
+    applicationButton.disabled = true;
+    applicationButton.textContent = "Preparando solicitud…";
     renderBrands();
     setView("brand");
   }
@@ -604,7 +623,7 @@
         benefits: state.model.benefits,
         slots: state.model.slots
       }
-    });
+    }).select("id").single();
   }
 
   function buildResult() {
@@ -612,7 +631,13 @@
     var client = state.client;
     var seller = state.seller;
     var requestId = makeRequestId();
+    state.requestId = requestId;
+    state.prequalificationId = "";
+    state.applicationId = "";
+    state.application = null;
     state.validUntil = new Date(Date.now() + model.validityHours * 60 * 60 * 1000);
+    applicationButton.disabled = true;
+    applicationButton.textContent = "Preparando solicitud…";
 
     document.getElementById("resultVehicleImage").src = model.image;
     document.getElementById("resultVehicleImage").alt = state.brand + " " + model.name;
@@ -647,12 +672,18 @@
       vehicle: state.brand + " " + model.name,
       campaign: model.campaign,
       requestId: requestId,
-      date: new Date()
+      date: new Date(),
+      application: false
     });
     savePrequalificationEvent(requestId).then(function (response) {
       if (response.error) {
         document.getElementById("resultRequestId").title = "La constancia se generó, pero no pudo registrarse en el historial central.";
+        applicationButton.textContent = "No se pudo habilitar la solicitud";
+        return;
       }
+      state.prequalificationId = response.data.id;
+      applicationButton.disabled = false;
+      applicationButton.textContent = "Completar solicitud comercial";
     });
     renderHistory();
     startCountdown();
@@ -682,6 +713,325 @@
     state.countdownTimer = window.setInterval(update, 1000);
   }
 
+  function splitClientName(fullName) {
+    var parts = String(fullName || "").trim().split(/\s+/).filter(Boolean);
+    return {
+      firstName: parts.length > 1 ? parts.slice(0, -1).join(" ") : (parts[0] || ""),
+      lastName: parts.length > 1 ? parts[parts.length - 1] : ""
+    };
+  }
+
+  function parseMoney(value) {
+    var clean = digits(value);
+    return clean ? Number(clean) : null;
+  }
+
+  function formatMoney(value) {
+    if (value === null || value === undefined || value === "") {
+      return "A confirmar";
+    }
+    return new Intl.NumberFormat("es-AR", {
+      style: "currency",
+      currency: "ARS",
+      maximumFractionDigits: 0
+    }).format(Number(value));
+  }
+
+  function formatDate(value) {
+    if (!value) {
+      return "No informado";
+    }
+    return new Intl.DateTimeFormat("es-AR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric"
+    }).format(new Date(value + "T12:00:00"));
+  }
+
+  function readApplicationData() {
+    var fields = applicationForm.elements;
+    return {
+      firstName: String(fields.firstName.value || "").trim().replace(/\s+/g, " "),
+      lastName: String(fields.lastName.value || "").trim().replace(/\s+/g, " "),
+      documentType: String(fields.documentType.value || "").trim(),
+      documentNumber: digits(fields.documentNumber.value),
+      cuil: digits(fields.cuil.value),
+      birthDate: fields.birthDate.value || "",
+      address: String(fields.address.value || "").trim().replace(/\s+/g, " "),
+      cityProvince: String(fields.cityProvince.value || "").trim().replace(/\s+/g, " "),
+      postalCode: String(fields.postalCode.value || "").trim().toUpperCase(),
+      maritalStatus: String(fields.maritalStatus.value || "").trim(),
+      spouseName: String(fields.spouseName.value || "").trim().replace(/\s+/g, " "),
+      spouseDocument: digits(fields.spouseDocument.value),
+      primaryPhone: String(fields.primaryPhone.value || "").trim(),
+      alternatePhone: String(fields.alternatePhone.value || "").trim(),
+      email: String(fields.email.value || "").trim().toLowerCase(),
+      contactSchedule: String(fields.contactSchedule.value || "").trim().replace(/\s+/g, " "),
+      employmentStatus: String(fields.employmentStatus.value || "").trim(),
+      employerName: String(fields.employerName.value || "").trim().replace(/\s+/g, " "),
+      employmentSeniority: String(fields.employmentSeniority.value || "").trim().replace(/\s+/g, " "),
+      monthlyIncome: parseMoney(fields.monthlyIncome.value),
+      automaticDebit: fields.automaticDebit.value === "true",
+      automaticDebitSelected: fields.automaticDebit.value !== "",
+      deferredInstallment: fields.deferredInstallment.value === "true",
+      deferredInstallmentSelected: fields.deferredInstallment.value !== "",
+      installmentsPaid: Number(fields.installmentsPaid.value),
+      installmentsToPay: Number(fields.installmentsToPay.value),
+      planType: String(fields.planType.value || "").trim().replace(/\s+/g, " "),
+      agreedPrice: parseMoney(fields.agreedPrice.value),
+      firstPaymentDate: fields.firstPaymentDate.value || "",
+      firstPaymentAmount: parseMoney(fields.firstPaymentAmount.value),
+      secondPaymentDate: fields.secondPaymentDate.value || "",
+      secondPaymentAmount: parseMoney(fields.secondPaymentAmount.value),
+      consent: fields.applicationConsent.checked
+    };
+  }
+
+  function validateApplication(data) {
+    var emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    var adultDate = new Date();
+    adultDate.setFullYear(adultDate.getFullYear() - 18);
+
+    if (data.firstName.length < 2 || data.lastName.length < 2) {
+      return "Completá el nombre y el apellido del cliente.";
+    }
+    if (data.documentNumber.length < 7 || data.documentNumber.length > 12) {
+      return "Ingresá un número de documento válido.";
+    }
+    if (!isValidCuil(data.cuil)) {
+      return "El CUIL asociado a la solicitud no es válido.";
+    }
+    if (!data.birthDate || new Date(data.birthDate + "T12:00:00") > adultDate) {
+      return "La solicitud debe corresponder a una persona mayor de 18 años.";
+    }
+    if (data.address.length < 5 || data.cityProvince.length < 3 || data.postalCode.length < 3) {
+      return "Completá el domicilio, la localidad/provincia y el código postal.";
+    }
+    if (!data.maritalStatus) {
+      return "Seleccioná el estado civil.";
+    }
+    if ((data.maritalStatus === "Casado/a" || data.maritalStatus === "Conviviente") && (data.spouseName.length < 3 || data.spouseDocument.length < 7)) {
+      return "Completá el nombre y DNI del cónyuge o conviviente.";
+    }
+    if (digits(data.primaryPhone).length < 8 || !emailPattern.test(data.email) || data.contactSchedule.length < 3) {
+      return "Revisá el teléfono, el correo y el horario de contacto.";
+    }
+    if (!data.employmentStatus || data.employerName.length < 2 || data.employmentSeniority.length < 2 || !data.monthlyIncome) {
+      return "Completá todos los datos laborales e ingresos mensuales.";
+    }
+    if (!data.automaticDebitSelected || !data.deferredInstallmentSelected) {
+      return "Indicá si corresponde débito automático y cuota diferida.";
+    }
+    if (!Number.isInteger(data.installmentsPaid) || data.installmentsPaid < 0 || !Number.isInteger(data.installmentsToPay) || data.installmentsToPay < 1) {
+      return "Revisá la cantidad de cuotas abonadas y cuotas a pagar.";
+    }
+    if (data.planType.length < 3 || !data.agreedPrice) {
+      return "Completá el tipo de plan y el precio pactado.";
+    }
+    if (Boolean(data.firstPaymentDate) !== Boolean(data.firstPaymentAmount) || Boolean(data.secondPaymentDate) !== Boolean(data.secondPaymentAmount)) {
+      return "Cada pago informado debe tener fecha e importe.";
+    }
+    if (!data.consent) {
+      return "El vendedor y el cliente deben confirmar los datos antes de generar la minuta.";
+    }
+    return "";
+  }
+
+  function setApplicationField(name, value) {
+    var field = applicationForm.elements[name];
+    if (!field) {
+      return;
+    }
+    if (field.type === "checkbox") {
+      field.checked = Boolean(value);
+    } else if (value !== null && value !== undefined) {
+      field.value = String(value);
+    }
+  }
+
+  function openCommercialApplication() {
+    var names;
+    var data;
+    if (!state.prequalificationId) {
+      return;
+    }
+    names = splitClientName(state.client.fullName);
+    data = state.application || {
+      firstName: names.firstName,
+      lastName: names.lastName,
+      documentType: "DNI",
+      documentNumber: "",
+      cuil: state.client.cuil,
+      birthDate: "",
+      address: "",
+      cityProvince: "",
+      postalCode: "",
+      maritalStatus: "",
+      spouseName: "",
+      spouseDocument: "",
+      primaryPhone: state.client.phone,
+      alternatePhone: "",
+      email: state.client.email,
+      contactSchedule: "",
+      employmentStatus: "",
+      employerName: "",
+      employmentSeniority: "",
+      monthlyIncome: "",
+      automaticDebit: "",
+      deferredInstallment: "",
+      installmentsPaid: 0,
+      installmentsToPay: "",
+      planType: state.model.campaign,
+      agreedPrice: "",
+      firstPaymentDate: "",
+      firstPaymentAmount: "",
+      secondPaymentDate: "",
+      secondPaymentAmount: "",
+      consent: false
+    };
+
+    applicationForm.reset();
+    Object.keys(data).forEach(function (name) {
+      var value = data[name];
+      if (name === "automaticDebit" || name === "deferredInstallment") {
+        value = value === "" ? "" : String(value);
+      }
+      setApplicationField(name === "consent" ? "applicationConsent" : name, value);
+    });
+    setApplicationField("cuil", formatCuilInput(data.cuil));
+    document.getElementById("applicationRequestCode").textContent = state.requestId;
+    document.getElementById("applicationVehicle").textContent = state.brand + " " + state.model.name;
+    document.getElementById("applicationCampaign").textContent = state.model.campaign;
+    applicationError.textContent = "";
+    setView("application");
+    applicationForm.elements.firstName.focus();
+  }
+
+  function saveCommercialApplication(data) {
+    return supabaseClient.from("commercial_applications").upsert({
+      prequalification_event_id: state.prequalificationId,
+      seller_user_id: state.userId,
+      request_code: state.requestId,
+      brand_name: state.brand,
+      model_name: state.model.name,
+      campaign_name: state.model.campaign,
+      first_name: data.firstName,
+      last_name: data.lastName,
+      document_type: data.documentType,
+      document_number: data.documentNumber,
+      cuil: data.cuil,
+      birth_date: data.birthDate,
+      address: data.address,
+      city_province: data.cityProvince,
+      postal_code: data.postalCode,
+      marital_status: data.maritalStatus,
+      spouse_name: data.spouseName || null,
+      spouse_document: data.spouseDocument || null,
+      primary_phone: data.primaryPhone,
+      alternate_phone: data.alternatePhone || null,
+      email: data.email,
+      contact_schedule: data.contactSchedule,
+      employment_status: data.employmentStatus,
+      employer_name: data.employerName,
+      employment_seniority: data.employmentSeniority,
+      monthly_income: data.monthlyIncome,
+      automatic_debit: data.automaticDebit,
+      deferred_installment: data.deferredInstallment,
+      installments_paid: data.installmentsPaid,
+      installments_to_pay: data.installmentsToPay,
+      plan_type: data.planType,
+      agreed_price: data.agreedPrice,
+      first_payment_date: data.firstPaymentDate || null,
+      first_payment_amount: data.firstPaymentAmount,
+      second_payment_date: data.secondPaymentDate || null,
+      second_payment_amount: data.secondPaymentAmount,
+      status: "completed",
+      terms_version: "GS-MINUTA-2026-01",
+      confirmed_at: new Date().toISOString(),
+      commercial_snapshot: {
+        advance: state.model.advance,
+        installment: state.model.installment,
+        availability: state.model.availability,
+        bonus: state.model.bonus,
+        benefits: state.model.benefits,
+        sellerName: state.seller.name,
+        sellerCode: state.seller.code,
+        sellerPhone: state.seller.phone
+      }
+    }, { onConflict: "prequalification_event_id" }).select("id").single();
+  }
+
+  function minuteValue(value) {
+    return escapeHtml(value || "No informado");
+  }
+
+  function minuteRow(label, value) {
+    return '<div><span>' + escapeHtml(label) + '</span><strong>' + minuteValue(value) + '</strong></div>';
+  }
+
+  function buildMinute(data) {
+    var issueDate = new Date();
+    var minuteCode = "MIN-" + state.requestId.replace(/^GS-/, "");
+    var spouse = data.spouseName ? data.spouseName + (data.spouseDocument ? " · DNI " + data.spouseDocument : "") : "No corresponde";
+    minutePrint.innerHTML = '' +
+      '<article class="minute-sheet" data-brand-theme="' + escapeHtml(brandTheme(state.brand)) + '">' +
+        '<header class="minute-header">' +
+          '<div class="minute-header-brand"><img src="../assets/logo-header.webp" alt="Grupo Sur Automotores"><div class="minute-brand-lockup"><strong>' + escapeHtml(state.brand) + '</strong><span>Solicitud comercial · ' + escapeHtml(state.model.name) + '</span></div></div>' +
+          '<div class="minute-identifiers"><strong>' + escapeHtml(minuteCode) + '</strong><span>Fecha: ' + escapeHtml(new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(issueDate)) + '</span><span>Precalificación: ' + escapeHtml(state.requestId) + '</span></div>' +
+        '</header>' +
+        '<section class="minute-print-section"><h2>Datos del cliente</h2><div class="minute-data-grid">' +
+          minuteRow("Nombre y apellido", data.firstName + " " + data.lastName) +
+          minuteRow(data.documentType, data.documentNumber) +
+          minuteRow("CUIL", formatCuilInput(data.cuil)) +
+          minuteRow("Fecha de nacimiento", formatDate(data.birthDate)) +
+          minuteRow("Domicilio", data.address) +
+          minuteRow("Localidad / Provincia", data.cityProvince) +
+          minuteRow("Código postal", data.postalCode) +
+          minuteRow("Estado civil", data.maritalStatus) +
+          minuteRow("Cónyuge / conviviente", spouse) +
+        '</div></section>' +
+        '<section class="minute-print-section"><h2>Contacto y situación laboral</h2><div class="minute-data-grid">' +
+          minuteRow("Teléfono", data.primaryPhone) +
+          minuteRow("Teléfono alternativo", data.alternatePhone || "No informado") +
+          minuteRow("Correo electrónico", data.email) +
+          minuteRow("Contacto preferido", data.contactSchedule) +
+          minuteRow("Condición laboral", data.employmentStatus) +
+          minuteRow("Empresa / actividad", data.employerName) +
+          minuteRow("Antigüedad", data.employmentSeniority) +
+          minuteRow("Ingresos mensuales", formatMoney(data.monthlyIncome)) +
+        '</div></section>' +
+        '<section class="minute-print-section"><h2>Condiciones comerciales</h2><div class="minute-data-grid three-columns">' +
+          minuteRow("Marca", state.brand) +
+          minuteRow("Modelo", state.model.name) +
+          minuteRow("Tipo de plan", data.planType) +
+          minuteRow("Precio pactado", formatMoney(data.agreedPrice)) +
+          minuteRow("Cuotas abonadas", String(data.installmentsPaid)) +
+          minuteRow("Cuotas a pagar", String(data.installmentsToPay)) +
+          minuteRow("Débito automático", data.automaticDebit ? "Sí" : "No") +
+          minuteRow("Cuota diferida", data.deferredInstallment ? "Sí" : "No") +
+          minuteRow("Asesor", state.seller.name + " · " + state.seller.code) +
+          minuteRow("Primer pago", data.firstPaymentDate ? formatDate(data.firstPaymentDate) + " · " + formatMoney(data.firstPaymentAmount) : "No informado") +
+          minuteRow("Segundo pago", data.secondPaymentDate ? formatDate(data.secondPaymentDate) + " · " + formatMoney(data.secondPaymentAmount) : "No informado") +
+          minuteRow("Bonificación", state.model.bonus) +
+        '</div></section>' +
+        '<section class="minute-print-section"><h2>Constancia y condiciones</h2><ol class="minute-terms">' +
+          '<li>La presente minuta registra los datos y condiciones comerciales informados durante esta gestión. No constituye una solicitud de adhesión, aprobación financiera, adjudicación ni obligación de entrega.</li>' +
+          '<li>La operación queda sujeta a validación documental y crediticia, vigencia de la campaña, disponibilidad del modelo y aceptación de las condiciones definitivas por las partes intervinientes.</li>' +
+          '<li>Toda suma declarada deberá contar con el comprobante correspondiente emitido por el receptor autorizado. Esta minuta no acredita por sí misma pago, reserva ni cancelación.</li>' +
+          '<li>Cuando se entregue un vehículo usado, su valor será determinado al momento de la tasación y peritaje, sujeto a la presentación de la documentación requerida.</li>' +
+          '<li>Únicamente se considerarán los beneficios y bonificaciones expresamente incluidos en esta minuta y vigentes al momento de formalizar la operación.</li>' +
+        '</ol></section>' +
+        '<div class="minute-signatures"><div>Firma del cliente</div><div>Aclaración y DNI</div><div>Asesor responsable</div></div>' +
+        '<footer class="minute-footer">Documento emitido desde el portal interno de Grupo Sur Automotores · Versión GS-MINUTA-2026-01</footer>' +
+      '</article>';
+    minutePrint.setAttribute("aria-hidden", "false");
+  }
+
+  function printMinute() {
+    document.body.classList.add("printing-minute");
+    window.setTimeout(function () { window.print(); }, 80);
+  }
+
   function renderHistory() {
     var list = document.getElementById("historyList");
     if (!state.history.length) {
@@ -694,7 +1044,7 @@
           '<div><strong>' + escapeHtml(item.name) + '</strong><span>' + escapeHtml(item.cuil) + '</span></div>' +
           '<div><strong>' + escapeHtml(item.vehicle) + '</strong><span>' + escapeHtml(item.campaign) + '</span></div>' +
           '<div><strong>' + escapeHtml(item.requestId) + '</strong><span>' + escapeHtml(new Intl.DateTimeFormat("es-AR", { hour: "2-digit", minute: "2-digit" }).format(item.date)) + '</span></div>' +
-          '<span class="history-status">Aprobada</span>' +
+          '<span class="history-status' + (item.application ? ' has-minute' : '') + '">' + (item.application ? 'Minuta generada' : 'Aprobada') + '</span>' +
         '</div>';
     }).join("");
   }
@@ -781,6 +1131,8 @@
       state.model = null;
       renderModels();
       setView("model");
+    } else if (action === "back-to-result") {
+      setView("result");
     }
   });
 
@@ -809,8 +1161,54 @@
     runProcessing();
   });
 
+  applicationButton.addEventListener("click", openCommercialApplication);
+
+  applicationForm.addEventListener("submit", async function (event) {
+    var data;
+    var error;
+    var response;
+    event.preventDefault();
+    applicationError.textContent = "";
+    data = readApplicationData();
+    error = validateApplication(data);
+    if (error) {
+      applicationError.textContent = error;
+      return;
+    }
+    applicationSubmitButton.disabled = true;
+    applicationSubmitButton.textContent = "Guardando solicitud…";
+    try {
+      response = await saveCommercialApplication(data);
+      if (response.error) {
+        throw response.error;
+      }
+      state.applicationId = response.data.id;
+      state.application = data;
+      state.history.forEach(function (item) {
+        if (item.requestId === state.requestId) {
+          item.application = true;
+        }
+      });
+      renderHistory();
+      buildMinute(data);
+      applicationSubmitButton.textContent = "Solicitud guardada";
+      printMinute();
+    } catch (saveError) {
+      applicationError.textContent = saveError.message || "No se pudo guardar la solicitud comercial.";
+      applicationSubmitButton.textContent = "Guardar y generar PDF";
+    } finally {
+      applicationSubmitButton.disabled = false;
+    }
+  });
+
   document.getElementById("printButton").addEventListener("click", function () {
+    document.body.classList.remove("printing-minute");
     window.print();
+  });
+
+  window.addEventListener("afterprint", function () {
+    document.body.classList.remove("printing-minute");
+    minutePrint.setAttribute("aria-hidden", "true");
   });
 
   window.addEventListener("focus", async function () {

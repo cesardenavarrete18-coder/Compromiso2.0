@@ -127,6 +127,68 @@ create index prequalification_events_seller_time_idx on public.prequalification_
 create index prequalification_events_model_time_idx on public.prequalification_events (model_id, created_at desc);
 create index prequalification_events_campaign_idx on public.prequalification_events (campaign_id);
 
+create table public.commercial_applications (
+  id uuid primary key default gen_random_uuid(),
+  prequalification_event_id uuid not null unique references public.prequalification_events (id) on delete cascade,
+  seller_user_id uuid not null default auth.uid() references auth.users (id) on delete restrict,
+  request_code text not null unique,
+  brand_name text not null,
+  model_name text not null,
+  campaign_name text not null,
+  first_name text not null,
+  last_name text not null,
+  document_type text not null,
+  document_number text not null,
+  cuil text not null,
+  birth_date date not null,
+  address text not null,
+  city_province text not null,
+  postal_code text not null,
+  marital_status text not null,
+  spouse_name text,
+  spouse_document text,
+  primary_phone text not null,
+  alternate_phone text,
+  email text not null,
+  contact_schedule text not null,
+  employment_status text not null,
+  employer_name text not null,
+  employment_seniority text not null,
+  monthly_income numeric(16, 2) not null,
+  automatic_debit boolean not null,
+  deferred_installment boolean not null,
+  installments_paid integer not null default 0,
+  installments_to_pay integer not null,
+  plan_type text not null,
+  agreed_price numeric(16, 2) not null,
+  first_payment_date date,
+  first_payment_amount numeric(16, 2),
+  second_payment_date date,
+  second_payment_amount numeric(16, 2),
+  status text not null default 'completed',
+  terms_version text not null,
+  confirmed_at timestamptz not null,
+  commercial_snapshot jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint commercial_applications_document_number check (document_number ~ '^\d{7,12}$'),
+  constraint commercial_applications_cuil check (cuil ~ '^\d{11}$'),
+  constraint commercial_applications_amounts check (
+    monthly_income >= 0 and agreed_price >= 0
+    and (first_payment_amount is null or first_payment_amount >= 0)
+    and (second_payment_amount is null or second_payment_amount >= 0)
+  ),
+  constraint commercial_applications_installments check (installments_paid >= 0 and installments_to_pay > 0),
+  constraint commercial_applications_payment_pairs check (
+    (first_payment_date is null) = (first_payment_amount is null)
+    and (second_payment_date is null) = (second_payment_amount is null)
+  ),
+  constraint commercial_applications_status check (status in ('completed', 'cancelled'))
+);
+
+create index commercial_applications_seller_time_idx on public.commercial_applications (seller_user_id, created_at desc);
+create index commercial_applications_prequalification_idx on public.commercial_applications (prequalification_event_id);
+
 create function private.current_user_active()
 returns boolean
 language sql
@@ -251,6 +313,8 @@ create trigger brands_set_updated_at before update on public.brands
   for each row execute function private.set_updated_at();
 create trigger models_set_updated_at before update on public.models
   for each row execute function private.set_updated_at();
+create trigger commercial_applications_set_updated_at before update on public.commercial_applications
+  for each row execute function private.set_updated_at();
 
 create function private.audit_campaign_change()
 returns trigger
@@ -304,6 +368,7 @@ alter table public.models enable row level security;
 alter table public.campaigns enable row level security;
 alter table public.campaign_audit_log enable row level security;
 alter table public.prequalification_events enable row level security;
+alter table public.commercial_applications enable row level security;
 
 create policy user_invites_deny_client_access
 on public.user_invites for all
@@ -403,12 +468,46 @@ with check (
   and seller_user_id = (select auth.uid())
 );
 
+create policy commercial_applications_read_own_or_admin
+on public.commercial_applications for select
+to authenticated
+using (
+  private.current_user_active()
+  and (seller_user_id = (select auth.uid()) or private.current_user_is_admin())
+);
+
+create policy commercial_applications_seller_insert
+on public.commercial_applications for insert
+to authenticated
+with check (
+  private.current_user_active()
+  and seller_user_id = (select auth.uid())
+  and exists (
+    select 1 from public.prequalification_events event
+    where event.id = prequalification_event_id
+      and event.seller_user_id = (select auth.uid())
+  )
+);
+
+create policy commercial_applications_update_own_or_admin
+on public.commercial_applications for update
+to authenticated
+using (
+  private.current_user_active()
+  and (seller_user_id = (select auth.uid()) or private.current_user_is_admin())
+)
+with check (
+  private.current_user_active()
+  and (seller_user_id = (select auth.uid()) or private.current_user_is_admin())
+);
+
 revoke all on all tables in schema public from anon;
 revoke all on public.user_invites from authenticated;
 grant select on public.profiles, public.brands, public.models, public.campaigns, public.campaign_audit_log to authenticated;
 grant insert, update, delete on public.brands, public.models, public.campaigns to authenticated;
 grant select, insert on public.prequalification_events to authenticated;
-grant all on public.user_invites, public.profiles, public.brands, public.models, public.campaigns, public.campaign_audit_log, public.prequalification_events to service_role;
+grant select, insert, update on public.commercial_applications to authenticated;
+grant all on public.user_invites, public.profiles, public.brands, public.models, public.campaigns, public.campaign_audit_log, public.prequalification_events, public.commercial_applications to service_role;
 grant usage, select on sequence public.campaign_audit_log_id_seq to service_role;
 
 insert into public.user_invites (email, role, seller_code, full_name, phone)
