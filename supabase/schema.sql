@@ -416,9 +416,9 @@ values ('cesardenavarrete18@gmail.com', 'admin', 'ADMIN', 'Cesar de Navarrete', 
 
 insert into public.brands (name, description, image_path, sort_order)
 values
-  ('Volkswagen', 'SUV, SUVW y pick-up', '/assets/brand-mini-vw.webp', 10),
-  ('Peugeot', 'Hatchback, SUV y utilitario', '/assets/brand-mini-peugeot.webp', 20),
-  ('Fiat', 'Urbano, sedán, SUV y pick-up', '/assets/brand-mini-fiat.webp', 30);
+  ('Volkswagen', 'SUV, SUVW y pick-up', '/assets/brand-selector-vw-v2.webp', 10),
+  ('Peugeot', 'Hatchback, SUV y utilitario', '/assets/brand-selector-peugeot-v2.webp', 20),
+  ('Fiat', 'Urbano, sedán, SUV y pick-up', '/assets/brand-selector-fiat-v2.webp', 30);
 
 insert into public.models (brand_id, name, image_path, campaign_name, short_description, advance_text, installment_text, sort_order)
 select b.id, source.name, source.image_path, source.campaign_name, source.short_description, source.advance_text, source.installment_text, source.sort_order

@@ -5,7 +5,7 @@
 
   var BRANDS = {
     Volkswagen: {
-      image: "../assets/brand-mini-vw.webp",
+      image: "../assets/brand-selector-vw-v2.webp",
       description: "SUV, SUVW y pick-up",
       models: [
         {
@@ -71,7 +71,7 @@
       ]
     },
     Peugeot: {
-      image: "../assets/brand-mini-peugeot.webp",
+      image: "../assets/brand-selector-peugeot-v2.webp",
       description: "Hatchback, SUV y utilitario",
       models: [
         {
@@ -117,7 +117,7 @@
       ]
     },
     Fiat: {
-      image: "../assets/brand-mini-fiat.webp",
+      image: "../assets/brand-selector-fiat-v2.webp",
       description: "Urbano, sedán, SUV y pick-up",
       models: [
         {
