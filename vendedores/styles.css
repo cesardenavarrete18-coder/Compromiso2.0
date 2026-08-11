@@ -1501,6 +1501,46 @@ a {
   grid-template-columns: 1fr;
 }
 
+.input-affix {
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  border: 1px solid #cbd7e6;
+  border-radius: 8px;
+  background: var(--white);
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.input-affix:focus-within {
+  border-color: var(--brand-action);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand-accent) 14%, transparent);
+}
+
+.input-affix > span {
+  flex: 0 0 auto;
+  color: var(--brand-deep);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.input-affix-prefix > span {
+  padding-left: 14px;
+}
+
+.input-affix-suffix > span {
+  padding-right: 14px;
+}
+
+.input-affix .text-input {
+  min-width: 0;
+  border: 0;
+  box-shadow: none;
+}
+
+.input-affix .text-input:focus {
+  box-shadow: none;
+}
+
 .application-columns {
   display: grid;
   align-items: start;
@@ -1957,6 +1997,77 @@ a {
     margin-top: 1mm;
     color: #64748b;
     font-size: 7pt;
+  }
+
+  .minute-vehicle {
+    display: grid;
+    overflow: hidden;
+    min-height: 41mm;
+    margin-bottom: 3mm;
+    border: 1px solid #cbd5e1;
+    background: linear-gradient(135deg, #f8fafc, #eef4f8);
+    grid-template-columns: 42% 58%;
+    break-inside: avoid;
+  }
+
+  .minute-vehicle-image {
+    display: grid;
+    overflow: hidden;
+    min-height: 41mm;
+    place-items: center;
+    border-right: 1px solid #cbd5e1;
+    background: #edf1f4;
+  }
+
+  .minute-vehicle-image img {
+    width: 100%;
+    height: 41mm;
+    object-fit: contain;
+    object-position: center;
+  }
+
+  .minute-vehicle-copy {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-width: 0;
+    padding: 4mm 5mm;
+  }
+
+  .minute-vehicle-copy > span {
+    color: var(--minute-accent);
+    font-size: 6.5pt;
+    font-weight: 850;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+  }
+
+  .minute-vehicle-copy h1 {
+    margin: 1mm 0 0;
+    color: var(--minute-deep);
+    font-size: 17pt;
+    line-height: 1;
+    letter-spacing: -0.035em;
+  }
+
+  .minute-vehicle-copy p {
+    margin: 2mm 0 0;
+    color: #475569;
+    font-size: 7.2pt;
+    line-height: 1.35;
+  }
+
+  .minute-vehicle-copy strong {
+    display: inline-block;
+    width: fit-content;
+    margin-top: 3mm;
+    padding: 1.3mm 2.4mm;
+    border-radius: 999px;
+    color: #fff;
+    background: var(--minute-deep);
+    font-size: 6.5pt;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
   }
 
   .minute-print-section {

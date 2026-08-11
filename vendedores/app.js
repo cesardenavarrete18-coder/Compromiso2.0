@@ -730,11 +730,14 @@
     if (value === null || value === undefined || value === "") {
       return "A confirmar";
     }
-    return new Intl.NumberFormat("es-AR", {
-      style: "currency",
-      currency: "ARS",
+    return "$ " + new Intl.NumberFormat("es-AR", {
       maximumFractionDigits: 0
     }).format(Number(value));
+  }
+
+  function formatYears(value) {
+    var years = Number(value);
+    return years === 1 ? "1 año" : years + " años";
   }
 
   function formatDate(value) {
@@ -769,8 +772,8 @@
       contactSchedule: String(fields.contactSchedule.value || "").trim().replace(/\s+/g, " "),
       employmentStatus: String(fields.employmentStatus.value || "").trim(),
       employerName: String(fields.employerName.value || "").trim().replace(/\s+/g, " "),
-      employmentSeniority: String(fields.employmentSeniority.value || "").trim().replace(/\s+/g, " "),
-      monthlyIncome: parseMoney(fields.monthlyIncome.value),
+      employmentSeniority: fields.employmentSeniority.value === "" ? null : Number(fields.employmentSeniority.value),
+      monthlyIncome: fields.monthlyIncome.value === "" ? null : Number(fields.monthlyIncome.value),
       automaticDebit: fields.automaticDebit.value === "true",
       automaticDebitSelected: fields.automaticDebit.value !== "",
       deferredInstallment: fields.deferredInstallment.value === "true",
@@ -816,8 +819,14 @@
     if (digits(data.primaryPhone).length < 8 || !emailPattern.test(data.email) || data.contactSchedule.length < 3) {
       return "Revisá el teléfono, el correo y el horario de contacto.";
     }
-    if (!data.employmentStatus || data.employerName.length < 2 || data.employmentSeniority.length < 2 || !data.monthlyIncome) {
-      return "Completá todos los datos laborales e ingresos mensuales.";
+    if (!data.employmentStatus || data.employerName.length < 2) {
+      return "Completá la condición laboral y la empresa o actividad.";
+    }
+    if (!Number.isInteger(data.employmentSeniority) || data.employmentSeniority < 0 || data.employmentSeniority > 80) {
+      return "Ingresá la antigüedad laboral como una cantidad de años válida.";
+    }
+    if (!Number.isInteger(data.monthlyIncome) || data.monthlyIncome < 1) {
+      return "Ingresá el sueldo mensual como un número entero.";
     }
     if (!data.automaticDebitSelected || !data.deferredInstallmentSelected) {
       return "Indicá si corresponde débito automático y cuota diferida.";
@@ -933,7 +942,7 @@
       contact_schedule: data.contactSchedule,
       employment_status: data.employmentStatus,
       employer_name: data.employerName,
-      employment_seniority: data.employmentSeniority,
+      employment_seniority: formatYears(data.employmentSeniority),
       monthly_income: data.monthlyIncome,
       automatic_debit: data.automaticDebit,
       deferred_installment: data.deferredInstallment,
@@ -954,6 +963,7 @@
         availability: state.model.availability,
         bonus: state.model.bonus,
         benefits: state.model.benefits,
+        image: state.model.image,
         sellerName: state.seller.name,
         sellerCode: state.seller.code,
         sellerPhone: state.seller.phone
@@ -979,6 +989,10 @@
           '<div class="minute-header-brand"><img src="../assets/logo-header.webp" alt="Grupo Sur Automotores"><div class="minute-brand-lockup"><strong>' + escapeHtml(state.brand) + '</strong><span>Solicitud comercial · ' + escapeHtml(state.model.name) + '</span></div></div>' +
           '<div class="minute-identifiers"><strong>' + escapeHtml(minuteCode) + '</strong><span>Fecha: ' + escapeHtml(new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(issueDate)) + '</span><span>Precalificación: ' + escapeHtml(state.requestId) + '</span></div>' +
         '</header>' +
+        '<section class="minute-vehicle">' +
+          '<div class="minute-vehicle-image"><img src="' + escapeHtml(state.model.image) + '" alt="' + escapeHtml(state.brand + " " + state.model.name) + '"></div>' +
+          '<div class="minute-vehicle-copy"><span>Vehículo evaluado</span><h1>' + escapeHtml(state.brand + " " + state.model.name) + '</h1><p>' + escapeHtml(state.model.campaign) + '</p><strong>Precalificación aprobada</strong></div>' +
+        '</section>' +
         '<section class="minute-print-section"><h2>Datos del cliente</h2><div class="minute-data-grid">' +
           minuteRow("Nombre y apellido", data.firstName + " " + data.lastName) +
           minuteRow(data.documentType, data.documentNumber) +
@@ -997,7 +1011,7 @@
           minuteRow("Contacto preferido", data.contactSchedule) +
           minuteRow("Condición laboral", data.employmentStatus) +
           minuteRow("Empresa / actividad", data.employerName) +
-          minuteRow("Antigüedad", data.employmentSeniority) +
+          minuteRow("Antigüedad", formatYears(data.employmentSeniority)) +
           minuteRow("Ingresos mensuales", formatMoney(data.monthlyIncome)) +
         '</div></section>' +
         '<section class="minute-print-section"><h2>Condiciones comerciales</h2><div class="minute-data-grid three-columns">' +
@@ -1028,8 +1042,19 @@
   }
 
   function printMinute() {
+    var images = Array.prototype.slice.call(minutePrint.querySelectorAll("img"));
     document.body.classList.add("printing-minute");
-    window.setTimeout(function () { window.print(); }, 80);
+    Promise.all(images.map(function (image) {
+      if (image.complete) {
+        return Promise.resolve();
+      }
+      return new Promise(function (resolve) {
+        image.addEventListener("load", resolve, { once: true });
+        image.addEventListener("error", resolve, { once: true });
+      });
+    })).then(function () {
+      window.setTimeout(function () { window.print(); }, 80);
+    });
   }
 
   function renderHistory() {

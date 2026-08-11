@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/vendedores/styles.css?v=20260811-2">
+  <link rel="stylesheet" href="/vendedores/styles.css?v=20260811-3">
 </head>
 <body>
   <main class="login-page" id="loginPage">
@@ -295,8 +295,8 @@
                 <div class="application-grid one-column">
                   <label class="field-group"><span>Condición laboral</span><select class="text-input" name="employmentStatus" required><option value="">Seleccionar</option><option>Relación de dependencia</option><option>Monotributista / autónomo</option><option>Jubilado/a o pensionado/a</option><option>Actividad informal</option><option>Otro</option></select></label>
                   <label class="field-group"><span>Empresa / actividad</span><input class="text-input" name="employerName" type="text" required></label>
-                  <label class="field-group"><span>Antigüedad</span><input class="text-input" name="employmentSeniority" type="text" placeholder="Ej. 3 años" required></label>
-                  <label class="field-group"><span>Ingresos mensuales</span><input class="text-input" name="monthlyIncome" type="text" inputmode="numeric" placeholder="$" required></label>
+                  <label class="field-group"><span>Antigüedad laboral</span><span class="input-affix input-affix-suffix"><input class="text-input" name="employmentSeniority" type="number" inputmode="numeric" min="0" max="80" step="1" placeholder="3" required><span>años</span></span></label>
+                  <label class="field-group"><span>Sueldo / ingresos mensuales</span><span class="input-affix input-affix-prefix"><span>$</span><input class="text-input" name="monthlyIncome" type="number" inputmode="numeric" min="1" step="1" placeholder="2000000" required></span></label>
                 </div>
               </section>
             </div>
@@ -361,6 +361,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.2/dist/umd/supabase.js"></script>
   <script src="/vendedores/supabase-config.js?v=20260810-1"></script>
-  <script src="/vendedores/app.js?v=20260811-6"></script>
+  <script src="/vendedores/app.js?v=20260811-7"></script>
 </body>
 </html>
