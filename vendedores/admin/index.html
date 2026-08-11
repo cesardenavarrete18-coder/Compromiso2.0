@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/vendedores/admin/admin.css?v=20260810-1">
+  <link rel="stylesheet" href="/vendedores/admin/admin.css?v=20260810-2">
 </head>
 <body>
   <main class="admin-login" id="adminLogin">
@@ -30,10 +30,10 @@
       <form class="login-card" id="adminLoginForm" novalidate>
         <span class="secure-badge">Panel de administración</span>
         <h2>Ingresar</h2>
-        <p>Usá tus credenciales de administrador.</p>
+        <p>Usá tu correo y contraseña de administrador.</p>
 
-        <label for="adminCode">Usuario</label>
-        <input id="adminCode" name="adminCode" type="text" autocomplete="username" placeholder="Ej. ADMIN" required>
+        <label for="adminCode">Correo electrónico</label>
+        <input id="adminCode" name="adminCode" type="email" autocomplete="username" placeholder="administrador@email.com" required>
 
         <label for="adminPassword">Contraseña</label>
         <div class="password-field">
@@ -42,13 +42,14 @@
         </div>
 
         <p class="form-error" id="loginError" role="alert" aria-live="polite"></p>
-        <button class="primary-button" type="submit">Ingresar al panel</button>
+        <button class="primary-button" id="adminLoginButton" type="submit">Ingresar al panel</button>
+        <button class="first-access-button" id="firstAccessButton" type="button">Crear mi acceso por primera vez</button>
 
         <div class="demo-access">
-          <strong>Acceso de demostración</strong>
-          <span>Usuario: ADMIN · Contraseña: admin2026</span>
+          <strong>Administrador autorizado</strong>
+          <span>cesardenavarrete18@gmail.com</span>
         </div>
-        <small>Este prototipo guarda la configuración únicamente en este navegador.</small>
+        <small>La contraseña debe tener al menos 8 caracteres y nunca se muestra a otros usuarios.</small>
       </form>
     </section>
   </main>
@@ -60,9 +61,13 @@
       </a>
 
       <nav aria-label="Navegación de administración">
-        <button class="nav-item is-active" type="button">
+        <button class="nav-item is-active" type="button" data-admin-view="campaigns">
           <span aria-hidden="true">▦</span>
           Campañas
+        </button>
+        <button class="nav-item" type="button" data-admin-view="sellers">
+          <span aria-hidden="true">♙</span>
+          Vendedores
         </button>
         <a class="nav-item" href="/vendedores/" target="_blank" rel="noopener">
           <span aria-hidden="true">↗</span>
@@ -72,7 +77,7 @@
 
       <div class="sidebar-info">
         <span class="admin-avatar">AD</span>
-        <div><strong>Administrador</strong><small>Acceso demo</small></div>
+        <div><strong>Administrador</strong><small>Acceso protegido</small></div>
       </div>
       <button class="logout-button" id="logoutButton" type="button">Cerrar sesión</button>
     </aside>
@@ -84,17 +89,18 @@
           <h1>Administración de campañas</h1>
         </div>
         <div class="topbar-meta">
-          <span class="demo-pill">Entorno de demostración</span>
+          <span class="demo-pill">Conectado a Supabase</span>
           <time id="currentDate"></time>
         </div>
       </header>
 
       <div class="workspace-content">
         <div class="local-notice" role="note">
-          <span aria-hidden="true">i</span>
-          <div><strong>Configuración de prueba</strong><p>Los cambios se verán en el portal de vendedores abierto en este mismo navegador. En la versión productiva quedarán centralizados para todos los equipos.</p></div>
+          <span aria-hidden="true">✓</span>
+          <div><strong>Configuración centralizada</strong><p>Los cambios guardados se reflejan para todos los vendedores, sin importar desde qué computadora ingresen.</p></div>
         </div>
 
+        <div id="campaignAdminView">
         <section class="stats" aria-label="Resumen de campañas">
           <article><span>Campañas activas</span><strong id="activeCount">0</strong><small>Dentro de vigencia</small></article>
           <article><span>Cupos informados</span><strong id="slotCount">0</strong><small>Actualización manual</small></article>
@@ -177,10 +183,51 @@
             </form>
           </div>
         </section>
+        </div>
+
+        <section class="seller-section" id="sellerAdminView" hidden>
+          <div class="section-heading">
+            <div><h2>Vendedores y accesos</h2><p>Creá usuarios, pausá accesos o asigná una nueva contraseña.</p></div>
+            <span class="seller-count" id="sellerCount">0 vendedores</span>
+          </div>
+
+          <div class="seller-layout">
+            <form class="seller-create-card" id="sellerForm" novalidate>
+              <span class="card-kicker">Nuevo acceso</span>
+              <h3>Agregar vendedor</h3>
+              <label class="field"><span>Nombre y apellido</span><input name="fullName" type="text" placeholder="Ej. María González" required></label>
+              <label class="field"><span>Código de vendedor</span><input name="sellerCode" type="text" maxlength="20" placeholder="Ej. GS002" required></label>
+              <label class="field"><span>Teléfono</span><input name="phone" type="tel" placeholder="Ej. 11 3456 7890"></label>
+              <label class="field"><span>Contraseña inicial</span><input name="password" type="password" minlength="8" placeholder="Mínimo 8 caracteres" required></label>
+              <p class="form-message" id="sellerFormMessage" role="status" aria-live="polite"></p>
+              <button class="primary-button" type="submit">Crear vendedor</button>
+            </form>
+
+            <div class="seller-list-card">
+              <div class="seller-list-head"><span>Usuario</span><span>Estado</span><span>Acciones</span></div>
+              <div class="seller-list" id="sellerList"></div>
+            </div>
+          </div>
+        </section>
       </div>
     </main>
   </div>
 
-  <script src="/vendedores/admin/admin.js?v=20260810-1"></script>
+  <dialog class="password-dialog" id="passwordDialog">
+    <form method="dialog" id="passwordForm">
+      <button class="dialog-close" value="cancel" aria-label="Cerrar">×</button>
+      <span class="card-kicker">Seguridad</span>
+      <h3>Nueva contraseña</h3>
+      <p id="passwordSellerName"></p>
+      <input id="passwordUserId" type="hidden">
+      <label class="field"><span>Contraseña nueva</span><input id="newSellerPassword" type="password" minlength="8" placeholder="Mínimo 8 caracteres" required></label>
+      <p class="form-message" id="passwordMessage" role="status"></p>
+      <button class="primary-button" id="savePasswordButton" type="submit" value="save">Guardar contraseña</button>
+    </form>
+  </dialog>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.2/dist/umd/supabase.js"></script>
+  <script src="/vendedores/supabase-config.js?v=20260810-1"></script>
+  <script src="/vendedores/admin/admin.js?v=20260810-2"></script>
 </body>
 </html>
