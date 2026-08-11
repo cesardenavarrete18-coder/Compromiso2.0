@@ -50,11 +50,7 @@
         <p class="form-error" id="loginError" role="alert" aria-live="polite"></p>
         <button class="primary-button login-button" type="submit">Ingresar al portal</button>
 
-        <div class="demo-access">
-          <strong>Acceso de demostración</strong>
-          <span>Código: GS001 · Contraseña: demo2026</span>
-        </div>
-        <small class="security-note">Este prototipo no almacena datos reales ni realiza consultas crediticias.</small>
+        <small class="security-note">Acceso personal y protegido. Solicitá tu usuario a un administrador.</small>
       </form>
     </section>
   </main>
@@ -93,7 +89,7 @@
           <h1 id="pageTitle">Nueva precalificación</h1>
         </div>
         <div class="header-actions">
-          <span class="demo-pill">Entorno de demostración</span>
+          <span class="demo-pill">Portal interno</span>
           <time id="currentDate"></time>
         </div>
       </header>
@@ -276,6 +272,8 @@
     </div>
   </div>
 
-  <script src="/vendedores/app.js?v=20260810-3"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.2/dist/umd/supabase.js"></script>
+  <script src="/vendedores/supabase-config.js?v=20260810-1"></script>
+  <script src="/vendedores/app.js?v=20260810-4"></script>
 </body>
 </html>
