@@ -1893,7 +1893,7 @@ a {
 @media print {
   @page {
     size: A4;
-    margin: 8mm;
+    margin: 0;
   }
 
   body {
@@ -1901,11 +1901,12 @@ a {
   }
 
   body.printing-minute {
-    width: 194mm;
-    min-width: 194mm;
-    max-width: 194mm;
-    min-height: 281mm;
-    margin: 0 auto;
+    width: 210mm;
+    min-width: 210mm;
+    max-width: 210mm;
+    min-height: 297mm;
+    margin: 0;
+    padding: 0;
     color: #111827;
     background: #fff;
   }
@@ -1918,9 +1919,10 @@ a {
 
   body.printing-minute .minute-print {
     display: block !important;
-    width: 194mm;
-    min-width: 194mm;
-    max-width: 194mm;
+    width: 210mm;
+    min-width: 210mm;
+    max-width: 210mm;
+    min-height: 297mm;
     margin: 0;
   }
 
@@ -1928,9 +1930,10 @@ a {
     --minute-accent: #087bd8;
     --minute-deep: #052f5f;
     display: flex;
-    width: 194mm;
-    min-height: 269mm;
+    width: 210mm;
+    min-height: 297mm;
     flex-direction: column;
+    padding: 5mm;
     color: #111827;
     background: #fff;
     font-family: Inter, Arial, sans-serif;
