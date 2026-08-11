@@ -1,16 +1,7 @@
 (function () {
   "use strict";
 
-  var DEMO_SELLERS = {
-    GS001: {
-      password: "demo2026",
-      name: "Asesor Demo",
-      code: "GS001",
-      phone: "11 0000 0000"
-    }
-  };
-
-  var CAMPAIGN_STORAGE_KEY = "grupoSurCampaignConfigV1";
+  var supabaseClient = window.grupoSurSupabaseClient;
 
   var BRANDS = {
     Volkswagen: {
@@ -201,7 +192,8 @@
     validUntil: null,
     history: [],
     countdownTimer: null,
-    visibleModels: []
+    visibleModels: [],
+    userId: ""
   };
 
   var loginPage = document.getElementById("loginPage");
@@ -226,22 +218,7 @@
       .replace(/'/g, "&#039;");
   }
 
-  function readCampaignOverrides() {
-    try {
-      return JSON.parse(localStorage.getItem(CAMPAIGN_STORAGE_KEY) || "{}") || {};
-    } catch (error) {
-      return {};
-    }
-  }
-
-  function campaignKey(brandName, modelName) {
-    return brandName + "::" + modelName;
-  }
-
   function resolveModelConfig(brandName, model) {
-    var overrides = readCampaignOverrides();
-    var configured = overrides[campaignKey(brandName, model.name)] || {};
-    var hasConfiguredSlots = Object.prototype.hasOwnProperty.call(configured, "slots");
     var result = Object.assign({
       active: true,
       benefits: ["Asesoramiento personalizado", "Condiciones sujetas a disponibilidad"],
@@ -249,17 +226,69 @@
       slots: null,
       validFrom: "",
       validTo: ""
-    }, model, configured);
+    }, model);
 
     if (result.slots !== null && result.slots !== "" && Number.isFinite(Number(result.slots))) {
       result.availability = Number(result.slots) === 1
         ? "1 cupo disponible"
         : Number(result.slots) + " cupos disponibles";
-    } else if (hasConfiguredSlots) {
+    } else {
       result.availability = "Disponibilidad a confirmar";
     }
     result.validityHours = Math.max(1, Number(result.validityHours) || 24);
     return result;
+  }
+
+  async function loadCentralCampaigns() {
+    var response = await supabaseClient
+      .from("campaigns")
+      .select("id, active, bonus, benefits, slots, valid_from, valid_to, timer_hours, model:models!inner(id, name, image_path, campaign_name, short_description, advance_text, installment_text, sort_order, active, brand:brands!inner(name, description, image_path, sort_order, active))");
+    var grouped = {};
+    if (response.error) {
+      throw response.error;
+    }
+    (response.data || []).forEach(function (row) {
+      var model = Array.isArray(row.model) ? row.model[0] : row.model;
+      var brand = model && (Array.isArray(model.brand) ? model.brand[0] : model.brand);
+      if (!model || !brand) {
+        return;
+      }
+      if (!grouped[brand.name]) {
+        grouped[brand.name] = {
+          image: brand.image_path,
+          description: brand.description,
+          sortOrder: brand.sort_order || 0,
+          models: []
+        };
+      }
+      grouped[brand.name].models.push({
+        id: model.id,
+        campaignId: row.id,
+        name: model.name,
+        image: model.image_path,
+        campaign: model.campaign_name,
+        short: model.short_description,
+        advance: model.advance_text,
+        installment: model.installment_text,
+        active: row.active && model.active && brand.active,
+        bonus: row.bonus,
+        benefits: row.benefits || [],
+        slots: row.slots,
+        validFrom: row.valid_from || "",
+        validTo: row.valid_to || "",
+        validityHours: row.timer_hours || 24,
+        sortOrder: model.sort_order || 0
+      });
+    });
+    Object.keys(grouped).forEach(function (brandName) {
+      grouped[brandName].models.sort(function (a, b) { return a.sortOrder - b.sortOrder; });
+    });
+    BRANDS = Object.keys(grouped).sort(function (a, b) {
+      return grouped[a].sortOrder - grouped[b].sortOrder;
+    }).reduce(function (result, brandName) {
+      result[brandName] = grouped[brandName];
+      return result;
+    }, {});
   }
 
   function isCampaignActive(model) {
@@ -296,7 +325,6 @@
     document.getElementById("sellerAvatar").textContent = initials(seller.name);
     document.getElementById("sidebarSellerName").textContent = seller.name;
     document.getElementById("sidebarSellerCode").textContent = "Código " + seller.code;
-    sessionStorage.setItem("grupoSurDemoSeller", seller.code);
     resetFlow();
   }
 
@@ -305,12 +333,33 @@
     state.brand = "";
     state.model = null;
     state.client = null;
-    sessionStorage.removeItem("grupoSurDemoSeller");
     portal.hidden = true;
     loginPage.hidden = false;
     loginForm.reset();
     loginError.textContent = "";
     document.getElementById("sellerCode").focus();
+  }
+
+  async function getSellerProfile() {
+    var userResponse = await supabaseClient.auth.getUser();
+    var user = userResponse.data && userResponse.data.user;
+    if (!user || userResponse.error) {
+      return null;
+    }
+    var profileResponse = await supabaseClient
+      .from("profiles")
+      .select("user_id, full_name, seller_code, phone, role, active")
+      .eq("user_id", user.id)
+      .single();
+    if (profileResponse.error || !profileResponse.data || profileResponse.data.role !== "seller" || !profileResponse.data.active) {
+      return null;
+    }
+    state.userId = user.id;
+    return {
+      name: profileResponse.data.full_name,
+      code: profileResponse.data.seller_code,
+      phone: profileResponse.data.phone || "Sin teléfono informado"
+    };
   }
 
   function renderBrands() {
@@ -529,6 +578,28 @@
     nextStage();
   }
 
+  function savePrequalificationEvent(requestId) {
+    var cleanCuil = digits(state.client.cuil);
+    return supabaseClient.from("prequalification_events").insert({
+      seller_user_id: state.userId,
+      model_id: state.model.id,
+      campaign_id: state.model.campaignId,
+      request_code: requestId,
+      customer_initials: initials(state.client.fullName),
+      cuil_last4: cleanCuil.slice(-4),
+      timer_hours: state.model.validityHours,
+      valid_until: state.validUntil.toISOString(),
+      campaign_snapshot: {
+        brand: state.brand,
+        model: state.model.name,
+        campaign: state.model.campaign,
+        bonus: state.model.bonus,
+        benefits: state.model.benefits,
+        slots: state.model.slots
+      }
+    });
+  }
+
   function buildResult() {
     var model = state.model;
     var client = state.client;
@@ -570,6 +641,11 @@
       campaign: model.campaign,
       requestId: requestId,
       date: new Date()
+    });
+    savePrequalificationEvent(requestId).then(function (response) {
+      if (response.error) {
+        document.getElementById("resultRequestId").title = "La constancia se generó, pero no pudo registrarse en el historial central.";
+      }
     });
     renderHistory();
     startCountdown();
@@ -624,21 +700,45 @@
     passwordToggle.setAttribute("aria-label", show ? "Ocultar contraseña" : "Mostrar contraseña");
   });
 
-  loginForm.addEventListener("submit", function (event) {
+  loginForm.addEventListener("submit", async function (event) {
     var code;
-    var seller;
+    var button = loginForm.querySelector('button[type="submit"]');
     event.preventDefault();
     loginError.textContent = "";
     code = String(loginForm.elements.sellerCode.value || "").trim().toUpperCase();
-    seller = DEMO_SELLERS[code];
-    if (!seller || seller.password !== loginForm.elements.sellerPassword.value) {
-      loginError.textContent = "El código o la contraseña no son correctos.";
+    if (!/^[A-Z0-9_-]{3,20}$/.test(code)) {
+      loginError.textContent = "Ingresá un código de vendedor válido.";
       return;
     }
-    showPortal(seller);
+    button.disabled = true;
+    button.textContent = "Ingresando…";
+    try {
+      var authResponse = await supabaseClient.auth.signInWithPassword({
+        email: code.toLowerCase() + "@acceso.compromisomi0km.com.ar",
+        password: loginForm.elements.sellerPassword.value
+      });
+      if (authResponse.error) {
+        throw authResponse.error;
+      }
+      var seller = await getSellerProfile();
+      if (!seller) {
+        await supabaseClient.auth.signOut();
+        throw new Error("El acceso está pausado o no corresponde a un vendedor.");
+      }
+      await loadCentralCampaigns();
+      showPortal(seller);
+    } catch (error) {
+      loginError.textContent = error.message === "Invalid login credentials" ? "El código o la contraseña no son correctos." : error.message;
+    } finally {
+      button.disabled = false;
+      button.textContent = "Ingresar al portal";
+    }
   });
 
-  logoutButton.addEventListener("click", showLogin);
+  logoutButton.addEventListener("click", async function () {
+    await supabaseClient.auth.signOut();
+    showLogin();
+  });
 
   document.getElementById("brandOptions").addEventListener("click", function (event) {
     var button = event.target.closest("[data-brand]");
@@ -706,25 +806,46 @@
     window.print();
   });
 
-  window.addEventListener("storage", function (event) {
-    if (event.key === CAMPAIGN_STORAGE_KEY && state.brand && !state.model) {
-      renderModels();
+  window.addEventListener("focus", async function () {
+    if (!state.seller) {
+      return;
     }
-  });
-
-  window.addEventListener("focus", function () {
-    if (state.brand && !state.model) {
-      renderModels();
+    try {
+      await loadCentralCampaigns();
+      if (state.brand && !state.model) {
+        renderModels();
+      }
+    } catch (error) {
+      return;
     }
   });
 
   formatCurrentDate();
   renderHistory();
 
-  var existingSellerCode = sessionStorage.getItem("grupoSurDemoSeller");
-  if (existingSellerCode && DEMO_SELLERS[existingSellerCode]) {
-    showPortal(DEMO_SELLERS[existingSellerCode]);
+  if (!supabaseClient) {
+    loginError.textContent = "No se pudo conectar con el servicio de acceso.";
   } else {
+    supabaseClient.auth.getUser().then(async function (response) {
+      if (!response.data || !response.data.user) {
+        showLogin();
+        return;
+      }
+      var seller = await getSellerProfile();
+      if (!seller) {
+        await supabaseClient.auth.signOut();
+        showLogin();
+        return;
+      }
+      try {
+        await loadCentralCampaigns();
+        showPortal(seller);
+      } catch (error) {
+        await supabaseClient.auth.signOut();
+        showLogin();
+        loginError.textContent = "No se pudieron cargar las campañas. Intentá nuevamente.";
+      }
+    });
     document.getElementById("sellerCode").focus();
   }
 }());
