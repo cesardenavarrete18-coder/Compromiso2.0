@@ -309,6 +309,10 @@
       .join("");
   }
 
+  function brandTheme(brandName) {
+    return String(brandName || "").toLowerCase().replace(/[^a-z0-9]+/g, "-");
+  }
+
   function formatCurrentDate() {
     document.getElementById("currentDate").textContent = new Intl.DateTimeFormat("es-AR", {
       weekday: "long",
@@ -366,11 +370,12 @@
     var container = document.getElementById("brandOptions");
     container.innerHTML = Object.keys(BRANDS).map(function (brandName) {
       var brand = BRANDS[brandName];
+      var available = brand.models.map(function (model) { return resolveModelConfig(brandName, model); }).filter(isCampaignActive).length;
       return "" +
-        '<button class="brand-option" type="button" data-brand="' + escapeHtml(brandName) + '">' +
+        '<button class="brand-option brand-' + brandTheme(brandName) + '" type="button" data-brand="' + escapeHtml(brandName) + '">' +
           '<span class="brand-option-image"><img src="' + brand.image + '" alt="' + escapeHtml(brandName) + '"></span>' +
           '<span class="brand-option-content">' +
-            '<span><h3>' + escapeHtml(brandName) + '</h3><p>' + escapeHtml(brand.models.length) + ' modelos · ' + escapeHtml(brand.description) + '</p></span>' +
+            '<span><span class="brand-card-kicker">Propuestas disponibles</span><h3>' + escapeHtml(brandName) + '</h3><p>' + escapeHtml(available) + ' modelos activos · ' + escapeHtml(brand.description) + '</p></span>' +
             '<span class="option-arrow" aria-hidden="true">→</span>' +
           '</span>' +
         '</button>';
@@ -384,7 +389,7 @@
       .map(function (model) { return resolveModelConfig(state.brand, model); })
       .filter(isCampaignActive);
     document.getElementById("selectedBrandBadge").textContent = state.brand;
-    document.getElementById("modelViewCopy").textContent = state.visibleModels.length + " modelos con condiciones comerciales cargadas.";
+    document.getElementById("modelViewCopy").textContent = state.visibleModels.length + " propuestas comerciales activas para acompañar la consulta del cliente.";
     if (!state.visibleModels.length) {
       container.innerHTML = '<div class="history-empty"><strong>No hay campañas activas</strong>El administrador debe activar al menos un modelo para esta marca.</div>';
       return;
@@ -394,7 +399,7 @@
         '<button class="model-option" type="button" data-model-index="' + index + '">' +
           '<span class="model-option-image"><img src="' + model.image + '" alt="' + escapeHtml(state.brand + " " + model.name) + '"></span>' +
           '<span class="model-option-content">' +
-            '<span class="model-option-topline"><span>' + escapeHtml(state.brand) + '</span><span class="stock-badge">Campaña activa</span></span>' +
+            '<span class="model-option-topline"><span>' + escapeHtml(state.brand) + '</span><span class="stock-badge">Condición disponible</span></span>' +
             '<h3>' + escapeHtml(model.name) + '</h3>' +
             '<p>' + escapeHtml(model.short) + '</p>' +
             '<span class="model-condition"><span>' + escapeHtml(model.campaign) + '</span><strong>' + escapeHtml(model.installment) + '</strong></span>' +
@@ -408,7 +413,7 @@
     document.getElementById("selectionSummary").innerHTML = "" +
       '<div class="summary-image"><img src="' + model.image + '" alt="' + escapeHtml(state.brand + " " + model.name) + '"></div>' +
       '<div class="summary-content">' +
-        '<span>Vehículo seleccionado</span>' +
+        '<span>Propuesta seleccionada</span>' +
         '<h3>' + escapeHtml(state.brand + " " + model.name) + '</h3>' +
         '<p>' + escapeHtml(model.short) + '</p>' +
         '<ul class="summary-list">' +
@@ -439,11 +444,11 @@
     });
 
     var titles = {
-      brand: "Nueva precalificación",
-      model: "Selección de modelo",
-      client: "Datos del cliente",
-      result: "Constancia de precalificación",
-      history: "Actividad reciente"
+      brand: "Iniciar nueva gestión",
+      model: "Selección de propuesta",
+      client: "Validación del cliente",
+      result: "Constancia comercial",
+      history: "Gestiones recientes"
     };
     document.getElementById("pageTitle").textContent = titles[viewName] || "Portal comercial";
     document.querySelectorAll(".nav-item").forEach(function (item) {
@@ -457,6 +462,7 @@
     state.model = null;
     state.client = null;
     state.validUntil = null;
+    portal.removeAttribute("data-brand-theme");
     if (state.countdownTimer) {
       window.clearInterval(state.countdownTimer);
       state.countdownTimer = null;
@@ -473,6 +479,7 @@
     }
     state.brand = brandName;
     state.model = null;
+    portal.setAttribute("data-brand-theme", brandTheme(brandName));
     renderModels();
     setView("model");
   }
@@ -550,9 +557,9 @@
 
   function runProcessing() {
     var stages = [
-      { title: "Validando los datos ingresados…", copy: "Comprobando formato e integridad de la información.", progress: "34%", delay: 1100 },
-      { title: "Verificando la campaña seleccionada…", copy: "Revisando las condiciones preliminares del modelo.", progress: "68%", delay: 1250 },
-      { title: "Preparando la constancia…", copy: "Generando el resultado comercial para presentar al cliente.", progress: "100%", delay: 1100 }
+      { title: "Validando los datos de la gestión…", copy: "Comprobando que la información esté completa para continuar.", progress: "34%", delay: 1100 },
+      { title: "Confirmando la condición comercial…", copy: "Revisando vigencia, beneficios y disponibilidad informada.", progress: "68%", delay: 1250 },
+      { title: "Preparando la propuesta para el cliente…", copy: "Organizando la constancia y los próximos pasos de la gestión.", progress: "100%", delay: 1100 }
     ];
     var index = 0;
 
@@ -611,7 +618,7 @@
     document.getElementById("resultVehicleImage").alt = state.brand + " " + model.name;
     document.getElementById("resultBrand").textContent = state.brand + " · " + model.campaign;
     document.getElementById("resultTitle").textContent = model.name;
-    document.getElementById("resultIntro").textContent = client.fullName + ", la solicitud reúne las condiciones comerciales preliminares cargadas para esta campaña.";
+    document.getElementById("resultIntro").textContent = client.fullName + ", la gestión reúne las condiciones comerciales preliminares de esta propuesta. El asesor te explicará los próximos pasos para avanzar.";
     document.getElementById("resultClientName").textContent = client.fullName;
     document.getElementById("resultCuil").textContent = maskCuil(client.cuil);
     document.getElementById("resultPhone").textContent = client.phone;
@@ -678,7 +685,7 @@
   function renderHistory() {
     var list = document.getElementById("historyList");
     if (!state.history.length) {
-      list.innerHTML = '<div class="history-empty"><strong>Todavía no hay actividad</strong>Completá una precalificación de demostración para verla acá.</div>';
+      list.innerHTML = '<div class="history-empty"><strong>Todavía no hay gestiones en esta sesión</strong>Generá una propuesta comercial para verla acá.</div>';
       return;
     }
     list.innerHTML = state.history.map(function (item) {

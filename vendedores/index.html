@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/vendedores/styles.css?v=20260810-2">
+  <link rel="stylesheet" href="/vendedores/styles.css?v=20260810-3">
 </head>
 <body>
   <main class="login-page" id="loginPage">
@@ -19,23 +19,23 @@
         <img src="../assets/logo-light.webp" alt="Grupo Sur Automotores">
       </a>
       <div class="showcase-copy">
-        <p class="eyebrow">Herramientas comerciales</p>
-        <h1>Precalificaciones claras para avanzar con cada cliente.</h1>
-        <p>Seleccioná una campaña, validá los datos iniciales y presentá una constancia comercial profesional en pocos minutos.</p>
+        <p class="eyebrow">Gestión comercial · acceso interno</p>
+        <h1>Convertí cada consulta en una propuesta clara para avanzar.</h1>
+        <p>Identificá la necesidad del cliente, elegí la campaña adecuada y presentá una condición comercial ordenada y profesional.</p>
       </div>
       <div class="showcase-points" aria-label="Características del portal">
-        <span>Volkswagen</span>
-        <span>Peugeot</span>
-        <span>Fiat</span>
+        <span>Campañas vigentes</span>
+        <span>Gestión guiada</span>
+        <span>Constancia comercial</span>
       </div>
     </section>
 
     <section class="login-panel">
       <form class="login-card" id="loginForm" novalidate>
         <div class="login-heading">
-          <span class="secure-badge">Acceso interno</span>
-          <h2>Bienvenido</h2>
-          <p>Ingresá con tu código de vendedor y contraseña.</p>
+          <span class="secure-badge">Portal del equipo comercial</span>
+          <h2>Ingresá a tu gestión</h2>
+          <p>Usá tu código personal para comenzar una nueva propuesta.</p>
         </div>
 
         <label class="field-label" for="sellerCode">Código de vendedor</label>
@@ -64,7 +64,7 @@
       <nav class="sidebar-nav" aria-label="Navegación del portal">
         <button class="nav-item is-active" type="button" data-action="home">
           <span class="nav-icon" aria-hidden="true">⌂</span>
-          Nueva precalificación
+          Nueva gestión
         </button>
         <button class="nav-item" type="button" data-action="history">
           <span class="nav-icon" aria-hidden="true">◷</span>
@@ -85,8 +85,8 @@
     <section class="workspace">
       <header class="portal-header">
         <div>
-          <p class="header-kicker" id="headerKicker">Portal comercial</p>
-          <h1 id="pageTitle">Nueva precalificación</h1>
+          <p class="header-kicker" id="headerKicker">Centro de gestión comercial</p>
+          <h1 id="pageTitle">Iniciar nueva gestión</h1>
         </div>
         <div class="header-actions">
           <span class="demo-pill">Portal interno</span>
@@ -106,10 +106,10 @@
           <div class="section-heading">
             <div>
               <p class="eyebrow dark">Paso 1 de 4</p>
-              <h2 id="brandTitle">Elegí la marca</h2>
-              <p>Seleccioná la marca consultada por el cliente para ver sus campañas activas.</p>
+              <h2 id="brandTitle">¿Qué marca está evaluando el cliente?</h2>
+              <p>Empezá por su interés principal para encontrar la propuesta comercial más adecuada.</p>
             </div>
-            <span class="campaign-status"><i></i> Campañas actualizadas</span>
+            <span class="campaign-status"><i></i> Condiciones sincronizadas</span>
           </div>
           <div class="brand-options" id="brandOptions"></div>
         </section>
@@ -119,8 +119,8 @@
             <div>
               <button class="back-link" type="button" data-action="back-to-brands">← Volver a marcas</button>
               <p class="eyebrow dark">Paso 2 de 4</p>
-              <h2 id="modelTitle">Seleccioná un modelo</h2>
-              <p id="modelViewCopy">Campañas comerciales disponibles.</p>
+              <h2 id="modelTitle">Elegí la propuesta a presentar</h2>
+              <p id="modelViewCopy">Condiciones comerciales disponibles para esta marca.</p>
             </div>
             <div class="selected-brand" id="selectedBrandBadge"></div>
           </div>
@@ -132,8 +132,8 @@
             <div>
               <button class="back-link" type="button" data-action="back-to-models">← Cambiar modelo</button>
               <p class="eyebrow dark">Paso 3 de 4</p>
-              <h2 id="clientTitle">Datos del cliente</h2>
-              <p>Completá los datos junto al cliente para iniciar la validación preliminar.</p>
+              <h2 id="clientTitle">Validá los datos para personalizar la propuesta</h2>
+              <p>Completalos junto al cliente antes de generar la constancia comercial.</p>
             </div>
           </div>
 
@@ -142,8 +142,8 @@
               <div class="form-section-title">
                 <span>01</span>
                 <div>
-                  <h3>Información personal</h3>
-                  <p>Todos los campos son obligatorios.</p>
+                  <h3>Datos para continuar la gestión</h3>
+                  <p>Verificá cada dato en voz alta junto al cliente.</p>
                 </div>
               </div>
 
@@ -170,13 +170,13 @@
               <label class="consent-box">
                 <input name="consent" type="checkbox" required>
                 <span>
-                  <strong>Consentimiento del cliente</strong>
-                  El cliente confirma que los datos son correctos y autoriza su uso para esta precalificación comercial y el contacto posterior de un asesor.
+                  <strong>Conformidad para continuar</strong>
+                  El cliente confirma que los datos son correctos y autoriza su uso para preparar esta propuesta comercial y continuar el contacto con su asesor.
                 </span>
               </label>
 
               <p class="form-error" id="clientError" role="alert" aria-live="polite"></p>
-              <button class="primary-button" type="submit">Iniciar precalificación</button>
+              <button class="primary-button" type="submit">Validar cliente y generar propuesta</button>
             </form>
 
             <aside class="selection-summary" id="selectionSummary" aria-label="Resumen del vehículo elegido"></aside>
@@ -249,11 +249,11 @@
         <section class="view" id="historyView" aria-labelledby="historyTitle">
           <div class="section-heading">
             <div>
-              <p class="eyebrow dark">Seguimiento</p>
-              <h2 id="historyTitle">Actividad reciente</h2>
-              <p>Las demostraciones completadas durante esta sesión aparecen acá sin almacenar CUIL completos.</p>
+              <p class="eyebrow dark">Seguimiento comercial</p>
+              <h2 id="historyTitle">Gestiones recientes</h2>
+              <p>Consultá las constancias generadas durante esta sesión sin exponer CUIL completos.</p>
             </div>
-            <button class="primary-button compact-button" type="button" data-action="home">Nueva precalificación</button>
+            <button class="primary-button compact-button" type="button" data-action="home">Iniciar nueva gestión</button>
           </div>
           <div class="history-list" id="historyList"></div>
         </section>
@@ -264,9 +264,9 @@
   <div class="processing-overlay" id="processingOverlay" hidden aria-live="polite" aria-busy="true">
     <div class="processing-card">
       <div class="spinner" aria-hidden="true"></div>
-      <p class="eyebrow dark">Precalificación en curso</p>
+      <p class="eyebrow dark">Preparando propuesta comercial</p>
       <h2 id="processingTitle">Validando los datos ingresados…</h2>
-      <p id="processingCopy">Este proceso puede demorar unos segundos.</p>
+      <p id="processingCopy">Estamos organizando la información para presentar al cliente.</p>
       <div class="processing-progress"><span id="processingBar"></span></div>
       <small>No cierres esta ventana.</small>
     </div>
@@ -274,6 +274,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.2/dist/umd/supabase.js"></script>
   <script src="/vendedores/supabase-config.js?v=20260810-1"></script>
-  <script src="/vendedores/app.js?v=20260810-4"></script>
+  <script src="/vendedores/app.js?v=20260810-5"></script>
 </body>
 </html>

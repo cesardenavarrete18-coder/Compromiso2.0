@@ -18,6 +18,9 @@
   --shadow: 0 22px 60px rgba(6, 23, 41, 0.13);
   --soft-shadow: 0 14px 34px rgba(6, 23, 41, 0.08);
   --font: "Inter", Arial, sans-serif;
+  --brand-accent: var(--blue-600);
+  --brand-deep: var(--navy-900);
+  --brand-soft: #edf6fc;
 }
 
 * {
@@ -84,8 +87,8 @@ a {
   color: var(--white);
   background:
     linear-gradient(90deg, rgba(5, 11, 22, 0.98) 0%, rgba(5, 11, 22, 0.84) 52%, rgba(5, 11, 22, 0.36) 100%),
-    linear-gradient(0deg, rgba(5, 11, 22, 0.66), transparent 55%),
-    url("../assets/banner-volkswagen.webp") 64% center / cover no-repeat;
+    linear-gradient(0deg, rgba(5, 11, 22, 0.58), transparent 55%),
+    url("../assets/portal-vendedores-login-v2.webp") center / cover no-repeat;
 }
 
 .login-showcase::after {
@@ -331,6 +334,35 @@ a {
   grid-template-columns: 264px minmax(0, 1fr);
 }
 
+.portal[data-brand-theme="volkswagen"] {
+  --brand-accent: #00a1e6;
+  --brand-deep: #001e50;
+  --brand-soft: #e9f6fc;
+}
+
+.portal[data-brand-theme="peugeot"] {
+  --brand-accent: #1670d2;
+  --brand-deep: #050a14;
+  --brand-soft: #edf4fc;
+}
+
+.portal[data-brand-theme="fiat"] {
+  --brand-accent: #d71931;
+  --brand-deep: #31050c;
+  --brand-soft: #fff0f2;
+}
+
+.portal[data-brand-theme] .primary-button {
+  border-color: var(--brand-accent);
+  background: var(--brand-accent);
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--brand-accent) 24%, transparent);
+}
+
+.portal[data-brand-theme] .back-link,
+.portal[data-brand-theme] .detail-label {
+  color: var(--brand-accent);
+}
+
 .sidebar {
   position: sticky;
   z-index: 10;
@@ -547,8 +579,8 @@ a {
 
 .stepper li.is-current span {
   color: var(--white);
-  border-color: var(--blue-600);
-  background: var(--blue-600);
+  border-color: var(--brand-accent);
+  background: var(--brand-accent);
   box-shadow: 0 6px 14px rgba(8, 123, 216, 0.22);
 }
 
@@ -630,9 +662,9 @@ a {
 .brand-option {
   position: relative;
   display: grid;
-  min-height: 330px;
+  min-height: 306px;
   overflow: hidden;
-  grid-template-rows: 210px 1fr;
+  grid-template-rows: 168px 1fr;
   padding: 0;
   border: 1px solid var(--line);
   border-radius: 12px;
@@ -643,8 +675,34 @@ a {
   transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
 }
 
+.brand-option::before {
+  position: absolute;
+  z-index: 3;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 4px;
+  background: var(--card-accent, var(--blue-600));
+  content: "";
+}
+
+.brand-option.brand-volkswagen {
+  --card-accent: #00a1e6;
+  --card-soft: #e9f6fc;
+}
+
+.brand-option.brand-peugeot {
+  --card-accent: #1670d2;
+  --card-soft: #edf4fc;
+}
+
+.brand-option.brand-fiat {
+  --card-accent: #d71931;
+  --card-soft: #fff0f2;
+}
+
 .brand-option:hover {
-  border-color: #a9c8df;
+  border-color: var(--card-accent, #a9c8df);
   box-shadow: var(--shadow);
   transform: translateY(-4px);
 }
@@ -680,6 +738,16 @@ a {
   padding: 22px;
 }
 
+.brand-card-kicker {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--card-accent, var(--blue-600));
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
 .brand-option h3 {
   margin: 0;
   font-size: 27px;
@@ -700,8 +768,8 @@ a {
   flex: 0 0 38px;
   place-items: center;
   border-radius: 50%;
-  color: var(--blue-700);
-  background: #edf6fc;
+  color: var(--card-accent, var(--blue-700));
+  background: var(--card-soft, #edf6fc);
   font-size: 18px;
   font-weight: 900;
 }
@@ -722,6 +790,9 @@ a {
 }
 
 .selected-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   flex: 0 0 auto;
   padding: 10px 14px;
   border: 1px solid var(--line);
@@ -729,6 +800,15 @@ a {
   background: var(--white);
   font-size: 13px;
   font-weight: 850;
+}
+
+.selected-brand::before {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--brand-accent);
+  box-shadow: 0 0 0 4px var(--brand-soft);
+  content: "";
 }
 
 .model-options {
@@ -750,7 +830,7 @@ a {
 }
 
 .model-option:hover {
-  border-color: #9fc4df;
+  border-color: var(--brand-accent);
   box-shadow: var(--shadow);
   transform: translateY(-3px);
 }
@@ -784,7 +864,7 @@ a {
 }
 
 .model-option-topline span:first-child {
-  color: var(--blue-600);
+  color: var(--brand-accent);
   font-size: 10px;
   font-weight: 850;
   letter-spacing: 0.08em;
@@ -792,7 +872,10 @@ a {
 }
 
 .stock-badge {
-  color: var(--success);
+  padding: 4px 7px;
+  border-radius: 999px;
+  color: var(--brand-accent);
+  background: var(--brand-soft);
   font-size: 10px;
   font-weight: 800;
 }
@@ -822,7 +905,7 @@ a {
 }
 
 .model-condition strong {
-  color: var(--blue-700);
+  color: var(--brand-accent);
 }
 
 .form-layout {
@@ -945,6 +1028,7 @@ a {
   position: sticky;
   top: 24px;
   overflow: hidden;
+  border-top: 4px solid var(--brand-accent);
 }
 
 .summary-image {
@@ -963,7 +1047,7 @@ a {
 }
 
 .summary-content > span {
-  color: var(--blue-600);
+  color: var(--brand-accent);
   font-size: 10px;
   font-weight: 850;
   letter-spacing: 0.08em;
@@ -1096,7 +1180,7 @@ a {
   min-height: 380px;
   grid-template-columns: minmax(460px, 1.08fr) minmax(440px, 0.92fr);
   color: var(--white);
-  background: var(--navy-900);
+  background: linear-gradient(135deg, var(--brand-deep), #071426 76%);
 }
 
 .approval-image-wrap {
@@ -1108,7 +1192,7 @@ a {
 .approval-image-wrap::after {
   position: absolute;
   inset: 0;
-  background: linear-gradient(90deg, transparent 58%, var(--navy-900) 100%), linear-gradient(0deg, rgba(5, 11, 22, 0.35), transparent 45%);
+  background: linear-gradient(90deg, transparent 56%, var(--brand-deep) 100%), linear-gradient(0deg, rgba(5, 11, 22, 0.35), transparent 45%);
   content: "";
 }
 
@@ -1155,7 +1239,7 @@ a {
 
 .result-brand {
   margin: 25px 0 5px;
-  color: var(--cyan-400);
+  color: color-mix(in srgb, var(--brand-accent) 72%, white);
   font-size: 11px;
   font-weight: 850;
   letter-spacing: 0.1em;

@@ -29,6 +29,10 @@
       .replace(/'/g, "&#039;");
   }
 
+  function brandTheme(brandName) {
+    return String(brandName || "").toLowerCase().replace(/[^a-z0-9]+/g, "-");
+  }
+
   function setBusy(button, busy, busyText) {
     if (!button) {
       return;
@@ -156,7 +160,7 @@
       var status = dateStatus(item);
       var availability = item.slots === null || item.slots === "" ? "Cupos sin informar" : item.slots + " cupos";
       return "" +
-        '<button class="campaign-item' + (item.id === state.selectedId ? " is-selected" : "") + '" type="button" data-id="' + escapeHtml(item.id) + '">' +
+        '<button class="campaign-item' + (item.id === state.selectedId ? " is-selected" : "") + '" type="button" data-id="' + escapeHtml(item.id) + '" data-brand-theme="' + brandTheme(item.brand) + '">' +
           '<img src="' + item.image + '" alt="">' +
           '<span class="campaign-item-copy"><span>' + escapeHtml(item.brand) + '</span><strong>' + escapeHtml(item.name) + '</strong><small>' + escapeHtml(availability + " · " + item.validityHours + " h") + '</small></span>' +
           '<i class="status-dot' + (status.active ? " is-active" : "") + '" title="' + escapeHtml(status.label) + '"></i>' +
@@ -170,6 +174,7 @@
       return;
     }
     document.getElementById("editorImage").src = item.image;
+    campaignForm.setAttribute("data-brand-theme", brandTheme(item.brand));
     document.getElementById("editorImage").alt = item.brand + " " + item.name;
     document.getElementById("editorBrand").textContent = item.brand;
     document.getElementById("editorModel").textContent = item.name;
@@ -276,7 +281,7 @@
     var campaigns = view === "campaigns";
     document.getElementById("campaignAdminView").hidden = !campaigns;
     document.getElementById("sellerAdminView").hidden = campaigns;
-    topbarTitle.textContent = campaigns ? "Administración de campañas" : "Administración de vendedores";
+    topbarTitle.textContent = campaigns ? "Gestión de campañas y equipo" : "Equipo comercial y accesos";
     document.querySelectorAll("[data-admin-view]").forEach(function (button) {
       button.classList.toggle("is-active", button.dataset.adminView === view);
     });

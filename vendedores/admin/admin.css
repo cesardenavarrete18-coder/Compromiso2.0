@@ -30,7 +30,7 @@ img { display: block; max-width: 100%; }
 [hidden] { display: none !important; }
 
 .admin-login { display: grid; min-height: 100vh; grid-template-columns: minmax(560px, 1.15fr) minmax(500px, .85fr); background: var(--white); }
-.login-showcase { position: relative; display: flex; min-height: 100vh; overflow: hidden; flex-direction: column; justify-content: space-between; padding: 44px clamp(48px, 6vw, 94px) 52px; color: var(--white); background: linear-gradient(90deg, rgba(5, 11, 22, .98), rgba(5, 11, 22, .78)), linear-gradient(0deg, rgba(5, 11, 22, .72), transparent 60%), url("/assets/banner-peugeot.webp") center / cover no-repeat; }
+.login-showcase { position: relative; display: flex; min-height: 100vh; overflow: hidden; flex-direction: column; justify-content: space-between; padding: 44px clamp(48px, 6vw, 94px) 52px; color: var(--white); background: linear-gradient(90deg, rgba(5, 11, 22, .98), rgba(5, 11, 22, .7)), linear-gradient(0deg, rgba(5, 11, 22, .65), transparent 60%), url("/assets/portal-admin-login-v2.webp") center / cover no-repeat; }
 .login-showcase::after { position: absolute; inset: 0; background: radial-gradient(circle at 22% 53%, rgba(12, 145, 243, .25), transparent 34%); content: ""; pointer-events: none; }
 .showcase-logo, .showcase-copy, .showcase-foot { position: relative; z-index: 1; }
 .showcase-logo img { width: 188px; }
@@ -103,11 +103,21 @@ img { display: block; max-width: 100%; }
 .brand-filters { display: flex; gap: 7px; }
 .brand-filter { padding: 8px 12px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); background: var(--white); font-size: 11px; font-weight: 800; }
 .brand-filter.is-active { color: var(--white); border-color: var(--blue-600); background: var(--blue-600); }
+.brand-filter.is-active[data-brand="Volkswagen"] { border-color: #00a1e6; background: #00a1e6; }
+.brand-filter.is-active[data-brand="Peugeot"] { border-color: #1670d2; background: #1670d2; }
+.brand-filter.is-active[data-brand="Fiat"] { border-color: #d71931; background: #d71931; }
 .campaign-layout { display: grid; grid-template-columns: minmax(280px, .75fr) minmax(540px, 1.45fr); gap: 22px; align-items: start; }
 .campaign-list { display: grid; max-height: 770px; overflow: auto; gap: 8px; padding-right: 5px; }
-.campaign-item { display: grid; width: 100%; grid-template-columns: 74px minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 10px; border: 1px solid var(--line); border-radius: 9px; background: var(--white); text-align: left; }
+.campaign-item { position: relative; display: grid; width: 100%; overflow: hidden; grid-template-columns: 74px minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 10px 10px 10px 13px; border: 1px solid var(--line); border-radius: 9px; background: var(--white); text-align: left; }
+.campaign-item::before { position: absolute; top: 0; bottom: 0; left: 0; width: 3px; background: var(--campaign-accent, var(--blue-600)); content: ""; }
+.campaign-item[data-brand-theme="volkswagen"] { --campaign-accent: #00a1e6; }
+.campaign-item[data-brand-theme="peugeot"] { --campaign-accent: #1670d2; }
+.campaign-item[data-brand-theme="fiat"] { --campaign-accent: #d71931; }
 .campaign-item:hover { border-color: #aecbe3; background: #f9fcff; }
 .campaign-item.is-selected { border-color: var(--blue-600); box-shadow: 0 0 0 3px rgba(8,123,216,.1); }
+.campaign-item.is-selected[data-brand-theme="volkswagen"] { border-color: #00a1e6; box-shadow: 0 0 0 3px rgba(0,161,230,.1); }
+.campaign-item.is-selected[data-brand-theme="peugeot"] { border-color: #1670d2; box-shadow: 0 0 0 3px rgba(22,112,210,.1); }
+.campaign-item.is-selected[data-brand-theme="fiat"] { border-color: #d71931; box-shadow: 0 0 0 3px rgba(215,25,49,.1); }
 .campaign-item img { width: 74px; height: 54px; border-radius: 7px; object-fit: cover; background: var(--surface); }
 .campaign-item-copy { min-width: 0; }
 .campaign-item-copy span { display: block; color: var(--blue-700); font-size: 9px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
@@ -117,6 +127,9 @@ img { display: block; max-width: 100%; }
 .status-dot.is-active { background: var(--success); box-shadow: 0 0 0 4px var(--success-soft); }
 
 .editor { border: 1px solid var(--line); border-radius: 10px; background: #fbfcfd; }
+.editor[data-brand-theme="volkswagen"] { border-top: 4px solid #00a1e6; }
+.editor[data-brand-theme="peugeot"] { border-top: 4px solid #1670d2; }
+.editor[data-brand-theme="fiat"] { border-top: 4px solid #d71931; }
 .editor-header { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 20px; border-bottom: 1px solid var(--line); background: var(--white); border-radius: 10px 10px 0 0; }
 .editor-vehicle { display: flex; min-width: 0; align-items: center; gap: 15px; }
 .editor-vehicle img { width: 112px; height: 76px; flex: 0 0 auto; border-radius: 8px; object-fit: cover; background: var(--surface); }
