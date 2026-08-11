@@ -427,19 +427,19 @@ from (
     ('Volkswagen', 'Amarok', '/assets/vw-amarok.webp', 'Plan 70/30', 'Bonificación y entrega pactada según campaña.', '$10.400.000', 'Desde $600.000', 10),
     ('Volkswagen', 'Tera', '/assets/vw-tera.webp', 'Plan 70/30', 'Alternativas de retiro en cuotas pactadas.', '$11.000.000', 'Desde $500.000', 20),
     ('Volkswagen', 'Taos', '/assets/vw-taos.webp', 'Plan 60/40', 'Propuesta con anticipo y financiación vigente.', '$15.000.000', 'A confirmar', 30),
-    ('Volkswagen', 'Nivus', '/assets/vw-nivus.webp', 'Plan 80/20', 'Financiación según versión seleccionada.', '$6.656.310', 'Desde $423.000', 40),
-    ('Volkswagen', 'T-Cross', '/assets/vw-tcross.webp', 'Plan 80/20', 'Condición preliminar con entrega pactada.', '$7.583.060', 'Desde $482.000', 50),
-    ('Volkswagen', 'Virtus', '/assets/vw-virtus.webp', 'Plan 90/10', 'Ingreso inicial reducido sujeto a campaña.', '$3.365.910', 'A confirmar', 60),
+    ('Volkswagen', 'Nivus', '/assets/vw-nivus-catalog-v2.webp', 'Plan 80/20', 'Financiación según versión seleccionada.', '$6.656.310', 'Desde $423.000', 40),
+    ('Volkswagen', 'T-Cross', '/assets/vw-tcross-catalog-v2.webp', 'Plan 80/20', 'Condición preliminar con entrega pactada.', '$7.583.060', 'Desde $482.000', 50),
+    ('Volkswagen', 'Virtus', '/assets/vw-virtus-catalog-v2.webp', 'Plan 90/10', 'Ingreso inicial reducido sujeto a campaña.', '$3.365.910', 'A confirmar', 60),
     ('Peugeot', '208', '/assets/peugeot-208.webp', 'Plan 80/20', 'Propuesta urbana con retiro pactado.', '$4.000.000', 'Desde $400.000', 10),
     ('Peugeot', '2008', '/assets/peugeot-2008.webp', 'Plan 70/30', 'SUV con alternativas de financiación vigente.', '$4.900.000', 'Desde $550.000', 20),
     ('Peugeot', 'Partner', '/assets/peugeot-partner.webp', 'Plan utilitario', 'Condición comercial para uso laboral.', '$10.000.000', 'Desde $500.000', 30),
-    ('Peugeot', 'Expert', '/assets/peugeot-expert.webp', 'Plan utilitario', 'Alternativa de financiación para trabajo.', '$10.000.000', 'Desde $500.000', 40),
+    ('Peugeot', 'Expert', '/assets/peugeot-expert-catalog-v2.webp', 'Plan utilitario', 'Alternativa de financiación para trabajo.', '$10.000.000', 'Desde $500.000', 40),
     ('Fiat', 'Cronos', '/assets/fiat-cronos.webp', 'Plan 80/20', 'Retiro pactado según condición vigente.', '$5.000.000', 'Desde $500.000', 10),
     ('Fiat', 'Mobi', '/assets/fiat-mobi.webp', 'Plan 80/20', 'Ingreso inicial y cuota accesible.', '$5.000.000', 'Desde $500.000', 20),
-    ('Fiat', 'Argo', '/assets/fiat-argo.webp', 'Campaña lanzamiento', 'Condición preliminar de lanzamiento.', 'A confirmar', 'A confirmar', 30),
+    ('Fiat', 'Argo', '/assets/fiat-argo-catalog-v2.webp', 'Campaña lanzamiento', 'Condición preliminar de lanzamiento.', 'A confirmar', 'A confirmar', 30),
     ('Fiat', 'Titano', '/assets/fiat-titano.webp', 'Plan pick-up', 'Propuesta para uso laboral y personal.', 'A confirmar', 'A confirmar', 40),
-    ('Fiat', 'Fastback', '/assets/fiat-fastback.webp', 'Plan 70/30', 'Financiación sujeta a versión y campaña.', 'A confirmar', 'A confirmar', 50),
-    ('Fiat', 'Strada', '/assets/fiat-strada.webp', 'Plan utilitario', 'Alternativas para trabajo y uso diario.', 'A confirmar', 'A confirmar', 60)
+    ('Fiat', 'Fastback', '/assets/fiat-fastback-catalog-v2.webp', 'Plan 70/30', 'Financiación sujeta a versión y campaña.', 'A confirmar', 'A confirmar', 50),
+    ('Fiat', 'Strada', '/assets/fiat-strada-catalog-v2.webp', 'Plan utilitario', 'Alternativas para trabajo y uso diario.', 'A confirmar', 'A confirmar', 60)
 ) as source(brand_name, name, image_path, campaign_name, short_description, advance_text, installment_text, sort_order)
 join public.brands b on b.name = source.brand_name;
 
