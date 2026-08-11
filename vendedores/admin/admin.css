@@ -56,6 +56,8 @@ img { display: block; max-width: 100%; }
 .primary-button { border: 1px solid var(--blue-600); color: var(--white); background: var(--blue-600); box-shadow: 0 10px 24px rgba(8, 123, 216, .22); }
 .primary-button:hover { background: var(--blue-700); }
 .login-card > .primary-button { width: 100%; }
+.first-access-button { width: 100%; margin-top: 10px; padding: 10px; border: 0; color: var(--blue-700); background: transparent; font-size: 12px; font-weight: 800; }
+.first-access-button:hover { text-decoration: underline; }
 .secondary-button { border: 1px solid #cbd7e4; color: var(--ink); background: var(--white); }
 .demo-access { display: flex; margin-top: 22px; padding: 14px; border: 1px solid #d8e8f6; border-radius: 8px; flex-direction: column; color: #39536b; background: #f4f9fd; font-size: 12px; }
 .demo-access strong { color: var(--blue-700); }
@@ -155,9 +157,44 @@ img { display: block; max-width: 100%; }
 .editor-actions { display: flex; justify-content: flex-end; gap: 10px; padding: 17px 22px; border-top: 1px solid var(--line); background: var(--white); border-radius: 0 0 10px 10px; }
 .editor-actions .primary-button, .editor-actions .secondary-button { min-height: 42px; padding: 9px 15px; font-size: 11px; }
 
+.seller-section { padding: 25px; border: 1px solid var(--line); border-radius: 12px; background: var(--white); box-shadow: var(--soft-shadow); }
+.seller-count { padding: 8px 12px; border-radius: 999px; color: var(--blue-700); background: #eaf4fc; font-size: 11px; font-weight: 800; }
+.seller-layout { display: grid; grid-template-columns: minmax(300px, .7fr) minmax(560px, 1.3fr); gap: 22px; align-items: start; }
+.seller-create-card, .seller-list-card { border: 1px solid var(--line); border-radius: 10px; background: #fbfcfd; }
+.seller-create-card { padding: 22px; }
+.card-kicker { color: var(--blue-700); font-size: 9px; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; }
+.seller-create-card h3, .password-dialog h3 { margin: 3px 0 18px; font-size: 21px; letter-spacing: -.03em; }
+.seller-create-card .field { margin-bottom: 14px; }
+.seller-create-card .primary-button { width: 100%; margin-top: 5px; }
+.seller-list-card { overflow: hidden; background: var(--white); }
+.seller-list-head, .seller-row { display: grid; grid-template-columns: minmax(240px, 1fr) 90px 180px; align-items: center; gap: 16px; }
+.seller-list-head { padding: 12px 17px; border-bottom: 1px solid var(--line); color: var(--muted); background: #f7f9fb; font-size: 9px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.seller-row { padding: 14px 17px; border-bottom: 1px solid var(--line); }
+.seller-row:last-child { border-bottom: 0; }
+.seller-identity { display: flex; min-width: 0; align-items: center; gap: 11px; }
+.seller-identity > span { display: grid; width: 38px; height: 38px; flex: 0 0 auto; place-items: center; border-radius: 50%; color: var(--white); background: var(--navy-800); font-size: 12px; font-weight: 900; }
+.seller-identity div { min-width: 0; }
+.seller-identity strong, .seller-identity small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.seller-identity strong { font-size: 12px; }
+.seller-identity small { color: var(--muted); font-size: 9px; }
+.seller-status { width: fit-content; padding: 5px 8px; border-radius: 999px; font-size: 9px; font-weight: 800; }
+.seller-status.is-active { color: var(--success); background: var(--success-soft); }
+.seller-status.is-paused { color: #7d4c0d; background: #fff2d8; }
+.seller-actions { display: flex; justify-content: flex-end; gap: 6px; }
+.seller-actions button { padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; color: var(--blue-700); background: var(--white); font-size: 9px; font-weight: 800; }
+.seller-empty { padding: 70px 25px; color: var(--muted); font-size: 12px; text-align: center; }
+.seller-empty strong { display: block; margin-bottom: 4px; color: var(--ink); font-size: 15px; }
+.password-dialog { width: min(92vw, 440px); padding: 0; border: 0; border-radius: 12px; color: var(--ink); box-shadow: 0 28px 80px rgba(5, 11, 22, .3); }
+.password-dialog::backdrop { background: rgba(5, 11, 22, .72); backdrop-filter: blur(5px); }
+.password-dialog form { position: relative; padding: 28px; }
+.password-dialog p { margin: -11px 0 18px; color: var(--muted); font-size: 12px; }
+.password-dialog .primary-button { width: 100%; margin-top: 10px; }
+.dialog-close { position: absolute; top: 13px; right: 13px; width: 32px; height: 32px; border: 0; border-radius: 50%; color: var(--muted); background: var(--surface); font-size: 20px; }
+
 @media (max-width: 1120px) {
   .admin-app { grid-template-columns: 210px minmax(0, 1fr); }
   .campaign-layout { grid-template-columns: 1fr; }
+  .seller-layout { grid-template-columns: 1fr; }
   .campaign-list { max-height: 320px; grid-template-columns: repeat(2, 1fr); }
   .admin-login { grid-template-columns: 1fr 480px; }
 }
@@ -178,6 +215,7 @@ img { display: block; max-width: 100%; }
   .editor-header, .offer-preview { align-items: flex-start; flex-direction: column; }
   .switch-row > span:first-child { text-align: left; }
   .offer-preview dl { width: 100%; }
+  .seller-list-head, .seller-row { grid-template-columns: minmax(180px, 1fr) 80px 160px; }
 }
 
 @media (max-width: 560px) {
@@ -191,4 +229,7 @@ img { display: block; max-width: 100%; }
   .offer-preview dl { grid-template-columns: 1fr; gap: 8px; }
   .editor-actions { flex-direction: column-reverse; }
   .editor-actions button { width: 100%; }
+  .seller-list-head { display: none; }
+  .seller-row { grid-template-columns: 1fr; }
+  .seller-actions { justify-content: flex-start; }
 }
