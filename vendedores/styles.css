@@ -21,6 +21,8 @@
   --brand-accent: var(--blue-600);
   --brand-deep: var(--navy-900);
   --brand-soft: #edf6fc;
+  --brand-action: var(--blue-600);
+  --brand-highlight: var(--cyan-400);
 }
 
 * {
@@ -335,32 +337,47 @@ a {
 }
 
 .portal[data-brand-theme="volkswagen"] {
-  --brand-accent: #00a1e6;
+  --brand-accent: #0040c5;
   --brand-deep: #001e50;
-  --brand-soft: #e9f6fc;
+  --brand-soft: #e9f8fd;
+  --brand-action: #001e50;
+  --brand-highlight: #00b0f0;
 }
 
 .portal[data-brand-theme="peugeot"] {
-  --brand-accent: #1670d2;
-  --brand-deep: #050a14;
-  --brand-soft: #edf4fc;
+  --brand-accent: #00a3e0;
+  --brand-deep: #000000;
+  --brand-soft: #eefaff;
+  --brand-action: #000000;
+  --brand-highlight: #00a3e0;
 }
 
 .portal[data-brand-theme="fiat"] {
-  --brand-accent: #d71931;
-  --brand-deep: #31050c;
-  --brand-soft: #fff0f2;
+  --brand-accent: #e2231a;
+  --brand-deep: #111111;
+  --brand-soft: #fff1ef;
+  --brand-action: #e2231a;
+  --brand-highlight: #e2231a;
 }
 
 .portal[data-brand-theme] .primary-button {
-  border-color: var(--brand-accent);
-  background: var(--brand-accent);
-  box-shadow: 0 10px 24px color-mix(in srgb, var(--brand-accent) 24%, transparent);
+  border-color: var(--brand-action);
+  background: var(--brand-action);
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--brand-action) 24%, transparent);
 }
 
 .portal[data-brand-theme] .back-link,
 .portal[data-brand-theme] .detail-label {
   color: var(--brand-accent);
+}
+
+.portal[data-brand-theme] .section-heading h2 {
+  color: var(--brand-deep);
+}
+
+.portal[data-brand-theme] .selected-brand {
+  border-color: color-mix(in srgb, var(--brand-accent) 24%, var(--line));
+  background: linear-gradient(135deg, var(--white), var(--brand-soft));
 }
 
 .sidebar {
@@ -687,18 +704,21 @@ a {
 }
 
 .brand-option.brand-volkswagen {
-  --card-accent: #00a1e6;
-  --card-soft: #e9f6fc;
+  --card-accent: #00b0f0;
+  --card-primary: #001e50;
+  --card-soft: #e9f8fd;
 }
 
 .brand-option.brand-peugeot {
-  --card-accent: #1670d2;
-  --card-soft: #edf4fc;
+  --card-accent: #00a3e0;
+  --card-primary: #000000;
+  --card-soft: #eefaff;
 }
 
 .brand-option.brand-fiat {
-  --card-accent: #d71931;
-  --card-soft: #fff0f2;
+  --card-accent: #e2231a;
+  --card-primary: #e2231a;
+  --card-soft: #fff1ef;
 }
 
 .brand-option:hover {
@@ -736,12 +756,13 @@ a {
   justify-content: space-between;
   gap: 20px;
   padding: 22px;
+  background: linear-gradient(135deg, var(--white) 68%, var(--card-soft, #edf6fc));
 }
 
 .brand-card-kicker {
   display: block;
   margin-bottom: 4px;
-  color: var(--card-accent, var(--blue-600));
+  color: var(--card-primary, var(--card-accent, var(--blue-600)));
   font-size: 9px;
   font-weight: 850;
   letter-spacing: 0.09em;
@@ -750,6 +771,7 @@ a {
 
 .brand-option h3 {
   margin: 0;
+  color: var(--card-primary, var(--ink));
   font-size: 27px;
   font-weight: 900;
   letter-spacing: -0.04em;
@@ -768,7 +790,7 @@ a {
   flex: 0 0 38px;
   place-items: center;
   border-radius: 50%;
-  color: var(--card-accent, var(--blue-700));
+  color: var(--card-primary, var(--card-accent, var(--blue-700)));
   background: var(--card-soft, #edf6fc);
   font-size: 18px;
   font-weight: 900;
