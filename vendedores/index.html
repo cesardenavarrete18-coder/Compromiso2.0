@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/vendedores/styles.css?v=20260813-4">
+  <link rel="stylesheet" href="/vendedores/styles.css?v=20260813-5">
 </head>
 <body>
   <main class="login-page" id="loginPage">
@@ -98,14 +98,15 @@
         <ol class="stepper" id="stepper" aria-label="Progreso de la precalificación">
           <li class="is-current" data-step="brand"><span>1</span> Marca</li>
           <li data-step="model"><span>2</span> Modelo</li>
-          <li data-step="client"><span>3</span> Cliente</li>
-          <li data-step="result"><span>4</span> Resultado</li>
+          <li data-step="offer"><span>3</span> Plan</li>
+          <li data-step="client"><span>4</span> Cliente</li>
+          <li data-step="result"><span>5</span> Resultado</li>
         </ol>
 
         <section class="view is-active" id="brandView" aria-labelledby="brandTitle">
           <div class="section-heading">
             <div>
-              <p class="eyebrow dark">Paso 1 de 4</p>
+              <p class="eyebrow dark">Paso 1 de 5</p>
               <h2 id="brandTitle">¿Qué marca está evaluando el cliente?</h2>
               <p>Empezá por su interés principal para encontrar la propuesta comercial más adecuada.</p>
             </div>
@@ -118,20 +119,33 @@
           <div class="section-heading">
             <div>
               <button class="back-link" type="button" data-action="back-to-brands">← Volver a marcas</button>
-              <p class="eyebrow dark">Paso 2 de 4</p>
-              <h2 id="modelTitle">Elegí la propuesta a presentar</h2>
-              <p id="modelViewCopy">Condiciones comerciales disponibles para esta marca.</p>
+              <p class="eyebrow dark">Paso 2 de 5</p>
+              <h2 id="modelTitle">Elegí el modelo que está evaluando</h2>
+              <p id="modelViewCopy">Modelos con propuestas comerciales disponibles para esta marca.</p>
             </div>
             <div class="selected-brand" id="selectedBrandBadge"></div>
           </div>
           <div class="model-options" id="modelOptions"></div>
         </section>
 
+        <section class="view" id="offerView" aria-labelledby="offerTitle">
+          <div class="section-heading">
+            <div>
+              <button class="back-link" type="button" data-action="back-to-models">← Cambiar modelo</button>
+              <p class="eyebrow dark">Paso 3 de 5</p>
+              <h2 id="offerTitle">Elegí el plan comercial</h2>
+              <p id="offerViewCopy">Seleccioná la versión y la condición que se presentará al cliente.</p>
+            </div>
+            <div class="selected-brand" id="selectedModelBadge"></div>
+          </div>
+          <div class="offer-options" id="offerOptions"></div>
+        </section>
+
         <section class="view" id="clientView" aria-labelledby="clientTitle">
           <div class="section-heading compact-heading">
             <div>
-              <button class="back-link" type="button" data-action="back-to-models">← Cambiar modelo</button>
-              <p class="eyebrow dark">Paso 3 de 4</p>
+              <button class="back-link" type="button" data-action="back-to-offers">← Cambiar plan</button>
+              <p class="eyebrow dark">Paso 4 de 5</p>
               <h2 id="clientTitle">Validá los datos para personalizar la propuesta</h2>
               <p>Completalos junto al cliente antes de generar la constancia comercial.</p>
             </div>
@@ -230,6 +244,7 @@
                 <dl class="detail-list">
                   <div><dt>Anticipo estimado</dt><dd id="resultAdvance"></dd></div>
                   <div><dt>Cuota estimada</dt><dd id="resultInstallment"></dd></div>
+                  <div><dt>Versión</dt><dd id="resultVersion"></dd></div>
                   <div><dt>Disponibilidad</dt><dd id="resultAvailability"></dd></div>
                   <div><dt>Bonificación</dt><dd id="resultBonus"></dd></div>
                   <div><dt>Beneficios</dt><dd id="resultBenefits"></dd></div>
@@ -365,6 +380,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.2/dist/umd/supabase.js"></script>
   <script src="/vendedores/supabase-config.js?v=20260813-2"></script>
-  <script src="/vendedores/app.js?v=20260813-4"></script>
+  <script src="/vendedores/app.js?v=20260813-5"></script>
 </body>
 </html>

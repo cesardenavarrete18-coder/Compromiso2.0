@@ -193,12 +193,14 @@
   var state = {
     seller: null,
     brand: "",
+    modelGroup: null,
     model: null,
     client: null,
     validUntil: null,
     history: [],
     countdownTimer: null,
     visibleModels: [],
+    visibleOffers: [],
     userId: "",
     requestId: "",
     prequalificationId: "",
@@ -254,10 +256,29 @@
     return result;
   }
 
+  function formatCommercialMoney(value, isFrom) {
+    if (value === null || value === "" || !Number.isFinite(Number(value))) {
+      return "A confirmar";
+    }
+    return (isFrom ? "Desde " : "") + "$" + new Intl.NumberFormat("es-AR", { maximumFractionDigits: 0 }).format(Number(value));
+  }
+
+  function vehicleVersion(model) {
+    return [model.versionName, model.transmission].filter(Boolean).join(" ") || "Versión a confirmar";
+  }
+
+  function vehicleTitle(model) {
+    return [model.name, model.versionName, model.transmission].filter(Boolean).join(" ");
+  }
+
+  function planDescription(model) {
+    return model.campaign + (model.installmentCount ? " · " + model.installmentCount + " cuotas" : "");
+  }
+
   async function loadCentralCampaigns() {
     var response = await supabaseClient
       .from("campaigns")
-      .select("id, active, bonus, benefits, slots, valid_from, valid_to, timer_hours, model:models!inner(id, name, image_path, campaign_name, short_description, advance_text, installment_text, sort_order, active, brand:brands!inner(name, description, image_path, sort_order, active))");
+      .select("id, plan_name, version_name, transmission, installment_count, advance_amount, installment_amount, installment_is_from, sort_order, active, bonus, benefits, slots, valid_from, valid_to, timer_hours, model:models!inner(id, name, image_path, short_description, sort_order, active, brand:brands!inner(name, description, image_path, sort_order, active))");
     var grouped = {};
     if (response.error) {
       throw response.error;
@@ -273,18 +294,33 @@
           image: brand.image_path,
           description: brand.description,
           sortOrder: brand.sort_order || 0,
-          models: []
+          models: [],
+          modelMap: {}
         };
       }
-      grouped[brand.name].models.push({
-        id: model.id,
+      if (!grouped[brand.name].modelMap[model.id]) {
+        grouped[brand.name].modelMap[model.id] = {
+          id: model.id,
+          name: model.name,
+          image: model.image_path,
+          short: model.short_description,
+          active: model.active && brand.active,
+          sortOrder: model.sort_order || 0,
+          offers: []
+        };
+        grouped[brand.name].models.push(grouped[brand.name].modelMap[model.id]);
+      }
+      grouped[brand.name].modelMap[model.id].offers.push({
         campaignId: row.id,
-        name: model.name,
-        image: model.image_path,
-        campaign: model.campaign_name,
-        short: model.short_description,
-        advance: model.advance_text,
-        installment: model.installment_text,
+        campaign: row.plan_name,
+        versionName: row.version_name || "",
+        transmission: row.transmission || "",
+        installmentCount: row.installment_count,
+        advanceAmount: row.advance_amount,
+        installmentAmount: row.installment_amount,
+        installmentIsFrom: row.installment_is_from !== false,
+        advance: formatCommercialMoney(row.advance_amount, false),
+        installment: formatCommercialMoney(row.installment_amount, row.installment_is_from !== false),
         active: row.active && model.active && brand.active,
         bonus: row.bonus,
         benefits: row.benefits || [],
@@ -292,11 +328,15 @@
         validFrom: row.valid_from || "",
         validTo: row.valid_to || "",
         validityHours: row.timer_hours || 24,
-        sortOrder: model.sort_order || 0
+        sortOrder: row.sort_order || 0
       });
     });
     Object.keys(grouped).forEach(function (brandName) {
       grouped[brandName].models.sort(function (a, b) { return a.sortOrder - b.sortOrder; });
+      grouped[brandName].models.forEach(function (model) {
+        model.offers.sort(function (a, b) { return a.sortOrder - b.sortOrder; });
+      });
+      delete grouped[brandName].modelMap;
     });
     BRANDS = Object.keys(grouped).sort(function (a, b) {
       return grouped[a].sortOrder - grouped[b].sortOrder;
@@ -354,6 +394,7 @@
   function showLogin() {
     state.seller = null;
     state.brand = "";
+    state.modelGroup = null;
     state.model = null;
     state.client = null;
     portal.hidden = true;
@@ -389,7 +430,9 @@
     var container = document.getElementById("brandOptions");
     container.innerHTML = Object.keys(BRANDS).map(function (brandName) {
       var brand = BRANDS[brandName];
-      var available = brand.models.map(function (model) { return resolveModelConfig(brandName, model); }).filter(isCampaignActive).length;
+      var available = brand.models.filter(function (model) {
+        return model.active !== false && model.offers.map(function (offer) { return resolveModelConfig(brandName, offer); }).some(isCampaignActive);
+      }).length;
       return "" +
         '<button class="brand-option brand-' + brandTheme(brandName) + '" type="button" data-brand="' + escapeHtml(brandName) + '">' +
           '<span class="brand-option-image"><img src="' + brand.image + '" alt="' + escapeHtml(brandName) + '"></span>' +
@@ -405,25 +448,49 @@
     var brand = BRANDS[state.brand];
     var container = document.getElementById("modelOptions");
     state.visibleModels = brand.models
-      .map(function (model) { return resolveModelConfig(state.brand, model); })
-      .filter(isCampaignActive);
+      .filter(function (model) {
+        return model.active !== false && model.offers.map(function (offer) { return resolveModelConfig(state.brand, offer); }).some(isCampaignActive);
+      });
     document.getElementById("selectedBrandBadge").textContent = state.brand;
-    document.getElementById("modelViewCopy").textContent = state.visibleModels.length + " propuestas comerciales activas para acompañar la consulta del cliente.";
+    document.getElementById("modelViewCopy").textContent = state.visibleModels.length + " modelos con propuestas comerciales activas.";
     if (!state.visibleModels.length) {
       container.innerHTML = '<div class="history-empty"><strong>No hay campañas activas</strong>El administrador debe activar al menos un modelo para esta marca.</div>';
       return;
     }
     container.innerHTML = state.visibleModels.map(function (model, index) {
+      var activeOffers = model.offers.map(function (offer) { return resolveModelConfig(state.brand, offer); }).filter(isCampaignActive);
+      var offerCount = activeOffers.length === 1 ? "1 plan disponible" : activeOffers.length + " planes disponibles";
       return "" +
         '<button class="model-option" type="button" data-model-index="' + index + '">' +
           '<span class="model-option-image"><img src="' + model.image + '" alt="' + escapeHtml(state.brand + " " + model.name) + '"></span>' +
           '<span class="model-option-content">' +
-            '<span class="model-option-topline"><span>' + escapeHtml(state.brand) + '</span><span class="stock-badge">Condición disponible</span></span>' +
+            '<span class="model-option-topline"><span>' + escapeHtml(state.brand) + '</span><span class="stock-badge">' + escapeHtml(offerCount) + '</span></span>' +
             '<h3>' + escapeHtml(model.name) + '</h3>' +
             '<p>' + escapeHtml(model.short) + '</p>' +
-            '<span class="model-condition"><span>' + escapeHtml(model.campaign) + '</span><strong>' + escapeHtml(model.installment) + '</strong></span>' +
+            '<span class="model-condition"><span>Comparar propuestas</span><strong>Ver planes →</strong></span>' +
           '</span>' +
         '</button>';
+    }).join("");
+  }
+
+  function renderOffers() {
+    var group = state.modelGroup;
+    var container = document.getElementById("offerOptions");
+    state.visibleOffers = group.offers
+      .map(function (offer) { return resolveModelConfig(state.brand, offer); })
+      .filter(isCampaignActive);
+    document.getElementById("selectedModelBadge").textContent = state.brand + " " + group.name;
+    document.getElementById("offerViewCopy").textContent = state.visibleOffers.length === 1
+      ? "Hay una propuesta comercial activa para este modelo."
+      : "Hay " + state.visibleOffers.length + " propuestas activas. Elegí la versión y el plan a presentar.";
+    container.innerHTML = state.visibleOffers.map(function (offer, index) {
+      return '<button class="offer-option" type="button" data-offer-index="' + index + '">' +
+        '<span class="offer-option-head"><span>' + escapeHtml(vehicleVersion(offer)) + '</span><i>Disponible</i></span>' +
+        '<h3>' + escapeHtml(offer.campaign) + '</h3>' +
+        '<p>' + escapeHtml(offer.installmentCount ? offer.installmentCount + " cuotas" : "Cantidad de cuotas a confirmar") + '</p>' +
+        '<dl><div><dt>Anticipo</dt><dd>' + escapeHtml(offer.advance) + '</dd></div><div><dt>Cuota visible</dt><dd>' + escapeHtml(offer.installment) + '</dd></div></dl>' +
+        '<span class="offer-option-action">Presentar esta propuesta →</span>' +
+      '</button>';
     }).join("");
   }
 
@@ -433,10 +500,11 @@
       '<div class="summary-image"><img src="' + model.image + '" alt="' + escapeHtml(state.brand + " " + model.name) + '"></div>' +
       '<div class="summary-content">' +
         '<span>Propuesta seleccionada</span>' +
-        '<h3>' + escapeHtml(state.brand + " " + model.name) + '</h3>' +
+        '<h3>' + escapeHtml(state.brand + " " + vehicleTitle(model)) + '</h3>' +
         '<p>' + escapeHtml(model.short) + '</p>' +
         '<ul class="summary-list">' +
-          '<li><span>Campaña</span><strong>' + escapeHtml(model.campaign) + '</strong></li>' +
+          '<li><span>Plan</span><strong>' + escapeHtml(planDescription(model)) + '</strong></li>' +
+          '<li><span>Versión</span><strong>' + escapeHtml(vehicleVersion(model)) + '</strong></li>' +
           '<li><span>Anticipo estimado</span><strong>' + escapeHtml(model.advance) + '</strong></li>' +
           '<li><span>Cuota estimada</span><strong>' + escapeHtml(model.installment) + '</strong></li>' +
           '<li><span>Disponibilidad</span><strong>' + escapeHtml(model.availability) + '</strong></li>' +
@@ -452,7 +520,7 @@
       view.classList.toggle("is-active", view.id === viewName + "View");
     });
 
-    var stepOrder = ["brand", "model", "client", "result"];
+    var stepOrder = ["brand", "model", "offer", "client", "result"];
     var activeIndex = stepOrder.indexOf(viewName);
     var isHistory = viewName === "history";
     var isApplication = viewName === "application";
@@ -466,6 +534,7 @@
     var titles = {
       brand: "Iniciar nueva gestión",
       model: "Selección de propuesta",
+      offer: "Selección de plan comercial",
       client: "Validación del cliente",
       result: "Constancia comercial",
       application: "Solicitud comercial",
@@ -480,6 +549,7 @@
 
   function resetFlow() {
     state.brand = "";
+    state.modelGroup = null;
     state.model = null;
     state.client = null;
     state.validUntil = null;
@@ -487,6 +557,7 @@
     state.prequalificationId = "";
     state.applicationId = "";
     state.application = null;
+    state.visibleOffers = [];
     portal.removeAttribute("data-brand-theme");
     if (state.countdownTimer) {
       window.clearInterval(state.countdownTimer);
@@ -507,6 +578,7 @@
       return;
     }
     state.brand = brandName;
+    state.modelGroup = null;
     state.model = null;
     portal.setAttribute("data-brand-theme", brandTheme(brandName));
     renderModels();
@@ -518,7 +590,18 @@
     if (!model) {
       return;
     }
-    state.model = model;
+    state.modelGroup = model;
+    state.model = null;
+    renderOffers();
+    setView("offer");
+  }
+
+  function selectOffer(index) {
+    var offer = state.visibleOffers[index];
+    if (!offer || !state.modelGroup) {
+      return;
+    }
+    state.model = Object.assign({}, state.modelGroup, offer);
     renderSelectionSummary();
     clientForm.reset();
     clientError.textContent = "";
@@ -626,7 +709,7 @@
       customer_name: state.client.fullName,
       customer_phone: state.client.phone,
       customer_document: cleanCuil.slice(2, -1),
-      model_name: state.model.name,
+      model_name: vehicleTitle(state.model),
       seller_name: state.seller.name,
       timer_hours: state.model.validityHours,
       valid_until: state.validUntil.toISOString(),
@@ -634,6 +717,11 @@
         brand: state.brand,
         model: state.model.name,
         campaign: state.model.campaign,
+        version: state.model.versionName,
+        transmission: state.model.transmission,
+        installmentCount: state.model.installmentCount,
+        advance: state.model.advance,
+        installment: state.model.installment,
         bonus: state.model.bonus,
         benefits: state.model.benefits,
         slots: state.model.slots
@@ -655,19 +743,20 @@
     applicationButton.textContent = "Preparando solicitud…";
 
     document.getElementById("resultVehicleImage").src = model.image;
-    document.getElementById("resultVehicleImage").alt = state.brand + " " + model.name;
+    document.getElementById("resultVehicleImage").alt = state.brand + " " + vehicleTitle(model);
     document.getElementById("resultBrandLogo").src = brandLogo(state.brand);
     document.getElementById("resultBrandLogo").alt = "Logo " + state.brand;
-    document.getElementById("resultBrand").textContent = state.brand + " · " + model.campaign;
-    document.getElementById("resultTitle").textContent = model.name;
+    document.getElementById("resultBrand").textContent = state.brand + " · " + planDescription(model);
+    document.getElementById("resultTitle").textContent = vehicleTitle(model);
     document.getElementById("resultIntro").textContent = client.fullName + ", la gestión reúne las condiciones comerciales preliminares de esta propuesta. El asesor te explicará los próximos pasos para avanzar.";
     document.getElementById("resultClientName").textContent = client.fullName;
     document.getElementById("resultCuil").textContent = maskCuil(client.cuil);
     document.getElementById("resultPhone").textContent = client.phone;
     document.getElementById("resultEmail").textContent = client.email;
-    document.getElementById("resultCampaign").textContent = model.campaign;
+    document.getElementById("resultCampaign").textContent = planDescription(model);
     document.getElementById("resultAdvance").textContent = model.advance;
     document.getElementById("resultInstallment").textContent = model.installment;
+    document.getElementById("resultVersion").textContent = vehicleVersion(model);
     document.getElementById("resultAvailability").textContent = model.availability;
     document.getElementById("resultBonus").textContent = model.bonus;
     document.getElementById("resultBenefits").textContent = (model.benefits || []).join(" · ");
@@ -686,8 +775,8 @@
     state.history.unshift({
       name: client.fullName,
       cuil: maskCuil(client.cuil),
-      vehicle: state.brand + " " + model.name,
-      campaign: model.campaign,
+      vehicle: state.brand + " " + vehicleTitle(model),
+      campaign: planDescription(model),
       requestId: requestId,
       date: new Date(),
       application: false
@@ -906,8 +995,8 @@
       automaticDebit: "",
       deferredInstallment: "",
       installmentsPaid: 0,
-      installmentsToPay: "",
-      planType: state.model.campaign,
+      installmentsToPay: state.model.installmentCount || "",
+      planType: planDescription(state.model),
       agreedPrice: "",
       firstPaymentDate: "",
       firstPaymentAmount: "",
@@ -926,8 +1015,8 @@
     });
     setApplicationField("cuil", formatCuilInput(data.cuil));
     document.getElementById("applicationRequestCode").textContent = state.requestId;
-    document.getElementById("applicationVehicle").textContent = state.brand + " " + state.model.name;
-    document.getElementById("applicationCampaign").textContent = state.model.campaign;
+    document.getElementById("applicationVehicle").textContent = state.brand + " " + vehicleTitle(state.model);
+    document.getElementById("applicationCampaign").textContent = planDescription(state.model);
     applicationError.textContent = "";
     setView("application");
     applicationForm.elements.firstName.focus();
@@ -940,7 +1029,7 @@
       request_code: state.requestId,
       brand_name: state.brand,
       model_name: state.model.name,
-      campaign_name: state.model.campaign,
+      campaign_name: planDescription(state.model),
       first_name: data.firstName,
       last_name: data.lastName,
       document_type: data.documentType,
@@ -975,6 +1064,10 @@
       terms_version: "GS-MINUTA-2026-01",
       confirmed_at: new Date().toISOString(),
       commercial_snapshot: {
+        plan: state.model.campaign,
+        version: state.model.versionName,
+        transmission: state.model.transmission,
+        installmentCount: state.model.installmentCount,
         advance: state.model.advance,
         installment: state.model.installment,
         availability: state.model.availability,
@@ -1003,12 +1096,12 @@
     minutePrint.innerHTML = '' +
       '<article class="minute-sheet" data-brand-theme="' + escapeHtml(brandTheme(state.brand)) + '">' +
         '<header class="minute-header">' +
-          '<div class="minute-header-brand"><img class="minute-company-logo" src="../assets/logo-header.webp" alt="Grupo Sur Automotores"><div class="minute-brand-lockup"><img class="minute-brand-logo" src="' + escapeHtml(brandLogo(state.brand)) + '" alt="Logo ' + escapeHtml(state.brand) + '"><span>Solicitud comercial · ' + escapeHtml(state.model.name) + '</span></div></div>' +
+          '<div class="minute-header-brand"><img class="minute-company-logo" src="../assets/logo-header.webp" alt="Grupo Sur Automotores"><div class="minute-brand-lockup"><img class="minute-brand-logo" src="' + escapeHtml(brandLogo(state.brand)) + '" alt="Logo ' + escapeHtml(state.brand) + '"><span>Solicitud comercial · ' + escapeHtml(vehicleTitle(state.model)) + '</span></div></div>' +
           '<div class="minute-identifiers"><strong>' + escapeHtml(minuteCode) + '</strong><span>Fecha: ' + escapeHtml(new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(issueDate)) + '</span><span>Precalificación: ' + escapeHtml(state.requestId) + '</span></div>' +
         '</header>' +
         '<section class="minute-vehicle">' +
-          '<div class="minute-vehicle-image"><img src="' + escapeHtml(state.model.image) + '" alt="' + escapeHtml(state.brand + " " + state.model.name) + '"></div>' +
-          '<div class="minute-vehicle-copy"><span>Vehículo evaluado</span><h1>' + escapeHtml(state.brand + " " + state.model.name) + '</h1><p>' + escapeHtml(state.model.campaign) + '</p><strong>Precalificación aprobada</strong></div>' +
+          '<div class="minute-vehicle-image"><img src="' + escapeHtml(state.model.image) + '" alt="' + escapeHtml(state.brand + " " + vehicleTitle(state.model)) + '"></div>' +
+          '<div class="minute-vehicle-copy"><span>Vehículo evaluado</span><h1>' + escapeHtml(state.brand + " " + vehicleTitle(state.model)) + '</h1><p>' + escapeHtml(planDescription(state.model)) + '</p><strong>Precalificación aprobada</strong></div>' +
         '</section>' +
         '<section class="minute-print-section"><h2>Datos del cliente</h2><div class="minute-data-grid">' +
           minuteRow("Nombre y apellido", data.firstName + " " + data.lastName) +
@@ -1034,7 +1127,10 @@
         '<section class="minute-print-section"><h2>Condiciones comerciales</h2><div class="minute-data-grid three-columns">' +
           minuteRow("Marca", state.brand) +
           minuteRow("Modelo", state.model.name) +
-          minuteRow("Tipo de plan", data.planType) +
+          minuteRow("Versión", vehicleVersion(state.model)) +
+          minuteRow("Tipo de plan", planDescription(state.model)) +
+          minuteRow("Anticipo informado", state.model.advance) +
+          minuteRow("Cuota informada", state.model.installment) +
           minuteRow("Precio pactado", formatMoney(data.agreedPrice)) +
           minuteRow("Cuotas abonadas", String(data.installmentsPaid)) +
           minuteRow("Cuotas a pagar", String(data.installmentsToPay)) +
@@ -1153,6 +1249,13 @@
     }
   });
 
+  document.getElementById("offerOptions").addEventListener("click", function (event) {
+    var button = event.target.closest("[data-offer-index]");
+    if (button) {
+      selectOffer(Number(button.dataset.offerIndex));
+    }
+  });
+
   document.addEventListener("click", function (event) {
     var actionButton = event.target.closest("[data-action]");
     var action;
@@ -1167,12 +1270,18 @@
       setView("history");
     } else if (action === "back-to-brands") {
       state.brand = "";
+      state.modelGroup = null;
       state.model = null;
       setView("brand");
     } else if (action === "back-to-models") {
+      state.modelGroup = null;
       state.model = null;
       renderModels();
       setView("model");
+    } else if (action === "back-to-offers") {
+      state.model = null;
+      renderOffers();
+      setView("offer");
     } else if (action === "back-to-result") {
       setView("result");
     }
@@ -1259,8 +1368,17 @@
     }
     try {
       await loadCentralCampaigns();
-      if (state.brand && !state.model) {
+      if (state.brand && !state.modelGroup) {
         renderModels();
+      } else if (state.modelGroup && !state.model) {
+        var refreshedBrand = BRANDS[state.brand];
+        var refreshedModel = refreshedBrand && refreshedBrand.models.find(function (model) {
+          return model.id === state.modelGroup.id;
+        });
+        if (refreshedModel) {
+          state.modelGroup = refreshedModel;
+        }
+        renderOffers();
       }
     } catch (error) {
       return;

@@ -38,6 +38,25 @@
     return String(brandName || "").toLowerCase().replace(/[^a-z0-9]+/g, "-");
   }
 
+  function formatMoney(value) {
+    if (value === null || value === "" || !Number.isFinite(Number(value))) {
+      return "A confirmar";
+    }
+    return "$" + new Intl.NumberFormat("es-AR", { maximumFractionDigits: 0 }).format(Number(value));
+  }
+
+  function offerDescriptor(item) {
+    var parts = [item.planName];
+    var vehicle = [item.versionName, item.transmission].filter(Boolean).join(" ");
+    if (vehicle) {
+      parts.push(vehicle);
+    }
+    if (item.installmentCount) {
+      parts.push(item.installmentCount + " cuotas");
+    }
+    return parts.filter(Boolean).join(" · ");
+  }
+
   function setBusy(button, busy, busyText) {
     if (!button) {
       return;
@@ -61,7 +80,15 @@
       brand: brand.name,
       name: model.name,
       image: model.image_path,
-      campaign: model.campaign_name,
+      campaign: row.plan_name,
+      planName: row.plan_name,
+      versionName: row.version_name || "",
+      transmission: row.transmission || "",
+      installmentCount: row.installment_count,
+      advanceAmount: row.advance_amount,
+      installmentAmount: row.installment_amount,
+      installmentIsFrom: row.installment_is_from !== false,
+      campaignOrder: row.sort_order || 0,
       active: row.active,
       bonus: row.bonus || "",
       benefits: row.benefits || [],
@@ -114,12 +141,12 @@
   async function loadCampaigns() {
     var result = await supabaseClient
       .from("campaigns")
-      .select("id, active, bonus, benefits, slots, valid_from, valid_to, timer_hours, model:models!inner(id, name, image_path, campaign_name, sort_order, brand:brands!inner(name, sort_order))");
+      .select("id, plan_name, version_name, transmission, installment_count, advance_amount, installment_amount, installment_is_from, sort_order, active, bonus, benefits, slots, valid_from, valid_to, timer_hours, model:models!inner(id, name, image_path, sort_order, brand:brands!inner(name, sort_order))");
     if (result.error) {
       throw result.error;
     }
     state.campaigns = (result.data || []).map(normalizeCampaign).sort(function (a, b) {
-      return a.brandOrder - b.brandOrder || a.modelOrder - b.modelOrder;
+      return a.brandOrder - b.brandOrder || a.modelOrder - b.modelOrder || a.campaignOrder - b.campaignOrder;
     });
     if (!state.selectedId && state.campaigns[0]) {
       state.selectedId = state.campaigns[0].id;
@@ -167,7 +194,7 @@
       return "" +
         '<button class="campaign-item' + (item.id === state.selectedId ? " is-selected" : "") + '" type="button" data-id="' + escapeHtml(item.id) + '" data-brand-theme="' + brandTheme(item.brand) + '">' +
           '<img src="' + item.image + '" alt="">' +
-          '<span class="campaign-item-copy"><span>' + escapeHtml(item.brand) + '</span><strong>' + escapeHtml(item.name) + '</strong><small>' + escapeHtml(availability + " · " + item.validityHours + " h") + '</small></span>' +
+          '<span class="campaign-item-copy"><span>' + escapeHtml(item.brand + " · " + item.name) + '</span><strong>' + escapeHtml(offerDescriptor(item)) + '</strong><small>' + escapeHtml(formatMoney(item.advanceAmount) + " anticipo · " + formatMoney(item.installmentAmount) + " cuota · " + availability) + '</small></span>' +
           '<i class="status-dot' + (status.active ? " is-active" : "") + '" title="' + escapeHtml(status.label) + '"></i>' +
         "</button>";
     }).join("");
@@ -183,7 +210,14 @@
     document.getElementById("editorImage").alt = item.brand + " " + item.name;
     document.getElementById("editorBrand").textContent = item.brand;
     document.getElementById("editorModel").textContent = item.name;
-    document.getElementById("editorCampaign").textContent = item.campaign;
+    document.getElementById("editorCampaign").textContent = offerDescriptor(item);
+    document.getElementById("campaignPlanName").value = item.planName || "";
+    document.getElementById("campaignVersionName").value = item.versionName || "";
+    document.getElementById("campaignTransmission").value = item.transmission || "";
+    document.getElementById("campaignInstallmentCount").value = item.installmentCount || "";
+    document.getElementById("campaignAdvanceAmount").value = item.advanceAmount === null ? "" : item.advanceAmount;
+    document.getElementById("campaignInstallmentAmount").value = item.installmentAmount === null ? "" : item.installmentAmount;
+    document.getElementById("campaignInstallmentIsFrom").checked = item.installmentIsFrom !== false;
     document.getElementById("campaignActive").checked = item.active !== false;
     document.getElementById("campaignBonus").value = item.bonus || "";
     document.getElementById("campaignBenefits").value = (item.benefits || []).join("\n");
@@ -217,6 +251,13 @@
   function formConfig() {
     return {
       active: document.getElementById("campaignActive").checked,
+      planName: document.getElementById("campaignPlanName").value.trim(),
+      versionName: document.getElementById("campaignVersionName").value.trim(),
+      transmission: document.getElementById("campaignTransmission").value,
+      installmentCount: document.getElementById("campaignInstallmentCount").value,
+      advanceAmount: document.getElementById("campaignAdvanceAmount").value,
+      installmentAmount: document.getElementById("campaignInstallmentAmount").value,
+      installmentIsFrom: document.getElementById("campaignInstallmentIsFrom").checked,
       bonus: document.getElementById("campaignBonus").value.trim(),
       benefits: document.getElementById("campaignBenefits").value.split("\n").map(function (line) { return line.trim(); }).filter(Boolean),
       slots: document.getElementById("campaignSlots").value,
@@ -233,8 +274,12 @@
     }
     var config = formConfig();
     var status = dateStatus(config);
-    document.getElementById("previewTitle").textContent = item.brand + " " + item.name;
-    document.getElementById("previewBonus").textContent = config.bonus || "Sin bonificación destacada";
+    var version = [config.versionName, config.transmission].filter(Boolean).join(" ");
+    var installment = config.installmentAmount === ""
+      ? "A confirmar"
+      : (config.installmentIsFrom ? "Desde " : "") + formatMoney(config.installmentAmount);
+    document.getElementById("previewTitle").textContent = item.brand + " " + item.name + (version ? " · " + version : "");
+    document.getElementById("previewBonus").textContent = config.planName + (config.installmentCount ? " · " + config.installmentCount + " cuotas" : "") + " · Anticipo " + formatMoney(config.advanceAmount) + " · Cuota " + installment;
     document.getElementById("previewSlots").textContent = config.slots === "" ? "Sin informar" : config.slots + " disponibles";
     document.getElementById("previewHours").textContent = (config.validityHours || 24) + " horas";
     document.getElementById("previewStatus").textContent = status.label;
@@ -564,8 +609,26 @@
     var config = formConfig();
     var hours = Number(config.validityHours);
     var slots = config.slots === "" ? null : Number(config.slots);
+    var installmentCount = config.installmentCount === "" ? null : Number(config.installmentCount);
+    var advanceAmount = config.advanceAmount === "" ? null : Number(config.advanceAmount);
+    var installmentAmount = config.installmentAmount === "" ? null : Number(config.installmentAmount);
     var button = campaignForm.querySelector('button[type="submit"]');
     formMessage.classList.remove("is-error");
+    if (config.planName.length < 2) {
+      formMessage.textContent = "Ingresá un nombre para el plan comercial.";
+      formMessage.classList.add("is-error");
+      return;
+    }
+    if (installmentCount !== null && (!Number.isInteger(installmentCount) || installmentCount < 1 || installmentCount > 240)) {
+      formMessage.textContent = "La cantidad de cuotas debe estar entre 1 y 240.";
+      formMessage.classList.add("is-error");
+      return;
+    }
+    if ((advanceAmount !== null && advanceAmount < 0) || (installmentAmount !== null && installmentAmount < 0)) {
+      formMessage.textContent = "El anticipo y la cuota no pueden ser negativos.";
+      formMessage.classList.add("is-error");
+      return;
+    }
     if (!Number.isInteger(hours) || hours < 1 || hours > 720) {
       formMessage.textContent = "Ingresá una duración entre 1 y 720 horas.";
       formMessage.classList.add("is-error");
@@ -591,6 +654,13 @@
       }
       var result = await supabaseClient.from("campaigns").update({
         active: config.active,
+        plan_name: config.planName,
+        version_name: config.versionName,
+        transmission: config.transmission,
+        installment_count: installmentCount,
+        advance_amount: advanceAmount,
+        installment_amount: installmentAmount,
+        installment_is_from: config.installmentIsFrom,
         bonus: config.bonus,
         benefits: config.benefits,
         slots: slots,
@@ -603,6 +673,14 @@
       }
       Object.assign(item, {
         active: result.data.active,
+        campaign: result.data.plan_name,
+        planName: result.data.plan_name,
+        versionName: result.data.version_name || "",
+        transmission: result.data.transmission || "",
+        installmentCount: result.data.installment_count,
+        advanceAmount: result.data.advance_amount,
+        installmentAmount: result.data.installment_amount,
+        installmentIsFrom: result.data.installment_is_from !== false,
         bonus: result.data.bonus,
         benefits: result.data.benefits,
         slots: result.data.slots,
@@ -636,6 +714,45 @@
     document.getElementById("campaignValidTo").value = "";
     updatePreview();
     formMessage.textContent = "Valores iniciales cargados. Presioná Guardar cambios para aplicarlos.";
+  });
+
+  document.getElementById("duplicateCampaignButton").addEventListener("click", async function () {
+    var item = selectedItem();
+    var button = this;
+    formMessage.classList.remove("is-error");
+    setBusy(button, true, "Duplicando…");
+    try {
+      var result = await supabaseClient.from("campaigns").insert({
+        model_id: item.modelId,
+        plan_name: (item.planName + " - nueva").slice(0, 80),
+        version_name: item.versionName,
+        transmission: item.transmission,
+        installment_count: item.installmentCount,
+        advance_amount: item.advanceAmount,
+        installment_amount: item.installmentAmount,
+        installment_is_from: item.installmentIsFrom,
+        sort_order: item.campaignOrder + 10,
+        active: false,
+        bonus: item.bonus,
+        benefits: item.benefits,
+        slots: null,
+        valid_from: item.validFrom || null,
+        valid_to: item.validTo || null,
+        timer_hours: item.validityHours
+      }).select("id").single();
+      if (result.error) {
+        throw result.error;
+      }
+      state.selectedId = result.data.id;
+      await loadCampaigns();
+      renderAll();
+      formMessage.textContent = "Propuesta duplicada en pausa. Ajustá sus datos y publicala cuando esté lista.";
+    } catch (error) {
+      formMessage.textContent = "No se pudo duplicar la propuesta. Intentá nuevamente.";
+      formMessage.classList.add("is-error");
+    } finally {
+      setBusy(button, false);
+    }
   });
 
   sellerForm.addEventListener("submit", async function (event) {

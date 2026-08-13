@@ -82,7 +82,15 @@ create index models_brand_active_sort_idx on public.models (brand_id, active, so
 
 create table public.campaigns (
   id uuid primary key default gen_random_uuid(),
-  model_id uuid not null unique references public.models (id) on delete cascade,
+  model_id uuid not null references public.models (id) on delete cascade,
+  plan_name text not null,
+  version_name text not null default '',
+  transmission text not null default '',
+  installment_count integer,
+  advance_amount numeric(16, 2),
+  installment_amount numeric(16, 2),
+  installment_is_from boolean not null default true,
+  sort_order integer not null default 10,
   active boolean not null default true,
   bonus text not null default 'Consultar bonificación vigente',
   benefits text[] not null default array['Asesoramiento personalizado', 'Condiciones sujetas a disponibilidad']::text[],
@@ -94,11 +102,20 @@ create table public.campaigns (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   constraint campaigns_slots_nonnegative check (slots is null or slots >= 0),
+  constraint campaigns_plan_name_length check (char_length(plan_name) between 2 and 80),
+  constraint campaigns_version_name_length check (char_length(version_name) <= 80),
+  constraint campaigns_transmission_values check (transmission in ('', 'MT', 'AT')),
+  constraint campaigns_installment_count_positive check (installment_count is null or installment_count > 0),
+  constraint campaigns_commercial_amounts_nonnegative check (
+    (advance_amount is null or advance_amount >= 0)
+    and (installment_amount is null or installment_amount >= 0)
+  ),
   constraint campaigns_valid_dates check (valid_to is null or valid_from is null or valid_to >= valid_from),
   constraint campaigns_timer_range check (timer_hours between 1 and 720)
 );
 
 create index campaigns_active_dates_idx on public.campaigns (active, valid_from, valid_to);
+create index campaigns_model_sort_idx on public.campaigns (model_id, sort_order, active);
 create index campaigns_updated_by_idx on public.campaigns (updated_by);
 
 create table public.campaign_audit_log (
@@ -565,8 +582,19 @@ from (
 ) as source(brand_name, name, image_path, campaign_name, short_description, advance_text, installment_text, sort_order)
 join public.brands b on b.name = source.brand_name;
 
-insert into public.campaigns (model_id, slots, timer_hours)
-select m.id, source.slots, 24
+insert into public.campaigns (
+  model_id, plan_name, advance_amount, installment_amount, installment_is_from,
+  slots, timer_hours, sort_order
+)
+select
+  m.id,
+  m.campaign_name,
+  nullif(regexp_replace(m.advance_text, '[^0-9]', '', 'g'), '')::numeric,
+  nullif(regexp_replace(m.installment_text, '[^0-9]', '', 'g'), '')::numeric,
+  m.installment_text ilike 'Desde %',
+  source.slots,
+  24,
+  10
 from (
   values
     ('Volkswagen', 'Amarok', 2), ('Volkswagen', 'Tera', 3), ('Volkswagen', 'Taos', null),
@@ -577,3 +605,23 @@ from (
 ) as source(brand_name, model_name, slots)
 join public.brands b on b.name = source.brand_name
 join public.models m on m.brand_id = b.id and m.name = source.model_name;
+
+update public.campaigns campaign
+set version_name = 'Allure', transmission = 'MT', installment_count = 84, sort_order = 20
+from public.models model
+join public.brands brand on brand.id = model.brand_id
+where campaign.model_id = model.id and brand.name = 'Peugeot' and model.name = '208';
+
+insert into public.campaigns (
+  model_id, active, plan_name, version_name, transmission, installment_count,
+  bonus, benefits, slots, timer_hours, sort_order
+)
+select model.id, false, offer.plan_name, 'Allure', offer.transmission, offer.installment_count,
+  base.bonus, base.benefits, null, base.timer_hours, offer.sort_order
+from public.models model
+join public.brands brand on brand.id = model.brand_id
+join public.campaigns base on base.model_id = model.id
+cross join (
+  values ('Plan 70/30', 'MT', 120, 10), ('Plan 100%', 'AT', 84, 30)
+) as offer(plan_name, transmission, installment_count, sort_order)
+where brand.name = 'Peugeot' and model.name = '208';

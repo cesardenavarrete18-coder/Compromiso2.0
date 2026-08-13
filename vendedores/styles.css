@@ -937,6 +937,86 @@ a {
   color: var(--brand-accent);
 }
 
+.offer-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.offer-option {
+  display: block;
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-top: 4px solid var(--brand-accent);
+  border-radius: 11px;
+  color: var(--navy-900);
+  background: var(--white);
+  box-shadow: var(--soft-shadow);
+  cursor: pointer;
+  text-align: left;
+  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.offer-option:hover {
+  border-color: var(--brand-accent);
+  box-shadow: var(--shadow);
+  transform: translateY(-3px);
+}
+
+.offer-option-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--brand-accent);
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.offer-option-head i {
+  padding: 4px 7px;
+  border-radius: 999px;
+  color: #087956;
+  background: #e6f6f0;
+  font-style: normal;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.offer-option h3 {
+  margin: 15px 0 4px;
+  color: var(--brand-deep);
+  font-size: 26px;
+  letter-spacing: -0.045em;
+}
+
+.offer-option > p {
+  margin: 0 0 19px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.offer-option dl {
+  display: grid;
+  margin: 0;
+  gap: 9px;
+}
+
+.offer-option dl div {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  padding-bottom: 9px;
+  border-bottom: 1px solid var(--line);
+  font-size: 11px;
+}
+
+.offer-option dt { color: var(--muted); }
+.offer-option dd { margin: 0; font-weight: 850; text-align: right; }
+.offer-option-action { display: block; margin-top: 19px; color: var(--brand-accent); font-size: 11px; font-weight: 850; text-align: right; }
+
 .form-layout {
   display: grid;
   align-items: start;
@@ -1748,7 +1828,8 @@ a {
   }
 
   .brand-options,
-  .model-options {
+  .model-options,
+  .offer-options {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -1919,6 +2000,7 @@ a {
 
   .brand-options,
   .model-options,
+  .offer-options,
   .form-grid,
   .application-grid,
   .commercial-grid {
@@ -2198,7 +2280,14 @@ a {
   }
 
   .minute-data-grid.three-columns {
+    padding-top: 2mm;
+    padding-bottom: 2mm;
     grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.2mm 4mm;
+  }
+
+  .minute-data-grid.three-columns div {
+    min-height: 4.4mm;
   }
 
   .minute-data-grid div {
