@@ -3,6 +3,12 @@
 
   var supabaseClient = window.grupoSurSupabaseClient;
 
+  var BRAND_LOGOS = Object.freeze({
+    Volkswagen: "../assets/brand-mini-vw.webp",
+    Peugeot: "../assets/brand-mini-peugeot.webp",
+    Fiat: "../assets/brand-mini-fiat.webp"
+  });
+
   var BRANDS = {
     Volkswagen: {
       image: "../assets/brand-selector-vw-v2.webp",
@@ -320,6 +326,10 @@
 
   function brandTheme(brandName) {
     return String(brandName || "").toLowerCase().replace(/[^a-z0-9]+/g, "-");
+  }
+
+  function brandLogo(brandName) {
+    return BRAND_LOGOS[brandName] || "../assets/logo-header.webp";
   }
 
   function formatCurrentDate() {
@@ -646,6 +656,8 @@
 
     document.getElementById("resultVehicleImage").src = model.image;
     document.getElementById("resultVehicleImage").alt = state.brand + " " + model.name;
+    document.getElementById("resultBrandLogo").src = brandLogo(state.brand);
+    document.getElementById("resultBrandLogo").alt = "Logo " + state.brand;
     document.getElementById("resultBrand").textContent = state.brand + " · " + model.campaign;
     document.getElementById("resultTitle").textContent = model.name;
     document.getElementById("resultIntro").textContent = client.fullName + ", la gestión reúne las condiciones comerciales preliminares de esta propuesta. El asesor te explicará los próximos pasos para avanzar.";
@@ -991,7 +1003,7 @@
     minutePrint.innerHTML = '' +
       '<article class="minute-sheet" data-brand-theme="' + escapeHtml(brandTheme(state.brand)) + '">' +
         '<header class="minute-header">' +
-          '<div class="minute-header-brand"><img src="../assets/logo-header.webp" alt="Grupo Sur Automotores"><div class="minute-brand-lockup"><strong>' + escapeHtml(state.brand) + '</strong><span>Solicitud comercial · ' + escapeHtml(state.model.name) + '</span></div></div>' +
+          '<div class="minute-header-brand"><img class="minute-company-logo" src="../assets/logo-header.webp" alt="Grupo Sur Automotores"><div class="minute-brand-lockup"><img class="minute-brand-logo" src="' + escapeHtml(brandLogo(state.brand)) + '" alt="Logo ' + escapeHtml(state.brand) + '"><span>Solicitud comercial · ' + escapeHtml(state.model.name) + '</span></div></div>' +
           '<div class="minute-identifiers"><strong>' + escapeHtml(minuteCode) + '</strong><span>Fecha: ' + escapeHtml(new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(issueDate)) + '</span><span>Precalificación: ' + escapeHtml(state.requestId) + '</span></div>' +
         '</header>' +
         '<section class="minute-vehicle">' +

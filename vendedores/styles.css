@@ -1249,6 +1249,28 @@ a {
   object-fit: cover;
 }
 
+.approval-brand-mark {
+  position: absolute;
+  z-index: 2;
+  top: 24px;
+  left: 24px;
+  display: block;
+  width: 190px;
+  height: 63px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 10px;
+  background: #071426;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.2);
+}
+
+.approval-brand-mark img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
 .approval-copy {
   display: flex;
   justify-content: center;
@@ -2022,7 +2044,7 @@ a {
     gap: 5mm;
   }
 
-  .minute-header img {
+  .minute-company-logo {
     width: 42mm;
     height: auto;
   }
@@ -2032,16 +2054,17 @@ a {
     border-left: 1px solid #cbd5e1;
   }
 
-  .minute-brand-lockup strong,
+  .minute-brand-logo,
   .minute-brand-lockup span {
     display: block;
   }
 
-  .minute-brand-lockup strong {
-    color: var(--minute-deep);
-    font-size: 19pt;
-    font-weight: 900;
-    letter-spacing: -0.04em;
+  .minute-brand-logo {
+    width: 38mm;
+    height: 12.7mm;
+    border: 0.25mm solid #cbd5e1;
+    border-radius: 1.8mm;
+    object-fit: cover;
   }
 
   .minute-brand-lockup span {
