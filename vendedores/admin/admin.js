@@ -129,7 +129,7 @@
   async function enterAdmin() {
     var profile = await getAdminProfile();
     if (!profile) {
-      await supabaseClient.auth.signOut();
+      await supabaseClient.auth.signOut({ scope: "local" });
       throw new Error("Esta cuenta no tiene permisos de administrador o todavía no fue confirmada.");
     }
     state.profile = profile;
@@ -516,7 +516,7 @@
   });
 
   document.getElementById("logoutButton").addEventListener("click", async function () {
-    await supabaseClient.auth.signOut();
+    await supabaseClient.auth.signOut({ scope: "local" });
     showLogin();
   });
 
@@ -583,6 +583,12 @@
     }
     setBusy(button, true, "Guardando…");
     try {
+      var adminProfile = await getAdminProfile();
+      if (!adminProfile) {
+        var sessionError = new Error("La sesión de administrador venció o cambió.");
+        sessionError.code = "ADMIN_SESSION_REQUIRED";
+        throw sessionError;
+      }
       var result = await supabaseClient.from("campaigns").update({
         active: config.active,
         bonus: config.bonus,
@@ -609,7 +615,11 @@
       updatePreview();
       formMessage.textContent = "Cambios guardados para todo el equipo.";
     } catch (error) {
-      formMessage.textContent = "No se pudieron guardar los cambios. Intentá nuevamente.";
+      if (error && (error.code === "ADMIN_SESSION_REQUIRED" || error.code === "42501" || error.code === "PGRST116" || error.status === 401 || error.status === 406)) {
+        formMessage.textContent = "La sesión activa no tiene permisos de administrador. Volvé a ingresar al panel y repetí el guardado.";
+      } else {
+        formMessage.textContent = "No se pudieron guardar los cambios. Revisá los datos e intentá nuevamente.";
+      }
       formMessage.classList.add("is-error");
     } finally {
       setBusy(button, false);

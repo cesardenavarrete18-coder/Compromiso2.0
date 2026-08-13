@@ -1109,7 +1109,7 @@
       }
       var seller = await getSellerProfile();
       if (!seller) {
-        await supabaseClient.auth.signOut();
+        await supabaseClient.auth.signOut({ scope: "local" });
         throw new Error("El acceso está pausado o no corresponde a un vendedor.");
       }
       await loadCentralCampaigns();
@@ -1123,7 +1123,7 @@
   });
 
   logoutButton.addEventListener("click", async function () {
-    await supabaseClient.auth.signOut();
+    await supabaseClient.auth.signOut({ scope: "local" });
     showLogin();
   });
 
@@ -1268,7 +1268,7 @@
       }
       var seller = await getSellerProfile();
       if (!seller) {
-        await supabaseClient.auth.signOut();
+        await supabaseClient.auth.signOut({ scope: "local" });
         showLogin();
         return;
       }
@@ -1276,7 +1276,7 @@
         await loadCentralCampaigns();
         showPortal(seller);
       } catch (error) {
-        await supabaseClient.auth.signOut();
+        await supabaseClient.auth.signOut({ scope: "local" });
         showLogin();
         loginError.textContent = "No se pudieron cargar las campañas. Intentá nuevamente.";
       }
