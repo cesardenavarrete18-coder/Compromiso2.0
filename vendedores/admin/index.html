@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/vendedores/admin/admin.css?v=20260811-1">
+  <link rel="stylesheet" href="/vendedores/admin/admin.css?v=20260813-2">
 </head>
 <body>
   <main class="admin-login" id="adminLogin">
@@ -68,6 +68,10 @@
         <button class="nav-item" type="button" data-admin-view="sellers">
           <span aria-hidden="true">♙</span>
           Vendedores
+        </button>
+        <button class="nav-item" type="button" data-admin-view="prequalifications">
+          <span aria-hidden="true">▤</span>
+          Precalificaciones
         </button>
         <a class="nav-item" href="/vendedores/" target="_blank" rel="noopener">
           <span aria-hidden="true">↗</span>
@@ -209,6 +213,31 @@
             </div>
           </div>
         </section>
+
+        <section class="prequalification-section" id="prequalificationAdminView" hidden>
+          <div class="section-heading prequalification-heading">
+            <div><h2>Clientes precalificados</h2><p>Consultá las nuevas gestiones registradas y descargá una planilla para trabajar en Excel.</p></div>
+            <button class="primary-button export-button" id="exportExcelButton" type="button" disabled>Descargar Excel</button>
+          </div>
+
+          <div class="prequalification-stats" aria-label="Resumen de precalificaciones">
+            <article><span>Registros exportables</span><strong id="prequalificationCount">0</strong><small>Con datos completos</small></article>
+            <article><span>Generadas hoy</span><strong id="prequalificationToday">0</strong><small>Según horario local</small></article>
+            <article><span>Modelos consultados</span><strong id="prequalificationModels">0</strong><small>En el listado actual</small></article>
+          </div>
+
+          <div class="prequalification-table-card">
+            <div class="table-scroll">
+              <table>
+                <thead><tr><th>Fecha</th><th>Nombre</th><th>Teléfono</th><th>DNI</th><th>Modelo</th><th>Asesor</th><th>Constancia</th></tr></thead>
+                <tbody id="prequalificationTableBody"></tbody>
+              </table>
+            </div>
+            <div class="prequalification-empty" id="prequalificationEmpty" hidden><strong>Todavía no hay registros exportables</strong><span>Las próximas precalificaciones aparecerán automáticamente en esta sección.</span></div>
+          </div>
+          <p class="export-message" id="exportMessage" role="status" aria-live="polite"></p>
+          <p class="privacy-note"><strong>Acceso restringido.</strong> La planilla contiene datos personales y debe utilizarse exclusivamente para la gestión comercial autorizada.</p>
+        </section>
       </div>
     </main>
   </div>
@@ -228,6 +257,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.2/dist/umd/supabase.js"></script>
   <script src="/vendedores/supabase-config.js?v=20260810-1"></script>
-  <script src="/vendedores/admin/admin.js?v=20260810-3"></script>
+  <script src="/vendedores/admin/excel-export.js?v=20260813-1"></script>
+  <script src="/vendedores/admin/admin.js?v=20260813-1"></script>
 </body>
 </html>

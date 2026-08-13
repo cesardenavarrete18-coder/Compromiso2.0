@@ -7,7 +7,8 @@
     selectedId: "",
     campaigns: [],
     profile: null,
-    sellers: []
+    sellers: [],
+    prequalifications: []
   };
 
   var adminLogin = document.getElementById("adminLogin");
@@ -18,6 +19,8 @@
   var formMessage = document.getElementById("formMessage");
   var sellerForm = document.getElementById("sellerForm");
   var sellerFormMessage = document.getElementById("sellerFormMessage");
+  var exportMessage = document.getElementById("exportMessage");
+  var exportExcelButton = document.getElementById("exportExcelButton");
   var topbarTitle = document.querySelector(".topbar h1");
 
   function escapeHtml(value) {
@@ -277,18 +280,134 @@
     }).join("");
   }
 
+  function formatPrequalificationDate(value) {
+    if (!value) {
+      return "—";
+    }
+    return new Intl.DateTimeFormat("es-AR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
+    }).format(new Date(value));
+  }
+
+  function localDateKey(value) {
+    var date = new Date(value);
+    return [date.getFullYear(), String(date.getMonth() + 1).padStart(2, "0"), String(date.getDate()).padStart(2, "0")].join("-");
+  }
+
+  async function loadPrequalifications() {
+    var rows = [];
+    var pageSize = 1000;
+    var from = 0;
+    var result;
+    do {
+      result = await supabaseClient
+        .from("prequalification_events")
+        .select("request_code, customer_name, customer_phone, customer_document, model_name, seller_name, created_at")
+        .not("customer_name", "is", null)
+        .order("created_at", { ascending: false })
+        .range(from, from + pageSize - 1);
+      if (result.error) {
+        throw result.error;
+      }
+      rows = rows.concat(result.data || []);
+      from += pageSize;
+    } while ((result.data || []).length === pageSize);
+    state.prequalifications = rows;
+    renderPrequalifications();
+  }
+
+  function renderPrequalifications() {
+    var today = localDateKey(new Date());
+    var modelCount = new Set(state.prequalifications.map(function (item) { return item.model_name; })).size;
+    var todayCount = state.prequalifications.filter(function (item) { return localDateKey(item.created_at) === today; }).length;
+    document.getElementById("prequalificationCount").textContent = state.prequalifications.length;
+    document.getElementById("prequalificationToday").textContent = todayCount;
+    document.getElementById("prequalificationModels").textContent = modelCount;
+    document.getElementById("prequalificationTableBody").innerHTML = state.prequalifications.map(function (item) {
+      return "" +
+        "<tr>" +
+          "<td>" + escapeHtml(formatPrequalificationDate(item.created_at)) + "</td>" +
+          "<td><strong>" + escapeHtml(item.customer_name) + "</strong></td>" +
+          "<td>" + escapeHtml(item.customer_phone) + "</td>" +
+          "<td>" + escapeHtml(item.customer_document) + "</td>" +
+          "<td>" + escapeHtml(item.model_name) + "</td>" +
+          "<td>" + escapeHtml(item.seller_name) + "</td>" +
+          "<td><code>" + escapeHtml(item.request_code) + "</code></td>" +
+        "</tr>";
+    }).join("");
+    document.getElementById("prequalificationEmpty").hidden = state.prequalifications.length > 0;
+    exportExcelButton.disabled = state.prequalifications.length === 0;
+  }
+
+  function downloadPrequalifications() {
+    exportMessage.textContent = "";
+    exportMessage.classList.remove("is-error");
+    if (!window.grupoSurExcel || !state.prequalifications.length) {
+      exportMessage.textContent = "No hay datos disponibles para exportar.";
+      exportMessage.classList.add("is-error");
+      return;
+    }
+    setBusy(exportExcelButton, true, "Preparando Excel…");
+    try {
+      var rows = [["Nombre", "Teléfono", "DNI", "Modelo", "Asesor", "Fecha", "Constancia"]].concat(state.prequalifications.map(function (item) {
+        return [
+          item.customer_name,
+          item.customer_phone,
+          item.customer_document,
+          item.model_name,
+          item.seller_name,
+          formatPrequalificationDate(item.created_at),
+          item.request_code
+        ];
+      }));
+      var bytes = window.grupoSurExcel.buildWorkbook(rows);
+      var blob = new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+      var url = URL.createObjectURL(blob);
+      var link = document.createElement("a");
+      link.href = url;
+      link.download = "precalificaciones-" + localDateKey(new Date()) + ".xlsx";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+      exportMessage.textContent = "Excel generado correctamente con " + state.prequalifications.length + " registros.";
+    } catch (error) {
+      exportMessage.textContent = "No se pudo generar el Excel. Intentá nuevamente.";
+      exportMessage.classList.add("is-error");
+    } finally {
+      setBusy(exportExcelButton, false);
+    }
+  }
+
   function showAdminView(view) {
     var campaigns = view === "campaigns";
+    var sellers = view === "sellers";
+    var prequalifications = view === "prequalifications";
     document.getElementById("campaignAdminView").hidden = !campaigns;
-    document.getElementById("sellerAdminView").hidden = campaigns;
-    topbarTitle.textContent = campaigns ? "Gestión de campañas y equipo" : "Equipo comercial y accesos";
+    document.getElementById("sellerAdminView").hidden = !sellers;
+    document.getElementById("prequalificationAdminView").hidden = !prequalifications;
+    topbarTitle.textContent = campaigns ? "Gestión de campañas y equipo" : sellers ? "Equipo comercial y accesos" : "Clientes precalificados";
     document.querySelectorAll("[data-admin-view]").forEach(function (button) {
       button.classList.toggle("is-active", button.dataset.adminView === view);
     });
-    if (!campaigns) {
+    if (sellers) {
       loadSellers().catch(function (error) {
         sellerFormMessage.textContent = error.message;
         sellerFormMessage.classList.add("is-error");
+      });
+    }
+    if (prequalifications) {
+      exportMessage.textContent = "Cargando registros…";
+      exportMessage.classList.remove("is-error");
+      loadPrequalifications().then(function () {
+        exportMessage.textContent = "";
+      }).catch(function () {
+        exportMessage.textContent = "No se pudieron cargar las precalificaciones. Verificá la conexión e intentá nuevamente.";
+        exportMessage.classList.add("is-error");
       });
     }
   }
@@ -362,6 +481,8 @@
       showAdminView(button.dataset.adminView);
     }
   });
+
+  exportExcelButton.addEventListener("click", downloadPrequalifications);
 
   document.getElementById("brandFilters").addEventListener("click", function (event) {
     var button = event.target.closest("[data-brand]");

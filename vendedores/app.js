@@ -613,6 +613,11 @@
       request_code: requestId,
       customer_initials: initials(state.client.fullName),
       cuil_last4: cleanCuil.slice(-4),
+      customer_name: state.client.fullName,
+      customer_phone: state.client.phone,
+      customer_document: cleanCuil.slice(2, -1),
+      model_name: state.model.name,
+      seller_name: state.seller.name,
       timer_hours: state.model.validityHours,
       valid_until: state.validUntil.toISOString(),
       campaign_snapshot: {

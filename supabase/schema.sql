@@ -114,12 +114,27 @@ create table public.prequalification_events (
   request_code text not null unique,
   customer_initials text not null,
   cuil_last4 text not null,
+  customer_name text,
+  customer_phone text,
+  customer_document text,
+  model_name text,
+  seller_name text,
   timer_hours integer not null,
   valid_until timestamptz not null,
   campaign_snapshot jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now(),
   constraint prequalification_initials_length check (char_length(customer_initials) between 2 and 12),
   constraint prequalification_cuil_last4 check (cuil_last4 ~ '^\d{4}$'),
+  constraint prequalification_customer_name check (customer_name is null or char_length(customer_name) between 2 and 120),
+  constraint prequalification_customer_phone check (customer_phone is null or char_length(customer_phone) between 6 and 30),
+  constraint prequalification_customer_document check (customer_document is null or customer_document ~ '^\d{7,9}$'),
+  constraint prequalification_model_name check (model_name is null or char_length(model_name) between 1 and 80),
+  constraint prequalification_seller_name check (seller_name is null or char_length(seller_name) between 2 and 120),
+  constraint prequalification_export_data_complete check (
+    (customer_name is null and customer_phone is null and customer_document is null and model_name is null and seller_name is null)
+    or
+    (customer_name is not null and customer_phone is not null and customer_document is not null and model_name is not null and seller_name is not null)
+  ),
   constraint prequalification_timer_range check (timer_hours between 1 and 720)
 );
 
