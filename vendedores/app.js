@@ -4,9 +4,9 @@
   var supabaseClient = window.grupoSurSupabaseClient;
 
   var BRAND_LOGOS = Object.freeze({
-    Volkswagen: "../assets/brand-mini-vw.webp",
-    Peugeot: "../assets/brand-mini-peugeot.webp",
-    Fiat: "../assets/brand-mini-fiat.webp"
+    Volkswagen: "../assets/brand-logo-vw-flat.png",
+    Peugeot: "../assets/brand-logo-peugeot-flat.png",
+    Fiat: "../assets/brand-logo-fiat-flat.png"
   });
 
   var BRANDS = {

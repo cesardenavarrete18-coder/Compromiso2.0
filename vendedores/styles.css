@@ -1254,22 +1254,26 @@ a {
   z-index: 2;
   top: 24px;
   left: 24px;
-  display: block;
-  width: 190px;
-  height: 63px;
-  overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  border-radius: 10px;
-  background: #071426;
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.2);
+  display: flex;
+  width: 170px;
+  height: 72px;
+  align-items: center;
+  justify-content: flex-start;
 }
 
 .approval-brand-mark img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  object-position: left center;
+  filter: drop-shadow(0 2px 3px rgba(255, 255, 255, 0.45)) drop-shadow(0 3px 6px rgba(0, 0, 0, 0.28));
 }
+
+.portal[data-brand-theme="volkswagen"] .approval-brand-mark { width: 76px; height: 76px; }
+.portal[data-brand-theme="peugeot"] .approval-brand-mark { width: 72px; height: 80px; }
+.portal[data-brand-theme="fiat"] .approval-brand-mark { width: 180px; height: 58px; }
 
 .approval-copy {
   display: flex;
@@ -2062,10 +2066,13 @@ a {
   .minute-brand-logo {
     width: 38mm;
     height: 12.7mm;
-    border: 0.25mm solid #cbd5e1;
-    border-radius: 1.8mm;
-    object-fit: cover;
+    object-fit: contain;
+    object-position: left center;
   }
+
+  .minute-sheet[data-brand-theme="volkswagen"] .minute-brand-logo { width: 14mm; height: 14mm; }
+  .minute-sheet[data-brand-theme="peugeot"] .minute-brand-logo { width: 13mm; height: 15mm; }
+  .minute-sheet[data-brand-theme="fiat"] .minute-brand-logo { width: 38mm; height: 12mm; }
 
   .minute-brand-lockup span {
     margin-top: 1mm;
