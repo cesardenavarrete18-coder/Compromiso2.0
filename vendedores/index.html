@@ -1,0 +1,385 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Portal interno de precalificaciones comerciales de Grupo Sur Automotores.">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Portal de vendedores | Grupo Sur Automotores</title>
+  <link rel="icon" href="../assets/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/vendedores/styles.css?v=20260813-5">
+</head>
+<body>
+  <main class="login-page" id="loginPage">
+    <section class="login-showcase" aria-label="Portal comercial Grupo Sur">
+      <a href="/" class="showcase-logo" aria-label="Volver a Compromiso Mi 0km">
+        <img src="../assets/logo-light.webp" alt="Grupo Sur Automotores">
+      </a>
+      <div class="showcase-copy">
+        <p class="eyebrow">Gestión comercial · acceso interno</p>
+        <h1>Convertí cada consulta en una propuesta clara para avanzar.</h1>
+        <p>Identificá la necesidad del cliente, elegí la campaña adecuada y presentá una condición comercial ordenada y profesional.</p>
+      </div>
+      <div class="showcase-points" aria-label="Características del portal">
+        <span>Campañas vigentes</span>
+        <span>Gestión guiada</span>
+        <span>Constancia comercial</span>
+      </div>
+    </section>
+
+    <section class="login-panel">
+      <form class="login-card" id="loginForm" novalidate>
+        <div class="login-heading">
+          <span class="secure-badge">Portal del equipo comercial</span>
+          <h2>Ingresá a tu gestión</h2>
+          <p>Usá tu código personal para comenzar una nueva propuesta.</p>
+        </div>
+
+        <label class="field-label" for="sellerCode">Código de vendedor</label>
+        <input class="text-input" id="sellerCode" name="sellerCode" type="text" autocomplete="username" placeholder="Ej. GS001" required>
+
+        <label class="field-label" for="sellerPassword">Contraseña</label>
+        <div class="password-field">
+          <input class="text-input" id="sellerPassword" name="sellerPassword" type="password" autocomplete="current-password" placeholder="Ingresá tu contraseña" required>
+          <button class="password-toggle" id="passwordToggle" type="button" aria-label="Mostrar contraseña">Ver</button>
+        </div>
+
+        <p class="form-error" id="loginError" role="alert" aria-live="polite"></p>
+        <button class="primary-button login-button" type="submit">Ingresar al portal</button>
+
+        <small class="security-note">Acceso personal y protegido. Solicitá tu usuario a un administrador.</small>
+      </form>
+    </section>
+  </main>
+
+  <div class="portal" id="portal" hidden>
+    <aside class="sidebar">
+      <a class="sidebar-logo" href="/" aria-label="Compromiso Mi 0km">
+        <img src="../assets/logo-light.webp" alt="Grupo Sur Automotores">
+      </a>
+
+      <nav class="sidebar-nav" aria-label="Navegación del portal">
+        <button class="nav-item is-active" type="button" data-action="home">
+          <span class="nav-icon" aria-hidden="true">⌂</span>
+          Nueva gestión
+        </button>
+        <button class="nav-item" type="button" data-action="history">
+          <span class="nav-icon" aria-hidden="true">◷</span>
+          Actividad reciente
+        </button>
+      </nav>
+
+      <div class="seller-card">
+        <div class="seller-avatar" id="sellerAvatar">AD</div>
+        <div>
+          <strong id="sidebarSellerName">Asesor Demo</strong>
+          <span id="sidebarSellerCode">Código GS001</span>
+        </div>
+      </div>
+      <button class="logout-button" id="logoutButton" type="button">Cerrar sesión</button>
+    </aside>
+
+    <section class="workspace">
+      <header class="portal-header">
+        <div>
+          <p class="header-kicker" id="headerKicker">Centro de gestión comercial</p>
+          <h1 id="pageTitle">Iniciar nueva gestión</h1>
+        </div>
+        <div class="header-actions">
+          <span class="demo-pill">Portal interno</span>
+          <time id="currentDate"></time>
+        </div>
+      </header>
+
+      <div class="workspace-content">
+        <ol class="stepper" id="stepper" aria-label="Progreso de la precalificación">
+          <li class="is-current" data-step="brand"><span>1</span> Marca</li>
+          <li data-step="model"><span>2</span> Modelo</li>
+          <li data-step="offer"><span>3</span> Plan</li>
+          <li data-step="client"><span>4</span> Cliente</li>
+          <li data-step="result"><span>5</span> Resultado</li>
+        </ol>
+
+        <section class="view is-active" id="brandView" aria-labelledby="brandTitle">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow dark">Paso 1 de 5</p>
+              <h2 id="brandTitle">¿Qué marca está evaluando el cliente?</h2>
+              <p>Empezá por su interés principal para encontrar la propuesta comercial más adecuada.</p>
+            </div>
+            <span class="campaign-status"><i></i> Condiciones sincronizadas</span>
+          </div>
+          <div class="brand-options" id="brandOptions"></div>
+        </section>
+
+        <section class="view" id="modelView" aria-labelledby="modelTitle">
+          <div class="section-heading">
+            <div>
+              <button class="back-link" type="button" data-action="back-to-brands">← Volver a marcas</button>
+              <p class="eyebrow dark">Paso 2 de 5</p>
+              <h2 id="modelTitle">Elegí el modelo que está evaluando</h2>
+              <p id="modelViewCopy">Modelos con propuestas comerciales disponibles para esta marca.</p>
+            </div>
+            <div class="selected-brand" id="selectedBrandBadge"></div>
+          </div>
+          <div class="model-options" id="modelOptions"></div>
+        </section>
+
+        <section class="view" id="offerView" aria-labelledby="offerTitle">
+          <div class="section-heading">
+            <div>
+              <button class="back-link" type="button" data-action="back-to-models">← Cambiar modelo</button>
+              <p class="eyebrow dark">Paso 3 de 5</p>
+              <h2 id="offerTitle">Elegí el plan comercial</h2>
+              <p id="offerViewCopy">Seleccioná la versión y la condición que se presentará al cliente.</p>
+            </div>
+            <div class="selected-brand" id="selectedModelBadge"></div>
+          </div>
+          <div class="offer-options" id="offerOptions"></div>
+        </section>
+
+        <section class="view" id="clientView" aria-labelledby="clientTitle">
+          <div class="section-heading compact-heading">
+            <div>
+              <button class="back-link" type="button" data-action="back-to-offers">← Cambiar plan</button>
+              <p class="eyebrow dark">Paso 4 de 5</p>
+              <h2 id="clientTitle">Validá los datos para personalizar la propuesta</h2>
+              <p>Completalos junto al cliente antes de generar la constancia comercial.</p>
+            </div>
+          </div>
+
+          <div class="form-layout">
+            <form class="client-form" id="clientForm" novalidate>
+              <div class="form-section-title">
+                <span>01</span>
+                <div>
+                  <h3>Datos para continuar la gestión</h3>
+                  <p>Verificá cada dato en voz alta junto al cliente.</p>
+                </div>
+              </div>
+
+              <div class="form-grid">
+                <label class="field-group field-wide">
+                  <span>Nombre y apellido</span>
+                  <input class="text-input" name="fullName" type="text" autocomplete="name" placeholder="Ej. Martín González" required>
+                </label>
+                <label class="field-group">
+                  <span>Teléfono</span>
+                  <input class="text-input" name="phone" type="tel" autocomplete="tel" inputmode="tel" placeholder="Ej. 11 3456 7890" required>
+                </label>
+                <label class="field-group">
+                  <span>Correo electrónico</span>
+                  <input class="text-input" name="email" type="email" autocomplete="email" placeholder="cliente@email.com" required>
+                </label>
+                <label class="field-group field-wide">
+                  <span>CUIL</span>
+                  <input class="text-input" name="cuil" type="text" inputmode="numeric" placeholder="XX-XXXXXXXX-X" maxlength="13" required>
+                  <small>Se mostrará parcialmente oculto en la constancia.</small>
+                </label>
+              </div>
+
+              <label class="consent-box">
+                <input name="consent" type="checkbox" required>
+                <span>
+                  <strong>Conformidad para continuar</strong>
+                  El cliente confirma que los datos son correctos y autoriza su uso para preparar esta propuesta comercial y continuar el contacto con su asesor.
+                </span>
+              </label>
+
+              <p class="form-error" id="clientError" role="alert" aria-live="polite"></p>
+              <button class="primary-button" type="submit">Validar cliente y generar propuesta</button>
+            </form>
+
+            <aside class="selection-summary" id="selectionSummary" aria-label="Resumen del vehículo elegido"></aside>
+          </div>
+        </section>
+
+        <section class="view" id="resultView" aria-labelledby="resultTitle">
+          <div class="result-toolbar">
+            <button class="back-link" type="button" data-action="new-request">← Nueva precalificación</button>
+            <div class="result-actions">
+              <button class="secondary-button" id="printButton" type="button">Imprimir constancia</button>
+              <button class="primary-button" id="applicationButton" type="button" disabled>Completar solicitud comercial</button>
+            </div>
+          </div>
+
+          <article class="approval-card">
+            <div class="approval-hero" id="approvalHero">
+              <div class="approval-image-wrap">
+                <img id="resultVehicleImage" src="" alt="">
+                <span class="approval-brand-mark"><img id="resultBrandLogo" src="" alt=""></span>
+              </div>
+              <div class="approval-copy">
+                <div class="approval-topline">
+                  <span class="approval-badge"><i>✓</i> Precalificación aprobada</span>
+                  <span class="promotion-badge"><strong>10% de descuento</strong><small>en unidades seleccionadas</small></span>
+                </div>
+                <p class="result-brand" id="resultBrand"></p>
+                <h2 id="resultTitle"></h2>
+                <p id="resultIntro"></p>
+                <div class="validity-card">
+                  <span>Vigencia de esta constancia</span>
+                  <strong id="countdown">24:00:00</strong>
+                  <small id="validUntil"></small>
+                </div>
+              </div>
+            </div>
+
+            <div class="approval-details">
+              <section>
+                <p class="detail-label">Cliente</p>
+                <h3 id="resultClientName"></h3>
+                <dl class="detail-list">
+                  <div><dt>CUIL</dt><dd id="resultCuil"></dd></div>
+                  <div><dt>Teléfono</dt><dd id="resultPhone"></dd></div>
+                  <div><dt>Correo</dt><dd id="resultEmail"></dd></div>
+                </dl>
+              </section>
+              <section>
+                <p class="detail-label">Condición preliminar</p>
+                <h3 id="resultCampaign"></h3>
+                <dl class="detail-list">
+                  <div><dt>Anticipo estimado</dt><dd id="resultAdvance"></dd></div>
+                  <div><dt>Cuota estimada</dt><dd id="resultInstallment"></dd></div>
+                  <div><dt>Versión</dt><dd id="resultVersion"></dd></div>
+                  <div><dt>Disponibilidad</dt><dd id="resultAvailability"></dd></div>
+                  <div><dt>Bonificación</dt><dd id="resultBonus"></dd></div>
+                  <div><dt>Beneficios</dt><dd id="resultBenefits"></dd></div>
+                </dl>
+              </section>
+              <section class="advisor-detail">
+                <p class="detail-label">Asesor responsable</p>
+                <h3 id="resultSellerName"></h3>
+                <dl class="detail-list">
+                  <div><dt>Código</dt><dd id="resultSellerCode"></dd></div>
+                  <div><dt>Contacto</dt><dd id="resultSellerPhone"></dd></div>
+                  <div><dt>Constancia</dt><dd id="resultRequestId"></dd></div>
+                </dl>
+              </section>
+            </div>
+
+            <footer class="approval-footer">
+              <img src="../assets/logo-header.webp" alt="Grupo Sur Automotores">
+              <p>Resultado comercial preliminar y no vinculante. No constituye una aprobación financiera definitiva. Sujeto a validación documental, análisis crediticio, disponibilidad y condiciones vigentes.</p>
+            </footer>
+          </article>
+        </section>
+
+        <section class="view" id="applicationView" aria-labelledby="applicationTitle">
+          <div class="section-heading compact-heading">
+            <div>
+              <button class="back-link" type="button" data-action="back-to-result">← Volver a la precalificación</button>
+              <p class="eyebrow dark">Segunda etapa comercial</p>
+              <h2 id="applicationTitle">Completá la solicitud junto al cliente</h2>
+              <p>Los datos iniciales ya están precargados. Revisá la información antes de guardar y generar la minuta.</p>
+            </div>
+            <span class="application-code" id="applicationRequestCode"></span>
+          </div>
+
+          <form class="application-form" id="applicationForm" novalidate>
+            <section class="application-section">
+              <div class="application-section-heading"><span>01</span><div><h3>Datos del cliente</h3><p>Identificación y domicilio declarado.</p></div></div>
+              <div class="application-grid">
+                <label class="field-group"><span>Nombre</span><input class="text-input" name="firstName" type="text" autocomplete="given-name" required></label>
+                <label class="field-group"><span>Apellido</span><input class="text-input" name="lastName" type="text" autocomplete="family-name" required></label>
+                <label class="field-group"><span>Tipo de documento</span><select class="text-input" name="documentType" required><option value="DNI">DNI</option><option value="LC">LC</option><option value="LE">LE</option><option value="Pasaporte">Pasaporte</option></select></label>
+                <label class="field-group"><span>Número de documento</span><input class="text-input" name="documentNumber" type="text" inputmode="numeric" maxlength="12" required></label>
+                <label class="field-group"><span>CUIL</span><input class="text-input" name="cuil" type="text" readonly></label>
+                <label class="field-group"><span>Fecha de nacimiento</span><input class="text-input" name="birthDate" type="date" required></label>
+                <label class="field-group field-wide"><span>Domicilio</span><input class="text-input" name="address" type="text" autocomplete="street-address" required></label>
+                <label class="field-group"><span>Localidad / Provincia</span><input class="text-input" name="cityProvince" type="text" required></label>
+                <label class="field-group"><span>Código postal</span><input class="text-input" name="postalCode" type="text" autocomplete="postal-code" maxlength="10" required></label>
+                <label class="field-group"><span>Estado civil</span><select class="text-input" name="maritalStatus" required><option value="">Seleccionar</option><option>Soltero/a</option><option>Casado/a</option><option>Conviviente</option><option>Divorciado/a</option><option>Viudo/a</option></select></label>
+                <label class="field-group"><span>Nombre del cónyuge</span><input class="text-input" name="spouseName" type="text"></label>
+                <label class="field-group"><span>DNI del cónyuge</span><input class="text-input" name="spouseDocument" type="text" inputmode="numeric" maxlength="12"></label>
+              </div>
+            </section>
+
+            <div class="application-columns">
+              <section class="application-section">
+                <div class="application-section-heading"><span>02</span><div><h3>Contacto</h3><p>Canales y horario preferido.</p></div></div>
+                <div class="application-grid one-column">
+                  <label class="field-group"><span>Teléfono particular</span><input class="text-input" name="primaryPhone" type="tel" autocomplete="tel" required></label>
+                  <label class="field-group"><span>Teléfono alternativo</span><input class="text-input" name="alternatePhone" type="tel"></label>
+                  <label class="field-group"><span>Correo electrónico</span><input class="text-input" name="email" type="email" autocomplete="email" required></label>
+                  <label class="field-group"><span>Forma y horario de contacto</span><input class="text-input" name="contactSchedule" type="text" placeholder="Ej. WhatsApp de 14 a 18 h" required></label>
+                </div>
+              </section>
+
+              <section class="application-section">
+                <div class="application-section-heading"><span>03</span><div><h3>Datos laborales</h3><p>Situación declarada por el cliente.</p></div></div>
+                <div class="application-grid one-column">
+                  <label class="field-group"><span>Condición laboral</span><select class="text-input" name="employmentStatus" required><option value="">Seleccionar</option><option>Relación de dependencia</option><option>Monotributista / autónomo</option><option>Jubilado/a o pensionado/a</option><option>Actividad informal</option><option>Otro</option></select></label>
+                  <label class="field-group"><span>Empresa / actividad</span><input class="text-input" name="employerName" type="text" required></label>
+                  <label class="field-group"><span>Antigüedad laboral</span><span class="input-affix input-affix-suffix"><input class="text-input" name="employmentSeniority" type="number" inputmode="numeric" min="0" max="80" step="1" placeholder="3" required><span>años</span></span></label>
+                  <label class="field-group"><span>Sueldo / ingresos mensuales</span><span class="input-affix input-affix-prefix"><span>$</span><input class="text-input" name="monthlyIncome" type="number" inputmode="numeric" min="1" step="1" placeholder="2000000" required></span></label>
+                </div>
+              </section>
+            </div>
+
+            <section class="application-section">
+              <div class="application-section-heading"><span>04</span><div><h3>Condiciones comerciales</h3><p>Información acordada durante la gestión.</p></div></div>
+              <div class="application-vehicle-summary"><strong id="applicationVehicle"></strong><span id="applicationCampaign"></span></div>
+              <div class="application-grid commercial-grid">
+                <label class="field-group"><span>Débito automático</span><select class="text-input" name="automaticDebit" required><option value="">Seleccionar</option><option value="true">Sí</option><option value="false">No</option></select></label>
+                <label class="field-group"><span>Cuota diferida</span><select class="text-input" name="deferredInstallment" required><option value="">Seleccionar</option><option value="true">Sí</option><option value="false">No</option></select></label>
+                <label class="field-group"><span>Cuotas abonadas</span><input class="text-input" name="installmentsPaid" type="number" min="0" max="999" value="0" required></label>
+                <label class="field-group"><span>Cuotas a pagar</span><input class="text-input" name="installmentsToPay" type="number" min="0" max="999" required></label>
+                <label class="field-group"><span>Tipo de plan</span><input class="text-input" name="planType" type="text" required></label>
+                <label class="field-group"><span>Precio pactado</span><input class="text-input" name="agreedPrice" type="text" inputmode="numeric" placeholder="$" required></label>
+                <label class="field-group"><span>Fecha del primer pago</span><input class="text-input" name="firstPaymentDate" type="date"></label>
+                <label class="field-group"><span>Importe del primer pago</span><input class="text-input" name="firstPaymentAmount" type="text" inputmode="numeric" placeholder="$"></label>
+                <label class="field-group"><span>Fecha del segundo pago</span><input class="text-input" name="secondPaymentDate" type="date"></label>
+                <label class="field-group"><span>Importe del segundo pago</span><input class="text-input" name="secondPaymentAmount" type="text" inputmode="numeric" placeholder="$"></label>
+              </div>
+            </section>
+
+            <label class="consent-box application-consent">
+              <input name="applicationConsent" type="checkbox" required>
+              <span><strong>Confirmación conjunta</strong>El vendedor leyó la información junto al cliente y ambas partes confirman que los datos y condiciones declarados son correctos para emitir esta minuta comercial.</span>
+            </label>
+
+            <p class="form-error" id="applicationError" role="alert" aria-live="polite"></p>
+            <div class="application-submit-row">
+              <p>Al continuar, la solicitud quedará guardada y se abrirá el diálogo para descargarla como PDF.</p>
+              <button class="primary-button" id="applicationSubmitButton" type="submit">Guardar y generar PDF</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="view" id="historyView" aria-labelledby="historyTitle">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow dark">Seguimiento comercial</p>
+              <h2 id="historyTitle">Gestiones recientes</h2>
+              <p>Consultá las constancias generadas durante esta sesión sin exponer CUIL completos.</p>
+            </div>
+            <button class="primary-button compact-button" type="button" data-action="home">Iniciar nueva gestión</button>
+          </div>
+          <div class="history-list" id="historyList"></div>
+        </section>
+      </div>
+    </section>
+  </div>
+
+  <section class="minute-print" id="minutePrint" aria-hidden="true"></section>
+
+  <div class="processing-overlay" id="processingOverlay" hidden aria-live="polite" aria-busy="true">
+    <div class="processing-card">
+      <div class="spinner" aria-hidden="true"></div>
+      <p class="eyebrow dark">Preparando propuesta comercial</p>
+      <h2 id="processingTitle">Validando los datos ingresados…</h2>
+      <p id="processingCopy">Estamos organizando la información para presentar al cliente.</p>
+      <div class="processing-progress"><span id="processingBar"></span></div>
+      <small>No cierres esta ventana.</small>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.2/dist/umd/supabase.js"></script>
+  <script src="/vendedores/supabase-config.js?v=20260813-2"></script>
+  <script src="/vendedores/app.js?v=20260813-5"></script>
+</body>
+</html>

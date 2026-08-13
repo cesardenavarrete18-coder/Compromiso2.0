@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Administración de campañas del portal de vendedores de Grupo Sur Automotores.">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Administración de campañas | Grupo Sur Automotores</title>
+  <link rel="icon" href="/assets/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/vendedores/admin/admin.css?v=20260813-4">
+</head>
+<body>
+  <main class="admin-login" id="adminLogin">
+    <section class="login-showcase">
+      <a href="/" class="showcase-logo" aria-label="Volver a Compromiso Mi 0km">
+        <img src="/assets/logo-light.webp" alt="Grupo Sur Automotores">
+      </a>
+      <div class="showcase-copy">
+        <p class="eyebrow">Dirección comercial · acceso restringido</p>
+        <h1>La operación comercial, siempre bajo control.</h1>
+        <p>Definí qué propuesta comunica el equipo, durante cuánto tiempo y con qué argumentos para avanzar cada gestión.</p>
+      </div>
+      <div class="showcase-foot">Campañas · vigencias · equipo</div>
+    </section>
+
+    <section class="login-panel">
+      <form class="login-card" id="adminLoginForm" novalidate>
+        <span class="secure-badge">Gestión centralizada</span>
+        <h2>Ingresá al panel</h2>
+        <p>Administrá las condiciones que utiliza todo el equipo comercial.</p>
+
+        <label for="adminCode">Correo electrónico</label>
+        <input id="adminCode" name="adminCode" type="email" autocomplete="username" placeholder="administrador@email.com" required>
+
+        <label for="adminPassword">Contraseña</label>
+        <div class="password-field">
+          <input id="adminPassword" name="adminPassword" type="password" autocomplete="current-password" placeholder="Ingresá tu contraseña" required>
+          <button id="passwordToggle" type="button" aria-label="Mostrar contraseña">Ver</button>
+        </div>
+
+        <p class="form-error" id="loginError" role="alert" aria-live="polite"></p>
+        <button class="primary-button" id="adminLoginButton" type="submit">Ingresar al panel</button>
+        <button class="first-access-button" id="firstAccessButton" type="button">Crear mi acceso por primera vez</button>
+
+        <div class="demo-access">
+          <strong>Administrador autorizado</strong>
+          <span>cesardenavarrete18@gmail.com</span>
+        </div>
+        <small>La contraseña debe tener al menos 8 caracteres y nunca se muestra a otros usuarios.</small>
+      </form>
+    </section>
+  </main>
+
+  <div class="admin-app" id="adminApp" hidden>
+    <aside class="sidebar">
+      <a href="/" class="sidebar-logo" aria-label="Compromiso Mi 0km">
+        <img src="/assets/logo-light.webp" alt="Grupo Sur Automotores">
+      </a>
+
+      <nav aria-label="Navegación de administración">
+        <button class="nav-item is-active" type="button" data-admin-view="campaigns">
+          <span aria-hidden="true">▦</span>
+          Campañas
+        </button>
+        <button class="nav-item" type="button" data-admin-view="sellers">
+          <span aria-hidden="true">♙</span>
+          Vendedores
+        </button>
+        <button class="nav-item" type="button" data-admin-view="prequalifications">
+          <span aria-hidden="true">▤</span>
+          Precalificaciones
+        </button>
+        <a class="nav-item" href="/vendedores/" target="_blank" rel="noopener">
+          <span aria-hidden="true">↗</span>
+          Portal vendedores
+        </a>
+      </nav>
+
+      <div class="sidebar-info">
+        <span class="admin-avatar">AD</span>
+        <div><strong>Administrador</strong><small>Acceso protegido</small></div>
+      </div>
+      <button class="logout-button" id="logoutButton" type="button">Cerrar sesión</button>
+    </aside>
+
+    <main class="workspace">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow dark">Operación comercial centralizada</p>
+          <h1>Gestión de campañas y equipo</h1>
+        </div>
+        <div class="topbar-meta">
+          <span class="demo-pill">Conectado a Supabase</span>
+          <time id="currentDate"></time>
+        </div>
+      </header>
+
+      <div class="workspace-content">
+        <div class="local-notice" role="note">
+          <span aria-hidden="true">✓</span>
+          <div><strong>Propuestas centralizadas para todo el equipo</strong><p>Cada plan, anticipo y cuota publicada se refleja en el portal y se conserva en las próximas gestiones emitidas.</p></div>
+        </div>
+
+        <div id="campaignAdminView">
+        <section class="stats" aria-label="Resumen de campañas">
+          <article><span>Propuestas publicadas</span><strong id="activeCount">0</strong><small>Activas y dentro de vigencia</small></article>
+          <article><span>Disponibilidad informada</span><strong id="slotCount">0</strong><small>Cupos actualizados manualmente</small></article>
+          <article><span>Vigencia promedio</span><strong id="timerAverage">0 h</strong><small>Desde cada precalificación</small></article>
+        </section>
+
+        <section class="campaign-section">
+          <div class="section-heading">
+            <div><h2>Planes y propuestas por modelo</h2><p>Administrá versiones, anticipos, cuotas, beneficios, disponibilidad y vigencia.</p></div>
+            <div class="brand-filters" id="brandFilters" aria-label="Filtrar por marca"></div>
+          </div>
+
+          <div class="campaign-layout">
+            <div class="campaign-list" id="campaignList" aria-label="Listado de campañas"></div>
+
+            <form class="editor" id="campaignForm" novalidate>
+              <header class="editor-header">
+                <div class="editor-vehicle">
+                  <img id="editorImage" src="" alt="">
+                  <div><span id="editorBrand"></span><h2 id="editorModel"></h2><p id="editorCampaign"></p></div>
+                </div>
+                <label class="switch-row">
+                  <span><strong>Campaña activa</strong><small>Visible si también está vigente</small></span>
+                  <span class="switch"><input id="campaignActive" name="active" type="checkbox"><i></i></span>
+                </label>
+              </header>
+
+              <div class="editor-grid">
+                <label class="field">
+                  <span>Nombre del plan</span>
+                  <input id="campaignPlanName" name="planName" type="text" maxlength="80" placeholder="Ej. Plan 70/30" required>
+                  <small>Identifica la propuesta ante el vendedor.</small>
+                </label>
+
+                <label class="field">
+                  <span>Versión</span>
+                  <input id="campaignVersionName" name="versionName" type="text" maxlength="80" placeholder="Ej. Allure">
+                  <small>Vacío: no se informa una versión.</small>
+                </label>
+
+                <label class="field">
+                  <span>Transmisión</span>
+                  <select id="campaignTransmission" name="transmission">
+                    <option value="">No especificada</option>
+                    <option value="MT">Manual (MT)</option>
+                    <option value="AT">Automática (AT)</option>
+                  </select>
+                </label>
+
+                <label class="field">
+                  <span>Cantidad total de cuotas</span>
+                  <input id="campaignInstallmentCount" name="installmentCount" type="number" min="1" max="240" step="1" inputmode="numeric" placeholder="Ej. 84">
+                  <small>Vacío: cantidad a confirmar.</small>
+                </label>
+
+                <label class="field">
+                  <span>Anticipo</span>
+                  <div class="input-prefix"><span>$</span><input id="campaignAdvanceAmount" name="advanceAmount" type="number" min="0" step="1" inputmode="numeric" placeholder="0"></div>
+                  <small>Se actualiza cuando cambian las condiciones.</small>
+                </label>
+
+                <label class="field">
+                  <span>Cuota visible</span>
+                  <div class="input-prefix"><span>$</span><input id="campaignInstallmentAmount" name="installmentAmount" type="number" min="0" step="1" inputmode="numeric" placeholder="0"></div>
+                  <div class="inline-check"><input id="campaignInstallmentIsFrom" name="installmentIsFrom" type="checkbox"><span>Mostrar como “Desde”</span></div>
+                </label>
+
+                <label class="field field-wide">
+                  <span>Beneficio principal para presentar</span>
+                  <input id="campaignBonus" name="bonus" type="text" maxlength="120" placeholder="Ej. Bonificación especial de lanzamiento">
+                  <small>Se muestra en el resumen y en la constancia.</small>
+                </label>
+
+                <label class="field field-wide">
+                  <span>Argumentos comerciales complementarios</span>
+                  <textarea id="campaignBenefits" name="benefits" rows="4" placeholder="Escribí un beneficio por línea"></textarea>
+                  <small>Un beneficio por línea.</small>
+                </label>
+
+                <label class="field">
+                  <span>Disponibilidad a comunicar</span>
+                  <input id="campaignSlots" name="slots" type="number" min="0" max="9999" step="1" inputmode="numeric">
+                  <small>Se modifica solo manualmente.</small>
+                </label>
+
+                <label class="field">
+                  <span>Vigencia de cada propuesta</span>
+                  <div class="input-suffix"><input id="campaignHours" name="validityHours" type="number" min="1" max="720" step="1" required><span>horas</span></div>
+                  <small>Comienza con cada aprobación.</small>
+                </label>
+
+                <label class="field">
+                  <span>Publicar desde</span>
+                  <input id="campaignValidFrom" name="validFrom" type="date">
+                  <small>Vacío: sin fecha de inicio.</small>
+                </label>
+
+                <label class="field">
+                  <span>Publicar hasta</span>
+                  <input id="campaignValidTo" name="validTo" type="date">
+                  <small>Vacío: sin vencimiento.</small>
+                </label>
+              </div>
+
+              <section class="offer-preview" aria-labelledby="previewTitle">
+                <div><span>Vista previa</span><h3 id="previewTitle"></h3><p id="previewBonus"></p></div>
+                <dl>
+                  <div><dt>Cupos</dt><dd id="previewSlots"></dd></div>
+                  <div><dt>Contador</dt><dd id="previewHours"></dd></div>
+                  <div><dt>Estado</dt><dd id="previewStatus"></dd></div>
+                </dl>
+              </section>
+
+              <p class="form-message" id="formMessage" role="status" aria-live="polite"></p>
+              <footer class="editor-actions">
+                <button class="secondary-button" id="resetButton" type="button">Restablecer condición base</button>
+                <button class="secondary-button" id="duplicateCampaignButton" type="button">Duplicar propuesta</button>
+                <button class="primary-button" type="submit">Publicar cambios</button>
+              </footer>
+            </form>
+          </div>
+        </section>
+        </div>
+
+        <section class="seller-section" id="sellerAdminView" hidden>
+          <div class="section-heading">
+            <div><h2>Equipo comercial y accesos</h2><p>Administrá quién puede iniciar gestiones y mantené cada acceso bajo control.</p></div>
+            <div class="seller-heading-actions">
+              <span class="seller-count" id="sellerCount">0 vendedores</span>
+              <button class="primary-button seller-export-button" id="exportSellersButton" type="button" disabled>Descargar base</button>
+            </div>
+          </div>
+
+          <div class="seller-layout">
+            <form class="seller-create-card" id="sellerForm" novalidate>
+              <span class="card-kicker">Incorporación al portal</span>
+              <h3>Habilitar vendedor</h3>
+              <label class="field"><span>Nombre y apellido</span><input name="fullName" type="text" placeholder="Ej. María González" required></label>
+              <label class="field"><span>Código de vendedor</span><input name="sellerCode" type="text" maxlength="20" placeholder="Ej. GS002" required></label>
+              <label class="field"><span>Teléfono</span><input name="phone" type="tel" minlength="6" maxlength="30" placeholder="Ej. 11 3456 7890" required></label>
+              <label class="field"><span>Correo electrónico</span><input name="contactEmail" type="email" maxlength="254" placeholder="Ej. maria@email.com" required></label>
+              <label class="field"><span>Contraseña inicial</span><input name="password" type="password" minlength="8" placeholder="Mínimo 8 caracteres" required></label>
+              <p class="form-message" id="sellerFormMessage" role="status" aria-live="polite"></p>
+              <button class="primary-button" type="submit">Crear acceso comercial</button>
+            </form>
+
+            <div class="seller-list-card">
+              <div class="seller-list-head"><span>Usuario</span><span>Estado</span><span>Acciones</span></div>
+              <div class="seller-list" id="sellerList"></div>
+            </div>
+          </div>
+          <p class="export-message seller-export-message" id="sellerExportMessage" role="status" aria-live="polite"></p>
+        </section>
+
+        <section class="prequalification-section" id="prequalificationAdminView" hidden>
+          <div class="section-heading prequalification-heading">
+            <div><h2>Clientes precalificados</h2><p>Consultá las nuevas gestiones registradas y descargá una planilla para trabajar en Excel.</p></div>
+            <button class="primary-button export-button" id="exportExcelButton" type="button" disabled>Descargar Excel</button>
+          </div>
+
+          <div class="prequalification-stats" aria-label="Resumen de precalificaciones">
+            <article><span>Registros exportables</span><strong id="prequalificationCount">0</strong><small>Con datos completos</small></article>
+            <article><span>Generadas hoy</span><strong id="prequalificationToday">0</strong><small>Según horario local</small></article>
+            <article><span>Modelos consultados</span><strong id="prequalificationModels">0</strong><small>En el listado actual</small></article>
+          </div>
+
+          <div class="prequalification-table-card">
+            <div class="table-scroll">
+              <table>
+                <thead><tr><th>Fecha</th><th>Nombre</th><th>Teléfono</th><th>DNI</th><th>Modelo</th><th>Asesor</th><th>Constancia</th></tr></thead>
+                <tbody id="prequalificationTableBody"></tbody>
+              </table>
+            </div>
+            <div class="prequalification-empty" id="prequalificationEmpty" hidden><strong>Todavía no hay registros exportables</strong><span>Las próximas precalificaciones aparecerán automáticamente en esta sección.</span></div>
+          </div>
+          <p class="export-message" id="exportMessage" role="status" aria-live="polite"></p>
+          <p class="privacy-note"><strong>Acceso restringido.</strong> La planilla contiene datos personales y debe utilizarse exclusivamente para la gestión comercial autorizada.</p>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <dialog class="password-dialog" id="passwordDialog">
+    <form method="dialog" id="passwordForm">
+      <button class="dialog-close" value="cancel" aria-label="Cerrar">×</button>
+      <span class="card-kicker">Seguridad</span>
+      <h3>Nueva contraseña</h3>
+      <p id="passwordSellerName"></p>
+      <input id="passwordUserId" type="hidden">
+      <label class="field"><span>Contraseña nueva</span><input id="newSellerPassword" type="password" minlength="8" placeholder="Mínimo 8 caracteres" required></label>
+      <p class="form-message" id="passwordMessage" role="status"></p>
+      <button class="primary-button" id="savePasswordButton" type="submit" value="save">Guardar contraseña</button>
+    </form>
+  </dialog>
+
+  <dialog class="password-dialog seller-edit-dialog" id="sellerEditDialog">
+    <form method="dialog" id="sellerEditForm">
+      <button class="dialog-close" value="cancel" aria-label="Cerrar">×</button>
+      <span class="card-kicker">Base de vendedores</span>
+      <h3>Editar vendedor</h3>
+      <input id="editSellerUserId" type="hidden">
+      <label class="field"><span>Nombre y apellido</span><input id="editSellerFullName" type="text" required></label>
+      <label class="field"><span>Código de vendedor</span><input id="editSellerCode" type="text" maxlength="20" required></label>
+      <label class="field"><span>Teléfono</span><input id="editSellerPhone" type="tel" minlength="6" maxlength="30" required></label>
+      <label class="field"><span>Correo electrónico</span><input id="editSellerEmail" type="email" maxlength="254" required></label>
+      <p class="form-message" id="sellerEditMessage" role="status"></p>
+      <button class="primary-button" id="saveSellerEditButton" type="submit" value="save">Guardar cambios</button>
+    </form>
+  </dialog>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.2/dist/umd/supabase.js"></script>
+  <script src="/vendedores/supabase-config.js?v=20260813-2"></script>
+  <script src="/vendedores/admin/excel-export.js?v=20260813-2"></script>
+  <script src="/vendedores/admin/admin.js?v=20260813-4"></script>
+</body>
+</html>
