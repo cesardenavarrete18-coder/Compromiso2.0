@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/vendedores/admin/admin.css?v=20260813-2">
+  <link rel="stylesheet" href="/vendedores/admin/admin.css?v=20260813-3">
 </head>
 <body>
   <main class="admin-login" id="adminLogin">
@@ -192,7 +192,10 @@
         <section class="seller-section" id="sellerAdminView" hidden>
           <div class="section-heading">
             <div><h2>Equipo comercial y accesos</h2><p>Administrá quién puede iniciar gestiones y mantené cada acceso bajo control.</p></div>
-            <span class="seller-count" id="sellerCount">0 vendedores</span>
+            <div class="seller-heading-actions">
+              <span class="seller-count" id="sellerCount">0 vendedores</span>
+              <button class="primary-button seller-export-button" id="exportSellersButton" type="button" disabled>Descargar base</button>
+            </div>
           </div>
 
           <div class="seller-layout">
@@ -201,7 +204,8 @@
               <h3>Habilitar vendedor</h3>
               <label class="field"><span>Nombre y apellido</span><input name="fullName" type="text" placeholder="Ej. María González" required></label>
               <label class="field"><span>Código de vendedor</span><input name="sellerCode" type="text" maxlength="20" placeholder="Ej. GS002" required></label>
-              <label class="field"><span>Teléfono</span><input name="phone" type="tel" placeholder="Ej. 11 3456 7890"></label>
+              <label class="field"><span>Teléfono</span><input name="phone" type="tel" minlength="6" maxlength="30" placeholder="Ej. 11 3456 7890" required></label>
+              <label class="field"><span>Correo electrónico</span><input name="contactEmail" type="email" maxlength="254" placeholder="Ej. maria@email.com" required></label>
               <label class="field"><span>Contraseña inicial</span><input name="password" type="password" minlength="8" placeholder="Mínimo 8 caracteres" required></label>
               <p class="form-message" id="sellerFormMessage" role="status" aria-live="polite"></p>
               <button class="primary-button" type="submit">Crear acceso comercial</button>
@@ -212,6 +216,7 @@
               <div class="seller-list" id="sellerList"></div>
             </div>
           </div>
+          <p class="export-message seller-export-message" id="sellerExportMessage" role="status" aria-live="polite"></p>
         </section>
 
         <section class="prequalification-section" id="prequalificationAdminView" hidden>
@@ -255,9 +260,24 @@
     </form>
   </dialog>
 
+  <dialog class="password-dialog seller-edit-dialog" id="sellerEditDialog">
+    <form method="dialog" id="sellerEditForm">
+      <button class="dialog-close" value="cancel" aria-label="Cerrar">×</button>
+      <span class="card-kicker">Base de vendedores</span>
+      <h3>Editar vendedor</h3>
+      <input id="editSellerUserId" type="hidden">
+      <label class="field"><span>Nombre y apellido</span><input id="editSellerFullName" type="text" required></label>
+      <label class="field"><span>Código de vendedor</span><input id="editSellerCode" type="text" maxlength="20" required></label>
+      <label class="field"><span>Teléfono</span><input id="editSellerPhone" type="tel" minlength="6" maxlength="30" required></label>
+      <label class="field"><span>Correo electrónico</span><input id="editSellerEmail" type="email" maxlength="254" required></label>
+      <p class="form-message" id="sellerEditMessage" role="status"></p>
+      <button class="primary-button" id="saveSellerEditButton" type="submit" value="save">Guardar cambios</button>
+    </form>
+  </dialog>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.2/dist/umd/supabase.js"></script>
   <script src="/vendedores/supabase-config.js?v=20260810-1"></script>
-  <script src="/vendedores/admin/excel-export.js?v=20260813-1"></script>
-  <script src="/vendedores/admin/admin.js?v=20260813-1"></script>
+  <script src="/vendedores/admin/excel-export.js?v=20260813-2"></script>
+  <script src="/vendedores/admin/admin.js?v=20260813-2"></script>
 </body>
 </html>

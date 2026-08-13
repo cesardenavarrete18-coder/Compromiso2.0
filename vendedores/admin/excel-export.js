@@ -97,8 +97,11 @@
     return concatBytes(localParts.concat([centralDirectory, endRecord]));
   }
 
-  function worksheetXml(rows) {
-    var widths = [28, 18, 14, 20, 26, 20, 24];
+  function worksheetXml(rows, customWidths) {
+    var widths = (customWidths || [28, 18, 14, 20, 26, 20, 24]).slice(0, rows[0].length);
+    while (widths.length < rows[0].length) {
+      widths.push(20);
+    }
     var rowXml = rows.map(function (row, rowIndex) {
       var cells = row.map(function (value, columnIndex) {
         var reference = columnName(columnIndex) + (rowIndex + 1);
@@ -120,10 +123,12 @@
       '</worksheet>';
   }
 
-  function buildWorkbook(rows) {
+  function buildWorkbook(rows, options) {
     if (!Array.isArray(rows) || !rows.length || !rows[0].length) {
       throw new Error("No hay datos para exportar.");
     }
+    options = options || {};
+    var sheetName = String(options.sheetName || "Precalificaciones").slice(0, 31);
     var files = [
       {
         name: "[Content_Types].xml",
@@ -135,7 +140,7 @@
       },
       {
         name: "xl/workbook.xml",
-        content: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Precalificaciones" sheetId="1" r:id="rId1"/></sheets></workbook>'
+        content: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="' + xmlEscape(sheetName) + '" sheetId="1" r:id="rId1"/></sheets></workbook>'
       },
       {
         name: "xl/_rels/workbook.xml.rels",
@@ -145,7 +150,7 @@
         name: "xl/styles.xml",
         content: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="2"><font><sz val="10"/><name val="Arial"/></font><font><b/><sz val="10"/><color rgb="FFFFFFFF"/><name val="Arial"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF001E50"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border><border><left style="thin"><color rgb="FFDCE5EF"/></left><right style="thin"><color rgb="FFDCE5EF"/></right><top style="thin"><color rgb="FFDCE5EF"/></top><bottom style="thin"><color rgb="FFDCE5EF"/></bottom><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="3"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment vertical="center"/></xf><xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment vertical="center"/></xf></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>'
       },
-      { name: "xl/worksheets/sheet1.xml", content: worksheetXml(rows) }
+      { name: "xl/worksheets/sheet1.xml", content: worksheetXml(rows, options.widths) }
     ];
     return createZip(files);
   }

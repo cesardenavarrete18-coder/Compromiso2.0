@@ -14,15 +14,19 @@ create table public.user_invites (
   seller_code text not null,
   full_name text not null,
   phone text,
+  contact_email text,
   active boolean not null default true,
   accepted_at timestamptz,
   created_at timestamptz not null default now(),
   constraint user_invites_email_normalized check (email = lower(trim(email))),
-  constraint user_invites_seller_code_format check (seller_code ~ '^[A-Z0-9_-]{3,20}$')
+  constraint user_invites_seller_code_format check (seller_code ~ '^[A-Z0-9_-]{3,20}$'),
+  constraint user_invites_phone_length check (phone is null or char_length(phone) between 6 and 30),
+  constraint user_invites_contact_email_format check (contact_email is null or (contact_email = lower(trim(contact_email)) and char_length(contact_email) <= 254 and contact_email ~* '^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$'))
 );
 
 create unique index user_invites_email_unique on public.user_invites (lower(email));
 create unique index user_invites_seller_code_unique on public.user_invites (upper(seller_code));
+create unique index user_invites_contact_email_unique on public.user_invites (lower(contact_email)) where contact_email is not null and accepted_at is null and active = true;
 
 create table public.profiles (
   user_id uuid primary key references auth.users (id) on delete cascade,
@@ -31,14 +35,18 @@ create table public.profiles (
   seller_code text not null,
   full_name text not null,
   phone text,
+  contact_email text,
   active boolean not null default true,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  constraint profiles_seller_code_format check (seller_code ~ '^[A-Z0-9_-]{3,20}$')
+  constraint profiles_seller_code_format check (seller_code ~ '^[A-Z0-9_-]{3,20}$'),
+  constraint profiles_phone_length check (phone is null or char_length(phone) between 6 and 30),
+  constraint profiles_contact_email_format check (contact_email is null or (contact_email = lower(trim(contact_email)) and char_length(contact_email) <= 254 and contact_email ~* '^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$'))
 );
 
 create unique index profiles_email_unique on public.profiles (lower(email));
 create unique index profiles_seller_code_unique on public.profiles (upper(seller_code));
+create unique index profiles_contact_email_unique on public.profiles (lower(contact_email)) where contact_email is not null;
 create index profiles_active_role_idx on public.profiles (role, active);
 
 create table public.brands (
@@ -289,8 +297,8 @@ begin
     raise exception 'No se encontró la invitación al crear el perfil.';
   end if;
 
-  insert into public.profiles (user_id, email, role, seller_code, full_name, phone, active)
-  values (new.id, lower(new.email), pending.role, upper(pending.seller_code), pending.full_name, pending.phone, true);
+  insert into public.profiles (user_id, email, role, seller_code, full_name, phone, contact_email, active)
+  values (new.id, lower(new.email), pending.role, upper(pending.seller_code), pending.full_name, pending.phone, pending.contact_email, true);
 
   update public.user_invites
   set accepted_at = now(), active = false

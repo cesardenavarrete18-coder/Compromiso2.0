@@ -19,6 +19,8 @@
   var formMessage = document.getElementById("formMessage");
   var sellerForm = document.getElementById("sellerForm");
   var sellerFormMessage = document.getElementById("sellerFormMessage");
+  var sellerExportMessage = document.getElementById("sellerExportMessage");
+  var exportSellersButton = document.getElementById("exportSellersButton");
   var exportMessage = document.getElementById("exportMessage");
   var exportExcelButton = document.getElementById("exportExcelButton");
   var topbarTitle = document.querySelector(".topbar h1");
@@ -265,6 +267,7 @@
 
   function renderSellers() {
     document.getElementById("sellerCount").textContent = state.sellers.length === 1 ? "1 vendedor" : state.sellers.length + " vendedores";
+    exportSellersButton.disabled = state.sellers.length === 0;
     var list = document.getElementById("sellerList");
     if (!state.sellers.length) {
       list.innerHTML = '<div class="seller-empty"><strong>Todavía no hay vendedores</strong>Creá el primer acceso desde el formulario.</div>';
@@ -273,11 +276,53 @@
     list.innerHTML = state.sellers.map(function (seller) {
       return "" +
         '<div class="seller-row">' +
-          '<div class="seller-identity"><span>' + escapeHtml((seller.full_name || "V").charAt(0)) + '</span><div><strong>' + escapeHtml(seller.full_name) + '</strong><small>' + escapeHtml(seller.seller_code) + (seller.phone ? " · " + escapeHtml(seller.phone) : "") + '</small></div></div>' +
+          '<div class="seller-identity"><span>' + escapeHtml((seller.full_name || "V").charAt(0)) + '</span><div><strong>' + escapeHtml(seller.full_name) + '</strong><small>' + escapeHtml(seller.seller_code) + " · " + escapeHtml(seller.phone || "Teléfono pendiente") + '</small><small>' + escapeHtml(seller.contact_email || "Correo pendiente") + '</small></div></div>' +
           '<span class="seller-status ' + (seller.active ? "is-active" : "is-paused") + '">' + (seller.active ? "Activo" : "Pausado") + '</span>' +
-          '<div class="seller-actions"><button type="button" data-user-action="password" data-user-id="' + seller.user_id + '" data-user-name="' + escapeHtml(seller.full_name) + '">Contraseña</button><button type="button" data-user-action="toggle" data-user-id="' + seller.user_id + '" data-active="' + seller.active + '">' + (seller.active ? "Pausar" : "Activar") + '</button></div>' +
+          '<div class="seller-actions"><button type="button" data-user-action="edit" data-user-id="' + seller.user_id + '">Editar</button><button type="button" data-user-action="password" data-user-id="' + seller.user_id + '" data-user-name="' + escapeHtml(seller.full_name) + '">Contraseña</button><button type="button" data-user-action="toggle" data-user-id="' + seller.user_id + '" data-active="' + seller.active + '">' + (seller.active ? "Pausar" : "Activar") + '</button></div>' +
         "</div>";
     }).join("");
+  }
+
+  function downloadSellers() {
+    sellerExportMessage.textContent = "";
+    sellerExportMessage.classList.remove("is-error");
+    if (!window.grupoSurExcel || !state.sellers.length) {
+      sellerExportMessage.textContent = "No hay vendedores disponibles para exportar.";
+      sellerExportMessage.classList.add("is-error");
+      return;
+    }
+    setBusy(exportSellersButton, true, "Preparando Excel…");
+    try {
+      var rows = [["Nombre", "Código", "Teléfono", "Correo", "Estado", "Fecha de alta"]].concat(state.sellers.map(function (seller) {
+        return [
+          seller.full_name,
+          seller.seller_code,
+          seller.phone || "",
+          seller.contact_email || "",
+          seller.active ? "Activo" : "Pausado",
+          formatPrequalificationDate(seller.created_at)
+        ];
+      }));
+      var bytes = window.grupoSurExcel.buildWorkbook(rows, {
+        sheetName: "Vendedores",
+        widths: [30, 16, 20, 32, 14, 22]
+      });
+      var blob = new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+      var url = URL.createObjectURL(blob);
+      var link = document.createElement("a");
+      link.href = url;
+      link.download = "base-vendedores-" + localDateKey(new Date()) + ".xlsx";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+      sellerExportMessage.textContent = "Base generada correctamente con " + state.sellers.length + " vendedores.";
+    } catch (error) {
+      sellerExportMessage.textContent = "No se pudo generar la base. Intentá nuevamente.";
+      sellerExportMessage.classList.add("is-error");
+    } finally {
+      setBusy(exportSellersButton, false);
+    }
   }
 
   function formatPrequalificationDate(value) {
@@ -483,6 +528,7 @@
   });
 
   exportExcelButton.addEventListener("click", downloadPrequalifications);
+  exportSellersButton.addEventListener("click", downloadSellers);
 
   document.getElementById("brandFilters").addEventListener("click", function (event) {
     var button = event.target.closest("[data-brand]");
@@ -594,6 +640,7 @@
         fullName: sellerForm.elements.fullName.value,
         sellerCode: sellerForm.elements.sellerCode.value,
         phone: sellerForm.elements.phone.value,
+        contactEmail: sellerForm.elements.contactEmail.value,
         password: sellerForm.elements.password.value
       });
       sellerForm.reset();
@@ -612,6 +659,21 @@
     if (!button) {
       return;
     }
+    if (button.dataset.userAction === "edit") {
+      var seller = state.sellers.find(function (item) { return item.user_id === button.dataset.userId; });
+      if (!seller) {
+        return;
+      }
+      document.getElementById("editSellerUserId").value = seller.user_id;
+      document.getElementById("editSellerFullName").value = seller.full_name || "";
+      document.getElementById("editSellerCode").value = seller.seller_code || "";
+      document.getElementById("editSellerPhone").value = seller.phone || "";
+      document.getElementById("editSellerEmail").value = seller.contact_email || "";
+      document.getElementById("sellerEditMessage").textContent = "";
+      document.getElementById("sellerEditMessage").classList.remove("is-error");
+      document.getElementById("sellerEditDialog").showModal();
+      return;
+    }
     if (button.dataset.userAction === "password") {
       document.getElementById("passwordUserId").value = button.dataset.userId;
       document.getElementById("passwordSellerName").textContent = button.dataset.userName;
@@ -627,6 +689,38 @@
     } catch (error) {
       sellerFormMessage.textContent = error.message;
       sellerFormMessage.classList.add("is-error");
+      setBusy(button, false);
+    }
+  });
+
+  document.getElementById("sellerEditForm").addEventListener("submit", async function (event) {
+    event.preventDefault();
+    if (event.submitter && event.submitter.value === "cancel") {
+      document.getElementById("sellerEditDialog").close();
+      return;
+    }
+    var message = document.getElementById("sellerEditMessage");
+    var button = document.getElementById("saveSellerEditButton");
+    message.textContent = "";
+    message.classList.remove("is-error");
+    setBusy(button, true, "Guardando…");
+    try {
+      await invokeUsers({
+        action: "update_seller",
+        userId: document.getElementById("editSellerUserId").value,
+        fullName: document.getElementById("editSellerFullName").value,
+        sellerCode: document.getElementById("editSellerCode").value,
+        phone: document.getElementById("editSellerPhone").value,
+        contactEmail: document.getElementById("editSellerEmail").value
+      });
+      document.getElementById("sellerEditDialog").close();
+      sellerFormMessage.textContent = "Datos del vendedor actualizados correctamente.";
+      sellerFormMessage.classList.remove("is-error");
+      await loadSellers();
+    } catch (error) {
+      message.textContent = error.message;
+      message.classList.add("is-error");
+    } finally {
       setBusy(button, false);
     }
   });
