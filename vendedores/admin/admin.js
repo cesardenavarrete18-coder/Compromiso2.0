@@ -8,7 +8,8 @@
     campaigns: [],
     profile: null,
     sellers: [],
-    prequalifications: []
+    prequalifications: [],
+    knowledgeDocuments: []
   };
 
   var adminLogin = document.getElementById("adminLogin");
@@ -24,6 +25,10 @@
   var exportMessage = document.getElementById("exportMessage");
   var exportExcelButton = document.getElementById("exportExcelButton");
   var topbarTitle = document.querySelector(".topbar h1");
+  var rulesForm = document.getElementById("aiRulesForm");
+  var knowledgeUploadForm = document.getElementById("knowledgeUploadForm");
+  var rulesMessage = document.getElementById("rulesMessage");
+  var knowledgeMessage = document.getElementById("knowledgeMessage");
 
   function escapeHtml(value) {
     return String(value == null ? "" : value)
@@ -478,10 +483,12 @@
     var campaigns = view === "campaigns";
     var sellers = view === "sellers";
     var prequalifications = view === "prequalifications";
+    var knowledge = view === "knowledge";
     document.getElementById("campaignAdminView").hidden = !campaigns;
     document.getElementById("sellerAdminView").hidden = !sellers;
     document.getElementById("prequalificationAdminView").hidden = !prequalifications;
-    topbarTitle.textContent = campaigns ? "Gestión de campañas y equipo" : sellers ? "Equipo comercial y accesos" : "Clientes precalificados";
+    document.getElementById("knowledgeAdminView").hidden = !knowledge;
+    topbarTitle.textContent = campaigns ? "Gestión de campañas y equipo" : sellers ? "Equipo comercial y accesos" : prequalifications ? "Clientes precalificados" : "Conocimiento de la IA";
     document.querySelectorAll("[data-admin-view]").forEach(function (button) {
       button.classList.toggle("is-active", button.dataset.adminView === view);
     });
@@ -501,7 +508,137 @@
         exportMessage.classList.add("is-error");
       });
     }
+    if (knowledge) {
+      loadKnowledge().catch(function (error) {
+        knowledgeMessage.textContent = error.message;
+        knowledgeMessage.classList.add("is-error");
+      });
+    }
   }
+
+  function knowledgeStatusLabel(status) {
+    return { pending: "Pendiente", processing: "Procesando", ready: "Listo", error: "Error" }[status] || status;
+  }
+
+  function renderKnowledgeDocuments() {
+    var container = document.getElementById("knowledgeDocumentList");
+    if (!state.knowledgeDocuments.length) {
+      container.innerHTML = '<div class="knowledge-empty"><strong>Todavía no hay documentos</strong><span>Cargá el primer PDF para darle contexto comercial al asistente.</span></div>';
+      return;
+    }
+    container.innerHTML = state.knowledgeDocuments.map(function (document) {
+      return '<article class="knowledge-document">' +
+        '<div class="knowledge-document-icon">PDF</div>' +
+        '<div class="knowledge-document-copy"><strong>' + escapeHtml(document.title) + '</strong><span>' + escapeHtml(document.brand) + ' · ' + escapeHtml(document.category) + '</span><small>' + escapeHtml(document.original_filename) + '</small>' + (document.processing_error ? '<small class="document-error">' + escapeHtml(document.processing_error) + '</small>' : '') + '</div>' +
+        '<span class="knowledge-status is-' + escapeHtml(document.processing_status) + '">' + escapeHtml(knowledgeStatusLabel(document.processing_status)) + '</span>' +
+        '<button class="document-delete" type="button" data-delete-document="' + escapeHtml(document.id) + '">Eliminar</button>' +
+      '</article>';
+    }).join("");
+  }
+
+  async function loadKnowledge() {
+    var results = await Promise.all([
+      supabaseClient.from("ai_assistant_settings").select("qualification_rules").eq("id", true).single(),
+      supabaseClient.from("ai_knowledge_documents").select("id, title, brand, category, original_filename, processing_status, processing_error, created_at").order("created_at", { ascending: false })
+    ]);
+    if (results[0].error) throw results[0].error;
+    if (results[1].error) throw results[1].error;
+    document.getElementById("qualificationRules").value = results[0].data.qualification_rules || "";
+    state.knowledgeDocuments = results[1].data || [];
+    renderKnowledgeDocuments();
+  }
+
+  rulesForm.addEventListener("submit", async function (event) {
+    event.preventDefault();
+    rulesMessage.textContent = "";
+    var button = rulesForm.querySelector('button[type="submit"]');
+    setBusy(button, true, "Guardando…");
+    try {
+      var result = await supabaseClient.from("ai_assistant_settings").update({ qualification_rules: document.getElementById("qualificationRules").value.trim(), updated_by: state.profile.user_id }).eq("id", true);
+      if (result.error) throw result.error;
+      rulesMessage.textContent = "Reglas actualizadas. Se aplicarán desde el próximo mensaje.";
+      rulesMessage.classList.remove("is-error");
+    } catch (error) {
+      rulesMessage.textContent = error.message;
+      rulesMessage.classList.add("is-error");
+    } finally {
+      setBusy(button, false);
+    }
+  });
+
+  document.getElementById("knowledgePdf").addEventListener("change", function () {
+    document.getElementById("knowledgeFileName").textContent = this.files[0] ? this.files[0].name : "Ningún archivo seleccionado";
+  });
+
+  knowledgeUploadForm.addEventListener("submit", async function (event) {
+    event.preventDefault();
+    knowledgeMessage.textContent = "";
+    var file = knowledgeUploadForm.elements.pdf.files[0];
+    var button = document.getElementById("uploadKnowledgeButton");
+    if (!file || file.type !== "application/pdf" || file.size > 20 * 1024 * 1024) {
+      knowledgeMessage.textContent = "Seleccioná un PDF válido de hasta 20 MB.";
+      knowledgeMessage.classList.add("is-error");
+      return;
+    }
+    setBusy(button, true, "Procesando PDF…");
+    var storagePath = state.profile.user_id + "/" + Date.now() + "-" + file.name.replace(/[^a-zA-Z0-9._-]+/g, "-");
+    try {
+      var upload = await supabaseClient.storage.from("ai-commercial-knowledge").upload(storagePath, file, { contentType: "application/pdf", upsert: false });
+      if (upload.error) throw upload.error;
+      var inserted = await supabaseClient.from("ai_knowledge_documents").insert({
+        title: knowledgeUploadForm.elements.title.value.trim(),
+        brand: knowledgeUploadForm.elements.brand.value,
+        category: knowledgeUploadForm.elements.category.value,
+        original_filename: file.name,
+        storage_path: storagePath,
+        mime_type: "application/pdf",
+        created_by: state.profile.user_id
+      }).select("id").single();
+      if (inserted.error) throw inserted.error;
+      var ingest = await supabaseClient.functions.invoke("ai-knowledge-ingest", { body: { document_id: inserted.data.id } });
+      if (ingest.error) throw ingest.error;
+      knowledgeMessage.textContent = ingest.data.status === "ready" ? "PDF cargado y listo para la IA." : "PDF cargado; OpenAI continúa procesándolo.";
+      knowledgeMessage.classList.remove("is-error");
+      knowledgeUploadForm.reset();
+      document.getElementById("knowledgeFileName").textContent = "Ningún archivo seleccionado";
+      await loadKnowledge();
+    } catch (error) {
+      knowledgeMessage.textContent = error.message || "No se pudo procesar el PDF.";
+      knowledgeMessage.classList.add("is-error");
+    } finally {
+      setBusy(button, false);
+    }
+  });
+
+  document.getElementById("knowledgeDocumentList").addEventListener("click", async function (event) {
+    var button = event.target.closest("[data-delete-document]");
+    if (!button || !window.confirm("¿Eliminar este documento del conocimiento de la IA?")) return;
+    setBusy(button, true, "Eliminando…");
+    try {
+      var result = await supabaseClient.functions.invoke("ai-knowledge-ingest", { body: { document_id: button.dataset.deleteDocument, action: "delete" } });
+      if (result.error) throw result.error;
+      await loadKnowledge();
+    } catch (error) {
+      knowledgeMessage.textContent = error.message;
+      knowledgeMessage.classList.add("is-error");
+      setBusy(button, false);
+    }
+  });
+
+  document.getElementById("refreshKnowledgeButton").addEventListener("click", function () {
+    var button = this;
+    setBusy(button, true, "Actualizando…");
+    Promise.all(state.knowledgeDocuments.filter(function (document) {
+      return document.processing_status === "processing";
+    }).map(function (document) {
+      return supabaseClient.functions.invoke("ai-knowledge-ingest", { body: { document_id: document.id, action: "status" } });
+    })).then(loadKnowledge).catch(function (error) {
+      knowledgeMessage.textContent = error.message;
+      knowledgeMessage.classList.add("is-error");
+    }).finally(function () {
+      setBusy(button, false);
+    });
+  });
 
   loginForm.addEventListener("submit", async function (event) {
     event.preventDefault();
@@ -537,7 +674,7 @@
       var result = await supabaseClient.auth.signUp({
         email: email,
         password: password,
-        options: { emailRedirectTo: window.location.origin + "/vendedores/admin/" }
+        options: { emailRedirectTo: window.location.origin + "/administracion/" }
       });
       if (result.error) {
         throw result.error;

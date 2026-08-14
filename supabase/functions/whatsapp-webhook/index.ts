@@ -56,6 +56,10 @@ function messageText(message: JsonRecord) {
   return typeof reply?.title === "string" ? reply.title.trim() : "";
 }
 
+function isConversationalMessage(message: JsonRecord) {
+  return ["text", "button", "interactive"].includes(String(message.type ?? "")) && messageText(message).length > 0;
+}
+
 function fallbackDecision(text: string): LeadDecision {
   const normalized = text.toLocaleLowerCase("es-AR");
   const salesIntent = /(0\s?km|auto|veh[ií]culo|modelo|cuota|anticipo|financi|plan|precio|entrega|volkswagen|peugeot|fiat)/i.test(normalized);
@@ -72,7 +76,7 @@ function fallbackDecision(text: string): LeadDecision {
   };
 }
 
-async function analyzeLeadConversation(history: string[], text: string): Promise<LeadDecision> {
+async function analyzeLeadConversation(history: string[], text: string, qualificationRules = "", vectorStoreId = ""): Promise<LeadDecision> {
   const apiKey = Deno.env.get("OPENAI_API_KEY") ?? "";
   if (!apiKey || !text) return fallbackDecision(text);
 
@@ -85,7 +89,7 @@ async function analyzeLeadConversation(history: string[], text: string): Promise
       body: JSON.stringify({
         model: Deno.env.get("OPENAI_LEAD_MODEL") ?? "gpt-4.1-mini",
         store: false,
-        max_output_tokens: 450,
+        max_output_tokens: 650,
         input: [
           {
             role: "developer",
@@ -94,13 +98,21 @@ Tu tarea es filtrar el lead y redactar la próxima respuesta de WhatsApp en espa
 
 Datos que conviene reunir de manera natural: modelo de interés, tipo de operación, anticipo disponible, si entrega usado (marca/modelo/año/km), zona, plazo de compra y experiencia previa con financiación.
 - Hacé como máximo dos preguntas por mensaje y no repitas datos ya informados.
+- Respondé específicamente a lo que dijo el cliente: mencioná el modelo, usado, anticipo, zona o plazo cuando ya estén informados. Evitá respuestas genéricas que podrían servir para cualquier conversación.
+- Presentate solamente en el primer mensaje de la conversación. En los siguientes, continuá naturalmente sin volver a saludar ni explicar que sos un asistente.
+- Preferí una sola pregunta concreta por turno. Si el cliente ya dio información suficiente, resumila y derivá en lugar de seguir interrogándolo.
 - No inventes precios, cuotas, stock, aprobaciones crediticias ni fechas de entrega.
 - Si ya hay al menos tres datos comerciales útiles, confirmá un resumen breve e indicá que un asesor continuará la gestión.
 - qualified: intención comercial concreta y datos suficientes para derivar.
 - follow_up: posible lead, pero todavía faltan datos.
 - unqualified: empleo, proveedor, spam o asunto ajeno. En ese caso respondé cortésmente que el canal es para consultas de vehículos.
 - priority high solo cuando expresa urgencia real, disponibilidad inmediata para avanzar o señar.
-- reply_text debe poder enviarse directamente por WhatsApp y no superar 600 caracteres.`,
+- reply_text debe poder enviarse directamente por WhatsApp y no superar 600 caracteres.
+
+Reglas comerciales configuradas por Administración:
+${qualificationRules || "Aplicá los criterios generales anteriores."}
+
+Si hay documentos comerciales disponibles, consultalos cuando la respuesta dependa de condiciones, modelos, planes o argumentos de venta. Nunca inventes un dato ausente.`,
           },
           { role: "user", content: conversation.slice(-8000) },
         ],
@@ -124,16 +136,24 @@ Datos que conviene reunir de manera natural: modelo de interés, tipo de operaci
             },
           },
         },
+        ...(vectorStoreId ? {
+          tools: [{ type: "file_search", vector_store_ids: [vectorStoreId], max_num_results: 3 }],
+        } : {}),
       }),
     });
-    if (!result.ok) return fallbackDecision(text);
+    if (!result.ok) {
+      const errorBody = await result.text();
+      console.error("OpenAI analysis failed", result.status, errorBody.slice(0, 1200));
+      return fallbackDecision(text);
+    }
     const payload = await result.json();
     const outputText = (payload.output || [])
       .flatMap((item: JsonRecord) => Array.isArray(item.content) ? item.content : [])
       .find((item: JsonRecord) => item.type === "output_text")?.text;
     if (typeof outputText !== "string") return fallbackDecision(text);
     return JSON.parse(outputText) as LeadDecision;
-  } catch {
+  } catch (error) {
+    console.error("OpenAI analysis exception", error instanceof Error ? error.message : String(error));
     return fallbackDecision(text);
   }
 }
@@ -207,6 +227,13 @@ Deno.serve(async (request) => {
   if (!supabaseUrl || !serviceRoleKey) return response({ error: "Server configuration incomplete" }, 500);
   const db = createClient(supabaseUrl, serviceRoleKey, { auth: { persistSession: false, autoRefreshToken: false } });
 
+  const assistantSettingsResult = await db
+    .from("ai_assistant_settings")
+    .select("qualification_rules, vector_store_id")
+    .eq("id", true)
+    .maybeSingle();
+  const assistantSettings = assistantSettingsResult.data || { qualification_rules: "", vector_store_id: "" };
+
   const entries = Array.isArray(webhook.entry) ? webhook.entry as JsonRecord[] : [];
   for (const entry of entries) {
     const changes = Array.isArray(entry.changes) ? entry.changes as JsonRecord[] : [];
@@ -215,6 +242,11 @@ Deno.serve(async (request) => {
       const messages = Array.isArray(value?.messages) ? value.messages as JsonRecord[] : [];
       const contacts = Array.isArray(value?.contacts) ? value.contacts as JsonRecord[] : [];
       for (const message of messages) {
+        // Meta también entrega reacciones, imágenes, ubicaciones y otros eventos en
+        // `messages`. Solo el contenido conversacional debe activar a la IA o
+        // modificar el estado del lead.
+        if (!isConversationalMessage(message)) continue;
+
         const whatsappMessageId = String(message.id ?? "");
         const duplicate = whatsappMessageId
           ? await db.from("lead_messages").select("id").eq("whatsapp_message_id", whatsappMessageId).maybeSingle()
@@ -230,7 +262,7 @@ Deno.serve(async (request) => {
 
         const existingResult = await db
           .from("leads")
-          .select("id, assigned_seller_user_id, routing_status")
+          .select("id, assigned_seller_user_id, routing_status, qualification_status")
           .eq("customer_phone", customerPhone)
           .not("routing_status", "in", "(closed,lost)")
           .gte("last_message_at", new Date(Date.now() - 30 * 86400000).toISOString())
@@ -238,11 +270,44 @@ Deno.serve(async (request) => {
           .limit(1)
           .maybeSingle();
         const existing = existingResult.data;
+
+        // Una vez calificado, el lead ya fue transferido al equipo comercial.
+        // Los mensajes posteriores se conservan y notifican al supervisor, pero
+        // la IA no reinicia el cuestionario ni compite con la atención humana.
+        if (existing?.qualification_status === "qualified") {
+          await db.from("lead_messages").insert({
+            lead_id: existing.id,
+            whatsapp_message_id: whatsappMessageId || null,
+            direction: "inbound",
+            message_type: String(message.type ?? "unknown"),
+            body,
+            raw_payload: message,
+          });
+          await db.from("leads").update({ last_message_at: new Date().toISOString() }).eq("id", existing.id);
+
+          const supervisors = await db.from("profiles").select("user_id").eq("role", "supervisor").eq("active", true);
+          if (supervisors.data?.length) {
+            await db.from("supervisor_notifications").insert(supervisors.data.map((supervisor) => ({
+              recipient_user_id: supervisor.user_id,
+              lead_id: existing.id,
+              notification_type: "routing_alert",
+              title: "Nuevo mensaje de un lead calificado",
+              body: `${customerName || customerPhone}: ${body}`.slice(0, 500),
+            })));
+          }
+          continue;
+        }
+
         const historyResult = existing?.id
           ? await db.from("lead_messages").select("direction, body").eq("lead_id", existing.id).order("created_at", { ascending: false }).limit(11)
           : { data: [] };
         const history = (historyResult.data || []).reverse().map((item) => `${item.direction === "outbound" ? "Asistente" : "Cliente"}: ${item.body}`);
-        const classification = await analyzeLeadConversation(history, body);
+        const classification = await analyzeLeadConversation(
+          history,
+          body,
+          String(assistantSettings.qualification_rules || ""),
+          String(assistantSettings.vector_store_id || ""),
+        );
 
         let seller: JsonRecord | null = null;
         if (!existing?.assigned_seller_user_id && codes.length) {
