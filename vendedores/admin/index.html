@@ -73,6 +73,10 @@
           <span aria-hidden="true">▤</span>
           Precalificaciones
         </button>
+        <a class="nav-item" href="/vendedores/supervisor/" target="_blank" rel="noopener">
+          <span aria-hidden="true">⌁</span>
+          Panel supervisor
+        </a>
         <a class="nav-item" href="/vendedores/" target="_blank" rel="noopener">
           <span aria-hidden="true">↗</span>
           Portal vendedores
@@ -233,7 +237,7 @@
           <div class="section-heading">
             <div><h2>Equipo comercial y accesos</h2><p>Administrá quién puede iniciar gestiones y mantené cada acceso bajo control.</p></div>
             <div class="seller-heading-actions">
-              <span class="seller-count" id="sellerCount">0 vendedores</span>
+              <span class="seller-count" id="sellerCount">0 integrantes</span>
               <button class="primary-button seller-export-button" id="exportSellersButton" type="button" disabled>Descargar base</button>
             </div>
           </div>
@@ -241,9 +245,10 @@
           <div class="seller-layout">
             <form class="seller-create-card" id="sellerForm" novalidate>
               <span class="card-kicker">Incorporación al portal</span>
-              <h3>Habilitar vendedor</h3>
+              <h3>Habilitar integrante</h3>
+              <label class="field"><span>Rol</span><select name="role"><option value="seller">Vendedor</option><option value="supervisor">Supervisor</option></select></label>
               <label class="field"><span>Nombre y apellido</span><input name="fullName" type="text" placeholder="Ej. María González" required></label>
-              <label class="field"><span>Código de vendedor</span><input name="sellerCode" type="text" maxlength="20" placeholder="Ej. GS002" required></label>
+              <label class="field"><span>Código interno</span><input name="sellerCode" type="text" maxlength="20" placeholder="Ej. GS002 o SUP01" required></label>
               <label class="field"><span>Teléfono</span><input name="phone" type="tel" minlength="6" maxlength="30" placeholder="Ej. 11 3456 7890" required></label>
               <label class="field"><span>Correo electrónico</span><input name="contactEmail" type="email" maxlength="254" placeholder="Ej. maria@email.com" required></label>
               <label class="field"><span>Contraseña inicial</span><input name="password" type="password" minlength="8" placeholder="Mínimo 8 caracteres" required></label>

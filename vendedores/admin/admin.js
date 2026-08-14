@@ -306,24 +306,24 @@
 
   async function loadSellers() {
     var data = await invokeUsers({ action: "list" });
-    state.sellers = (data.users || []).filter(function (user) { return user.role === "seller"; });
+    state.sellers = (data.users || []).filter(function (user) { return user.role === "seller" || user.role === "supervisor"; });
     renderSellers();
   }
 
   function renderSellers() {
-    document.getElementById("sellerCount").textContent = state.sellers.length === 1 ? "1 vendedor" : state.sellers.length + " vendedores";
+    document.getElementById("sellerCount").textContent = state.sellers.length === 1 ? "1 integrante" : state.sellers.length + " integrantes";
     exportSellersButton.disabled = state.sellers.length === 0;
     var list = document.getElementById("sellerList");
     if (!state.sellers.length) {
-      list.innerHTML = '<div class="seller-empty"><strong>Todavía no hay vendedores</strong>Creá el primer acceso desde el formulario.</div>';
+      list.innerHTML = '<div class="seller-empty"><strong>Todavía no hay integrantes</strong>Creá el primer acceso desde el formulario.</div>';
       return;
     }
     list.innerHTML = state.sellers.map(function (seller) {
       return "" +
         '<div class="seller-row">' +
-          '<div class="seller-identity"><span>' + escapeHtml((seller.full_name || "V").charAt(0)) + '</span><div><strong>' + escapeHtml(seller.full_name) + '</strong><small>' + escapeHtml(seller.seller_code) + " · " + escapeHtml(seller.phone || "Teléfono pendiente") + '</small><small>' + escapeHtml(seller.contact_email || "Correo pendiente") + '</small></div></div>' +
+          '<div class="seller-identity"><span>' + escapeHtml((seller.full_name || "V").charAt(0)) + '</span><div><strong>' + escapeHtml(seller.full_name) + '</strong><small>' + escapeHtml(seller.role === "supervisor" ? "Supervisor" : "Vendedor") + " · " + escapeHtml(seller.seller_code) + '</small><small>' + escapeHtml(seller.contact_email || "Correo pendiente") + '</small></div></div>' +
           '<span class="seller-status ' + (seller.active ? "is-active" : "is-paused") + '">' + (seller.active ? "Activo" : "Pausado") + '</span>' +
-          '<div class="seller-actions"><button type="button" data-user-action="edit" data-user-id="' + seller.user_id + '">Editar</button><button type="button" data-user-action="password" data-user-id="' + seller.user_id + '" data-user-name="' + escapeHtml(seller.full_name) + '">Contraseña</button><button type="button" data-user-action="toggle" data-user-id="' + seller.user_id + '" data-active="' + seller.active + '">' + (seller.active ? "Pausar" : "Activar") + '</button></div>' +
+          '<div class="seller-actions">' + (seller.role === "seller" ? '<button type="button" data-user-action="edit" data-user-id="' + seller.user_id + '">Editar</button>' : '') + '<button type="button" data-user-action="password" data-user-id="' + seller.user_id + '" data-user-name="' + escapeHtml(seller.full_name) + '">Contraseña</button><button type="button" data-user-action="toggle" data-user-id="' + seller.user_id + '" data-active="' + seller.active + '">' + (seller.active ? "Pausar" : "Activar") + '</button></div>' +
         "</div>";
     }).join("");
   }
@@ -338,9 +338,10 @@
     }
     setBusy(exportSellersButton, true, "Preparando Excel…");
     try {
-      var rows = [["Nombre", "Código", "Teléfono", "Correo", "Estado", "Fecha de alta"]].concat(state.sellers.map(function (seller) {
+      var rows = [["Nombre", "Rol", "Código", "Teléfono", "Correo", "Estado", "Fecha de alta"]].concat(state.sellers.map(function (seller) {
         return [
           seller.full_name,
+          seller.role === "supervisor" ? "Supervisor" : "Vendedor",
           seller.seller_code,
           seller.phone || "",
           seller.contact_email || "",
@@ -350,7 +351,7 @@
       }));
       var bytes = window.grupoSurExcel.buildWorkbook(rows, {
         sheetName: "Vendedores",
-        widths: [30, 16, 20, 32, 14, 22]
+        widths: [30, 16, 16, 20, 32, 14, 22]
       });
       var blob = new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
       var url = URL.createObjectURL(blob);
@@ -760,10 +761,12 @@
     sellerFormMessage.textContent = "";
     sellerFormMessage.classList.remove("is-error");
     var button = sellerForm.querySelector('button[type="submit"]');
+    var requestedRole = sellerForm.elements.role.value;
     setBusy(button, true, "Creando…");
     try {
       await invokeUsers({
-        action: "create_seller",
+        action: "create_user",
+        role: requestedRole,
         fullName: sellerForm.elements.fullName.value,
         sellerCode: sellerForm.elements.sellerCode.value,
         phone: sellerForm.elements.phone.value,
@@ -771,7 +774,7 @@
         password: sellerForm.elements.password.value
       });
       sellerForm.reset();
-      sellerFormMessage.textContent = "Vendedor creado correctamente.";
+      sellerFormMessage.textContent = requestedRole === "supervisor" ? "Supervisor creado correctamente." : "Vendedor creado correctamente.";
       await loadSellers();
     } catch (error) {
       sellerFormMessage.textContent = error.message;

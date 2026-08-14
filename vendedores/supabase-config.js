@@ -9,12 +9,17 @@
   window.GRUPO_SUR_SUPABASE_CONFIG = config;
   if (window.supabase && typeof window.supabase.createClient === "function") {
     var isAdminPortal = /^\/vendedores\/admin(?:\/|$)/.test(window.location.pathname);
+    var isSupervisorPortal = /^\/vendedores\/supervisor(?:\/|$)/.test(window.location.pathname);
     window.grupoSurSupabaseClient = window.supabase.createClient(config.url, config.publishableKey, {
       auth: {
         persistSession: true,
         autoRefreshToken: true,
         detectSessionInUrl: true,
-        storageKey: isAdminPortal ? "grupo-sur-admin-auth-v1" : "grupo-sur-seller-auth-v1"
+        storageKey: isAdminPortal
+          ? "grupo-sur-admin-auth-v1"
+          : isSupervisorPortal
+            ? "grupo-sur-supervisor-auth-v1"
+            : "grupo-sur-seller-auth-v1"
       }
     });
   }
