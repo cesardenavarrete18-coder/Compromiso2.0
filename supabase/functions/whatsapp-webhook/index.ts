@@ -2,12 +2,13 @@ import { createClient } from "@supabase/supabase-js";
 
 type JsonRecord = Record<string, unknown>;
 
-type LeadClassification = {
+type LeadDecision = {
   qualification_status: "qualified" | "follow_up" | "unqualified";
   priority: "low" | "normal" | "high";
   intent_summary: string;
   model_interest: string;
   disqualify_reason: string;
+  reply_text: string;
 };
 
 const encoder = new TextEncoder();
@@ -55,7 +56,7 @@ function messageText(message: JsonRecord) {
   return typeof reply?.title === "string" ? reply.title.trim() : "";
 }
 
-function fallbackClassification(text: string): LeadClassification {
+function fallbackDecision(text: string): LeadDecision {
   const normalized = text.toLocaleLowerCase("es-AR");
   const salesIntent = /(0\s?km|auto|veh[ií]culo|modelo|cuota|anticipo|financi|plan|precio|entrega|volkswagen|peugeot|fiat)/i.test(normalized);
   const urgent = /(hoy|urgente|ya|comprar|seña|entrega inmediata)/i.test(normalized);
@@ -65,12 +66,17 @@ function fallbackClassification(text: string): LeadClassification {
     intent_summary: salesIntent ? "Consulta comercial recibida por WhatsApp" : "Contacto nuevo pendiente de ampliar información",
     model_interest: "",
     disqualify_reason: "",
+    reply_text: salesIntent
+      ? "¡Hola! Soy el asistente de Grupo Sur Automotores. Para orientarte mejor, ¿qué modelo estás buscando y con qué anticipo aproximado contás?"
+      : "¡Hola! Soy el asistente de Grupo Sur Automotores. ¿Qué vehículo 0 km estás buscando?",
   };
 }
 
-async function classifyLead(text: string): Promise<LeadClassification> {
+async function analyzeLeadConversation(history: string[], text: string): Promise<LeadDecision> {
   const apiKey = Deno.env.get("OPENAI_API_KEY") ?? "";
-  if (!apiKey || !text) return fallbackClassification(text);
+  if (!apiKey || !text) return fallbackDecision(text);
+
+  const conversation = [...history, `Cliente: ${text}`].slice(-12).join("\n");
 
   try {
     const result = await fetch("https://api.openai.com/v1/responses", {
@@ -79,18 +85,29 @@ async function classifyLead(text: string): Promise<LeadClassification> {
       body: JSON.stringify({
         model: Deno.env.get("OPENAI_LEAD_MODEL") ?? "gpt-4.1-mini",
         store: false,
-        max_output_tokens: 220,
+        max_output_tokens: 450,
         input: [
           {
             role: "developer",
-            content: "Clasificá mensajes entrantes para una concesionaria argentina de autos 0 km. qualified: hay intención comercial concreta. follow_up: falta información pero puede ser lead. unqualified: spam, empleo, proveedor o tema ajeno. No inventes datos.",
+            content: `Sos el asistente comercial de Grupo Sur Automotores, una concesionaria argentina de vehículos 0 km.
+Tu tarea es filtrar el lead y redactar la próxima respuesta de WhatsApp en español rioplatense profesional, cálido y breve.
+
+Datos que conviene reunir de manera natural: modelo de interés, tipo de operación, anticipo disponible, si entrega usado (marca/modelo/año/km), zona, plazo de compra y experiencia previa con financiación.
+- Hacé como máximo dos preguntas por mensaje y no repitas datos ya informados.
+- No inventes precios, cuotas, stock, aprobaciones crediticias ni fechas de entrega.
+- Si ya hay al menos tres datos comerciales útiles, confirmá un resumen breve e indicá que un asesor continuará la gestión.
+- qualified: intención comercial concreta y datos suficientes para derivar.
+- follow_up: posible lead, pero todavía faltan datos.
+- unqualified: empleo, proveedor, spam o asunto ajeno. En ese caso respondé cortésmente que el canal es para consultas de vehículos.
+- priority high solo cuando expresa urgencia real, disponibilidad inmediata para avanzar o señar.
+- reply_text debe poder enviarse directamente por WhatsApp y no superar 600 caracteres.`,
           },
-          { role: "user", content: text.slice(0, 4000) },
+          { role: "user", content: conversation.slice(-8000) },
         ],
         text: {
           format: {
             type: "json_schema",
-            name: "lead_classification",
+            name: "lead_decision",
             strict: true,
             schema: {
               type: "object",
@@ -101,23 +118,51 @@ async function classifyLead(text: string): Promise<LeadClassification> {
                 intent_summary: { type: "string" },
                 model_interest: { type: "string" },
                 disqualify_reason: { type: "string" },
+                reply_text: { type: "string" },
               },
-              required: ["qualification_status", "priority", "intent_summary", "model_interest", "disqualify_reason"],
+              required: ["qualification_status", "priority", "intent_summary", "model_interest", "disqualify_reason", "reply_text"],
             },
           },
         },
       }),
     });
-    if (!result.ok) return fallbackClassification(text);
+    if (!result.ok) return fallbackDecision(text);
     const payload = await result.json();
     const outputText = (payload.output || [])
       .flatMap((item: JsonRecord) => Array.isArray(item.content) ? item.content : [])
       .find((item: JsonRecord) => item.type === "output_text")?.text;
-    if (typeof outputText !== "string") return fallbackClassification(text);
-    return JSON.parse(outputText) as LeadClassification;
+    if (typeof outputText !== "string") return fallbackDecision(text);
+    return JSON.parse(outputText) as LeadDecision;
   } catch {
-    return fallbackClassification(text);
+    return fallbackDecision(text);
   }
+}
+
+async function sendWhatsAppText(to: string, body: string) {
+  const accessToken = Deno.env.get("META_WHATSAPP_ACCESS_TOKEN") ?? "";
+  const phoneNumberId = Deno.env.get("META_WHATSAPP_PHONE_NUMBER_ID") ?? "";
+  const graphVersion = Deno.env.get("META_GRAPH_API_VERSION") ?? "v25.0";
+  if (!accessToken || !phoneNumberId || !body) {
+    return { ok: false, messageId: "", payload: { error: "WhatsApp sending configuration incomplete" } };
+  }
+
+  const result = await fetch(`https://graph.facebook.com/${graphVersion}/${phoneNumberId}/messages`, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      messaging_product: "whatsapp",
+      recipient_type: "individual",
+      to,
+      type: "text",
+      text: { preview_url: false, body: body.slice(0, 4096) },
+    }),
+  });
+  const payload = await result.json().catch(() => ({})) as JsonRecord;
+  const sentMessages = Array.isArray(payload.messages) ? payload.messages as JsonRecord[] : [];
+  return { ok: result.ok, messageId: String(sentMessages[0]?.id ?? ""), payload };
 }
 
 function argentinaDayStart() {
@@ -181,7 +226,6 @@ Deno.serve(async (request) => {
         const profile = contacts[0]?.profile as JsonRecord | undefined;
         const customerName = typeof profile?.name === "string" ? profile.name.slice(0, 120) : null;
         const body = messageText(message);
-        const classification = await classifyLead(body);
         const codes = candidateCodes(body);
 
         const existingResult = await db
@@ -194,6 +238,11 @@ Deno.serve(async (request) => {
           .limit(1)
           .maybeSingle();
         const existing = existingResult.data;
+        const historyResult = existing?.id
+          ? await db.from("lead_messages").select("direction, body").eq("lead_id", existing.id).order("created_at", { ascending: false }).limit(11)
+          : { data: [] };
+        const history = (historyResult.data || []).reverse().map((item) => `${item.direction === "outbound" ? "Asistente" : "Cliente"}: ${item.body}`);
+        const classification = await analyzeLeadConversation(history, body);
 
         let seller: JsonRecord | null = null;
         if (!existing?.assigned_seller_user_id && codes.length) {
@@ -261,6 +310,23 @@ Deno.serve(async (request) => {
           body,
           raw_payload: message,
         });
+
+        const outgoingBody = classification.reply_text.trim();
+        if (outgoingBody) {
+          const outgoing = await sendWhatsAppText(customerPhone, outgoingBody);
+          if (outgoing.ok) {
+            await db.from("lead_messages").insert({
+              lead_id: leadResult.data.id,
+              whatsapp_message_id: outgoing.messageId || null,
+              direction: "outbound",
+              message_type: "text",
+              body: outgoingBody,
+              raw_payload: outgoing.payload,
+            });
+          } else {
+            console.error("WhatsApp send failed", JSON.stringify(outgoing.payload));
+          }
+        }
 
         if (!existing && assignedSellerId) {
           await db.from("lead_assignments").insert({
