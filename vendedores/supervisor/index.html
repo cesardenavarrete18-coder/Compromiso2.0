@@ -110,7 +110,8 @@
         <label>Modelo / interés<input name="modelInterest" type="text"></label>
         <label>Prioridad<select name="priority"><option value="normal">Normal</option><option value="high">Alta</option><option value="low">Baja</option></select></label>
         <label>Asignar a<select name="sellerId" id="manualSellerSelect"><option value="">Bandeja general</option></select></label>
-        <label>Primer contacto<input name="nextContactAt" type="datetime-local"></label>
+        <label>Fecha del primer contacto<input name="nextContactDate" type="text" inputmode="numeric" maxlength="10" placeholder="dd/mm/aaaa" autocomplete="off"></label>
+        <label>Hora del primer contacto<input name="nextContactTime" type="time" step="300"></label>
         <label class="wide">Comentario inicial<textarea name="summary" rows="4" placeholder="Qué necesita el cliente y cómo ingresó"></textarea></label>
       </div>
       <p class="message error" id="manualLeadMessage"></p>
@@ -130,6 +131,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.2/dist/umd/supabase.js"></script>
   <script src="/vendedores/supabase-config.js?v=20260814-1"></script>
-  <script src="/vendedores/supervisor/supervisor.js?v=20260815-2"></script>
+  <script src="/vendedores/supervisor/supervisor.js?v=20260815-3"></script>
 </body>
 </html>
