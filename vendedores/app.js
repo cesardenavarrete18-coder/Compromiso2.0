@@ -389,6 +389,9 @@
     document.getElementById("sidebarSellerName").textContent = seller.name;
     document.getElementById("sidebarSellerCode").textContent = "Código " + seller.code;
     resetFlow();
+    if (window.grupoSurCRM && typeof window.grupoSurCRM.open === "function") {
+      window.grupoSurCRM.open("agenda");
+    }
   }
 
   function showLogin() {

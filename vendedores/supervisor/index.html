@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/vendedores/supervisor/supervisor.css?v=20260814-1">
+  <link rel="stylesheet" href="/vendedores/supervisor/supervisor.css?v=20260815-2">
 </head>
 <body>
   <main class="login" id="loginView">
@@ -48,7 +48,7 @@
     <main class="workspace">
       <header class="topbar">
         <div><p class="eyebrow dark">Operación en tiempo real</p><h1>Bandeja de leads</h1></div>
-        <div class="topbar-actions"><span class="live"><i></i> Conectado</span><button class="button secondary" id="refreshButton" type="button">Actualizar</button></div>
+        <div class="topbar-actions"><span class="live"><i></i> Conectado</span><button class="button secondary" id="manualLeadButton" type="button">+ Nuevo lead</button><button class="button secondary" id="refreshButton" type="button">Actualizar</button></div>
       </header>
 
       <div class="content">
@@ -57,6 +57,12 @@
           <article><span>Directos hoy</span><strong id="directStat">0</strong><small>Por código de vendedor</small></article>
           <article><span>Asignados hoy</span><strong id="assignedStat">0</strong><small>Manual + directo</small></article>
           <article><span>Sin calificar</span><strong id="unqualifiedStat">0</strong><small>Filtrados por la IA</small></article>
+          <article class="sale-stat"><span>Ventas pendientes</span><strong id="pendingSalesStat">0</strong><small>Requieren confirmación</small></article>
+        </section>
+
+        <section class="sales-panel" id="salesPanel">
+          <div class="section-head"><div><h2>Ventas para confirmar</h2><p>Revisá las operaciones informadas por los vendedores antes de sumarlas al ranking.</p></div><span id="salesCount">0 pendientes</span></div>
+          <div class="sales-list" id="salesList"></div>
         </section>
 
         <section class="team-panel">
@@ -73,6 +79,11 @@
           <div class="lead-list" id="leadList"></div>
           <div class="empty" id="emptyState" hidden><strong>No hay leads en esta vista</strong><span>Cuando ingrese una nueva conversación aparecerá automáticamente.</span></div>
         </section>
+
+        <section class="ranking-panel">
+          <div class="section-head"><div><h2>Ranking mensual</h2><p>Ventas confirmadas y conversión sobre los leads asignados.</p></div><label class="ranking-month">Mes<input id="rankingMonth" type="month"></label></div>
+          <div class="supervisor-ranking" id="supervisorRanking"></div>
+        </section>
       </div>
     </main>
   </div>
@@ -88,8 +99,38 @@
     </form>
   </dialog>
 
+  <dialog id="manualLeadDialog" class="lead-dialog compact-dialog">
+    <form method="dialog" id="manualLeadForm">
+      <button class="dialog-close" value="cancel" aria-label="Cerrar">×</button>
+      <p class="eyebrow dark">Ingreso desde otro canal</p><h2>Cargar nuevo lead</h2><p>Podés asignarlo ahora o dejarlo en la bandeja general.</p>
+      <div class="dialog-form-grid">
+        <label>Nombre y apellido<input name="customerName" type="text" required></label>
+        <label>Teléfono<input name="customerPhone" type="tel" placeholder="Ej. +54 11 5555 5555" required></label>
+        <label>Origen<input name="sourceDetail" type="text" placeholder="Ej. Salón, referido, exposición"></label>
+        <label>Modelo / interés<input name="modelInterest" type="text"></label>
+        <label>Prioridad<select name="priority"><option value="normal">Normal</option><option value="high">Alta</option><option value="low">Baja</option></select></label>
+        <label>Asignar a<select name="sellerId" id="manualSellerSelect"><option value="">Bandeja general</option></select></label>
+        <label>Fecha del primer contacto<input name="nextContactDate" type="text" inputmode="numeric" maxlength="10" placeholder="dd/mm/aaaa" autocomplete="off"></label>
+        <label>Hora del primer contacto<input name="nextContactTime" type="time" step="300"></label>
+        <label class="wide">Comentario inicial<textarea name="summary" rows="4" placeholder="Qué necesita el cliente y cómo ingresó"></textarea></label>
+      </div>
+      <p class="message error" id="manualLeadMessage"></p>
+      <button class="button primary" id="manualLeadSubmit" type="button">Guardar lead</button>
+    </form>
+  </dialog>
+
+  <dialog id="saleReviewDialog" class="lead-dialog compact-dialog">
+    <form method="dialog">
+      <button class="dialog-close" value="cancel" aria-label="Cerrar">×</button>
+      <p class="eyebrow dark">Control de operación</p><h2 id="saleReviewTitle">Revisar venta</h2><div class="sale-review-summary" id="saleReviewSummary"></div>
+      <label class="review-note">Observación<textarea id="saleReviewNote" rows="4" placeholder="Opcional al aprobar; recomendada al rechazar"></textarea></label>
+      <p class="message error" id="saleReviewMessage"></p>
+      <div class="review-actions"><button class="button secondary reject" id="saleRejectButton" type="button">Rechazar</button><button class="button primary" id="saleApproveButton" type="button">Confirmar venta</button></div>
+    </form>
+  </dialog>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.2/dist/umd/supabase.js"></script>
   <script src="/vendedores/supabase-config.js?v=20260814-1"></script>
-  <script src="/vendedores/supervisor/supervisor.js?v=20260814-1"></script>
+  <script src="/vendedores/supervisor/supervisor.js?v=20260815-3"></script>
 </body>
 </html>
