@@ -2,7 +2,7 @@
   "use strict";
 
   var supabaseClient = window.grupoSurSupabaseClient;
-  var state = { profile: null, sellers: [], settings: {}, leads: [], sales: [], activeSale: null, filter: "pending_supervisor", search: "" };
+  var state = { profile: null, sellers: [], settings: {}, leads: [], filter: "pending_supervisor", search: "" };
   var loginView = document.getElementById("loginView");
   var appView = document.getElementById("appView");
   var loginForm = document.getElementById("loginForm");
@@ -20,32 +20,7 @@
   }
 
   function formatDate(value) {
-    return new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(value));
-  }
-
-  function parseArgentineDateTime(dateValue, timeValue) {
-    var dateText = String(dateValue || "").trim();
-    var timeText = String(timeValue || "").trim();
-    if (!dateText && !timeText) return null;
-    if (!dateText || !timeText) throw new Error("Completá la fecha y la hora del primer contacto.");
-    var match = dateText.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-    if (!match) throw new Error("Ingresá la fecha con formato dd/mm/aaaa.");
-    var day = Number(match[1]);
-    var month = Number(match[2]);
-    var year = Number(match[3]);
-    var probe = new Date(Date.UTC(year, month - 1, day));
-    if (probe.getUTCFullYear() !== year || probe.getUTCMonth() !== month - 1 || probe.getUTCDate() !== day) throw new Error("La fecha del primer contacto no es válida.");
-    return new Date(String(year).padStart(4, "0") + "-" + String(month).padStart(2, "0") + "-" + String(day).padStart(2, "0") + "T" + timeText + ":00-03:00").toISOString();
-  }
-
-  function maskDateInput(input) {
-    var digits = input.value.replace(/\D/g, "").slice(0, 8);
-    input.value = digits.length > 4 ? digits.slice(0, 2) + "/" + digits.slice(2, 4) + "/" + digits.slice(4) : digits.length > 2 ? digits.slice(0, 2) + "/" + digits.slice(2) : digits;
-  }
-
-  function money(value) {
-    if (value == null || value === "") return "Importe no informado";
-    return "$" + new Intl.NumberFormat("es-AR", { maximumFractionDigits: 0 }).format(Number(value));
+    return new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }).format(new Date(value));
   }
 
   function localDateKey(value) {
@@ -74,8 +49,7 @@
     var results = await Promise.all([
       supabaseClient.from("profiles").select("user_id, full_name, seller_code, active").eq("role", "seller").order("full_name"),
       supabaseClient.from("seller_routing_settings").select("seller_user_id, daily_quota, paused"),
-      supabaseClient.from("leads").select("id, customer_phone, customer_name, source_channel, source_detail, seller_code_received, qualification_status, priority, intent_summary, model_interest, routing_status, routing_reason, assigned_seller_user_id, assigned_at, last_message_at, created_at, crm:lead_crm(status, priority, next_contact_at, sale_confirmation_status)").order("last_message_at", { ascending: false }).limit(500),
-      supabaseClient.from("lead_sale_requests").select("id, lead_id, seller_user_id, vehicle, sale_amount, notes, status, requested_at, seller:profiles!lead_sale_requests_seller_user_id_fkey(full_name, seller_code), lead:leads(customer_name, customer_phone, intent_summary)").eq("status", "pending").order("requested_at")
+      supabaseClient.from("leads").select("id, customer_phone, customer_name, source_channel, source_detail, seller_code_received, qualification_status, priority, intent_summary, model_interest, routing_status, routing_reason, assigned_seller_user_id, assigned_at, last_message_at, created_at").order("last_message_at", { ascending: false }).limit(500)
     ]);
     var failed = results.find(function (item) { return item.error; });
     if (failed) throw failed.error;
@@ -83,7 +57,6 @@
     state.settings = {};
     (results[1].data || []).forEach(function (item) { state.settings[item.seller_user_id] = item; });
     state.leads = results[2].data || [];
-    state.sales = results[3].data || [];
     renderAll();
     pageMessage.textContent = "";
   }
@@ -98,7 +71,6 @@
     document.getElementById("directStat").textContent = state.leads.filter(function (lead) { return lead.routing_status === "assigned_direct" && lead.assigned_at && localDateKey(lead.assigned_at) === today; }).length;
     document.getElementById("assignedStat").textContent = state.leads.filter(function (lead) { return lead.assigned_seller_user_id && lead.assigned_at && localDateKey(lead.assigned_at) === today; }).length;
     document.getElementById("unqualifiedStat").textContent = state.leads.filter(function (lead) { return lead.qualification_status === "unqualified"; }).length;
-    document.getElementById("pendingSalesStat").textContent = state.sales.length;
   }
 
   function assignedToday(sellerId) {
@@ -156,10 +128,9 @@
     var leads = filteredLeads();
     document.getElementById("leadList").innerHTML = leads.map(function (lead) {
       var assigned = sellerById(lead.assigned_seller_user_id);
-      var crm = Array.isArray(lead.crm) ? lead.crm[0] : lead.crm;
       return '<article class="lead-card" data-lead-id="' + lead.id + '">' +
         '<div class="lead-person"><strong>' + escapeHtml(lead.customer_name || "Cliente sin nombre") + '</strong><span>+' + escapeHtml(lead.customer_phone) + ' · ' + escapeHtml(formatDate(lead.last_message_at)) + '</span><span>' + escapeHtml(lead.source_channel === "tiktok" ? "TikTok / código " + (lead.seller_code_received || "—") : "WhatsApp general") + '</span></div>' +
-        '<div class="lead-summary"><p>' + escapeHtml(lead.intent_summary || "Pendiente de resumen") + '</p><div class="badges"><span class="badge ' + escapeHtml(lead.qualification_status) + '">' + escapeHtml(lead.qualification_status === "qualified" ? "Calificado" : lead.qualification_status === "unqualified" ? "No calificado" : "Seguimiento") + '</span><span class="badge ' + escapeHtml((crm && crm.priority) || lead.priority) + '">' + escapeHtml((crm && crm.priority) === "high" || lead.priority === "high" ? "Prioridad alta" : "Prioridad normal") + '</span><span class="badge">' + escapeHtml(crm && crm.status ? crm.status.replace(/_/g, " ") : "nuevo") + '</span><span class="badge">' + escapeHtml(routingLabel(lead)) + '</span></div></div>' +
+        '<div class="lead-summary"><p>' + escapeHtml(lead.intent_summary || "Pendiente de resumen") + '</p><div class="badges"><span class="badge ' + escapeHtml(lead.qualification_status) + '">' + escapeHtml(lead.qualification_status === "qualified" ? "Calificado" : lead.qualification_status === "unqualified" ? "No calificado" : "Seguimiento") + '</span><span class="badge ' + escapeHtml(lead.priority) + '">' + escapeHtml(lead.priority === "high" ? "Prioridad alta" : "Prioridad normal") + '</span><span class="badge">' + escapeHtml(routingLabel(lead)) + '</span></div></div>' +
         '<div class="assignment"><select data-seller-select aria-label="Asignar vendedor">' + sellerOptions(lead.assigned_seller_user_id) + '</select><button class="button primary" data-assign type="button">' + (assigned ? "Reasignar" : "Asignar") + '</button></div>' +
         '<button class="details" data-details type="button">Ver chat</button>' +
       '</article>';
@@ -167,30 +138,10 @@
     document.getElementById("emptyState").hidden = leads.length > 0;
   }
 
-  function renderSales() {
-    document.getElementById("salesCount").textContent = state.sales.length === 1 ? "1 pendiente" : state.sales.length + " pendientes";
-    document.getElementById("salesList").innerHTML = state.sales.length ? state.sales.map(function (sale) {
-      var seller = Array.isArray(sale.seller) ? sale.seller[0] : sale.seller;
-      var lead = Array.isArray(sale.lead) ? sale.lead[0] : sale.lead;
-      return '<article class="sale-row" data-sale-id="' + sale.id + '"><div><strong>' + escapeHtml(lead && lead.customer_name || "Cliente sin nombre") + '</strong><small>+' + escapeHtml(lead && lead.customer_phone || "") + ' · ' + escapeHtml(formatDate(sale.requested_at)) + '</small></div><div><strong>' + escapeHtml(sale.vehicle) + '</strong><span>' + escapeHtml(sale.notes || lead && lead.intent_summary || "Sin observaciones") + '</span></div><div><span class="sale-amount">' + escapeHtml(money(sale.sale_amount)) + '</span><small>' + escapeHtml(seller && seller.full_name || "Vendedor") + ' · ' + escapeHtml(seller && seller.seller_code || "") + '</small></div><button class="button primary" data-review-sale type="button">Revisar</button></article>';
-    }).join("") : '<div class="sales-empty">No hay ventas pendientes de confirmación.</div>';
-  }
-
-  async function renderRanking() {
-    var month = document.getElementById("rankingMonth").value;
-    var result = await supabaseClient.rpc("get_sales_ranking", { p_month: month ? month + "-01" : null });
-    document.getElementById("supervisorRanking").innerHTML = result.error || !result.data.length ? '<div class="sales-empty">Todavía no hay datos para este mes.</div>' : result.data.map(function (item, index) {
-      return '<article class="rank-card"><span class="rank-place">' + (index + 1) + '</span><div><strong>' + escapeHtml(item.seller_name) + '</strong><small>' + escapeHtml(item.seller_code) + ' · ' + item.assigned_leads + ' leads</small></div><div class="rank-result"><b>' + item.confirmed_sales + '</b><small>' + escapeHtml(item.conversion_rate) + '% conversión</small></div></article>';
-    }).join("");
-  }
-
   function renderAll() {
     renderStats();
     renderTeam();
     renderLeads();
-    renderSales();
-    renderRanking();
-    document.getElementById("manualSellerSelect").innerHTML = '<option value="">Bandeja general</option>' + state.sellers.filter(function (seller) { return seller.active; }).map(function (seller) { return '<option value="' + seller.user_id + '">' + escapeHtml(seller.full_name + " · " + seller.seller_code) + '</option>'; }).join("");
   }
 
   async function enterApp() {
@@ -274,8 +225,10 @@
       var sellerId = card.querySelector("[data-seller-select]").value;
       if (!sellerId) { pageMessage.textContent = "Elegí un vendedor antes de asignar."; return; }
       setBusy(button, true, "Asignando…");
-      var update = await supabaseClient.rpc("assign_lead_to_seller", { p_lead_id: lead.id, p_seller_user_id: sellerId });
+      var previousSellerId = lead.assigned_seller_user_id;
+      var update = await supabaseClient.from("leads").update({ assigned_seller_user_id: sellerId, assigned_by_user_id: state.profile.user_id, assigned_at: new Date().toISOString(), routing_status: "assigned_manual", routing_reason: previousSellerId ? "supervisor_reassignment" : "supervisor_assignment" }).eq("id", lead.id);
       if (!update.error) {
+        await supabaseClient.from("lead_assignments").insert({ lead_id: lead.id, seller_user_id: sellerId, assigned_by_user_id: state.profile.user_id, assignment_type: previousSellerId ? "reassigned" : "manual", reason: previousSellerId ? "Reasignado por supervisor" : "Asignado por supervisor" });
         await loadData(true);
       } else {
         pageMessage.textContent = "No se pudo asignar el lead.";
@@ -294,84 +247,6 @@
         : messages.data.map(function (message) { return '<div class="message-bubble ' + escapeHtml(message.direction) + '">' + escapeHtml(message.body || "Mensaje sin texto") + '<small>' + escapeHtml(formatDate(message.created_at)) + '</small></div>'; }).join("");
     }
   });
-
-  document.getElementById("manualLeadButton").addEventListener("click", function () {
-    document.getElementById("manualLeadForm").reset();
-    document.getElementById("manualLeadMessage").textContent = "";
-    document.getElementById("manualLeadDialog").showModal();
-  });
-
-  document.getElementById("manualLeadSubmit").addEventListener("click", async function () {
-    var form = document.getElementById("manualLeadForm");
-    var message = document.getElementById("manualLeadMessage");
-    var name = form.elements.customerName.value.trim();
-    var phone = form.elements.customerPhone.value.trim();
-    message.textContent = "";
-    if (name.length < 2 || phone.length < 6) { message.textContent = "Completá el nombre y el teléfono del cliente."; return; }
-    var nextContactAt;
-    try {
-      nextContactAt = parseArgentineDateTime(form.elements.nextContactDate.value, form.elements.nextContactTime.value);
-    } catch (error) {
-      message.textContent = error.message;
-      return;
-    }
-    setBusy(this, true, "Guardando…");
-    var result = await supabaseClient.rpc("create_manual_lead", {
-      p_customer_name: name,
-      p_customer_phone: phone,
-      p_source_detail: form.elements.sourceDetail.value.trim(),
-      p_model_interest: form.elements.modelInterest.value.trim(),
-      p_intent_summary: form.elements.summary.value.trim(),
-      p_priority: form.elements.priority.value,
-      p_seller_user_id: form.elements.sellerId.value || null,
-      p_next_contact_at: nextContactAt
-    });
-    if (result.error) { message.textContent = result.error.message; setBusy(this, false); return; }
-    document.getElementById("manualLeadDialog").close();
-    await loadData(true);
-    pageMessage.textContent = "Lead cargado correctamente.";
-    setBusy(this, false);
-  });
-
-  document.getElementById("salesList").addEventListener("click", function (event) {
-    var button = event.target.closest("[data-review-sale]");
-    if (!button) return;
-    var row = button.closest("[data-sale-id]");
-    var sale = state.sales.find(function (item) { return item.id === row.dataset.saleId; });
-    if (!sale) return;
-    state.activeSale = sale;
-    var seller = Array.isArray(sale.seller) ? sale.seller[0] : sale.seller;
-    var lead = Array.isArray(sale.lead) ? sale.lead[0] : sale.lead;
-    document.getElementById("saleReviewTitle").textContent = "Venta de " + (lead && lead.customer_name || "cliente");
-    document.getElementById("saleReviewSummary").innerHTML = '<strong>' + escapeHtml(sale.vehicle) + ' · ' + escapeHtml(money(sale.sale_amount)) + '</strong><span>Informada por ' + escapeHtml(seller && seller.full_name || "Vendedor") + ' el ' + escapeHtml(formatDate(sale.requested_at)) + '</span><span>' + escapeHtml(sale.notes || "Sin observaciones") + '</span>';
-    document.getElementById("saleReviewNote").value = "";
-    document.getElementById("saleReviewMessage").textContent = "";
-    document.getElementById("saleReviewDialog").showModal();
-  });
-
-  async function reviewSale(approved, button) {
-    if (!state.activeSale) return;
-    var message = document.getElementById("saleReviewMessage");
-    var note = document.getElementById("saleReviewNote").value.trim();
-    message.textContent = "";
-    if (!approved && note.length < 3) { message.textContent = "Indicá el motivo del rechazo para orientar al vendedor."; return; }
-    setBusy(button, true, approved ? "Confirmando…" : "Rechazando…");
-    var result = await supabaseClient.rpc("review_lead_sale", { p_request_id: state.activeSale.id, p_approved: approved, p_review_note: note });
-    if (result.error) { message.textContent = result.error.message; setBusy(button, false); return; }
-    document.getElementById("saleReviewDialog").close();
-    state.activeSale = null;
-    await loadData(true);
-    pageMessage.textContent = approved ? "Venta confirmada y sumada al ranking." : "La venta fue observada y volvió a Cierre.";
-    setBusy(button, false);
-  }
-
-  document.getElementById("saleApproveButton").addEventListener("click", function () { reviewSale(true, this); });
-  document.getElementById("saleRejectButton").addEventListener("click", function () { reviewSale(false, this); });
-  document.getElementById("rankingMonth").addEventListener("change", renderRanking);
-  document.querySelector('input[name="nextContactDate"]').addEventListener("input", function () { maskDateInput(this); });
-
-  var rankingNow = new Date();
-  document.getElementById("rankingMonth").value = rankingNow.getFullYear() + "-" + String(rankingNow.getMonth() + 1).padStart(2, "0");
 
   if (!supabaseClient) { loginMessage.textContent = "No se pudo conectar con Supabase."; return; }
   supabaseClient.auth.getUser().then(function (result) {
