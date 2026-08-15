@@ -20,7 +20,27 @@
   }
 
   function formatDate(value) {
-    return new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }).format(new Date(value));
+    return new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(value));
+  }
+
+  function parseArgentineDateTime(dateValue, timeValue) {
+    var dateText = String(dateValue || "").trim();
+    var timeText = String(timeValue || "").trim();
+    if (!dateText && !timeText) return null;
+    if (!dateText || !timeText) throw new Error("Completá la fecha y la hora del primer contacto.");
+    var match = dateText.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (!match) throw new Error("Ingresá la fecha con formato dd/mm/aaaa.");
+    var day = Number(match[1]);
+    var month = Number(match[2]);
+    var year = Number(match[3]);
+    var probe = new Date(Date.UTC(year, month - 1, day));
+    if (probe.getUTCFullYear() !== year || probe.getUTCMonth() !== month - 1 || probe.getUTCDate() !== day) throw new Error("La fecha del primer contacto no es válida.");
+    return new Date(String(year).padStart(4, "0") + "-" + String(month).padStart(2, "0") + "-" + String(day).padStart(2, "0") + "T" + timeText + ":00-03:00").toISOString();
+  }
+
+  function maskDateInput(input) {
+    var digits = input.value.replace(/\D/g, "").slice(0, 8);
+    input.value = digits.length > 4 ? digits.slice(0, 2) + "/" + digits.slice(2, 4) + "/" + digits.slice(4) : digits.length > 2 ? digits.slice(0, 2) + "/" + digits.slice(2) : digits;
   }
 
   function money(value) {
@@ -288,6 +308,13 @@
     var phone = form.elements.customerPhone.value.trim();
     message.textContent = "";
     if (name.length < 2 || phone.length < 6) { message.textContent = "Completá el nombre y el teléfono del cliente."; return; }
+    var nextContactAt;
+    try {
+      nextContactAt = parseArgentineDateTime(form.elements.nextContactDate.value, form.elements.nextContactTime.value);
+    } catch (error) {
+      message.textContent = error.message;
+      return;
+    }
     setBusy(this, true, "Guardando…");
     var result = await supabaseClient.rpc("create_manual_lead", {
       p_customer_name: name,
@@ -297,7 +324,7 @@
       p_intent_summary: form.elements.summary.value.trim(),
       p_priority: form.elements.priority.value,
       p_seller_user_id: form.elements.sellerId.value || null,
-      p_next_contact_at: form.elements.nextContactAt.value ? new Date(form.elements.nextContactAt.value).toISOString() : null
+      p_next_contact_at: nextContactAt
     });
     if (result.error) { message.textContent = result.error.message; setBusy(this, false); return; }
     document.getElementById("manualLeadDialog").close();
@@ -341,6 +368,7 @@
   document.getElementById("saleApproveButton").addEventListener("click", function () { reviewSale(true, this); });
   document.getElementById("saleRejectButton").addEventListener("click", function () { reviewSale(false, this); });
   document.getElementById("rankingMonth").addEventListener("change", renderRanking);
+  document.querySelector('input[name="nextContactDate"]').addEventListener("input", function () { maskDateInput(this); });
 
   var rankingNow = new Date();
   document.getElementById("rankingMonth").value = rankingNow.getFullYear() + "-" + String(rankingNow.getMonth() + 1).padStart(2, "0");
