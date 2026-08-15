@@ -41,7 +41,7 @@
     if (!value) return "Sin programar";
     return new Intl.DateTimeFormat("es-AR", {
       weekday: includeWeekday ? "short" : undefined,
-      day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit"
+      day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit"
     }).format(new Date(value));
   }
 
@@ -49,15 +49,37 @@
     return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Argentina/Buenos_Aires", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(value));
   }
 
-  function toLocalInput(value) {
-    if (!value) return "";
-    var date = new Date(value);
-    var shifted = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
-    return shifted.toISOString().slice(0, 16);
+  function dateParts(value) {
+    if (!value) return { date: "", time: "" };
+    var parts = new Intl.DateTimeFormat("es-AR", {
+      timeZone: "America/Argentina/Buenos_Aires",
+      day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", hourCycle: "h23"
+    }).formatToParts(new Date(value));
+    var values = {};
+    parts.forEach(function (part) { if (part.type !== "literal") values[part.type] = part.value; });
+    return { date: values.day + "/" + values.month + "/" + values.year, time: values.hour + ":" + values.minute };
   }
 
-  function fromLocalInput(value) {
-    return value ? new Date(value).toISOString() : null;
+  function parseArgentineDateTime(dateValue, timeValue, fieldLabel) {
+    var dateText = String(dateValue || "").trim();
+    var timeText = String(timeValue || "").trim();
+    if (!dateText && !timeText) return null;
+    if (!dateText || !timeText) throw new Error("Completá la fecha y la hora de " + fieldLabel + ".");
+    var match = dateText.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (!match) throw new Error("Ingresá la fecha de " + fieldLabel + " con formato dd/mm/aaaa.");
+    var day = Number(match[1]);
+    var month = Number(match[2]);
+    var year = Number(match[3]);
+    var timeMatch = timeText.match(/^(\d{2}):(\d{2})$/);
+    if (!timeMatch) throw new Error("Ingresá una hora válida para " + fieldLabel + ".");
+    var probe = new Date(Date.UTC(year, month - 1, day));
+    if (probe.getUTCFullYear() !== year || probe.getUTCMonth() !== month - 1 || probe.getUTCDate() !== day) throw new Error("La fecha de " + fieldLabel + " no es válida.");
+    return new Date(String(year).padStart(4, "0") + "-" + String(month).padStart(2, "0") + "-" + String(day).padStart(2, "0") + "T" + timeMatch[1] + ":" + timeMatch[2] + ":00-03:00").toISOString();
+  }
+
+  function maskDateInput(input) {
+    var digits = input.value.replace(/\D/g, "").slice(0, 8);
+    input.value = digits.length > 4 ? digits.slice(0, 2) + "/" + digits.slice(2, 4) + "/" + digits.slice(4) : digits.length > 2 ? digits.slice(0, 2) + "/" + digits.slice(2) : digits;
   }
 
   function money(value) {
@@ -111,7 +133,7 @@
     var counts = {
       overdue: state.leads.filter(function (lead) { var crm = crmOf(lead); return crm.next_contact_at && new Date(crm.next_contact_at).getTime() < now && localDateKey(crm.next_contact_at) !== today && !CLOSED_STAGES.includes(crm.status); }).length,
       today: state.leads.filter(function (lead) { var crm = crmOf(lead); return crm.next_contact_at && localDateKey(crm.next_contact_at) === today && !CLOSED_STAGES.includes(crm.status); }).length,
-      newLead: state.leads.filter(function (lead) { return crmOf(lead).status === "nuevo"; }).length,
+      newLead: state.leads.filter(function (lead) { var crm = crmOf(lead); return crm.status === "nuevo" && !crm.next_contact_at; }).length,
       interview: state.leads.filter(function (lead) { var crm = crmOf(lead); return crm.status === "entrevista" && crm.interview_at && new Date(crm.interview_at).getTime() >= now; }).length,
       closing: state.leads.filter(function (lead) { return ["cierre", "sena"].includes(crmOf(lead).status); }).length
     };
@@ -151,9 +173,9 @@
     var leads = state.leads.filter(function (lead) { return matchesSearch(lead, query); });
     var today = localDateKey(new Date());
     var now = Date.now();
-    var overdue = leads.filter(function (lead) { var crm = crmOf(lead); return crm.next_contact_at && new Date(crm.next_contact_at).getTime() < now && localDateKey(crm.next_contact_at) !== today && !CLOSED_STAGES.includes(crm.status); });
-    var forToday = leads.filter(function (lead) { var crm = crmOf(lead); return crm.next_contact_at && localDateKey(crm.next_contact_at) === today && !CLOSED_STAGES.includes(crm.status); });
-    var newLeads = leads.filter(function (lead) { return crmOf(lead).status === "nuevo"; });
+    var overdue = leads.filter(function (lead) { var crm = crmOf(lead); return crm.next_contact_at && new Date(crm.next_contact_at).getTime() < now && localDateKey(crm.next_contact_at) !== today && !CLOSED_STAGES.includes(crm.status); }).sort(function (a, b) { return new Date(crmOf(a).next_contact_at) - new Date(crmOf(b).next_contact_at); });
+    var forToday = leads.filter(function (lead) { var crm = crmOf(lead); return crm.next_contact_at && localDateKey(crm.next_contact_at) === today && !CLOSED_STAGES.includes(crm.status); }).sort(function (a, b) { return new Date(crmOf(a).next_contact_at) - new Date(crmOf(b).next_contact_at); });
+    var newLeads = leads.filter(function (lead) { var crm = crmOf(lead); return crm.status === "nuevo" && !crm.next_contact_at; });
     var next = leads.filter(function (lead) { var crm = crmOf(lead); return crm.next_contact_at && new Date(crm.next_contact_at).getTime() >= now && localDateKey(crm.next_contact_at) !== today && !CLOSED_STAGES.includes(crm.status); }).sort(function (a, b) { return new Date(crmOf(a).next_contact_at) - new Date(crmOf(b).next_contact_at); });
     document.getElementById("crmAgenda").innerHTML =
       agendaGroup("Contactos vencidos", overdue, "No tenés seguimientos vencidos.") +
@@ -256,9 +278,13 @@
     document.getElementById("crmStatusInput").innerHTML = (crm.status === "venta" ? STAGES.filter(function (stage) { return stage.value === "venta"; }) : STAGES.filter(function (stage) { return stage.value !== "venta"; })).map(function (stage) { return '<option value="' + stage.value + '"' + (stage.value === crm.status ? ' selected' : '') + '>' + escapeHtml(stage.label) + '</option>'; }).join("");
     document.getElementById("crmPriorityInput").value = crm.priority || "normal";
     document.getElementById("crmNoteInput").value = "";
-    document.getElementById("crmNextContactInput").value = toLocalInput(crm.next_contact_at);
+    var nextContactParts = dateParts(crm.next_contact_at);
+    document.getElementById("crmNextContactDateInput").value = nextContactParts.date;
+    document.getElementById("crmNextContactTimeInput").value = nextContactParts.time;
     document.getElementById("crmNextContactNoteInput").value = crm.next_contact_note || "";
-    document.getElementById("crmInterviewInput").value = toLocalInput(crm.interview_at);
+    var interviewParts = dateParts(crm.interview_at);
+    document.getElementById("crmInterviewDateInput").value = interviewParts.date;
+    document.getElementById("crmInterviewTimeInput").value = interviewParts.time;
     document.getElementById("crmInterviewLocationInput").value = crm.interview_location || "";
     document.getElementById("crmDepositInput").value = crm.deposit_amount || "";
     document.getElementById("crmFormError").textContent = "";
@@ -282,11 +308,18 @@
     var button = document.getElementById("crmSaveManagement");
     var status = document.getElementById("crmStatusInput").value;
     var note = document.getElementById("crmNoteInput").value.trim();
-    var nextContact = fromLocalInput(document.getElementById("crmNextContactInput").value);
-    var interview = fromLocalInput(document.getElementById("crmInterviewInput").value);
     var deposit = document.getElementById("crmDepositInput").value;
     var errorBox = document.getElementById("crmFormError");
     errorBox.textContent = "";
+    var nextContact;
+    var interview;
+    try {
+      nextContact = parseArgentineDateTime(document.getElementById("crmNextContactDateInput").value, document.getElementById("crmNextContactTimeInput").value, "próximo contacto");
+      interview = parseArgentineDateTime(document.getElementById("crmInterviewDateInput").value, document.getElementById("crmInterviewTimeInput").value, "la entrevista");
+    } catch (error) {
+      errorBox.textContent = error.message;
+      return;
+    }
     if (status === "no_contesta" && !nextContact) { errorBox.textContent = "Programá el próximo intento de contacto."; return; }
     if (status === "entrevista" && !interview) { errorBox.textContent = "Indicá la fecha y hora de la entrevista."; return; }
     if (status === "sena" && (!deposit || Number(deposit) <= 0)) { errorBox.textContent = "Indicá el importe de la seña."; return; }
@@ -373,6 +406,9 @@
   document.getElementById("crmAgendaSearch").addEventListener("input", function () { state.searchAgenda = this.value; renderAgenda(); });
   document.getElementById("crmPipelineSearch").addEventListener("input", function () { state.searchPipeline = this.value; renderPipeline(); });
   document.getElementById("crmRankingMonth").addEventListener("change", loadRanking);
+  ["crmNextContactDateInput", "crmInterviewDateInput"].forEach(function (id) {
+    document.getElementById(id).addEventListener("input", function () { maskDateInput(this); });
+  });
 
   var now = new Date();
   document.getElementById("crmRankingMonth").value = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0");
