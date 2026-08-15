@@ -1,0 +1,32 @@
+{
+  "redirects": [
+    {
+      "source": "/vendedores/supervisor/:path*",
+      "destination": "/supervisores/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/vendedores/admin/:path*",
+      "destination": "/administracion/:path*",
+      "permanent": true
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/supervisores",
+      "destination": "/vendedores/supervisor/index.html"
+    },
+    {
+      "source": "/supervisores/:path*",
+      "destination": "/vendedores/supervisor/:path*"
+    },
+    {
+      "source": "/administracion",
+      "destination": "/vendedores/admin/index.html"
+    },
+    {
+      "source": "/administracion/:path*",
+      "destination": "/vendedores/admin/:path*"
+    }
+  ]
+}

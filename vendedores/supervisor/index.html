@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Supervisión y asignación de leads de Grupo Sur Automotores.">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Supervisor de leads | Grupo Sur Automotores</title>
+  <link rel="icon" href="/assets/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/vendedores/supervisor/supervisor.css?v=20260815-2">
+</head>
+<body>
+  <main class="login" id="loginView">
+    <section class="login-brand">
+      <a href="/" aria-label="Volver al sitio"><img src="/assets/logo-light.webp" alt="Grupo Sur Automotores"></a>
+      <div><p class="eyebrow">Centro de distribución comercial</p><h1>Cada lead visible. Cada asignación, controlada.</h1><p>Una sola bandeja para revisar la calidad, distribuir oportunidades y seguir el ritmo de todo el equipo.</p></div>
+      <small>WhatsApp · TikTok · Portal de vendedores</small>
+    </section>
+    <section class="login-panel">
+      <form id="loginForm" class="login-card" novalidate>
+        <span class="pill">Acceso de supervisión</span>
+        <h2>Ingresá al panel</h2>
+        <p>Usá el correo y la contraseña asignados por administración.</p>
+        <label>Correo electrónico<input name="email" type="email" autocomplete="username" required></label>
+        <label>Contraseña<input name="password" type="password" autocomplete="current-password" minlength="8" required></label>
+        <p class="message error" id="loginMessage" role="alert"></p>
+        <button class="button primary" type="submit">Ingresar</button>
+      </form>
+    </section>
+  </main>
+
+  <div class="app" id="appView" hidden>
+    <aside class="sidebar">
+      <a href="/" class="logo"><img src="/assets/logo-light.webp" alt="Grupo Sur Automotores"></a>
+      <nav>
+        <button class="nav-button active" type="button" data-filter="pending_supervisor"><span>⌁</span>Pendientes</button>
+        <button class="nav-button" type="button" data-filter="assigned_direct"><span>↗</span>Derivación directa</button>
+        <button class="nav-button" type="button" data-filter="assigned_manual"><span>✓</span>Asignados</button>
+        <button class="nav-button" type="button" data-filter="all"><span>▦</span>Todos los leads</button>
+      </nav>
+      <div class="account"><span id="avatar">SU</span><div><strong id="profileName">Supervisor</strong><small>Control comercial</small></div></div>
+      <button class="logout" id="logoutButton" type="button">Cerrar sesión</button>
+    </aside>
+
+    <main class="workspace">
+      <header class="topbar">
+        <div><p class="eyebrow dark">Operación en tiempo real</p><h1>Bandeja de leads</h1></div>
+        <div class="topbar-actions"><span class="live"><i></i> Conectado</span><button class="button secondary" id="manualLeadButton" type="button">+ Nuevo lead</button><button class="button secondary" id="refreshButton" type="button">Actualizar</button></div>
+      </header>
+
+      <div class="content">
+        <section class="stats">
+          <article><span>Pendientes</span><strong id="pendingStat">0</strong><small>Requieren asignación</small></article>
+          <article><span>Directos hoy</span><strong id="directStat">0</strong><small>Por código de vendedor</small></article>
+          <article><span>Asignados hoy</span><strong id="assignedStat">0</strong><small>Manual + directo</small></article>
+          <article><span>Sin calificar</span><strong id="unqualifiedStat">0</strong><small>Filtrados por la IA</small></article>
+          <article class="sale-stat"><span>Ventas pendientes</span><strong id="pendingSalesStat">0</strong><small>Requieren confirmación</small></article>
+        </section>
+
+        <section class="sales-panel" id="salesPanel">
+          <div class="section-head"><div><h2>Ventas para confirmar</h2><p>Revisá las operaciones informadas por los vendedores antes de sumarlas al ranking.</p></div><span id="salesCount">0 pendientes</span></div>
+          <div class="sales-list" id="salesList"></div>
+        </section>
+
+        <section class="team-panel">
+          <div class="section-head"><div><h2>Capacidad del equipo</h2><p>Pausá derivaciones o ajustá el máximo diario sin desactivar el acceso del vendedor.</p></div><span id="teamCount">0 vendedores</span></div>
+          <div class="team-grid" id="teamGrid"></div>
+        </section>
+
+        <section class="lead-panel">
+          <div class="section-head lead-head">
+            <div><h2 id="listTitle">Leads pendientes</h2><p id="listSubtitle">La IA ya resumió la intención; elegí a quién asignar cada oportunidad.</p></div>
+            <label class="search"><span>⌕</span><input id="searchInput" type="search" placeholder="Buscar nombre, teléfono o interés"></label>
+          </div>
+          <p class="message" id="pageMessage" role="status"></p>
+          <div class="lead-list" id="leadList"></div>
+          <div class="empty" id="emptyState" hidden><strong>No hay leads en esta vista</strong><span>Cuando ingrese una nueva conversación aparecerá automáticamente.</span></div>
+        </section>
+
+        <section class="ranking-panel">
+          <div class="section-head"><div><h2>Ranking mensual</h2><p>Ventas confirmadas y conversión sobre los leads asignados.</p></div><label class="ranking-month">Mes<input id="rankingMonth" type="month"></label></div>
+          <div class="supervisor-ranking" id="supervisorRanking"></div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <dialog id="leadDialog" class="lead-dialog">
+    <form method="dialog">
+      <button class="dialog-close" value="cancel" aria-label="Cerrar">×</button>
+      <p class="eyebrow dark">Detalle de conversación</p>
+      <h2 id="dialogLeadName"></h2>
+      <p id="dialogLeadSummary"></p>
+      <div class="conversation" id="conversation"></div>
+      <button class="button secondary" value="cancel">Cerrar</button>
+    </form>
+  </dialog>
+
+  <dialog id="manualLeadDialog" class="lead-dialog compact-dialog">
+    <form method="dialog" id="manualLeadForm">
+      <button class="dialog-close" value="cancel" aria-label="Cerrar">×</button>
+      <p class="eyebrow dark">Ingreso desde otro canal</p><h2>Cargar nuevo lead</h2><p>Podés asignarlo ahora o dejarlo en la bandeja general.</p>
+      <div class="dialog-form-grid">
+        <label>Nombre y apellido<input name="customerName" type="text" required></label>
+        <label>Teléfono<input name="customerPhone" type="tel" placeholder="Ej. +54 11 5555 5555" required></label>
+        <label>Origen<input name="sourceDetail" type="text" placeholder="Ej. Salón, referido, exposición"></label>
+        <label>Modelo / interés<input name="modelInterest" type="text"></label>
+        <label>Prioridad<select name="priority"><option value="normal">Normal</option><option value="high">Alta</option><option value="low">Baja</option></select></label>
+        <label>Asignar a<select name="sellerId" id="manualSellerSelect"><option value="">Bandeja general</option></select></label>
+        <label>Fecha del primer contacto<input name="nextContactDate" type="text" inputmode="numeric" maxlength="10" placeholder="dd/mm/aaaa" autocomplete="off"></label>
+        <label>Hora del primer contacto<input name="nextContactTime" type="time" step="300"></label>
+        <label class="wide">Comentario inicial<textarea name="summary" rows="4" placeholder="Qué necesita el cliente y cómo ingresó"></textarea></label>
+      </div>
+      <p class="message error" id="manualLeadMessage"></p>
+      <button class="button primary" id="manualLeadSubmit" type="button">Guardar lead</button>
+    </form>
+  </dialog>
+
+  <dialog id="saleReviewDialog" class="lead-dialog compact-dialog">
+    <form method="dialog">
+      <button class="dialog-close" value="cancel" aria-label="Cerrar">×</button>
+      <p class="eyebrow dark">Control de operación</p><h2 id="saleReviewTitle">Revisar venta</h2><div class="sale-review-summary" id="saleReviewSummary"></div>
+      <label class="review-note">Observación<textarea id="saleReviewNote" rows="4" placeholder="Opcional al aprobar; recomendada al rechazar"></textarea></label>
+      <p class="message error" id="saleReviewMessage"></p>
+      <div class="review-actions"><button class="button secondary reject" id="saleRejectButton" type="button">Rechazar</button><button class="button primary" id="saleApproveButton" type="button">Confirmar venta</button></div>
+    </form>
+  </dialog>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.2/dist/umd/supabase.js"></script>
+  <script src="/vendedores/supabase-config.js?v=20260814-1"></script>
+  <script src="/vendedores/supervisor/supervisor.js?v=20260815-3"></script>
+</body>
+</html>
