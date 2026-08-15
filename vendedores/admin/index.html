@@ -73,6 +73,14 @@
           <span aria-hidden="true">▤</span>
           Precalificaciones
         </button>
+        <button class="nav-item" type="button" data-admin-view="knowledge">
+          <span aria-hidden="true">◎</span>
+          Conocimiento IA
+        </button>
+        <a class="nav-item" href="/supervisores/" target="_blank" rel="noopener">
+          <span aria-hidden="true">⌁</span>
+          Panel supervisor
+        </a>
         <a class="nav-item" href="/vendedores/" target="_blank" rel="noopener">
           <span aria-hidden="true">↗</span>
           Portal vendedores
@@ -233,7 +241,7 @@
           <div class="section-heading">
             <div><h2>Equipo comercial y accesos</h2><p>Administrá quién puede iniciar gestiones y mantené cada acceso bajo control.</p></div>
             <div class="seller-heading-actions">
-              <span class="seller-count" id="sellerCount">0 vendedores</span>
+              <span class="seller-count" id="sellerCount">0 integrantes</span>
               <button class="primary-button seller-export-button" id="exportSellersButton" type="button" disabled>Descargar base</button>
             </div>
           </div>
@@ -241,9 +249,10 @@
           <div class="seller-layout">
             <form class="seller-create-card" id="sellerForm" novalidate>
               <span class="card-kicker">Incorporación al portal</span>
-              <h3>Habilitar vendedor</h3>
+              <h3>Habilitar integrante</h3>
+              <label class="field"><span>Rol</span><select name="role"><option value="seller">Vendedor</option><option value="supervisor">Supervisor</option></select></label>
               <label class="field"><span>Nombre y apellido</span><input name="fullName" type="text" placeholder="Ej. María González" required></label>
-              <label class="field"><span>Código de vendedor</span><input name="sellerCode" type="text" maxlength="20" placeholder="Ej. GS002" required></label>
+              <label class="field"><span>Código interno</span><input name="sellerCode" type="text" maxlength="20" placeholder="Ej. GS002 o SUP01" required></label>
               <label class="field"><span>Teléfono</span><input name="phone" type="tel" minlength="6" maxlength="30" placeholder="Ej. 11 3456 7890" required></label>
               <label class="field"><span>Correo electrónico</span><input name="contactEmail" type="email" maxlength="254" placeholder="Ej. maria@email.com" required></label>
               <label class="field"><span>Contraseña inicial</span><input name="password" type="password" minlength="8" placeholder="Mínimo 8 caracteres" required></label>
@@ -283,6 +292,47 @@
           <p class="export-message" id="exportMessage" role="status" aria-live="polite"></p>
           <p class="privacy-note"><strong>Acceso restringido.</strong> La planilla contiene datos personales y debe utilizarse exclusivamente para la gestión comercial autorizada.</p>
         </section>
+
+        <section class="knowledge-section" id="knowledgeAdminView" hidden>
+          <div class="section-heading">
+            <div><h2>Centro de conocimiento de la IA</h2><p>Definí cómo calificar oportunidades y cargá la documentación comercial que puede consultar el asistente.</p></div>
+            <span class="knowledge-private-badge">Biblioteca privada</span>
+          </div>
+
+          <div class="knowledge-grid">
+            <form class="knowledge-card" id="aiRulesForm">
+              <span class="card-kicker">Criterios obligatorios</span>
+              <h3>Reglas de calificación</h3>
+              <p>Estas reglas tienen prioridad sobre los criterios generales del asistente.</p>
+              <label class="field">
+                <span>¿Cuándo consideramos que un lead está calificado?</span>
+                <textarea id="qualificationRules" rows="9" minlength="20" maxlength="10000" required></textarea>
+              </label>
+              <p class="form-message knowledge-message" id="rulesMessage" role="status"></p>
+              <button class="primary-button" type="submit">Guardar reglas</button>
+            </form>
+
+            <form class="knowledge-card" id="knowledgeUploadForm">
+              <span class="card-kicker">Documentación comercial</span>
+              <h3>Cargar PDF</h3>
+              <p>Admite listas, planes, argumentarios y manuales de venta de hasta 20 MB.</p>
+              <label class="field"><span>Nombre del documento</span><input name="title" type="text" maxlength="160" placeholder="Ej. Condiciones Volkswagen agosto" required></label>
+              <div class="knowledge-fields">
+                <label class="field"><span>Marca</span><select name="brand"><option>General</option><option>Volkswagen</option><option>Peugeot</option><option>Fiat</option></select></label>
+                <label class="field"><span>Categoría</span><select name="category"><option>Condiciones comerciales</option><option>Argumentario de ventas</option><option>Ficha de producto</option><option>Proceso interno</option></select></label>
+              </div>
+              <label class="pdf-drop" for="knowledgePdf"><strong>Seleccionar archivo PDF</strong><span id="knowledgeFileName">Ningún archivo seleccionado</span></label>
+              <input id="knowledgePdf" name="pdf" type="file" accept="application/pdf,.pdf" required hidden>
+              <p class="form-message knowledge-message" id="knowledgeMessage" role="status"></p>
+              <button class="primary-button" id="uploadKnowledgeButton" type="submit">Cargar y procesar</button>
+            </form>
+          </div>
+
+          <div class="knowledge-library">
+            <div class="knowledge-library-head"><div><h3>Biblioteca disponible</h3><p>Solo los documentos listos pueden ser consultados por la IA.</p></div><button class="secondary-button" id="refreshKnowledgeButton" type="button">Actualizar</button></div>
+            <div id="knowledgeDocumentList" class="knowledge-document-list"></div>
+          </div>
+        </section>
       </div>
     </main>
   </div>
@@ -318,6 +368,6 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.2/dist/umd/supabase.js"></script>
   <script src="/vendedores/supabase-config.js?v=20260813-2"></script>
   <script src="/vendedores/admin/excel-export.js?v=20260813-2"></script>
-  <script src="/vendedores/admin/admin.js?v=20260813-4"></script>
+  <script src="/vendedores/admin/admin.js?v=20260814-5"></script>
 </body>
 </html>
