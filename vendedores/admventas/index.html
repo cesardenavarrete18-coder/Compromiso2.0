@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Administración de ventas | Grupo Sur</title>
+  <link rel="icon" href="/assets/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/vendedores/admventas/admventas.css?v=20260815-2">
+</head>
+<body>
+  <main class="login" id="loginView">
+    <section class="login-brand">
+      <a href="/"><img src="/assets/logo-light.webp" alt="Grupo Sur Automotores"></a>
+      <div><p class="eyebrow">Administración de ventas</p><h1>Del cierre comercial a la cartera activa.</h1><p>Controlá la documentación, los scorings, la firma y el seguimiento mensual desde un único circuito.</p></div>
+      <small>Acceso interno · Información confidencial</small>
+    </section>
+    <section class="login-panel">
+      <form class="login-card" id="loginForm">
+        <span class="pill">Acceso administrativo</span><h2>Ingresá al panel</h2><p>Utilizá el correo y la contraseña asignados.</p>
+        <label>Correo electrónico<input name="email" type="email" autocomplete="username" required></label>
+        <label>Contraseña<input name="password" type="password" autocomplete="current-password" minlength="8" required></label>
+        <p class="message error" id="loginMessage"></p><button class="button primary" type="submit">Ingresar</button>
+      </form>
+    </section>
+  </main>
+
+  <div class="app" id="appView" hidden>
+    <aside class="sidebar">
+      <a class="logo" href="/"><img src="/assets/logo-light.webp" alt="Grupo Sur Automotores"></a>
+      <nav>
+        <button class="nav-button active" type="button" data-view="operations"><span>▦</span>Operaciones</button>
+        <button class="nav-button" type="button" data-view="clients"><span>◎</span>Cartera de clientes</button>
+        <button class="nav-button" type="button" data-view="installments"><span>✓</span>Control de cuotas</button>
+      </nav>
+      <div class="account"><span id="avatar">AV</span><div><strong id="profileName">Administración</strong><small>Ventas y cartera</small></div></div>
+      <button class="logout" id="logoutButton" type="button">Cerrar sesión</button>
+    </aside>
+
+    <main class="workspace">
+      <header class="topbar"><div><p class="eyebrow dark" id="pageKicker">Control de operaciones</p><h1 id="pageTitle">Administración de ventas</h1></div><div class="topbar-actions"><span class="live"><i></i> Conectado</span><button class="button secondary" id="refreshButton" type="button">Actualizar</button></div></header>
+      <div class="content">
+        <section class="stats" id="statsPanel">
+          <article><span>Minutas pendientes</span><strong id="minuteStat">0</strong><small>Esperando al vendedor</small></article>
+          <article><span>En control</span><strong id="reviewStat">0</strong><small>Scoring o firma</small></article>
+          <article><span>Observadas</span><strong id="observedStat">0</strong><small>Requieren seguimiento</small></article>
+          <article><span>Finalizadas</span><strong id="finalizedStat">0</strong><small>Proceso aprobado</small></article>
+        </section>
+
+        <section class="view active" data-panel="operations">
+          <div class="section-head"><div><h2>Operaciones administrativas</h2><p>La venta aparece aquí después de la aprobación del supervisor.</p></div><label class="search"><span>⌕</span><input id="operationSearch" type="search" placeholder="Buscar operación, cliente o vendedor"></label></div>
+          <div class="filters" id="operationFilters"><button class="active" data-status="all" type="button">Todas</button><button data-status="minute_pending" type="button">Sin minuta</button><button data-status="quality_control" type="button">Scoring CDN</button><button data-status="dealer_scoring" type="button">Concesionario</button><button data-status="contract_signature" type="button">Firma</button><button data-status="formation_group" type="button">Finalizadas</button><button data-status="cancelled" type="button">Bajas</button></div>
+          <p class="message" id="operationMessage"></p><div class="operation-list" id="operationList"></div>
+        </section>
+
+        <section class="view" data-panel="clients">
+          <div class="section-head"><div><h2>Cartera de clientes</h2><p>Se crea automáticamente al aprobarse los tres controles.</p></div><label class="search"><span>⌕</span><input id="clientSearch" type="search" placeholder="Buscar cliente, DNI o vehículo"></label></div>
+          <div class="client-grid" id="clientGrid"></div>
+        </section>
+
+        <section class="view" data-panel="installments">
+          <div class="section-head"><div><h2>Seguimiento mensual de cuotas</h2><p>Septiembre como mes de agrupación corresponde a la cuota N° 2; los meses siguientes avanzan correlativamente.</p></div><label class="month-field">Mes<input id="installmentMonth" type="month"></label></div>
+          <section class="payment-metrics">
+            <article class="paid"><span>Pagaron</span><strong id="paidPercentage">0%</strong><small id="paidCount">0 clientes</small></article>
+            <article class="promised"><span>Promesas de pago</span><strong id="promisedPercentage">0%</strong><small id="promisedCount">0 clientes</small></article>
+            <article class="late"><span>Morosos</span><strong id="latePercentage">0%</strong><small id="lateCount">0 clientes</small></article>
+            <article><span>Pendientes</span><strong id="pendingPercentage">0%</strong><small id="pendingCount">0 clientes</small></article>
+          </section>
+          <div class="table-wrap"><table><thead><tr><th>Cliente</th><th>Operación</th><th>Cuota</th><th>Estado</th><th>Promesa</th><th>Comprobante</th><th>Acción</th></tr></thead><tbody id="installmentBody"></tbody></table></div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <dialog id="operationDialog" class="dialog"><div class="dialog-shell"><button class="dialog-close" data-close-operation type="button">×</button>
+    <p class="eyebrow dark">Control administrativo</p><h2 id="operationTitle">Operación</h2><div class="operation-summary" id="operationSummary"></div>
+    <section class="minute-card" id="quoteCard"><div><strong>Presupuesto asociado</strong><span id="quoteStatus">Sin presupuesto</span></div><button class="button secondary" id="printQuoteButton" type="button">Ver / imprimir</button></section>
+    <div class="stage-grid" id="stageGrid"></div>
+    <section class="minute-card"><div><strong>Minuta comercial</strong><span id="minuteStatus">Pendiente</span></div><button class="button secondary" id="printMinuteButton" type="button">Ver / imprimir</button></section>
+    <section class="documents"><div class="section-head compact"><div><h3>Documentación</h3><p>DNI, contrato firmado y documentación respaldatoria.</p></div></div><div id="documentList" class="document-list"></div><form id="documentForm" class="document-form"><select name="type"><option value="dni">DNI</option><option value="signed_contract">Contrato firmado</option><option value="supporting_document">Documentación respaldatoria</option><option value="receipt">Comprobante</option></select><input name="file" type="file" accept="application/pdf,image/jpeg,image/png,image/webp"><button class="button secondary" type="submit">Adjuntar</button></form></section>
+    <section class="timeline"><h3>Historia administrativa</h3><div id="caseTimeline"></div></section><p class="message" id="dialogMessage"></p>
+  </div></dialog>
+
+  <dialog id="reviewDialog" class="dialog small"><form method="dialog" class="dialog-shell"><button class="dialog-close" value="cancel">×</button><p class="eyebrow dark" id="reviewKicker">Control</p><h2 id="reviewTitle">Registrar resultado</h2><label>Resultado<select id="reviewOutcome"></select></label><label>Comentario / motivo<textarea id="reviewComment" rows="5" placeholder="Dejá constancia clara del control realizado"></textarea></label><p class="message" id="reviewMessage"></p><button class="button primary" id="saveReviewButton" type="button">Guardar resultado</button></form></dialog>
+
+  <dialog id="groupDialog" class="dialog small"><form method="dialog" class="dialog-shell"><button class="dialog-close" value="cancel">×</button><p class="eyebrow dark">Formación de grupo</p><h2>Agrupar cliente</h2><p>El mes elegido se registrará como cuota N° 2.</p><label>Mes de agrupación<input id="groupMonth" type="month"></label><p class="message" id="groupMessage"></p><button class="button primary" id="groupButton" type="button">Confirmar agrupación</button></form></dialog>
+
+  <section class="minute-print" id="minutePrint" aria-hidden="true"></section>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/vendedores/supabase-config.js?v=20260815-3"></script>
+  <script src="/vendedores/admventas/admventas.js?v=20260815-2"></script>
+</body>
+</html>

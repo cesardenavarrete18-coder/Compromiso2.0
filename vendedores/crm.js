@@ -198,18 +198,18 @@
   async function loadRanking() {
     var monthValue = document.getElementById("crmRankingMonth").value;
     var firstDay = monthValue ? monthValue + "-01" : null;
-    var result = await supabaseClient.rpc("get_sales_ranking", { p_month: firstDay });
+    var result = await supabaseClient.rpc("get_sales_performance", { p_month: firstDay });
     var data = result.data || [];
     if (result.error) {
-      document.getElementById("crmRankingBody").innerHTML = '<tr><td colspan="5">No se pudo cargar el ranking.</td></tr>';
+      document.getElementById("crmRankingBody").innerHTML = '<tr><td colspan="6">No se pudo cargar el ranking.</td></tr>';
       return;
     }
     document.getElementById("crmPodium").innerHTML = data.slice(0, 3).map(function (item, index) {
       return '<article class="podium-card"><span class="place">' + (index + 1) + '</span><h3>' + escapeHtml(item.seller_name) + '</h3><p>' + escapeHtml(item.seller_code) + ' · ' + escapeHtml(item.conversion_rate) + '% de conversión</p><strong>' + item.confirmed_sales + ' venta' + (Number(item.confirmed_sales) === 1 ? '' : 's') + '</strong></article>';
     }).join("") || '<div class="agenda-empty">Todavía no hay vendedores activos.</div>';
     document.getElementById("crmRankingBody").innerHTML = data.map(function (item, index) {
-      return '<tr><td><strong>#' + (index + 1) + '</strong></td><td><strong>' + escapeHtml(item.seller_name) + '</strong><small>' + escapeHtml(item.seller_code) + '</small></td><td>' + item.confirmed_sales + '</td><td>' + item.assigned_leads + '</td><td>' + escapeHtml(item.conversion_rate) + '%</td></tr>';
-    }).join("") || '<tr><td colspan="5">Todavía no hay datos para este mes.</td></tr>';
+      return '<tr><td><strong>#' + (index + 1) + '</strong></td><td><strong>' + escapeHtml(item.seller_name) + '</strong><small>' + escapeHtml(item.seller_code) + '</small></td><td>' + item.confirmed_sales + '</td><td>' + item.finalized_sales + '</td><td>' + item.assigned_leads + '</td><td>' + escapeHtml(item.conversion_rate) + '%</td></tr>';
+    }).join("") || '<tr><td colspan="6">Todavía no hay datos para este mes.</td></tr>';
   }
 
   function openView(viewName) {
@@ -218,10 +218,13 @@
     var target = document.getElementById("crm" + viewName.charAt(0).toUpperCase() + viewName.slice(1) + "View");
     if (target) target.classList.add("is-active");
     document.getElementById("stepper").hidden = true;
-    document.getElementById("pageTitle").textContent = viewName === "agenda" ? "Mi agenda comercial" : viewName === "pipeline" ? "Embudo de oportunidades" : "Ranking del equipo";
+    document.getElementById("pageTitle").textContent = viewName === "agenda" ? "Mi agenda comercial" : viewName === "pipeline" ? "Embudo de oportunidades" : viewName === "quotes" ? "Presupuestos comerciales" : viewName === "sales" ? "Estado de mis ventas" : "Ranking del equipo";
     document.getElementById("headerKicker").textContent = "CRM Grupo Sur Automotores";
     document.querySelectorAll(".nav-item").forEach(function (item) { item.classList.toggle("is-active", item.dataset.crmView === viewName); });
-    if (viewName === "ranking") loadRanking(); else loadLeads(true);
+    if (viewName === "ranking") loadRanking();
+    else if (viewName === "quotes" && window.grupoSurSales) window.grupoSurSales.loadQuotes();
+    else if (viewName === "sales" && window.grupoSurSales) window.grupoSurSales.loadSales();
+    else loadLeads(true);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -369,7 +372,7 @@
     errorBox.textContent = "";
     if (vehicle.length < 2) { errorBox.textContent = "Indicá el vehículo vendido."; return; }
     setBusy(button, true, "Enviando…");
-    var result = await supabaseClient.rpc("request_lead_sale", { p_lead_id: state.activeLead.id, p_vehicle: vehicle, p_amount: amount ? Number(amount) : null, p_notes: document.getElementById("crmSaleNotes").value.trim() });
+    var result = await supabaseClient.rpc("request_lead_sale_v2", { p_lead_id: state.activeLead.id, p_vehicle: vehicle, p_amount: amount ? Number(amount) : null, p_notes: document.getElementById("crmSaleNotes").value.trim(), p_quote_id: document.getElementById("crmSaleQuote").value || null });
     if (result.error) { errorBox.textContent = result.error.message; setBusy(button, false); return; }
     saleDialog.close();
     await loadLeads(true);
@@ -393,11 +396,13 @@
   document.getElementById("crmSaveManagement").addEventListener("click", saveManagement);
   document.getElementById("crmCommentButton").addEventListener("click", function () { document.getElementById("crmCommentError").textContent = ""; commentDialog.showModal(); });
   document.getElementById("crmCommentSave").addEventListener("click", saveComment);
-  document.getElementById("crmSaleButton").addEventListener("click", function () {
+  document.getElementById("crmSaleButton").addEventListener("click", async function () {
     if (this.disabled || !state.activeLead) return;
     document.getElementById("crmSaleVehicle").value = crmOf(state.activeLead).vehicle_sold || state.activeLead.model_interest || "";
     document.getElementById("crmSaleAmount").value = "";
     document.getElementById("crmSaleNotes").value = "";
+    var quotes = await supabaseClient.from("sales_quotes").select("id, quote_code, vehicle_version, final_advance_amount, commercial_snapshot").eq("lead_id", state.activeLead.id).eq("status", "issued").order("issued_at", { ascending: false });
+    document.getElementById("crmSaleQuote").innerHTML = '<option value="">Sin presupuesto asociado</option>' + (quotes.data || []).map(function (quote) { var snapshot = quote.commercial_snapshot || {}; return '<option value="' + quote.id + '">' + escapeHtml(quote.quote_code + " · " + (snapshot.model || "") + " " + quote.vehicle_version) + '</option>'; }).join("");
     document.getElementById("crmSaleError").textContent = "";
     saleDialog.showModal();
   });
@@ -412,5 +417,5 @@
 
   var now = new Date();
   document.getElementById("crmRankingMonth").value = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0");
-  window.grupoSurCRM = { open: openView, refresh: loadLeads };
+  window.grupoSurCRM = { open: openView, refresh: loadLeads, getActiveLead: function () { return state.activeLead; } };
 }());

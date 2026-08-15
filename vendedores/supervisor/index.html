@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/vendedores/supervisor/supervisor.css?v=20260815-2">
+  <link rel="stylesheet" href="/vendedores/supervisor/supervisor.css?v=20260815-4">
 </head>
 <body>
   <main class="login" id="loginView">
@@ -80,8 +80,18 @@
           <div class="empty" id="emptyState" hidden><strong>No hay leads en esta vista</strong><span>Cuando ingrese una nueva conversación aparecerá automáticamente.</span></div>
         </section>
 
+        <section class="admin-sales-panel">
+          <div class="section-head"><div><h2>Seguimiento administrativo</h2><p>Estado de las ventas aprobadas, observaciones y bajas del equipo.</p></div><span id="adminSalesCount">0 operaciones</span></div>
+          <div class="admin-sales-list" id="adminSalesList"></div>
+        </section>
+
+        <section class="installment-metrics-panel">
+          <div class="section-head"><div><h2>Cumplimiento de cuotas</h2><p>Indicadores mensuales de clientes agrupados. Esta información no se muestra a vendedores.</p></div><label class="ranking-month">Mes<input id="installmentMonth" type="month"></label></div>
+          <div class="installment-metrics" id="installmentMetrics"></div>
+        </section>
+
         <section class="ranking-panel">
-          <div class="section-head"><div><h2>Ranking mensual</h2><p>Ventas confirmadas y conversión sobre los leads asignados.</p></div><label class="ranking-month">Mes<input id="rankingMonth" type="month"></label></div>
+          <div class="section-head"><div><h2>Ranking mensual</h2><p>Ventas confirmadas, finalizadas y conversión sobre los leads asignados.</p></div><label class="ranking-month">Mes<input id="rankingMonth" type="month"></label></div>
           <div class="supervisor-ranking" id="supervisorRanking"></div>
         </section>
       </div>
@@ -131,6 +141,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.2/dist/umd/supabase.js"></script>
   <script src="/vendedores/supabase-config.js?v=20260814-1"></script>
-  <script src="/vendedores/supervisor/supervisor.js?v=20260815-3"></script>
+  <script src="/vendedores/supervisor/supervisor.js?v=20260815-4"></script>
 </body>
 </html>
