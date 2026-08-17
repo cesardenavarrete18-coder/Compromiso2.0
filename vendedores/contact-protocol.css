@@ -13,6 +13,8 @@
 .protocol-task.is-next { border-color: #77b9e4; box-shadow: 0 8px 20px rgba(14,112,177,.09); }
 .protocol-task.is-next:after { position: absolute; inset: 0 0 0 auto; width: 3px; border-radius: 0 10px 10px 0; background: var(--blue-600); content: ""; }
 .protocol-task.completed, .protocol-task.skipped, .protocol-task.cancelled { opacity: .68; background: #f7f9fa; }
+.protocol-task.completed.on-time { opacity: 1; border-color: #a9dcc2; background: #f3fbf7; }
+.protocol-task.completed.outside-window { opacity: 1; border-color: #edca86; background: #fffaf0; }
 .protocol-task-number { display: grid; width: 30px; height: 30px; place-items: center; border: 1px solid #cce1ef; border-radius: 9px; color: var(--blue-700); background: #eaf4fc; font-size: 9px; font-weight: 900; }
 .protocol-task-title { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 .protocol-task-title strong { display: block; margin-top: 2px; font-size: 10px; }
@@ -25,7 +27,15 @@
 .protocol-actions a, .protocol-actions button { padding: 7px 9px; border: 1px solid #b9d2e4; border-radius: 7px; color: var(--blue-700); background: #fff; font-size: 8px; font-weight: 850; text-decoration: none; }
 .protocol-actions .success { color: #05603a; border-color: #a8dbc0; background: #eaf8f0; }
 .protocol-actions .whatsapp { color: #fff; border-color: #128c7e; background: #128c7e; }
+.protocol-actions .whatsapp.secondary { color: #087568; border-color: #9dd6cf; background: #eefaf8; }
 .protocol-result { margin-top: 6px; color: var(--muted); font-size: 8px; font-weight: 800; }
+.protocol-task.on-time .protocol-result { color: #08734a; }
+.protocol-task.outside-window .protocol-result { color: #98610b; }
+.crm-management-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 14px; margin: 18px 0 12px; padding-top: 16px; border-top: 1px solid var(--line); }
+.crm-management-heading span,.crm-management-heading strong,.crm-management-heading small { display: block; }
+.crm-management-heading span { color: var(--blue-700); font-size: 7px; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; }
+.crm-management-heading strong { margin-top: 2px; font-size: 13px; }
+.crm-management-heading small { color: var(--muted); font-size: 8px; text-align: right; }
 .customer-history { display: grid; gap: 8px; }
 .customer-history-item { padding: 12px; border: 1px solid var(--line); border-radius: 9px; background: #f9fbfc; }
 .customer-history-item strong, .customer-history-item span, .customer-history-item small { display: block; }

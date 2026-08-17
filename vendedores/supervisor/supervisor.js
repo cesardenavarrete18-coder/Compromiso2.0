@@ -2,7 +2,7 @@
   "use strict";
 
   var supabaseClient = window.grupoSurSupabaseClient;
-  var state = { profile: null, sellers: [], settings: {}, leads: [], tasks: [], goals: [], templates: [], sales: [], adminSales: [], activeSale: null, filter: "pending_supervisor", search: "" };
+  var state = { profile: null, sellers: [], settings: {}, leads: [], tasks: [], goals: [], templates: [], sales: [], adminSales: [], activeSale: null, view: "leads", filter: "pending_supervisor", search: "" };
   var loginView = document.getElementById("loginView");
   var appView = document.getElementById("appView");
   var loginForm = document.getElementById("loginForm");
@@ -76,9 +76,9 @@
       supabaseClient.from("seller_routing_settings").select("seller_user_id, daily_quota, paused"),
       supabaseClient.from("leads").select("id, customer_phone, customer_name, source_channel, source_detail, seller_code_received, qualification_status, priority, intent_summary, model_interest, routing_status, routing_reason, assigned_seller_user_id, assigned_at, last_message_at, created_at, attribution:lead_attributions(platform,campaign_name,adset_name,ad_name,headline), crm:lead_crm(status, priority, next_contact_at, last_contact_at, interview_at, sale_confirmation_status, sale_confirmed_at)").order("last_message_at", { ascending: false }).limit(500),
       supabaseClient.from("lead_sale_requests").select("id, lead_id, seller_user_id, vehicle, sale_amount, notes, status, requested_at, seller:profiles!lead_sale_requests_seller_user_id_fkey(full_name, seller_code), lead:leads(customer_name, customer_phone, intent_summary)").eq("status", "pending").order("requested_at"),
-      supabaseClient.from("sales_cases").select("id, case_code, vehicle, status, cdn_scoring_status, dealer_scoring_status, contract_status, finalized_at, cancellation_reason, updated_at, seller:profiles!sales_cases_seller_user_id_fkey(full_name, seller_code), lead:leads!sales_cases_lead_id_fkey(customer_name), events:sales_case_events(stage, outcome, comment, created_at)").order("updated_at", { ascending: false }).limit(250),
+      supabaseClient.from("sales_cases").select("id, case_code, seller_user_id, vehicle, status, cdn_scoring_status, dealer_scoring_status, contract_status, finalized_at, cancellation_reason, updated_at, seller:profiles!sales_cases_seller_user_id_fkey(full_name, seller_code), lead:leads!sales_cases_lead_id_fkey(customer_name), events:sales_case_events(stage, outcome, comment, created_at)").order("updated_at", { ascending: false }).limit(250),
       supabaseClient.from("lead_contact_tasks").select("id, lead_id, seller_user_id, channel, call_attempt, message_step, due_start, due_end, status, outcome, lead:leads(customer_name,customer_phone,model_interest), seller:profiles!lead_contact_tasks_seller_user_id_fkey(full_name,seller_code)").eq("status", "pending").order("due_start").limit(1000),
-      supabaseClient.from("commercial_goals").select("id, period_month, seller_user_id, target_contacts, target_interviews, target_sales, target_finalized").is("seller_user_id", null).order("period_month", { ascending: false }).limit(24),
+      supabaseClient.from("commercial_goals").select("id, period_month, seller_user_id, target_contacts, target_interviews, target_sales, target_finalized").order("period_month", { ascending: false }).limit(500),
       supabaseClient.from("contact_message_templates").select("id, step_number, title, body, active, updated_at").order("step_number")
     ]);
     var failed = results.find(function (item) { return item.error; });
@@ -137,24 +137,36 @@
   function renderGoals() {
     var month = document.getElementById("goalMonth").value;
     if (!month) return;
-    var goal = state.goals.find(function (item) { return String(item.period_month).slice(0, 7) === month; }) || {};
-    [["goalContacts", "target_contacts"], ["goalInterviews", "target_interviews"], ["goalSales", "target_sales"], ["goalFinalized", "target_finalized"]].forEach(function (mapping) {
-      document.getElementById(mapping[0]).value = goal[mapping[1]] || 0;
-    });
-    var contacts = state.leads.filter(function (lead) { var crm = Array.isArray(lead.crm) ? lead.crm[0] : lead.crm; return monthContains(crm && crm.last_contact_at, month); }).length;
-    var interviews = state.leads.filter(function (lead) { var crm = Array.isArray(lead.crm) ? lead.crm[0] : lead.crm; return monthContains(crm && crm.interview_at, month); }).length;
-    var sales = state.leads.filter(function (lead) { var crm = Array.isArray(lead.crm) ? lead.crm[0] : lead.crm; return crm && crm.sale_confirmation_status === "confirmed" && monthContains(crm.sale_confirmed_at, month); }).length;
-    var finalized = state.adminSales.filter(function (sale) { return monthContains(sale.finalized_at, month); }).length;
-    var rows = [
-      ["Contactados", contacts, Number(goal.target_contacts || 0)],
-      ["Entrevistas", interviews, Number(goal.target_interviews || 0)],
-      ["Ventas", sales, Number(goal.target_sales || 0)],
-      ["Finalizadas", finalized, Number(goal.target_finalized || 0)]
-    ];
-    document.getElementById("goalProgress").innerHTML = rows.map(function (row) {
-      var percent = row[2] ? Math.min(100, Math.round(row[1] * 100 / row[2])) : 0;
-      return '<article class="goal-progress-card"><div><span>' + escapeHtml(row[0]) + '</span><strong>' + row[1] + ' / ' + row[2] + '</strong></div><div class="goal-bar"><i style="width:' + percent + '%"></i></div><small>' + percent + '% del objetivo</small></article>';
+    var sellerSelect = document.getElementById("goalSeller");
+    var currentSeller = sellerSelect.value;
+    sellerSelect.innerHTML = state.sellers.map(function (seller) { return '<option value="' + seller.user_id + '">' + escapeHtml(seller.full_name + " · " + seller.seller_code) + '</option>'; }).join("");
+    if (!state.sellers.length) {
+      document.getElementById("goalFinalized").value = 0;
+      document.getElementById("goalProgress").innerHTML = '<div class="sales-empty">Todavía no hay vendedores activos.</div>';
+      return;
+    }
+    if (currentSeller && state.sellers.some(function (seller) { return seller.user_id === currentSeller; })) sellerSelect.value = currentSeller;
+    var goal = state.goals.find(function (item) { return item.seller_user_id === sellerSelect.value && String(item.period_month).slice(0, 7) === month; }) || {};
+    document.getElementById("goalFinalized").value = goal.target_finalized || 0;
+    document.getElementById("goalProgress").innerHTML = state.sellers.map(function (seller) {
+      var sellerGoal = state.goals.find(function (item) { return item.seller_user_id === seller.user_id && String(item.period_month).slice(0, 7) === month; }) || {};
+      var target = Number(sellerGoal.target_finalized || 0);
+      var finalized = state.adminSales.filter(function (sale) { return sale.seller_user_id === seller.user_id && monthContains(sale.finalized_at, month); }).length;
+      var percent = target ? Math.min(100, Math.round(finalized * 100 / target)) : 0;
+      return '<article class="goal-progress-card"><div><span>' + escapeHtml(seller.full_name) + '</span><strong>' + finalized + ' / ' + target + ' ventas</strong></div><div class="goal-bar"><i style="width:' + percent + '%"></i></div><small>' + percent + '% de cumplimiento · ventas finalizadas</small></article>';
     }).join("");
+  }
+
+  function switchSupervisorView(view) {
+    state.view = view;
+    document.querySelectorAll("[data-supervisor-panel]").forEach(function (panel) { panel.hidden = panel.dataset.supervisorPanel !== view; });
+    document.querySelectorAll("[data-supervisor-view]").forEach(function (button) { button.classList.toggle("active", button.dataset.supervisorView === view); });
+    var titles = { leads: ["Distribución comercial", "Bandeja de leads"], followup: ["Cumplimiento operativo", "Proceso de seguimiento"], sales: ["Control comercial", "Ventas para confirmar"], administration: ["Circuito posterior a la venta", "Seguimiento administrativo"], goals: ["Rendimiento del equipo", "Objetivos comerciales"] };
+    document.querySelector(".topbar .eyebrow").textContent = titles[view][0];
+    document.querySelector(".topbar h1").textContent = titles[view][1];
+    if (view === "goals") { renderGoals(); renderRanking(); }
+    if (view === "administration") renderInstallmentMetrics();
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function renderTemplates() {
@@ -304,6 +316,7 @@
     state.profile = profile;
     document.getElementById("profileName").textContent = profile.full_name;
     document.getElementById("avatar").textContent = initials(profile.full_name);
+    document.getElementById("authLoading").hidden = true;
     loginView.hidden = true;
     appView.hidden = false;
     await loadData(false);
@@ -329,14 +342,20 @@
     await supabaseClient.auth.signOut({ scope: "local" });
     state.profile = null;
     appView.hidden = true;
+    document.getElementById("authLoading").hidden = true;
     loginView.hidden = false;
   });
 
   document.querySelector(".sidebar nav").addEventListener("click", function (event) {
+    var button = event.target.closest("[data-supervisor-view]");
+    if (button) switchSupervisorView(button.dataset.supervisorView);
+  });
+
+  document.querySelector(".lead-view-filters").addEventListener("click", function (event) {
     var button = event.target.closest("[data-filter]");
     if (!button) return;
     state.filter = button.dataset.filter;
-    document.querySelectorAll("[data-filter]").forEach(function (item) { item.classList.toggle("active", item === button); });
+    this.querySelectorAll("[data-filter]").forEach(function (item) { item.classList.toggle("active", item === button); });
     renderLeads();
   });
 
@@ -469,21 +488,24 @@
   document.getElementById("rankingMonth").addEventListener("change", renderRanking);
   document.getElementById("installmentMonth").addEventListener("change", renderInstallmentMetrics);
   document.getElementById("goalMonth").addEventListener("change", renderGoals);
+  document.getElementById("goalSeller").addEventListener("change", renderGoals);
   document.getElementById("goalSave").addEventListener("click", async function () {
     var month = document.getElementById("goalMonth").value;
-    var existing = state.goals.find(function (item) { return String(item.period_month).slice(0, 7) === month; });
+    var sellerId = document.getElementById("goalSeller").value;
+    if (!month || !sellerId) { pageMessage.textContent = "Elegí un mes y un vendedor."; return; }
+    var existing = state.goals.find(function (item) { return item.seller_user_id === sellerId && String(item.period_month).slice(0, 7) === month; });
     var payload = {
       period_month: month + "-01",
-      seller_user_id: null,
-      target_contacts: Number(document.getElementById("goalContacts").value || 0),
-      target_interviews: Number(document.getElementById("goalInterviews").value || 0),
-      target_sales: Number(document.getElementById("goalSales").value || 0),
+      seller_user_id: sellerId,
+      target_contacts: 0,
+      target_interviews: 0,
+      target_sales: 0,
       target_finalized: Number(document.getElementById("goalFinalized").value || 0),
       created_by: state.profile.user_id
     };
     setBusy(this, true, "Guardando…");
     var result = existing ? await supabaseClient.from("commercial_goals").update(payload).eq("id", existing.id) : await supabaseClient.from("commercial_goals").insert(payload);
-    if (result.error) pageMessage.textContent = result.error.message; else { await loadData(true); pageMessage.textContent = "Objetivos comerciales guardados."; }
+    if (result.error) pageMessage.textContent = result.error.message; else { await loadData(true); pageMessage.textContent = "Objetivo de ventas guardado para el vendedor."; }
     setBusy(this, false);
   });
   document.getElementById("contactTemplates").addEventListener("click", async function (event) {
@@ -503,9 +525,14 @@
   document.getElementById("installmentMonth").value = document.getElementById("rankingMonth").value;
   document.getElementById("goalMonth").value = document.getElementById("rankingMonth").value;
 
-  if (!supabaseClient) { loginMessage.textContent = "No se pudo conectar con Supabase."; return; }
+  if (!supabaseClient) { document.getElementById("authLoading").hidden = true; loginView.hidden = false; loginMessage.textContent = "No se pudo conectar con Supabase."; return; }
   supabaseClient.auth.getUser().then(function (result) {
-    if (result.data && result.data.user) enterApp().catch(function (error) { loginView.hidden = false; appView.hidden = true; loginMessage.textContent = error.message; });
+    if (result.data && result.data.user) {
+      enterApp().catch(function (error) { document.getElementById("authLoading").hidden = true; loginView.hidden = false; appView.hidden = true; loginMessage.textContent = error.message; });
+      return;
+    }
+    document.getElementById("authLoading").hidden = true;
+    loginView.hidden = false;
   });
   window.setInterval(function () { if (state.profile) loadData(true).catch(function () {}); }, 30000);
 }());

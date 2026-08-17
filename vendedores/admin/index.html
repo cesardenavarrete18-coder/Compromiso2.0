@@ -173,6 +173,13 @@
                 </label>
 
                 <label class="field">
+                  <span>Valor final del plan</span>
+                  <div class="input-prefix"><span>$</span><input id="campaignFinalPrice" name="finalPrice" type="number" min="1" step="1" inputmode="numeric" placeholder="0" required></div>
+                  <small>Importe contractual de referencia. No descuenta bonificaciones ni beneficios.</small>
+                  <small>Obligatorio para generar presupuestos de plan.</small>
+                </label>
+
+                <label class="field">
                   <span>Anticipo</span>
                   <div class="input-prefix"><span>$</span><input id="campaignAdvanceAmount" name="advanceAmount" type="number" min="0" step="1" inputmode="numeric" placeholder="0"></div>
                   <small>Se actualiza cuando cambian las condiciones.</small>
@@ -385,6 +392,6 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.2/dist/umd/supabase.js"></script>
   <script src="/vendedores/supabase-config.js?v=20260813-2"></script>
   <script src="/vendedores/admin/excel-export.js?v=20260813-2"></script>
-  <script src="/vendedores/admin/admin.js?v=20260815-1"></script>
+  <script src="/vendedores/admin/admin.js?v=20260817-1"></script>
 </body>
 </html>

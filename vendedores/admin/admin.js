@@ -92,6 +92,7 @@
       versionName: row.version_name || "",
       transmission: row.transmission || "",
       installmentCount: row.installment_count,
+      finalPrice: row.final_price,
       advanceAmount: row.advance_amount,
       installmentAmount: row.installment_amount,
       installmentIsFrom: row.installment_is_from !== false,
@@ -148,7 +149,7 @@
   async function loadCampaigns() {
     var result = await supabaseClient
       .from("campaigns")
-      .select("id, plan_name, version_name, transmission, installment_count, advance_amount, installment_amount, installment_is_from, sort_order, active, bonus, benefits, slots, valid_from, valid_to, timer_hours, model:models!inner(id, name, image_path, sort_order, brand:brands!inner(name, sort_order))");
+      .select("id, plan_name, version_name, transmission, installment_count, final_price, advance_amount, installment_amount, installment_is_from, sort_order, active, bonus, benefits, slots, valid_from, valid_to, timer_hours, model:models!inner(id, name, image_path, sort_order, brand:brands!inner(name, sort_order))");
     if (result.error) {
       throw result.error;
     }
@@ -229,7 +230,7 @@
       return "" +
         '<button class="campaign-item' + (item.id === state.selectedId ? " is-selected" : "") + '" type="button" data-id="' + escapeHtml(item.id) + '" data-brand-theme="' + brandTheme(item.brand) + '">' +
           '<img src="' + item.image + '" alt="">' +
-          '<span class="campaign-item-copy"><span>' + escapeHtml(item.brand + " · " + item.name) + '</span><strong>' + escapeHtml(offerDescriptor(item)) + '</strong><small>' + escapeHtml(formatMoney(item.advanceAmount) + " anticipo · " + formatMoney(item.installmentAmount) + " cuota · " + availability) + '</small></span>' +
+          '<span class="campaign-item-copy"><span>' + escapeHtml(item.brand + " · " + item.name) + '</span><strong>' + escapeHtml(offerDescriptor(item)) + '</strong><small>' + escapeHtml(formatMoney(item.finalPrice) + " valor final · " + formatMoney(item.advanceAmount) + " anticipo · " + formatMoney(item.installmentAmount) + " cuota · " + availability) + '</small></span>' +
           '<i class="status-dot' + (status.active ? " is-active" : "") + '" title="' + escapeHtml(status.label) + '"></i>' +
         "</button>";
     }).join("");
@@ -250,6 +251,7 @@
     document.getElementById("campaignVersionName").value = item.versionName || "";
     document.getElementById("campaignTransmission").value = item.transmission || "";
     document.getElementById("campaignInstallmentCount").value = item.installmentCount || "";
+    document.getElementById("campaignFinalPrice").value = item.finalPrice === null ? "" : item.finalPrice;
     document.getElementById("campaignAdvanceAmount").value = item.advanceAmount === null ? "" : item.advanceAmount;
     document.getElementById("campaignInstallmentAmount").value = item.installmentAmount === null ? "" : item.installmentAmount;
     document.getElementById("campaignInstallmentIsFrom").checked = item.installmentIsFrom !== false;
@@ -290,6 +292,7 @@
       versionName: document.getElementById("campaignVersionName").value.trim(),
       transmission: document.getElementById("campaignTransmission").value,
       installmentCount: document.getElementById("campaignInstallmentCount").value,
+      finalPrice: document.getElementById("campaignFinalPrice").value,
       advanceAmount: document.getElementById("campaignAdvanceAmount").value,
       installmentAmount: document.getElementById("campaignInstallmentAmount").value,
       installmentIsFrom: document.getElementById("campaignInstallmentIsFrom").checked,
@@ -314,7 +317,7 @@
       ? "A confirmar"
       : (config.installmentIsFrom ? "Desde " : "") + formatMoney(config.installmentAmount);
     document.getElementById("previewTitle").textContent = item.brand + " " + item.name + (version ? " · " + version : "");
-    document.getElementById("previewBonus").textContent = config.planName + (config.installmentCount ? " · " + config.installmentCount + " cuotas" : "") + " · Anticipo " + formatMoney(config.advanceAmount) + " · Cuota " + installment;
+    document.getElementById("previewBonus").textContent = config.planName + (config.installmentCount ? " · " + config.installmentCount + " cuotas" : "") + " · Valor final " + formatMoney(config.finalPrice) + " · Anticipo " + formatMoney(config.advanceAmount) + " · Cuota " + installment;
     document.getElementById("previewSlots").textContent = config.slots === "" ? "Sin informar" : config.slots + " disponibles";
     document.getElementById("previewHours").textContent = (config.validityHours || 24) + " horas";
     document.getElementById("previewStatus").textContent = status.label;
@@ -807,6 +810,7 @@
     var hours = Number(config.validityHours);
     var slots = config.slots === "" ? null : Number(config.slots);
     var installmentCount = config.installmentCount === "" ? null : Number(config.installmentCount);
+    var finalPrice = config.finalPrice === "" ? null : Number(config.finalPrice);
     var advanceAmount = config.advanceAmount === "" ? null : Number(config.advanceAmount);
     var installmentAmount = config.installmentAmount === "" ? null : Number(config.installmentAmount);
     var button = campaignForm.querySelector('button[type="submit"]');
@@ -821,8 +825,13 @@
       formMessage.classList.add("is-error");
       return;
     }
-    if ((advanceAmount !== null && advanceAmount < 0) || (installmentAmount !== null && installmentAmount < 0)) {
-      formMessage.textContent = "El anticipo y la cuota no pueden ser negativos.";
+    if (finalPrice === null || !Number.isFinite(finalPrice) || finalPrice <= 0) {
+      formMessage.textContent = "Ingresá el valor final vigente del plan.";
+      formMessage.classList.add("is-error");
+      return;
+    }
+    if ((finalPrice !== null && finalPrice < 0) || (advanceAmount !== null && advanceAmount < 0) || (installmentAmount !== null && installmentAmount < 0)) {
+      formMessage.textContent = "El valor final, el anticipo y la cuota no pueden ser negativos.";
       formMessage.classList.add("is-error");
       return;
     }
@@ -855,6 +864,7 @@
         version_name: config.versionName,
         transmission: config.transmission,
         installment_count: installmentCount,
+        final_price: finalPrice,
         advance_amount: advanceAmount,
         installment_amount: installmentAmount,
         installment_is_from: config.installmentIsFrom,
@@ -875,6 +885,7 @@
         versionName: result.data.version_name || "",
         transmission: result.data.transmission || "",
         installmentCount: result.data.installment_count,
+        finalPrice: result.data.final_price,
         advanceAmount: result.data.advance_amount,
         installmentAmount: result.data.installment_amount,
         installmentIsFrom: result.data.installment_is_from !== false,
@@ -925,6 +936,7 @@
         version_name: item.versionName,
         transmission: item.transmission,
         installment_count: item.installmentCount,
+        final_price: item.finalPrice,
         advance_amount: item.advanceAmount,
         installment_amount: item.installmentAmount,
         installment_is_from: item.installmentIsFrom,

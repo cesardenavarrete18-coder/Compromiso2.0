@@ -10,9 +10,12 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/vendedores/admventas/admventas.css?v=20260817-1">
+  <link rel="stylesheet" href="/vendedores/admventas/workflow-polish.css?v=20260817-1">
+  <link rel="stylesheet" href="/vendedores/auth-loading.css?v=20260817-1">
 </head>
 <body>
-  <main class="login" id="loginView">
+  <div class="auth-loading" id="authLoading" role="status"><span></span><strong>Validando tu sesión…</strong></div>
+  <main class="login" id="loginView" hidden>
     <section class="login-brand">
       <a href="/"><img src="/assets/logo-light.webp" alt="Grupo Sur Automotores"></a>
       <div><p class="eyebrow">Administración de ventas</p><h1>Del cierre comercial a la cartera activa.</h1><p>Controlá la documentación, los scorings, la firma y el seguimiento mensual desde un único circuito.</p></div>
@@ -80,7 +83,7 @@
     <section class="minute-card" id="quoteCard"><div><strong>Presupuesto asociado</strong><span id="quoteStatus">Sin presupuesto</span></div><button class="button secondary" id="printQuoteButton" type="button">Ver / imprimir</button></section>
     <div class="stage-grid" id="stageGrid"></div>
     <section class="minute-card"><div><strong>Minuta comercial</strong><span id="minuteStatus">Pendiente</span></div><button class="button secondary" id="printMinuteButton" type="button">Ver / imprimir</button></section>
-    <section class="documents"><div class="section-head compact"><div><h3>Documentación</h3><p>DNI, contrato firmado y documentación respaldatoria.</p></div></div><div id="documentList" class="document-list"></div><form id="documentForm" class="document-form"><select name="type"><option value="dni">DNI</option><option value="signed_contract">Contrato firmado</option><option value="supporting_document">Documentación respaldatoria</option><option value="receipt">Comprobante</option></select><input name="file" type="file" accept="application/pdf,image/jpeg,image/png,image/webp"><button class="button secondary" type="submit">Adjuntar</button></form></section>
+    <section class="documents"><div class="section-head compact"><div><h3>Documentación de la operación</h3><p>DNI del titular, comprobante de pago y, cuando corresponda, documentación del cotitular o cónyuge.</p></div></div><div id="documentChecklist" class="document-checklist"></div><div id="documentList" class="document-list"></div><form id="documentForm" class="document-form"><select name="type"><option value="dni_holder_front">DNI titular · Frente</option><option value="dni_holder_back">DNI titular · Dorso</option><option value="payment_receipt">Comprobante de pago</option><option value="dni_coholder_front">DNI cotitular / cónyuge · Frente</option><option value="dni_coholder_back">DNI cotitular / cónyuge · Dorso</option><option value="signed_contract">Contrato firmado</option><option value="supporting_document">Otra documentación</option></select><input name="file" type="file" accept="application/pdf,image/jpeg,image/png,image/webp"><button class="button secondary" type="submit">Adjuntar</button></form></section>
     <section class="timeline"><h3>Historia administrativa</h3><div id="caseTimeline"></div></section><p class="message" id="dialogMessage"></p>
   </div></dialog>
 
@@ -91,6 +94,6 @@
   <section class="minute-print" id="minutePrint" aria-hidden="true"></section>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/vendedores/supabase-config.js?v=20260815-3"></script>
-  <script src="/vendedores/admventas/admventas.js?v=20260815-2"></script>
+  <script src="/vendedores/admventas/admventas.js?v=20260817-1"></script>
 </body>
 </html>

@@ -16,7 +16,7 @@
     { value: "desistir", label: "Desistir" }
   ];
   var CLOSED_STAGES = ["venta", "desistir", "invalido"];
-  var state = { leads: [], tasks: [], activeLead: null, view: "agenda", searchAgenda: "", searchPipeline: "", loading: false };
+  var state = { leads: [], tasks: [], saleQuotes: [], activeLead: null, view: "agenda", searchAgenda: "", searchPipeline: "", loading: false };
   var leadDialog = document.getElementById("crmLeadDialog");
   var commentDialog = document.getElementById("crmCommentDialog");
   var saleDialog = document.getElementById("crmSaleDialog");
@@ -238,7 +238,7 @@
   function renderPipeline() {
     var query = normalizeSearch(state.searchPipeline);
     var leads = state.leads.filter(function (lead) { return matchesSearch(lead, query); });
-    document.getElementById("crmPipeline").innerHTML = STAGES.map(function (stage) {
+    document.getElementById("crmPipeline").innerHTML = STAGES.filter(function (stage) { return stage.value !== "invalido"; }).map(function (stage) {
       var items = leads.filter(function (lead) { return (crmOf(lead).status || "nuevo") === stage.value; });
       return '<section class="pipeline-column"><div class="pipeline-head"><strong>' + escapeHtml(stage.label) + '</strong><span>' + items.length + '</span></div><div class="pipeline-cards">' +
         (items.length ? items.map(leadCard).join("") : '<div class="pipeline-empty">Sin leads en este estado</div>') + '</div></section>';
@@ -310,7 +310,6 @@
     var status = document.getElementById("crmStatusInput").value;
     document.querySelectorAll("[data-status-field]").forEach(function (field) { field.classList.toggle("visible", field.dataset.statusField === status); });
     var automated = state.activeLead && nextPendingTask(state.activeLead.id) && ["nuevo", "no_contesta"].includes(status);
-    document.querySelectorAll(".manual-followup-field").forEach(function (field) { field.hidden = Boolean(automated); });
     var help = {
       no_contesta: automated ? "El proceso de seguimiento ya programó automáticamente el próximo intento." : "Programá el próximo intento.",
       entrevista: "La entrevista requiere día, hora y, de ser posible, sucursal.",
@@ -319,7 +318,7 @@
       invalido: "Explicá por qué el teléfono o contacto es inválido.",
       desistir: "Indicá el motivo. El lead pasará a la base fría para remarketing."
     };
-    document.getElementById("crmFormHelp").textContent = automated ? "Las próximas llamadas y WhatsApp ya están organizados. Sólo registrá el resultado de cada acción." : (help[status] || "Guardá un resumen breve y programá el próximo paso cuando corresponda.");
+    document.getElementById("crmFormHelp").textContent = automated ? "El checklist propone los intentos recomendados. Podés conservar esa fecha o definir manualmente el próximo contacto." : (help[status] || "Guardá un resumen breve y programá el próximo paso cuando corresponda.");
   }
 
   function renderProtocol(lead) {
@@ -337,13 +336,15 @@
         var isNext = nextTask && nextTask.id === task.id;
         var due = formatDate(task.due_start, true) + " a " + new Intl.DateTimeFormat("es-AR", { timeZone: "America/Argentina/Buenos_Aires", hour: "2-digit", minute: "2-digit" }).format(new Date(task.due_end));
         var body = task.channel === "whatsapp" ? personalizedMessage(task, lead) : "";
-        return '<article class="protocol-task ' + escapeHtml(task.status) + (isNext ? ' is-next' : '') + '">' +
+        var completedAt = task.completed_at ? new Date(task.completed_at).getTime() : null;
+        var insideWindow = completedAt && completedAt >= new Date(task.due_start).getTime() && completedAt <= new Date(task.due_end).getTime();
+        return '<article class="protocol-task ' + escapeHtml(task.status) + (isNext ? ' is-next' : '') + (task.completed_at ? (insideWindow ? ' on-time' : ' outside-window') : '') + '">' +
           '<span class="protocol-task-number">' + task.sequence_order + '</span><div class="protocol-task-main"><div class="protocol-task-title"><div><span class="protocol-channel">' + escapeHtml(task.channel === "call" ? "Llamada" : "WhatsApp") + '</span><strong>' + escapeHtml(taskTitle(task)) + '</strong></div><div class="protocol-task-meta">' + (isNext ? '<em>Próximo paso</em>' : '') + '<small>' + escapeHtml(due) + '</small></div></div>' +
           (body ? '<p>' + escapeHtml(body) + '</p>' : '<p>Contactá al cliente dentro de esta franja y registrá el resultado.</p>') +
           (pending ? '<div class="protocol-actions">' + (task.channel === "call" ?
             '<a href="tel:+' + String(lead.customer_phone).replace(/\D/g, "") + '">Llamar ahora</a><button type="button" data-contact-task="' + task.id + '" data-contact-outcome="no_answer">No respondió</button><button class="success" type="button" data-contact-task="' + task.id + '" data-contact-outcome="answered">Respondió</button>' :
-            '<button class="whatsapp" type="button" data-contact-task="' + task.id + '" data-contact-outcome="sent" data-whatsapp-body="' + encodeURIComponent(body) + '">Abrir WhatsApp y registrar</button>') + '</div>' :
-            '<div class="protocol-result">' + escapeHtml(task.status === "cancelled" ? "Cancelada" : task.outcome === "answered" ? "Respondió" : task.outcome === "no_answer" ? "No respondió" : task.outcome === "sent" ? "Enviado" : "Completada") + (task.completed_at ? " · " + escapeHtml(formatDate(task.completed_at)) : "") + '</div>') +
+            '<button class="whatsapp secondary" type="button" data-open-whatsapp="' + encodeURIComponent(body) + '">Abrir WhatsApp</button><button class="whatsapp" type="button" data-contact-task="' + task.id + '" data-contact-outcome="sent">Marcar enviado</button>') + '</div>' :
+            '<div class="protocol-result">' + escapeHtml(task.status === "cancelled" ? "Cancelada" : task.outcome === "answered" ? "Respondió" : task.outcome === "no_answer" ? "No respondió" : task.outcome === "sent" ? "Enviado" : "Completada") + (task.completed_at ? " · " + escapeHtml(formatDate(task.completed_at)) + (insideWindow ? " · Cumplida en horario" : " · Fuera de franja") : "") + '</div>') +
           '</div></article>';
       }).join("") + '</div>';
   }
@@ -419,6 +420,9 @@
       nextContact = automatedTask ? automatedTask.due_start : null;
     }
     if (status === "no_contesta" && !nextContact) { errorBox.textContent = "Programá el próximo intento de contacto."; return; }
+    if (nextContact && new Date(nextContact).getTime() <= Date.now()) { errorBox.textContent = "El próximo contacto debe quedar programado a futuro."; return; }
+    if (["nuevo", "no_contesta", "en_proceso", "cierre", "sena"].includes(status) && !nextContact) { errorBox.textContent = "Programá la próxima acción antes de guardar."; return; }
+    if (nextContact && document.getElementById("crmNextContactNoteInput").value.trim().length < 3) { errorBox.textContent = "Indicá el motivo del próximo contacto."; return; }
     if (status === "entrevista" && !interview) { errorBox.textContent = "Indicá la fecha y hora de la entrevista."; return; }
     if (status === "sena" && (!deposit || Number(deposit) <= 0)) { errorBox.textContent = "Indicá el importe de la seña."; return; }
     if (["invalido", "desistir"].includes(status) && note.length < 3) { errorBox.textContent = "Explicá brevemente el motivo."; return; }
@@ -437,7 +441,7 @@
     });
     if (result.error) { errorBox.textContent = result.error.message; setBusy(button, false); return; }
     await loadLeads(true);
-    await openLead(state.activeLead.id);
+    leadDialog.close();
     setBusy(button, false);
   }
 
@@ -475,19 +479,15 @@
     setBusy(button, false);
   }
 
-  async function completeContactTask(taskId, outcome, whatsappBody) {
+  async function completeContactTask(taskId, outcome) {
     if (!state.activeLead) return;
-    if (outcome === "sent") {
-      var phone = String(state.activeLead.customer_phone || "").replace(/\D/g, "");
-      window.open("https://wa.me/" + phone + "?text=" + (whatsappBody || ""), "_blank", "noopener");
-    }
     var result = await supabaseClient.rpc("complete_contact_task_with_follow_up", { p_task_id: taskId, p_outcome: outcome, p_note: "", p_next_contact_at: null, p_next_contact_note: "" });
     if (result.error) {
       document.getElementById("crmFormError").textContent = result.error.message;
       return;
     }
     await loadLeads(true);
-    await openLead(state.activeLead.id);
+    leadDialog.close();
   }
 
   function suggestedFollowUp() {
@@ -535,7 +535,7 @@
     pendingAnsweredTaskId = null;
     answeredDialog.close();
     await loadLeads(true);
-    await openLead(state.activeLead.id);
+    leadDialog.close();
     setBusy(button, false);
   }
 
@@ -553,7 +553,13 @@
     var contactTask = event.target.closest("[data-contact-task]");
     if (contactTask) {
       if (contactTask.dataset.contactOutcome === "answered") openAnsweredFollowUp(contactTask.dataset.contactTask);
-      else completeContactTask(contactTask.dataset.contactTask, contactTask.dataset.contactOutcome, contactTask.dataset.whatsappBody || "");
+      else completeContactTask(contactTask.dataset.contactTask, contactTask.dataset.contactOutcome);
+      return;
+    }
+    var openWhatsapp = event.target.closest("[data-open-whatsapp]");
+    if (openWhatsapp && state.activeLead) {
+      var phone = String(state.activeLead.customer_phone || "").replace(/\D/g, "");
+      window.open("https://wa.me/" + phone + "?text=" + openWhatsapp.dataset.openWhatsapp, "_blank", "noopener");
     }
   });
 
@@ -568,12 +574,27 @@
     document.getElementById("crmSaleVehicle").value = crmOf(state.activeLead).vehicle_sold || state.activeLead.model_interest || "";
     document.getElementById("crmSaleAmount").value = "";
     document.getElementById("crmSaleNotes").value = "";
-    var quotes = await supabaseClient.from("sales_quotes").select("id, quote_code, vehicle_version, final_advance_amount, commercial_snapshot").eq("lead_id", state.activeLead.id).eq("status", "issued").order("issued_at", { ascending: false });
-    document.getElementById("crmSaleQuote").innerHTML = '<option value="">Sin presupuesto asociado</option>' + (quotes.data || []).map(function (quote) { var snapshot = quote.commercial_snapshot || {}; return '<option value="' + quote.id + '">' + escapeHtml(quote.quote_code + " · " + (snapshot.model || "") + " " + quote.vehicle_version) + '</option>'; }).join("");
+    var quotes = await supabaseClient.from("sales_quotes").select("id, quote_code, offer_type, vehicle_version, sale_price, final_advance_amount, commercial_snapshot").eq("lead_id", state.activeLead.id).eq("status", "issued").order("issued_at", { ascending: false });
+    state.saleQuotes = quotes.data || [];
+    document.getElementById("crmSaleQuote").innerHTML = '<option value="">Sin presupuesto asociado</option>' + state.saleQuotes.map(function (quote) { var snapshot = quote.commercial_snapshot || {}; return '<option value="' + quote.id + '">' + escapeHtml(quote.quote_code + " · " + (snapshot.model || "") + " " + quote.vehicle_version) + '</option>'; }).join("");
+    document.getElementById("crmSaleVehicle").readOnly = false;
+    document.getElementById("crmSaleAmount").readOnly = false;
     document.getElementById("crmSaleError").textContent = "";
     saleDialog.showModal();
   });
   document.getElementById("crmSaleSubmit").addEventListener("click", requestSale);
+  document.getElementById("crmSaleQuote").addEventListener("change", function () {
+    var quote = state.saleQuotes.find(function (item) { return item.id === this.value; }, this);
+    var isPlan = quote && quote.offer_type === "savings_plan";
+    var snapshot = quote && quote.commercial_snapshot || {};
+    if (isPlan) {
+      document.getElementById("crmSaleVehicle").value = [snapshot.brand, snapshot.model, quote.vehicle_version].filter(Boolean).join(" ");
+      document.getElementById("crmSaleAmount").value = quote.sale_price;
+    }
+    document.getElementById("crmSaleVehicle").readOnly = Boolean(isPlan);
+    document.getElementById("crmSaleAmount").readOnly = Boolean(isPlan);
+    document.getElementById("crmSaleQuoteHelp").textContent = isPlan ? "Datos bloqueados: la venta toma el vehículo y el valor final del plan seleccionado, sin descontar bonificaciones." : "Si elegís un presupuesto de plan, el vehículo y el importe se toman de esa propuesta.";
+  });
   document.getElementById("crmRefreshButton").addEventListener("click", function () { var button = this; setBusy(button, true, "Actualizando…"); loadLeads(false).finally(function () { setBusy(button, false); }); });
   document.getElementById("crmAgendaSearch").addEventListener("input", function () { state.searchAgenda = this.value; renderAgenda(); });
   document.getElementById("crmPipelineSearch").addEventListener("input", function () { state.searchPipeline = this.value; renderPipeline(); });

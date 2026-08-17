@@ -1,0 +1,37 @@
+[data-supervisor-panel][hidden] { display: none !important; }
+
+.lead-view-filters {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 0 0 18px;
+}
+
+.lead-view-filters button {
+  border: 1px solid #cfe0f2;
+  border-radius: 999px;
+  padding: 9px 14px;
+  background: #fff;
+  color: #49627d;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.lead-view-filters button.active {
+  border-color: #087bd8;
+  color: #fff;
+  background: #087bd8;
+}
+
+.seller-goal-form { align-content: start; }
+
+.seller-goal-form select {
+  width: 100%;
+  border: 1px solid #c8d9eb;
+  border-radius: 12px;
+  padding: 12px;
+  background: #fff;
+  color: #10243d;
+  font: inherit;
+}

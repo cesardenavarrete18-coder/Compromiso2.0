@@ -1,0 +1,22 @@
+.quote-dialog-shell { background: linear-gradient(180deg, #f5faff 0, #fff 150px); }
+.quote-dialog-heading { padding: 4px 48px 14px 0; }
+.quote-dialog-heading h2 { margin: 2px 0 5px; font-size: 26px; letter-spacing: -.04em; }
+.quote-dialog-heading > p:not(.eyebrow) { margin: 0; color: var(--muted); font-size: 10px; }
+.quote-form-grid label small { color: var(--muted); font-size: 8px; font-weight: 600; }
+.quote-form-grid input[readonly], #crmSaleVehicle[readonly], #crmSaleAmount[readonly] { color: #29455a; background: #edf4f8; cursor: not-allowed; }
+.quote-calculation { padding: 10px; border: 1px solid #d7e8f3; border-radius: 11px; background: #fff; box-shadow: 0 8px 24px rgba(19, 77, 114, .06); }
+
+@media print {
+  .commercial-quote-sheet .quote-print-hero { margin: 8mm 0 5mm; padding: 9mm; border-radius: 4mm; color: #fff; background: linear-gradient(135deg, #06172a, #087bd8); }
+  .commercial-quote-sheet .quote-print-hero span { font-size: 8pt; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+  .commercial-quote-sheet .quote-print-hero h1 { margin: 3mm 0 1mm; font-size: 23pt; line-height: 1.05; }
+  .commercial-quote-sheet .quote-print-hero p { margin: 0; font-size: 11pt; opacity: .9; }
+  .commercial-quote-sheet .quote-customer-strip { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; margin-bottom: 6mm; }
+  .commercial-quote-sheet .quote-customer-strip div { padding: 4mm; border: .3mm solid #d8e4ed; border-radius: 3mm; }
+  .commercial-quote-sheet .quote-customer-strip span, .commercial-quote-sheet .quote-customer-strip strong { display: block; }
+  .commercial-quote-sheet .quote-customer-strip span { color: #617789; font-size: 7pt; text-transform: uppercase; }
+  .commercial-quote-sheet .quote-customer-strip strong { margin-top: 1mm; font-size: 11pt; }
+  .commercial-quote-sheet .quote-benefits { display: grid; grid-template-columns: 1fr 1fr; gap: 2mm 7mm; margin: 0; padding-left: 5mm; font-size: 9pt; }
+  .commercial-quote-sheet .quote-legal p { color: #526a7c; font-size: 8pt; line-height: 1.5; }
+}
+

@@ -383,6 +383,7 @@
 
   function showPortal(seller) {
     state.seller = seller;
+    document.getElementById("authLoading").hidden = true;
     loginPage.hidden = true;
     portal.hidden = false;
     document.getElementById("sellerAvatar").textContent = initials(seller.name);
@@ -401,6 +402,7 @@
     state.model = null;
     state.client = null;
     portal.hidden = true;
+    document.getElementById("authLoading").hidden = true;
     loginPage.hidden = false;
     loginForm.reset();
     loginError.textContent = "";
@@ -1392,6 +1394,7 @@
   renderHistory();
 
   if (!supabaseClient) {
+    showLogin();
     loginError.textContent = "No se pudo conectar con el servicio de acceso.";
   } else {
     supabaseClient.auth.getUser().then(async function (response) {
