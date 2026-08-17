@@ -2,7 +2,7 @@
   "use strict";
 
   var supabaseClient = window.grupoSurSupabaseClient;
-  var state = { profile: null, sellers: [], settings: {}, leads: [], sales: [], activeSale: null, filter: "pending_supervisor", search: "" };
+  var state = { profile: null, sellers: [], settings: {}, leads: [], tasks: [], goals: [], templates: [], sales: [], adminSales: [], activeSale: null, filter: "pending_supervisor", search: "" };
   var loginView = document.getElementById("loginView");
   var appView = document.getElementById("appView");
   var loginForm = document.getElementById("loginForm");
@@ -74,8 +74,12 @@
     var results = await Promise.all([
       supabaseClient.from("profiles").select("user_id, full_name, seller_code, active").eq("role", "seller").order("full_name"),
       supabaseClient.from("seller_routing_settings").select("seller_user_id, daily_quota, paused"),
-      supabaseClient.from("leads").select("id, customer_phone, customer_name, source_channel, source_detail, seller_code_received, qualification_status, priority, intent_summary, model_interest, routing_status, routing_reason, assigned_seller_user_id, assigned_at, last_message_at, created_at, crm:lead_crm(status, priority, next_contact_at, sale_confirmation_status)").order("last_message_at", { ascending: false }).limit(500),
-      supabaseClient.from("lead_sale_requests").select("id, lead_id, seller_user_id, vehicle, sale_amount, notes, status, requested_at, seller:profiles!lead_sale_requests_seller_user_id_fkey(full_name, seller_code), lead:leads(customer_name, customer_phone, intent_summary)").eq("status", "pending").order("requested_at")
+      supabaseClient.from("leads").select("id, customer_phone, customer_name, source_channel, source_detail, seller_code_received, qualification_status, priority, intent_summary, model_interest, routing_status, routing_reason, assigned_seller_user_id, assigned_at, last_message_at, created_at, attribution:lead_attributions(platform,campaign_name,adset_name,ad_name,headline), crm:lead_crm(status, priority, next_contact_at, last_contact_at, interview_at, sale_confirmation_status, sale_confirmed_at)").order("last_message_at", { ascending: false }).limit(500),
+      supabaseClient.from("lead_sale_requests").select("id, lead_id, seller_user_id, vehicle, sale_amount, notes, status, requested_at, seller:profiles!lead_sale_requests_seller_user_id_fkey(full_name, seller_code), lead:leads(customer_name, customer_phone, intent_summary)").eq("status", "pending").order("requested_at"),
+      supabaseClient.from("sales_cases").select("id, case_code, vehicle, status, cdn_scoring_status, dealer_scoring_status, contract_status, finalized_at, cancellation_reason, updated_at, seller:profiles!sales_cases_seller_user_id_fkey(full_name, seller_code), lead:leads!sales_cases_lead_id_fkey(customer_name), events:sales_case_events(stage, outcome, comment, created_at)").order("updated_at", { ascending: false }).limit(250),
+      supabaseClient.from("lead_contact_tasks").select("id, lead_id, seller_user_id, channel, call_attempt, message_step, due_start, due_end, status, outcome, lead:leads(customer_name,customer_phone,model_interest), seller:profiles!lead_contact_tasks_seller_user_id_fkey(full_name,seller_code)").eq("status", "pending").order("due_start").limit(1000),
+      supabaseClient.from("commercial_goals").select("id, period_month, seller_user_id, target_contacts, target_interviews, target_sales, target_finalized").is("seller_user_id", null).order("period_month", { ascending: false }).limit(24),
+      supabaseClient.from("contact_message_templates").select("id, step_number, title, body, active, updated_at").order("step_number")
     ]);
     var failed = results.find(function (item) { return item.error; });
     if (failed) throw failed.error;
@@ -84,6 +88,10 @@
     (results[1].data || []).forEach(function (item) { state.settings[item.seller_user_id] = item; });
     state.leads = results[2].data || [];
     state.sales = results[3].data || [];
+    state.adminSales = results[4].data || [];
+    state.tasks = results[5].data || [];
+    state.goals = results[6].data || [];
+    state.templates = results[7].data || [];
     renderAll();
     pageMessage.textContent = "";
   }
@@ -99,6 +107,60 @@
     document.getElementById("assignedStat").textContent = state.leads.filter(function (lead) { return lead.assigned_seller_user_id && lead.assigned_at && localDateKey(lead.assigned_at) === today; }).length;
     document.getElementById("unqualifiedStat").textContent = state.leads.filter(function (lead) { return lead.qualification_status === "unqualified"; }).length;
     document.getElementById("pendingSalesStat").textContent = state.sales.length;
+    document.getElementById("overdueTasksStat").textContent = state.tasks.filter(function (task) { return new Date(task.due_end).getTime() < Date.now(); }).length;
+  }
+
+  function renderOperations() {
+    var now = Date.now();
+    var today = localDateKey(new Date());
+    var overdue = state.tasks.filter(function (task) { return new Date(task.due_end).getTime() < now; });
+    var todayTasks = state.tasks.filter(function (task) { return localDateKey(task.due_start) === today; });
+    document.getElementById("operationsSummary").innerHTML = state.sellers.map(function (seller) {
+      var sellerTasks = state.tasks.filter(function (task) { return task.seller_user_id === seller.user_id; });
+      var sellerOverdue = sellerTasks.filter(function (task) { return new Date(task.due_end).getTime() < now; }).length;
+      var sellerToday = sellerTasks.filter(function (task) { return localDateKey(task.due_start) === today; }).length;
+      return '<article class="operation-seller' + (sellerOverdue ? ' attention' : '') + '"><span>' + escapeHtml(initials(seller.full_name)) + '</span><div><strong>' + escapeHtml(seller.full_name) + '</strong><small>' + sellerToday + ' acciones hoy · ' + sellerOverdue + ' vencidas</small></div><b>' + sellerTasks.length + '</b></article>';
+    }).join("") || '<div class="sales-empty">Todavía no hay vendedores activos.</div>';
+    document.getElementById("operationsTasks").innerHTML = overdue.concat(todayTasks.filter(function (task) { return !overdue.some(function (item) { return item.id === task.id; }); })).slice(0, 12).map(function (task) {
+      var lead = Array.isArray(task.lead) ? task.lead[0] : task.lead;
+      var seller = Array.isArray(task.seller) ? task.seller[0] : task.seller;
+      var isOverdue = new Date(task.due_end).getTime() < now;
+      return '<article class="operation-task' + (isOverdue ? ' overdue' : '') + '"><div><strong>' + escapeHtml(task.channel === "call" ? "Llamada " + task.call_attempt + " de 3" : "WhatsApp " + task.message_step + " de 4") + '</strong><small>' + escapeHtml(formatDate(task.due_start)) + '</small></div><div><strong>' + escapeHtml(lead && lead.customer_name || "Cliente") + '</strong><small>' + escapeHtml(lead && lead.model_interest || "Modelo a definir") + '</small></div><span>' + escapeHtml(seller && seller.full_name || "Sin vendedor") + '</span></article>';
+    }).join("") || '<div class="sales-empty">No hay acciones vencidas ni programadas para hoy.</div>';
+    document.getElementById("operationsCaption").textContent = overdue.length + " vencidas · " + todayTasks.length + " programadas para hoy";
+  }
+
+  function monthContains(value, month) {
+    return Boolean(value && String(value).slice(0, 7) === month);
+  }
+
+  function renderGoals() {
+    var month = document.getElementById("goalMonth").value;
+    if (!month) return;
+    var goal = state.goals.find(function (item) { return String(item.period_month).slice(0, 7) === month; }) || {};
+    [["goalContacts", "target_contacts"], ["goalInterviews", "target_interviews"], ["goalSales", "target_sales"], ["goalFinalized", "target_finalized"]].forEach(function (mapping) {
+      document.getElementById(mapping[0]).value = goal[mapping[1]] || 0;
+    });
+    var contacts = state.leads.filter(function (lead) { var crm = Array.isArray(lead.crm) ? lead.crm[0] : lead.crm; return monthContains(crm && crm.last_contact_at, month); }).length;
+    var interviews = state.leads.filter(function (lead) { var crm = Array.isArray(lead.crm) ? lead.crm[0] : lead.crm; return monthContains(crm && crm.interview_at, month); }).length;
+    var sales = state.leads.filter(function (lead) { var crm = Array.isArray(lead.crm) ? lead.crm[0] : lead.crm; return crm && crm.sale_confirmation_status === "confirmed" && monthContains(crm.sale_confirmed_at, month); }).length;
+    var finalized = state.adminSales.filter(function (sale) { return monthContains(sale.finalized_at, month); }).length;
+    var rows = [
+      ["Contactados", contacts, Number(goal.target_contacts || 0)],
+      ["Entrevistas", interviews, Number(goal.target_interviews || 0)],
+      ["Ventas", sales, Number(goal.target_sales || 0)],
+      ["Finalizadas", finalized, Number(goal.target_finalized || 0)]
+    ];
+    document.getElementById("goalProgress").innerHTML = rows.map(function (row) {
+      var percent = row[2] ? Math.min(100, Math.round(row[1] * 100 / row[2])) : 0;
+      return '<article class="goal-progress-card"><div><span>' + escapeHtml(row[0]) + '</span><strong>' + row[1] + ' / ' + row[2] + '</strong></div><div class="goal-bar"><i style="width:' + percent + '%"></i></div><small>' + percent + '% del objetivo</small></article>';
+    }).join("");
+  }
+
+  function renderTemplates() {
+    document.getElementById("contactTemplates").innerHTML = state.templates.map(function (template) {
+      return '<article class="template-card" data-template-id="' + template.id + '"><div><span>WhatsApp ' + template.step_number + ' de 4</span><strong>' + escapeHtml(template.title) + '</strong></div><textarea rows="4" maxlength="1500">' + escapeHtml(template.body) + '</textarea><small>Variables disponibles: {nombre}, {vendedor}, {modelo}</small><button class="button secondary" data-save-template type="button">Guardar texto</button></article>';
+    }).join("") || '<div class="sales-empty">No hay plantillas configuradas.</div>';
   }
 
   function assignedToday(sellerId) {
@@ -157,8 +219,10 @@
     document.getElementById("leadList").innerHTML = leads.map(function (lead) {
       var assigned = sellerById(lead.assigned_seller_user_id);
       var crm = Array.isArray(lead.crm) ? lead.crm[0] : lead.crm;
+      var attribution = Array.isArray(lead.attribution) ? lead.attribution[0] : lead.attribution;
+      var sourceLabel = lead.source_channel === "tiktok" ? "TikTok / código " + (lead.seller_code_received || "—") : lead.source_detail === "meta_ads" ? "Meta Ads · " + (attribution && (attribution.ad_name || attribution.headline || attribution.campaign_name) || "Anuncio sin nombre") : lead.source_channel === "manual" ? "Carga manual · " + (lead.source_detail || "Sin detalle") : "WhatsApp orgánico";
       return '<article class="lead-card" data-lead-id="' + lead.id + '">' +
-        '<div class="lead-person"><strong>' + escapeHtml(lead.customer_name || "Cliente sin nombre") + '</strong><span>+' + escapeHtml(lead.customer_phone) + ' · ' + escapeHtml(formatDate(lead.last_message_at)) + '</span><span>' + escapeHtml(lead.source_channel === "tiktok" ? "TikTok / código " + (lead.seller_code_received || "—") : "WhatsApp general") + '</span></div>' +
+        '<div class="lead-person"><strong>' + escapeHtml(lead.customer_name || "Cliente sin nombre") + '</strong><span>+' + escapeHtml(lead.customer_phone) + ' · ' + escapeHtml(formatDate(lead.last_message_at)) + '</span><span>' + escapeHtml(sourceLabel) + '</span></div>' +
         '<div class="lead-summary"><p>' + escapeHtml(lead.intent_summary || "Pendiente de resumen") + '</p><div class="badges"><span class="badge ' + escapeHtml(lead.qualification_status) + '">' + escapeHtml(lead.qualification_status === "qualified" ? "Calificado" : lead.qualification_status === "unqualified" ? "No calificado" : "Seguimiento") + '</span><span class="badge ' + escapeHtml((crm && crm.priority) || lead.priority) + '">' + escapeHtml((crm && crm.priority) === "high" || lead.priority === "high" ? "Prioridad alta" : "Prioridad normal") + '</span><span class="badge">' + escapeHtml(crm && crm.status ? crm.status.replace(/_/g, " ") : "nuevo") + '</span><span class="badge">' + escapeHtml(routingLabel(lead)) + '</span></div></div>' +
         '<div class="assignment"><select data-seller-select aria-label="Asignar vendedor">' + sellerOptions(lead.assigned_seller_user_id) + '</select><button class="button primary" data-assign type="button">' + (assigned ? "Reasignar" : "Asignar") + '</button></div>' +
         '<button class="details" data-details type="button">Ver chat</button>' +
@@ -176,11 +240,44 @@
     }).join("") : '<div class="sales-empty">No hay ventas pendientes de confirmación.</div>';
   }
 
+  function stageLabel(value) {
+    return { pending: "Pendiente", approved: "Aprobado", observed: "Observado", rejected: "Rechazado", baja: "Baja", cancelled: "Baja" }[value] || value || "Pendiente";
+  }
+
+  function stageChip(label, value) {
+    return '<span class="admin-stage ' + escapeHtml(value || "pending") + '"><small>' + escapeHtml(label) + '</small><b>' + escapeHtml(stageLabel(value)) + '</b></span>';
+  }
+
+  function renderAdministrativeSales() {
+    document.getElementById("adminSalesCount").textContent = state.adminSales.length === 1 ? "1 operación" : state.adminSales.length + " operaciones";
+    document.getElementById("adminSalesList").innerHTML = state.adminSales.length ? state.adminSales.map(function (sale) {
+      var seller = Array.isArray(sale.seller) ? sale.seller[0] : sale.seller;
+      var lead = Array.isArray(sale.lead) ? sale.lead[0] : sale.lead;
+      var events = (sale.events || []).filter(function (item) { return item.comment; }).sort(function (a, b) { return new Date(b.created_at) - new Date(a.created_at); });
+      var comment = sale.cancellation_reason || (events[0] && events[0].comment) || "Sin observaciones administrativas.";
+      return '<article class="admin-sale-card"><div><span class="case-code">' + escapeHtml(sale.case_code) + '</span><strong>' + escapeHtml(lead && lead.customer_name || "Cliente") + '</strong><small>' + escapeHtml(seller && seller.full_name || "Vendedor") + ' · ' + escapeHtml(sale.vehicle) + '</small></div><div class="admin-stages">' + stageChip("Scoring CDN", sale.cdn_scoring_status) + stageChip("Scoring concesionario", sale.dealer_scoring_status) + stageChip("Contrato", sale.contract_status) + '</div><div class="admin-comment"><b>' + escapeHtml(sale.status === "cancelled" ? "Motivo de baja" : "Última novedad") + '</b><span>' + escapeHtml(comment) + '</span><small>Actualizado ' + escapeHtml(formatDate(sale.updated_at)) + '</small></div></article>';
+    }).join("") : '<div class="sales-empty">Todavía no hay ventas en circuito administrativo.</div>';
+  }
+
+  async function renderInstallmentMetrics() {
+    var month = document.getElementById("installmentMonth").value;
+    var result = await supabaseClient.rpc("get_installment_metrics", { p_month: month ? month + "-01" : null });
+    var row = result.data && result.data[0];
+    var target = document.getElementById("installmentMetrics");
+    if (result.error || !row || !Number(row.total_installments)) {
+      target.innerHTML = '<div class="sales-empty">No hay cuotas agrupadas para este mes.</div>';
+      return;
+    }
+    target.innerHTML = [["Pagadas", row.paid_count, row.paid_percentage, "paid"], ["Promesas de pago", row.promised_count, row.promised_percentage, "promised"], ["Morosas", row.delinquent_count, row.delinquent_percentage, "delinquent"]].map(function (item) {
+      return '<article class="metric-card ' + item[3] + '"><span>' + escapeHtml(item[0]) + '</span><strong>' + escapeHtml(item[2]) + '%</strong><small>' + escapeHtml(item[1]) + ' de ' + escapeHtml(row.total_installments) + ' cuotas</small></article>';
+    }).join("");
+  }
+
   async function renderRanking() {
     var month = document.getElementById("rankingMonth").value;
-    var result = await supabaseClient.rpc("get_sales_ranking", { p_month: month ? month + "-01" : null });
+    var result = await supabaseClient.rpc("get_sales_performance", { p_month: month ? month + "-01" : null });
     document.getElementById("supervisorRanking").innerHTML = result.error || !result.data.length ? '<div class="sales-empty">Todavía no hay datos para este mes.</div>' : result.data.map(function (item, index) {
-      return '<article class="rank-card"><span class="rank-place">' + (index + 1) + '</span><div><strong>' + escapeHtml(item.seller_name) + '</strong><small>' + escapeHtml(item.seller_code) + ' · ' + item.assigned_leads + ' leads</small></div><div class="rank-result"><b>' + item.confirmed_sales + '</b><small>' + escapeHtml(item.conversion_rate) + '% conversión</small></div></article>';
+      return '<article class="rank-card"><span class="rank-place">' + (index + 1) + '</span><div><strong>' + escapeHtml(item.seller_name) + '</strong><small>' + escapeHtml(item.seller_code) + ' · ' + item.assigned_leads + ' leads</small></div><div class="rank-result"><b>' + item.confirmed_sales + '</b><small>' + escapeHtml(item.finalized_sales) + ' finalizadas · ' + escapeHtml(item.conversion_rate) + '%</small></div></article>';
     }).join("");
   }
 
@@ -189,7 +286,12 @@
     renderTeam();
     renderLeads();
     renderSales();
+    renderAdministrativeSales();
+    renderInstallmentMetrics();
     renderRanking();
+    renderOperations();
+    renderGoals();
+    renderTemplates();
     document.getElementById("manualSellerSelect").innerHTML = '<option value="">Bandeja general</option>' + state.sellers.filter(function (seller) { return seller.active; }).map(function (seller) { return '<option value="' + seller.user_id + '">' + escapeHtml(seller.full_name + " · " + seller.seller_code) + '</option>'; }).join("");
   }
 
@@ -308,13 +410,8 @@
     var phone = form.elements.customerPhone.value.trim();
     message.textContent = "";
     if (name.length < 2 || phone.length < 6) { message.textContent = "Completá el nombre y el teléfono del cliente."; return; }
-    var nextContactAt;
-    try {
-      nextContactAt = parseArgentineDateTime(form.elements.nextContactDate.value, form.elements.nextContactTime.value);
-    } catch (error) {
-      message.textContent = error.message;
-      return;
-    }
+    var nextContactAt = null;
+    if (!form.elements.contactConsent.checked) { message.textContent = "Confirmá que el cliente autorizó el contacto comercial."; return; }
     setBusy(this, true, "Guardando…");
     var result = await supabaseClient.rpc("create_manual_lead", {
       p_customer_name: name,
@@ -327,6 +424,8 @@
       p_next_contact_at: nextContactAt
     });
     if (result.error) { message.textContent = result.error.message; setBusy(this, false); return; }
+    var consentUpdate = await supabaseClient.from("leads").update({ contact_consent_at: new Date().toISOString(), contact_consent_source: "carga_manual_supervisor" }).eq("id", result.data);
+    if (consentUpdate.error) { message.textContent = consentUpdate.error.message; setBusy(this, false); return; }
     document.getElementById("manualLeadDialog").close();
     await loadData(true);
     pageMessage.textContent = "Lead cargado correctamente.";
@@ -368,10 +467,41 @@
   document.getElementById("saleApproveButton").addEventListener("click", function () { reviewSale(true, this); });
   document.getElementById("saleRejectButton").addEventListener("click", function () { reviewSale(false, this); });
   document.getElementById("rankingMonth").addEventListener("change", renderRanking);
-  document.querySelector('input[name="nextContactDate"]').addEventListener("input", function () { maskDateInput(this); });
+  document.getElementById("installmentMonth").addEventListener("change", renderInstallmentMetrics);
+  document.getElementById("goalMonth").addEventListener("change", renderGoals);
+  document.getElementById("goalSave").addEventListener("click", async function () {
+    var month = document.getElementById("goalMonth").value;
+    var existing = state.goals.find(function (item) { return String(item.period_month).slice(0, 7) === month; });
+    var payload = {
+      period_month: month + "-01",
+      seller_user_id: null,
+      target_contacts: Number(document.getElementById("goalContacts").value || 0),
+      target_interviews: Number(document.getElementById("goalInterviews").value || 0),
+      target_sales: Number(document.getElementById("goalSales").value || 0),
+      target_finalized: Number(document.getElementById("goalFinalized").value || 0),
+      created_by: state.profile.user_id
+    };
+    setBusy(this, true, "Guardando…");
+    var result = existing ? await supabaseClient.from("commercial_goals").update(payload).eq("id", existing.id) : await supabaseClient.from("commercial_goals").insert(payload);
+    if (result.error) pageMessage.textContent = result.error.message; else { await loadData(true); pageMessage.textContent = "Objetivos comerciales guardados."; }
+    setBusy(this, false);
+  });
+  document.getElementById("contactTemplates").addEventListener("click", async function (event) {
+    var button = event.target.closest("[data-save-template]");
+    if (!button) return;
+    var card = button.closest("[data-template-id]");
+    var body = card.querySelector("textarea").value.trim();
+    if (body.length < 10) { pageMessage.textContent = "La plantilla debe tener al menos 10 caracteres."; return; }
+    setBusy(button, true, "Guardando…");
+    var result = await supabaseClient.from("contact_message_templates").update({ body: body, updated_by: state.profile.user_id }).eq("id", card.dataset.templateId);
+    if (result.error) pageMessage.textContent = result.error.message; else { await loadData(true); pageMessage.textContent = "Plantilla de seguimiento actualizada."; }
+    setBusy(button, false);
+  });
 
   var rankingNow = new Date();
   document.getElementById("rankingMonth").value = rankingNow.getFullYear() + "-" + String(rankingNow.getMonth() + 1).padStart(2, "0");
+  document.getElementById("installmentMonth").value = document.getElementById("rankingMonth").value;
+  document.getElementById("goalMonth").value = document.getElementById("rankingMonth").value;
 
   if (!supabaseClient) { loginMessage.textContent = "No se pudo conectar con Supabase."; return; }
   supabaseClient.auth.getUser().then(function (result) {
