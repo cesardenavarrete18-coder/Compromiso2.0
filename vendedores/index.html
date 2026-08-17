@@ -12,7 +12,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/vendedores/styles.css?v=20260813-6">
   <link rel="stylesheet" href="/vendedores/crm.css?v=20260815-3">
-  <link rel="stylesheet" href="/vendedores/contact-protocol.css?v=20260817-1">
+  <link rel="stylesheet" href="/vendedores/contact-protocol.css?v=20260817-2">
 </head>
 <body>
   <main class="login-page" id="loginPage">
@@ -446,7 +446,7 @@
         <section class="crm-detail-main">
           <div class="crm-client-summary" id="crmClientSummary"></div>
           <div class="crm-quick-actions"><a class="crm-action-link" id="crmCallLink" href="#">Llamar</a><button class="crm-action-link" id="crmCommentButton" type="button">Agregar comentario</button><button class="crm-action-link" id="crmBudgetButton" type="button">Presupuesto</button><button class="crm-action-link accent" id="crmSaleButton" type="button">Solicitar venta</button></div>
-          <div class="crm-tabs"><button class="active" type="button" data-crm-tab="manage">Registrar gestión</button><button type="button" data-crm-tab="protocol">Protocolo 3–4–1</button><button type="button" data-crm-tab="timeline">Historial</button><button type="button" data-crm-tab="customer">Consultas previas</button><button type="button" data-crm-tab="chat">Conversación IA</button></div>
+          <div class="crm-tabs"><button class="active" type="button" data-crm-tab="manage">Registrar gestión</button><button type="button" data-crm-tab="protocol">Proceso de seguimiento</button><button type="button" data-crm-tab="timeline">Historial</button><button type="button" data-crm-tab="customer">Consultas previas</button><button type="button" data-crm-tab="chat">Conversación IA</button></div>
           <div class="crm-tab-panel active" data-crm-panel="manage">
             <div class="crm-form-grid">
               <label>Nuevo estado<select id="crmStatusInput"></select></label>
@@ -475,6 +475,8 @@
 
   <dialog class="crm-dialog small" id="crmCommentDialog"><form method="dialog" class="crm-dialog-shell"><button class="crm-dialog-close" value="cancel" aria-label="Cerrar">×</button><p class="eyebrow dark">Nota interna</p><h2>Agregar comentario</h2><textarea id="crmCommentInput" rows="5" placeholder="Información útil para continuar la gestión"></textarea><p class="crm-form-error" id="crmCommentError"></p><button class="primary-button" id="crmCommentSave" type="button">Guardar comentario</button></form></dialog>
 
+  <dialog class="crm-dialog small" id="crmAnsweredDialog"><form method="dialog" class="crm-dialog-shell"><button class="crm-dialog-close" value="cancel" aria-label="Cancelar">×</button><p class="eyebrow dark">Cliente contactado</p><h2>Definir el próximo paso</h2><p class="crm-dialog-copy">La respuesta se registra únicamente cuando queda programada la próxima acción comercial.</p><div class="crm-form-grid answered-follow-up-grid"><label>Fecha del próximo contacto<input id="crmAnsweredDate" type="text" inputmode="numeric" maxlength="10" placeholder="dd/mm/aaaa" autocomplete="off"></label><label>Hora<input id="crmAnsweredTime" type="time" step="300"></label><label class="wide">Motivo / acción acordada<input id="crmAnsweredNote" type="text" placeholder="Ej. Enviar propuesta y confirmar documentación"></label></div><p class="crm-form-error" id="crmAnsweredError"></p><button class="primary-button" id="crmAnsweredSave" type="button">Guardar respuesta y próximo paso</button></form></dialog>
+
   <dialog class="crm-dialog small" id="crmSaleDialog"><form method="dialog" class="crm-dialog-shell"><button class="crm-dialog-close" value="cancel" aria-label="Cerrar">×</button><p class="eyebrow dark">Confirmación de supervisión</p><h2>Solicitar registro de venta</h2><label>Presupuesto asociado · opcional<select id="crmSaleQuote"><option value="">Sin presupuesto asociado</option></select></label><label>Vehículo vendido<input id="crmSaleVehicle" type="text" placeholder="Ej. Volkswagen Amarok Trendline"></label><label>Importe de la operación · opcional<input id="crmSaleAmount" type="number" min="0" step="1" placeholder="$"></label><label>Observaciones<textarea id="crmSaleNotes" rows="4"></textarea></label><p class="crm-form-error" id="crmSaleError"></p><button class="primary-button" id="crmSaleSubmit" type="button">Enviar a supervisión</button></form></dialog>
 
   <dialog class="crm-dialog" id="quoteDialog"><form method="dialog" class="crm-dialog-shell" id="quoteForm"><button class="crm-dialog-close" value="cancel" aria-label="Cerrar">×</button><p class="eyebrow dark">Presupuesto asociado al Lead</p><h2>Generar propuesta comercial</h2><div class="quote-form-grid"><label>Lead<select name="leadId" id="quoteLead" required></select></label><label>Modelo<select name="modelId" id="quoteModel" required></select></label><label>Tipo de financiación<select name="offerType" id="quoteOfferType"><option value="savings_plan">Plan de ahorro</option><option value="bank_credit">Crédito de terminal</option></select></label><label>Condición disponible<select name="offerId" id="quoteOffer" required></select></label><label>Versión<select name="vehicleVersion" id="quoteVersion" required><option value="">Seleccionar versión</option></select></label><label>Precio de venta<input name="salePrice" type="number" min="0" step="1" required></label><label data-bank-field>Monto a financiar<input name="financedAmount" type="number" min="0" step="1"></label><label>Vigencia<input name="validUntil" type="date" required></label></div><div class="quote-calculation" id="quoteCalculation"></div><p class="crm-form-error" id="quoteError"></p><button class="primary-button" id="quoteSubmit" type="submit">Guardar y generar PDF</button></form></dialog>
@@ -487,7 +489,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.2/dist/umd/supabase.js"></script>
   <script src="/vendedores/supabase-config.js?v=20260813-2"></script>
   <script src="/vendedores/app.js?v=20260813-5"></script>
-  <script src="/vendedores/crm.js?v=20260817-1"></script>
+  <script src="/vendedores/crm.js?v=20260817-2"></script>
   <script src="/vendedores/sales.js?v=20260815-2"></script>
 </body>
 </html>
