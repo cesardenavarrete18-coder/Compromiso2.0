@@ -2,7 +2,7 @@
   "use strict";
 
   var supabaseClient = window.grupoSurSupabaseClient;
-  var state = { profile: null, sellers: [], settings: {}, leads: [], sales: [], activeSale: null, filter: "pending_supervisor", search: "" };
+  var state = { profile: null, sellers: [], settings: {}, leads: [], sales: [], adminSales: [], activeSale: null, filter: "pending_supervisor", search: "" };
   var loginView = document.getElementById("loginView");
   var appView = document.getElementById("appView");
   var loginForm = document.getElementById("loginForm");
@@ -75,7 +75,8 @@
       supabaseClient.from("profiles").select("user_id, full_name, seller_code, active").eq("role", "seller").order("full_name"),
       supabaseClient.from("seller_routing_settings").select("seller_user_id, daily_quota, paused"),
       supabaseClient.from("leads").select("id, customer_phone, customer_name, source_channel, source_detail, seller_code_received, qualification_status, priority, intent_summary, model_interest, routing_status, routing_reason, assigned_seller_user_id, assigned_at, last_message_at, created_at, crm:lead_crm(status, priority, next_contact_at, sale_confirmation_status)").order("last_message_at", { ascending: false }).limit(500),
-      supabaseClient.from("lead_sale_requests").select("id, lead_id, seller_user_id, vehicle, sale_amount, notes, status, requested_at, seller:profiles!lead_sale_requests_seller_user_id_fkey(full_name, seller_code), lead:leads(customer_name, customer_phone, intent_summary)").eq("status", "pending").order("requested_at")
+      supabaseClient.from("lead_sale_requests").select("id, lead_id, seller_user_id, vehicle, sale_amount, notes, status, requested_at, seller:profiles!lead_sale_requests_seller_user_id_fkey(full_name, seller_code), lead:leads(customer_name, customer_phone, intent_summary)").eq("status", "pending").order("requested_at"),
+      supabaseClient.from("sales_cases").select("id, case_code, vehicle, status, cdn_scoring_status, dealer_scoring_status, contract_status, finalized_at, cancellation_reason, updated_at, seller:profiles!sales_cases_seller_user_id_fkey(full_name, seller_code), lead:leads!sales_cases_lead_id_fkey(customer_name), events:sales_case_events(stage, outcome, comment, created_at)").order("updated_at", { ascending: false }).limit(250)
     ]);
     var failed = results.find(function (item) { return item.error; });
     if (failed) throw failed.error;
@@ -84,6 +85,7 @@
     (results[1].data || []).forEach(function (item) { state.settings[item.seller_user_id] = item; });
     state.leads = results[2].data || [];
     state.sales = results[3].data || [];
+    state.adminSales = results[4].data || [];
     renderAll();
     pageMessage.textContent = "";
   }
@@ -176,11 +178,44 @@
     }).join("") : '<div class="sales-empty">No hay ventas pendientes de confirmación.</div>';
   }
 
+  function stageLabel(value) {
+    return { pending: "Pendiente", approved: "Aprobado", observed: "Observado", rejected: "Rechazado", baja: "Baja", cancelled: "Baja" }[value] || value || "Pendiente";
+  }
+
+  function stageChip(label, value) {
+    return '<span class="admin-stage ' + escapeHtml(value || "pending") + '"><small>' + escapeHtml(label) + '</small><b>' + escapeHtml(stageLabel(value)) + '</b></span>';
+  }
+
+  function renderAdministrativeSales() {
+    document.getElementById("adminSalesCount").textContent = state.adminSales.length === 1 ? "1 operación" : state.adminSales.length + " operaciones";
+    document.getElementById("adminSalesList").innerHTML = state.adminSales.length ? state.adminSales.map(function (sale) {
+      var seller = Array.isArray(sale.seller) ? sale.seller[0] : sale.seller;
+      var lead = Array.isArray(sale.lead) ? sale.lead[0] : sale.lead;
+      var events = (sale.events || []).filter(function (item) { return item.comment; }).sort(function (a, b) { return new Date(b.created_at) - new Date(a.created_at); });
+      var comment = sale.cancellation_reason || (events[0] && events[0].comment) || "Sin observaciones administrativas.";
+      return '<article class="admin-sale-card"><div><span class="case-code">' + escapeHtml(sale.case_code) + '</span><strong>' + escapeHtml(lead && lead.customer_name || "Cliente") + '</strong><small>' + escapeHtml(seller && seller.full_name || "Vendedor") + ' · ' + escapeHtml(sale.vehicle) + '</small></div><div class="admin-stages">' + stageChip("Scoring CDN", sale.cdn_scoring_status) + stageChip("Scoring concesionario", sale.dealer_scoring_status) + stageChip("Contrato", sale.contract_status) + '</div><div class="admin-comment"><b>' + escapeHtml(sale.status === "cancelled" ? "Motivo de baja" : "Última novedad") + '</b><span>' + escapeHtml(comment) + '</span><small>Actualizado ' + escapeHtml(formatDate(sale.updated_at)) + '</small></div></article>';
+    }).join("") : '<div class="sales-empty">Todavía no hay ventas en circuito administrativo.</div>';
+  }
+
+  async function renderInstallmentMetrics() {
+    var month = document.getElementById("installmentMonth").value;
+    var result = await supabaseClient.rpc("get_installment_metrics", { p_month: month ? month + "-01" : null });
+    var row = result.data && result.data[0];
+    var target = document.getElementById("installmentMetrics");
+    if (result.error || !row || !Number(row.total_installments)) {
+      target.innerHTML = '<div class="sales-empty">No hay cuotas agrupadas para este mes.</div>';
+      return;
+    }
+    target.innerHTML = [["Pagadas", row.paid_count, row.paid_percentage, "paid"], ["Promesas de pago", row.promised_count, row.promised_percentage, "promised"], ["Morosas", row.delinquent_count, row.delinquent_percentage, "delinquent"]].map(function (item) {
+      return '<article class="metric-card ' + item[3] + '"><span>' + escapeHtml(item[0]) + '</span><strong>' + escapeHtml(item[2]) + '%</strong><small>' + escapeHtml(item[1]) + ' de ' + escapeHtml(row.total_installments) + ' cuotas</small></article>';
+    }).join("");
+  }
+
   async function renderRanking() {
     var month = document.getElementById("rankingMonth").value;
-    var result = await supabaseClient.rpc("get_sales_ranking", { p_month: month ? month + "-01" : null });
+    var result = await supabaseClient.rpc("get_sales_performance", { p_month: month ? month + "-01" : null });
     document.getElementById("supervisorRanking").innerHTML = result.error || !result.data.length ? '<div class="sales-empty">Todavía no hay datos para este mes.</div>' : result.data.map(function (item, index) {
-      return '<article class="rank-card"><span class="rank-place">' + (index + 1) + '</span><div><strong>' + escapeHtml(item.seller_name) + '</strong><small>' + escapeHtml(item.seller_code) + ' · ' + item.assigned_leads + ' leads</small></div><div class="rank-result"><b>' + item.confirmed_sales + '</b><small>' + escapeHtml(item.conversion_rate) + '% conversión</small></div></article>';
+      return '<article class="rank-card"><span class="rank-place">' + (index + 1) + '</span><div><strong>' + escapeHtml(item.seller_name) + '</strong><small>' + escapeHtml(item.seller_code) + ' · ' + item.assigned_leads + ' leads</small></div><div class="rank-result"><b>' + item.confirmed_sales + '</b><small>' + escapeHtml(item.finalized_sales) + ' finalizadas · ' + escapeHtml(item.conversion_rate) + '%</small></div></article>';
     }).join("");
   }
 
@@ -189,6 +224,8 @@
     renderTeam();
     renderLeads();
     renderSales();
+    renderAdministrativeSales();
+    renderInstallmentMetrics();
     renderRanking();
     document.getElementById("manualSellerSelect").innerHTML = '<option value="">Bandeja general</option>' + state.sellers.filter(function (seller) { return seller.active; }).map(function (seller) { return '<option value="' + seller.user_id + '">' + escapeHtml(seller.full_name + " · " + seller.seller_code) + '</option>'; }).join("");
   }
@@ -368,10 +405,12 @@
   document.getElementById("saleApproveButton").addEventListener("click", function () { reviewSale(true, this); });
   document.getElementById("saleRejectButton").addEventListener("click", function () { reviewSale(false, this); });
   document.getElementById("rankingMonth").addEventListener("change", renderRanking);
+  document.getElementById("installmentMonth").addEventListener("change", renderInstallmentMetrics);
   document.querySelector('input[name="nextContactDate"]').addEventListener("input", function () { maskDateInput(this); });
 
   var rankingNow = new Date();
   document.getElementById("rankingMonth").value = rankingNow.getFullYear() + "-" + String(rankingNow.getMonth() + 1).padStart(2, "0");
+  document.getElementById("installmentMonth").value = document.getElementById("rankingMonth").value;
 
   if (!supabaseClient) { loginMessage.textContent = "No se pudo conectar con Supabase."; return; }
   supabaseClient.auth.getUser().then(function (result) {
