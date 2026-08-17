@@ -9,6 +9,11 @@
       "source": "/vendedores/admin/:path*",
       "destination": "/administracion/:path*",
       "permanent": true
+    },
+    {
+      "source": "/vendedores/admventas/:path*",
+      "destination": "/admventas/:path*",
+      "permanent": true
     }
   ],
   "rewrites": [
@@ -27,6 +32,14 @@
     {
       "source": "/administracion/:path*",
       "destination": "/vendedores/admin/:path*"
+    },
+    {
+      "source": "/admventas",
+      "destination": "/vendedores/admventas/index.html"
+    },
+    {
+      "source": "/admventas/:path*",
+      "destination": "/vendedores/admventas/:path*"
     }
   ]
 }
