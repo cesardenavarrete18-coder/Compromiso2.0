@@ -20,6 +20,8 @@
   var leadDialog = document.getElementById("crmLeadDialog");
   var commentDialog = document.getElementById("crmCommentDialog");
   var saleDialog = document.getElementById("crmSaleDialog");
+  var answeredDialog = document.getElementById("crmAnsweredDialog");
+  var pendingAnsweredTaskId = null;
 
   function escapeHtml(value) {
     return String(value == null ? "" : value).replace(/[&<>'"]/g, function (char) {
@@ -80,6 +82,7 @@
     if (!value) return "Sin programar";
     return new Intl.DateTimeFormat("es-AR", {
       weekday: includeWeekday ? "short" : undefined,
+      timeZone: "America/Argentina/Buenos_Aires",
       day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit"
     }).format(new Date(value));
   }
@@ -172,11 +175,10 @@
   }
 
   function renderSummary() {
-    var today = localDateKey(new Date());
     var now = Date.now();
     var counts = {
-      overdue: state.leads.filter(function (lead) { var crm = crmOf(lead); return crm.next_contact_at && new Date(crm.next_contact_at).getTime() < now && localDateKey(crm.next_contact_at) !== today && !CLOSED_STAGES.includes(crm.status); }).length,
-      today: state.leads.filter(function (lead) { var crm = crmOf(lead); return crm.next_contact_at && localDateKey(crm.next_contact_at) === today && !CLOSED_STAGES.includes(crm.status); }).length,
+      overdue: state.leads.filter(function (lead) { var crm = crmOf(lead); return crm.next_contact_at && new Date(crm.next_contact_at).getTime() < now && !CLOSED_STAGES.includes(crm.status); }).length,
+      today: state.leads.filter(function (lead) { var crm = crmOf(lead); return crm.next_contact_at && new Date(crm.next_contact_at).getTime() >= now && localDateKey(crm.next_contact_at) === localDateKey(new Date()) && !CLOSED_STAGES.includes(crm.status); }).length,
       newLead: state.leads.filter(function (lead) { var crm = crmOf(lead); return crm.status === "nuevo" && !crm.next_contact_at; }).length,
       interview: state.leads.filter(function (lead) { var crm = crmOf(lead); return crm.status === "entrevista" && crm.interview_at && new Date(crm.interview_at).getTime() >= now; }).length,
       closing: state.leads.filter(function (lead) { return ["cierre", "sena"].includes(crmOf(lead).status); }).length
@@ -204,13 +206,13 @@
       '<div class="crm-card-tags"><span>' + escapeHtml(lead.model_interest || "Modelo a definir") + '</span>' +
         '<span class="' + (crm.priority === "high" ? "high" : "") + '">' + escapeHtml(crm.priority === "high" ? "Prioridad alta" : crm.priority === "low" ? "Prioridad baja" : "Prioridad normal") + '</span>' +
         (pendingSale ? '<span class="high">Venta por confirmar</span>' : '') +
-        (progress ? '<span class="protocol">Protocolo ' + progress.completed + '/' + progress.total + '</span>' : '') + '</div>' +
+        (progress ? '<span class="protocol">Seguimiento ' + progress.completed + '/' + progress.total + '</span>' : '') + '</div>' +
       '<div class="crm-card-footer"><time class="' + (isOverdue ? "overdue" : "") + '">' + escapeHtml(next ? (isOverdue ? "Vencido · " : "Próximo · ") + formatDate(next) : crm.status === "nuevo" ? "Pendiente de primer contacto" : "Sin próxima tarea") + '</time><button class="crm-open" type="button">Gestionar</button></div>' +
     '</article>';
   }
 
   function agendaGroup(title, items, emptyText) {
-    return '<section class="agenda-group"><div class="agenda-group-head"><h3>' + escapeHtml(title) + '</h3><span>' + items.length + '</span></div>' +
+    return '<section class="agenda-group' + (title === "Sin próxima acción" ? ' requires-action' : '') + '"><div class="agenda-group-head"><h3>' + escapeHtml(title) + '</h3><span>' + items.length + '</span></div>' +
       (items.length ? '<div class="agenda-cards">' + items.map(leadCard).join("") + '</div>' : '<div class="agenda-empty">' + escapeHtml(emptyText) + '</div>') + '</section>';
   }
 
@@ -219,12 +221,14 @@
     var leads = state.leads.filter(function (lead) { return matchesSearch(lead, query); });
     var today = localDateKey(new Date());
     var now = Date.now();
-    var overdue = leads.filter(function (lead) { var crm = crmOf(lead); return crm.next_contact_at && new Date(crm.next_contact_at).getTime() < now && localDateKey(crm.next_contact_at) !== today && !CLOSED_STAGES.includes(crm.status); }).sort(function (a, b) { return new Date(crmOf(a).next_contact_at) - new Date(crmOf(b).next_contact_at); });
-    var forToday = leads.filter(function (lead) { var crm = crmOf(lead); return crm.next_contact_at && localDateKey(crm.next_contact_at) === today && !CLOSED_STAGES.includes(crm.status); }).sort(function (a, b) { return new Date(crmOf(a).next_contact_at) - new Date(crmOf(b).next_contact_at); });
+    var overdue = leads.filter(function (lead) { var crm = crmOf(lead); return crm.next_contact_at && new Date(crm.next_contact_at).getTime() < now && !CLOSED_STAGES.includes(crm.status); }).sort(function (a, b) { return new Date(crmOf(a).next_contact_at) - new Date(crmOf(b).next_contact_at); });
+    var forToday = leads.filter(function (lead) { var crm = crmOf(lead); return crm.next_contact_at && new Date(crm.next_contact_at).getTime() >= now && localDateKey(crm.next_contact_at) === today && !CLOSED_STAGES.includes(crm.status); }).sort(function (a, b) { return new Date(crmOf(a).next_contact_at) - new Date(crmOf(b).next_contact_at); });
     var newLeads = leads.filter(function (lead) { var crm = crmOf(lead); return crm.status === "nuevo" && !crm.next_contact_at; });
+    var unscheduled = leads.filter(function (lead) { var crm = crmOf(lead); return !crm.next_contact_at && !CLOSED_STAGES.includes(crm.status) && crm.status !== "nuevo"; });
     var next = leads.filter(function (lead) { var crm = crmOf(lead); return crm.next_contact_at && new Date(crm.next_contact_at).getTime() >= now && localDateKey(crm.next_contact_at) !== today && !CLOSED_STAGES.includes(crm.status); }).sort(function (a, b) { return new Date(crmOf(a).next_contact_at) - new Date(crmOf(b).next_contact_at); });
     document.getElementById("crmAgenda").innerHTML =
       agendaGroup("Contactos vencidos", overdue, "No tenés seguimientos vencidos.") +
+      agendaGroup("Sin próxima acción", unscheduled, "Todas las gestiones activas tienen un próximo paso definido.") +
       agendaGroup("Programados para hoy", forToday, "No hay contactos programados para hoy.") +
       agendaGroup("Nuevos por atender", newLeads, "No tenés leads nuevos pendientes.") +
       agendaGroup("Próximos contactos", next.slice(0, 30), "Todavía no programaste próximos contactos.");
@@ -308,7 +312,7 @@
     var automated = state.activeLead && nextPendingTask(state.activeLead.id) && ["nuevo", "no_contesta"].includes(status);
     document.querySelectorAll(".manual-followup-field").forEach(function (field) { field.hidden = Boolean(automated); });
     var help = {
-      no_contesta: automated ? "El protocolo ya programó automáticamente el próximo intento." : "Programá el próximo intento.",
+      no_contesta: automated ? "El proceso de seguimiento ya programó automáticamente el próximo intento." : "Programá el próximo intento.",
       entrevista: "La entrevista requiere día, hora y, de ser posible, sucursal.",
       cierre: "Este lead quedará automáticamente en prioridad alta.",
       sena: "Registrá el importe de la seña; la venta seguirá requiriendo confirmación.",
@@ -322,16 +326,19 @@
     var tasks = tasksForLead(lead.id);
     var container = document.getElementById("crmProtocol");
     if (!tasks.length) {
-      container.innerHTML = '<div class="agenda-empty">Este Lead no tiene un protocolo activo. Podés gestionarlo de forma manual.</div>';
+      container.innerHTML = '<div class="agenda-empty">Este Lead no tiene un proceso de seguimiento activo. Podés gestionarlo de forma manual.</div>';
       return;
     }
-    container.innerHTML = '<div class="protocol-heading"><div><strong>Protocolo de contacto 3–4–1</strong><span>3 llamadas · 4 WhatsApp · 3 días hábiles</span></div><span class="protocol-progress">' + protocolProgress(lead.id).completed + '/7</span></div>' +
+    var progress = protocolProgress(lead.id);
+    var nextTask = nextPendingTask(lead.id);
+    container.innerHTML = '<div class="protocol-heading"><div><span class="protocol-kicker">Organización comercial</span><strong>Proceso de seguimiento</strong><span>3 llamadas · 4 WhatsApp · distribuidos en 3 días hábiles</span></div><span class="protocol-progress"><b>' + progress.completed + '</b><small>de ' + progress.total + '</small></span></div>' +
       '<div class="protocol-task-list">' + tasks.map(function (task) {
         var pending = task.status === "pending";
-        var due = formatDate(task.due_start, true) + " a " + new Intl.DateTimeFormat("es-AR", { hour: "2-digit", minute: "2-digit" }).format(new Date(task.due_end));
+        var isNext = nextTask && nextTask.id === task.id;
+        var due = formatDate(task.due_start, true) + " a " + new Intl.DateTimeFormat("es-AR", { timeZone: "America/Argentina/Buenos_Aires", hour: "2-digit", minute: "2-digit" }).format(new Date(task.due_end));
         var body = task.channel === "whatsapp" ? personalizedMessage(task, lead) : "";
-        return '<article class="protocol-task ' + escapeHtml(task.status) + '">' +
-          '<span class="protocol-task-number">' + task.sequence_order + '</span><div class="protocol-task-main"><div class="protocol-task-title"><strong>' + escapeHtml(taskTitle(task)) + '</strong><small>' + escapeHtml(due) + '</small></div>' +
+        return '<article class="protocol-task ' + escapeHtml(task.status) + (isNext ? ' is-next' : '') + '">' +
+          '<span class="protocol-task-number">' + task.sequence_order + '</span><div class="protocol-task-main"><div class="protocol-task-title"><div><span class="protocol-channel">' + escapeHtml(task.channel === "call" ? "Llamada" : "WhatsApp") + '</span><strong>' + escapeHtml(taskTitle(task)) + '</strong></div><div class="protocol-task-meta">' + (isNext ? '<em>Próximo paso</em>' : '') + '<small>' + escapeHtml(due) + '</small></div></div>' +
           (body ? '<p>' + escapeHtml(body) + '</p>' : '<p>Contactá al cliente dentro de esta franja y registrá el resultado.</p>') +
           (pending ? '<div class="protocol-actions">' + (task.channel === "call" ?
             '<a href="tel:+' + String(lead.customer_phone).replace(/\D/g, "") + '">Llamar ahora</a><button type="button" data-contact-task="' + task.id + '" data-contact-outcome="no_answer">No respondió</button><button class="success" type="button" data-contact-task="' + task.id + '" data-contact-outcome="answered">Respondió</button>' :
@@ -474,13 +481,62 @@
       var phone = String(state.activeLead.customer_phone || "").replace(/\D/g, "");
       window.open("https://wa.me/" + phone + "?text=" + (whatsappBody || ""), "_blank", "noopener");
     }
-    var result = await supabaseClient.rpc("complete_contact_task", { p_task_id: taskId, p_outcome: outcome, p_note: "" });
+    var result = await supabaseClient.rpc("complete_contact_task_with_follow_up", { p_task_id: taskId, p_outcome: outcome, p_note: "", p_next_contact_at: null, p_next_contact_note: "" });
     if (result.error) {
       document.getElementById("crmFormError").textContent = result.error.message;
       return;
     }
     await loadLeads(true);
     await openLead(state.activeLead.id);
+  }
+
+  function suggestedFollowUp() {
+    var candidate = new Date();
+    candidate.setDate(candidate.getDate() + 1);
+    while ([0, 6].includes(candidate.getDay())) candidate.setDate(candidate.getDate() + 1);
+    candidate.setHours(10, 0, 0, 0);
+    return dateParts(candidate.toISOString());
+  }
+
+  function openAnsweredFollowUp(taskId) {
+    pendingAnsweredTaskId = taskId;
+    var suggested = suggestedFollowUp();
+    document.getElementById("crmAnsweredDate").value = suggested.date;
+    document.getElementById("crmAnsweredTime").value = suggested.time;
+    document.getElementById("crmAnsweredNote").value = "";
+    document.getElementById("crmAnsweredError").textContent = "";
+    answeredDialog.showModal();
+  }
+
+  async function saveAnsweredFollowUp() {
+    if (!pendingAnsweredTaskId) return;
+    var errorBox = document.getElementById("crmAnsweredError");
+    var button = document.getElementById("crmAnsweredSave");
+    var note = document.getElementById("crmAnsweredNote").value.trim();
+    var nextContact;
+    errorBox.textContent = "";
+    try {
+      nextContact = parseArgentineDateTime(document.getElementById("crmAnsweredDate").value, document.getElementById("crmAnsweredTime").value, "próximo contacto");
+    } catch (error) {
+      errorBox.textContent = error.message;
+      return;
+    }
+    if (!nextContact || new Date(nextContact).getTime() <= Date.now()) { errorBox.textContent = "Elegí una fecha y hora futura."; return; }
+    if (note.length < 3) { errorBox.textContent = "Indicá brevemente cuál es el próximo paso."; return; }
+    setBusy(button, true, "Guardando…");
+    var result = await supabaseClient.rpc("complete_contact_task_with_follow_up", {
+      p_task_id: pendingAnsweredTaskId,
+      p_outcome: "answered",
+      p_note: "El cliente respondió",
+      p_next_contact_at: nextContact,
+      p_next_contact_note: note
+    });
+    if (result.error) { errorBox.textContent = result.error.message; setBusy(button, false); return; }
+    pendingAnsweredTaskId = null;
+    answeredDialog.close();
+    await loadLeads(true);
+    await openLead(state.activeLead.id);
+    setBusy(button, false);
   }
 
   document.addEventListener("click", function (event) {
@@ -495,13 +551,18 @@
       return;
     }
     var contactTask = event.target.closest("[data-contact-task]");
-    if (contactTask) completeContactTask(contactTask.dataset.contactTask, contactTask.dataset.contactOutcome, contactTask.dataset.whatsappBody || "");
+    if (contactTask) {
+      if (contactTask.dataset.contactOutcome === "answered") openAnsweredFollowUp(contactTask.dataset.contactTask);
+      else completeContactTask(contactTask.dataset.contactTask, contactTask.dataset.contactOutcome, contactTask.dataset.whatsappBody || "");
+    }
   });
 
   document.getElementById("crmStatusInput").addEventListener("change", updateConditionalFields);
   document.getElementById("crmSaveManagement").addEventListener("click", saveManagement);
   document.getElementById("crmCommentButton").addEventListener("click", function () { document.getElementById("crmCommentError").textContent = ""; commentDialog.showModal(); });
   document.getElementById("crmCommentSave").addEventListener("click", saveComment);
+  document.getElementById("crmAnsweredSave").addEventListener("click", saveAnsweredFollowUp);
+  document.getElementById("crmAnsweredDate").addEventListener("input", function () { maskDateInput(this); });
   document.getElementById("crmSaleButton").addEventListener("click", async function () {
     if (this.disabled || !state.activeLead) return;
     document.getElementById("crmSaleVehicle").value = crmOf(state.activeLead).vehicle_sold || state.activeLead.model_interest || "";
