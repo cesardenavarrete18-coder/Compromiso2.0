@@ -2,7 +2,7 @@
   "use strict";
 
   var supabaseClient = window.grupoSurSupabaseClient;
-  var state = { profile: null, sellers: [], settings: {}, leads: [], tasks: [], goals: [], templates: [], sales: [], adminSales: [], activeSale: null, activeConversationLeadId: null, view: "leads", filter: "pending_supervisor", search: "" };
+  var state = { profile: null, sellers: [], settings: {}, leads: [], tasks: [], goals: [], templates: [], sales: [], adminSales: [], activeSale: null, view: "leads", filter: "pending_supervisor", search: "" };
   var loginView = document.getElementById("loginView");
   var appView = document.getElementById("appView");
   var loginForm = document.getElementById("loginForm");
@@ -75,7 +75,7 @@
       supabaseClient.from("profiles").select("user_id, full_name, seller_code, active").eq("role", "seller").order("full_name"),
       supabaseClient.from("seller_routing_settings").select("seller_user_id, daily_quota, paused"),
       supabaseClient.from("leads").select("id, customer_phone, customer_name, source_channel, source_detail, seller_code_received, qualification_status, priority, intent_summary, model_interest, routing_status, routing_reason, assigned_seller_user_id, assigned_at, last_message_at, created_at, attribution:lead_attributions(platform,campaign_name,adset_name,ad_name,headline), crm:lead_crm(status, priority, next_contact_at, last_contact_at, interview_at, sale_confirmation_status, sale_confirmed_at)").order("last_message_at", { ascending: false }).limit(500),
-      supabaseClient.from("lead_sale_requests").select("id, lead_id, seller_user_id, vehicle, sale_amount, notes, status, requested_at, seller:profiles!lead_sale_requests_seller_user_id_fkey(full_name, seller_code), lead:leads(customer_name, customer_phone, intent_summary)").eq("status", "pending").order("requested_at"),
+      supabaseClient.from("lead_sale_requests").select("id, lead_id, seller_user_id, vehicle, sale_amount, notes, status, requested_at, provisional_application_id, seller:profiles!lead_sale_requests_seller_user_id_fkey(full_name, seller_code), lead:leads(customer_name, customer_phone, intent_summary), provisional:commercial_applications!lead_sale_requests_provisional_application_id_fkey(request_code, brand_name, model_name, campaign_name, first_name, last_name, document_type, document_number, cuil, primary_phone, email, employment_status, employer_name, employment_seniority, monthly_income, automatic_debit, deferred_installment, installments_paid, installments_to_pay, plan_type, agreed_price, commercial_snapshot)").eq("status", "pending").order("requested_at"),
       supabaseClient.from("sales_cases").select("id, case_code, seller_user_id, vehicle, status, cdn_scoring_status, dealer_scoring_status, contract_status, finalized_at, cancellation_reason, updated_at, seller:profiles!sales_cases_seller_user_id_fkey(full_name, seller_code), lead:leads!sales_cases_lead_id_fkey(customer_name), events:sales_case_events(stage, outcome, comment, created_at)").order("updated_at", { ascending: false }).limit(250),
       supabaseClient.from("lead_contact_tasks").select("id, lead_id, seller_user_id, channel, call_attempt, message_step, due_start, due_end, status, outcome, lead:leads(customer_name,customer_phone,model_interest), seller:profiles!lead_contact_tasks_seller_user_id_fkey(full_name,seller_code)").eq("status", "pending").order("due_start").limit(1000),
       supabaseClient.from("commercial_goals").select("id, period_month, seller_user_id, target_contacts, target_interviews, target_sales, target_finalized").order("period_month", { ascending: false }).limit(500),
@@ -219,25 +219,6 @@
     return "Bandeja general";
   }
 
-  async function loadConversation(leadId) {
-    if (!leadId) return;
-    var messages = await supabaseClient.from("lead_messages").select("direction, body, created_at").eq("lead_id", leadId).order("created_at");
-    if (state.activeConversationLeadId !== leadId) return;
-    var conversation = document.getElementById("conversation");
-    var status = document.getElementById("dialogConversationStatus");
-    if (messages.error || !messages.data.length) {
-      conversation.innerHTML = '<div class="message-bubble">Todavía no hay mensajes disponibles.</div>';
-      status.textContent = "Sin mensajes para mostrar";
-      return;
-    }
-    conversation.innerHTML = messages.data.map(function (message) { return '<div class="message-bubble ' + escapeHtml(message.direction) + '">' + escapeHtml(message.body || "Mensaje sin texto") + '<small>' + escapeHtml(formatDate(message.created_at)) + '</small></div>'; }).join("");
-    var lastMessage = messages.data[messages.data.length - 1];
-    status.textContent = lastMessage.direction === "outbound"
-      ? "Pendiente de filtrado · esperando respuesta del cliente desde " + formatDate(lastMessage.created_at)
-      : "El cliente respondió · último mensaje " + formatDate(lastMessage.created_at);
-    conversation.scrollTop = conversation.scrollHeight;
-  }
-
   function renderLeads() {
     var labels = {
       pending_supervisor: ["Leads pendientes", "La IA ya resumió la intención; elegí a quién asignar cada oportunidad."],
@@ -255,7 +236,7 @@
       var sourceLabel = lead.source_channel === "tiktok" ? "TikTok / código " + (lead.seller_code_received || "—") : lead.source_detail === "meta_ads" ? "Meta Ads · " + (attribution && (attribution.ad_name || attribution.headline || attribution.campaign_name) || "Anuncio sin nombre") : lead.source_channel === "manual" ? "Carga manual · " + (lead.source_detail || "Sin detalle") : "WhatsApp orgánico";
       return '<article class="lead-card" data-lead-id="' + lead.id + '">' +
         '<div class="lead-person"><strong>' + escapeHtml(lead.customer_name || "Cliente sin nombre") + '</strong><span>+' + escapeHtml(lead.customer_phone) + ' · ' + escapeHtml(formatDate(lead.last_message_at)) + '</span><span>' + escapeHtml(sourceLabel) + '</span></div>' +
-        '<div class="lead-summary"><p>' + escapeHtml(lead.intent_summary || "Pendiente de resumen") + '</p><div class="badges"><span class="badge ' + escapeHtml(lead.qualification_status) + '">' + escapeHtml(lead.qualification_status === "qualified" ? "Calificado" : lead.qualification_status === "unqualified" ? "No calificado" : "Pendiente de filtrado") + '</span><span class="badge ' + escapeHtml((crm && crm.priority) || lead.priority) + '">' + escapeHtml((crm && crm.priority) === "high" || lead.priority === "high" ? "Prioridad alta" : "Prioridad normal") + '</span><span class="badge">' + escapeHtml(crm && crm.status ? crm.status.replace(/_/g, " ") : "nuevo") + '</span><span class="badge">' + escapeHtml(routingLabel(lead)) + '</span></div></div>' +
+        '<div class="lead-summary"><p>' + escapeHtml(lead.intent_summary || "Pendiente de resumen") + '</p><div class="badges"><span class="badge ' + escapeHtml(lead.qualification_status) + '">' + escapeHtml(lead.qualification_status === "qualified" ? "Calificado" : lead.qualification_status === "unqualified" ? "No calificado" : "Seguimiento") + '</span><span class="badge ' + escapeHtml((crm && crm.priority) || lead.priority) + '">' + escapeHtml((crm && crm.priority) === "high" || lead.priority === "high" ? "Prioridad alta" : "Prioridad normal") + '</span><span class="badge">' + escapeHtml(crm && crm.status ? crm.status.replace(/_/g, " ") : "nuevo") + '</span><span class="badge">' + escapeHtml(routingLabel(lead)) + '</span></div></div>' +
         '<div class="assignment"><select data-seller-select aria-label="Asignar vendedor">' + sellerOptions(lead.assigned_seller_user_id) + '</select><button class="button primary" data-assign type="button">' + (assigned ? "Reasignar" : "Asignar") + '</button></div>' +
         '<button class="details" data-details type="button">Ver chat</button>' +
       '</article>';
@@ -268,7 +249,8 @@
     document.getElementById("salesList").innerHTML = state.sales.length ? state.sales.map(function (sale) {
       var seller = Array.isArray(sale.seller) ? sale.seller[0] : sale.seller;
       var lead = Array.isArray(sale.lead) ? sale.lead[0] : sale.lead;
-      return '<article class="sale-row" data-sale-id="' + sale.id + '"><div><strong>' + escapeHtml(lead && lead.customer_name || "Cliente sin nombre") + '</strong><small>+' + escapeHtml(lead && lead.customer_phone || "") + ' · ' + escapeHtml(formatDate(sale.requested_at)) + '</small></div><div><strong>' + escapeHtml(sale.vehicle) + '</strong><span>' + escapeHtml(sale.notes || lead && lead.intent_summary || "Sin observaciones") + '</span></div><div><span class="sale-amount">' + escapeHtml(money(sale.sale_amount)) + '</span><small>' + escapeHtml(seller && seller.full_name || "Vendedor") + ' · ' + escapeHtml(seller && seller.seller_code || "") + '</small></div><button class="button primary" data-review-sale type="button">Revisar</button></article>';
+      var provisional = Array.isArray(sale.provisional) ? sale.provisional[0] : sale.provisional;
+      return '<article class="sale-row" data-sale-id="' + sale.id + '"><div><strong>' + escapeHtml(lead && lead.customer_name || "Cliente sin nombre") + '</strong><small>+' + escapeHtml(lead && lead.customer_phone || "") + ' · ' + escapeHtml(formatDate(sale.requested_at)) + '</small>' + (provisional ? '<span class="sale-source-chip">Datero del Apto</span>' : '') + '</div><div><strong>' + escapeHtml(sale.vehicle) + '</strong><span>' + escapeHtml(sale.notes || lead && lead.intent_summary || "Sin observaciones") + '</span></div><div><span class="sale-amount">' + escapeHtml(money(sale.sale_amount)) + '</span><small>' + escapeHtml(seller && seller.full_name || "Vendedor") + ' · ' + escapeHtml(seller && seller.seller_code || "") + '</small></div><button class="button primary" data-review-sale type="button">Revisar</button></article>';
     }).join("") : '<div class="sales-empty">No hay ventas pendientes de confirmación.</div>';
   }
 
@@ -428,17 +410,13 @@
       document.getElementById("dialogLeadName").textContent = lead.customer_name || "+" + lead.customer_phone;
       document.getElementById("dialogLeadSummary").textContent = lead.intent_summary || "Sin resumen disponible.";
       document.getElementById("conversation").innerHTML = '<div class="message-bubble">Cargando conversación…</div>';
-      document.getElementById("dialogConversationStatus").textContent = "Consultando mensajes…";
-      state.activeConversationLeadId = lead.id;
       document.getElementById("leadDialog").showModal();
-      await loadConversation(lead.id);
+      var messages = await supabaseClient.from("lead_messages").select("direction, body, created_at").eq("lead_id", lead.id).order("created_at");
+      document.getElementById("conversation").innerHTML = messages.error || !messages.data.length
+        ? '<div class="message-bubble">Todavía no hay mensajes disponibles.</div>'
+        : messages.data.map(function (message) { return '<div class="message-bubble ' + escapeHtml(message.direction) + '">' + escapeHtml(message.body || "Mensaje sin texto") + '<small>' + escapeHtml(formatDate(message.created_at)) + '</small></div>'; }).join("");
     }
   });
-
-  document.getElementById("conversationRefresh").addEventListener("click", function () {
-    loadConversation(state.activeConversationLeadId).catch(function () {});
-  });
-  document.getElementById("leadDialog").addEventListener("close", function () { state.activeConversationLeadId = null; });
 
   document.getElementById("manualLeadButton").addEventListener("click", function () {
     document.getElementById("manualLeadForm").reset();
@@ -475,6 +453,21 @@
     setBusy(this, false);
   });
 
+  function provisionalReviewHtml(sale) {
+    var provisional = Array.isArray(sale.provisional) ? sale.provisional[0] : sale.provisional;
+    if (!provisional) return "";
+    return '<section class="provisional-review"><div class="provisional-review-title"><span>Datero del Apto</span><strong>' + escapeHtml(provisional.request_code) + '</strong></div><div class="provisional-review-grid">' +
+      '<div><small>Cliente</small><strong>' + escapeHtml(provisional.first_name + " " + provisional.last_name) + '</strong></div>' +
+      '<div><small>' + escapeHtml(provisional.document_type) + ' / CUIL</small><strong>' + escapeHtml(provisional.document_number + " · " + provisional.cuil) + '</strong></div>' +
+      '<div><small>Contacto</small><strong>' + escapeHtml(provisional.primary_phone + " · " + provisional.email) + '</strong></div>' +
+      '<div><small>Vehículo y plan</small><strong>' + escapeHtml([provisional.brand_name, provisional.model_name, provisional.plan_type].filter(Boolean).join(" · ")) + '</strong></div>' +
+      '<div><small>Valor de la operación</small><strong>' + escapeHtml(money(provisional.agreed_price)) + '</strong></div>' +
+      '<div><small>Cuotas del plan</small><strong>' + escapeHtml(provisional.installments_paid + " abonada / " + provisional.installments_to_pay + " a abonar") + '</strong></div>' +
+      '<div><small>Situación laboral</small><strong>' + escapeHtml(provisional.employment_status + " · " + provisional.employer_name) + '</strong></div>' +
+      '<div><small>Ingreso declarado</small><strong>' + escapeHtml(money(provisional.monthly_income)) + '</strong></div>' +
+    '</div><p>Este datero es provisorio y no registra pagos. Si aprobás la venta, la minuta definitiva volverá al vendedor en “Mis ventas”.</p></section>';
+  }
+
   document.getElementById("salesList").addEventListener("click", function (event) {
     var button = event.target.closest("[data-review-sale]");
     if (!button) return;
@@ -485,7 +478,7 @@
     var seller = Array.isArray(sale.seller) ? sale.seller[0] : sale.seller;
     var lead = Array.isArray(sale.lead) ? sale.lead[0] : sale.lead;
     document.getElementById("saleReviewTitle").textContent = "Venta de " + (lead && lead.customer_name || "cliente");
-    document.getElementById("saleReviewSummary").innerHTML = '<strong>' + escapeHtml(sale.vehicle) + ' · ' + escapeHtml(money(sale.sale_amount)) + '</strong><span>Informada por ' + escapeHtml(seller && seller.full_name || "Vendedor") + ' el ' + escapeHtml(formatDate(sale.requested_at)) + '</span><span>' + escapeHtml(sale.notes || "Sin observaciones") + '</span>';
+    document.getElementById("saleReviewSummary").innerHTML = '<strong>' + escapeHtml(sale.vehicle) + ' · ' + escapeHtml(money(sale.sale_amount)) + '</strong><span>Informada por ' + escapeHtml(seller && seller.full_name || "Vendedor") + ' el ' + escapeHtml(formatDate(sale.requested_at)) + '</span><span>' + escapeHtml(sale.notes || "Sin observaciones") + '</span>' + provisionalReviewHtml(sale);
     document.getElementById("saleReviewNote").value = "";
     document.getElementById("saleReviewMessage").textContent = "";
     document.getElementById("saleReviewDialog").showModal();
@@ -559,7 +552,4 @@
     loginView.hidden = false;
   });
   window.setInterval(function () { if (state.profile) loadData(true).catch(function () {}); }, 30000);
-  window.setInterval(function () {
-    if (state.profile && state.activeConversationLeadId && document.getElementById("leadDialog").open) loadConversation(state.activeConversationLeadId).catch(function () {});
-  }, 10000);
 }());

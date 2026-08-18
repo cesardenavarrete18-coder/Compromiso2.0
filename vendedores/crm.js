@@ -268,7 +268,7 @@
     var target = document.getElementById("crm" + viewName.charAt(0).toUpperCase() + viewName.slice(1) + "View");
     if (target) target.classList.add("is-active");
     document.getElementById("stepper").hidden = true;
-    document.getElementById("pageTitle").textContent = viewName === "agenda" ? "Mi agenda comercial" : viewName === "pipeline" ? "Embudo de oportunidades" : viewName === "quotes" ? "Presupuestos comerciales" : viewName === "sales" ? "Estado de mis ventas" : viewName === "recalls" ? "Panel de rellamados" : "Ranking del equipo";
+    document.getElementById("pageTitle").textContent = viewName === "agenda" ? "Mi agenda comercial" : viewName === "pipeline" ? "Embudo de oportunidades" : viewName === "quotes" ? "Presupuestos comerciales" : viewName === "sales" ? "Mis ventas" : viewName === "recalls" ? "Panel de rellamados" : "Ranking del equipo";
     document.getElementById("headerKicker").textContent = viewName === "recalls" ? "Base histórica asignada" : "CRM Grupo Sur Automotores";
     document.querySelectorAll(".nav-item").forEach(function (item) { item.classList.toggle("is-active", item.dataset.crmView === viewName); });
     if (viewName === "ranking") loadRanking();
@@ -389,7 +389,7 @@
     managementButton.disabled = crm.status === "venta";
     managementButton.textContent = crm.status === "venta" ? "Venta confirmada" : "Guardar gestión";
     saleButton.disabled = crm.sale_confirmation_status === "pending" || crm.sale_confirmation_status === "confirmed";
-    saleButton.textContent = crm.sale_confirmation_status === "pending" ? "Venta pendiente" : crm.sale_confirmation_status === "confirmed" ? "Venta confirmada" : "Solicitar venta";
+    saleButton.textContent = crm.sale_confirmation_status === "pending" ? "Datero pendiente" : crm.sale_confirmation_status === "confirmed" ? "Venta confirmada" : "Enviar datero";
     renderNextCard(lead);
     renderProtocol(lead);
     updateConditionalFields();

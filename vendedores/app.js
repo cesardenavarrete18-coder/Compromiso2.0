@@ -893,10 +893,10 @@
       installmentsToPay: Number(fields.installmentsToPay.value),
       planType: String(fields.planType.value || "").trim().replace(/\s+/g, " "),
       agreedPrice: parseMoney(fields.agreedPrice.value),
-      firstPaymentDate: fields.firstPaymentDate.value || "",
-      firstPaymentAmount: parseMoney(fields.firstPaymentAmount.value),
-      secondPaymentDate: fields.secondPaymentDate.value || "",
-      secondPaymentAmount: parseMoney(fields.secondPaymentAmount.value),
+      firstPaymentDate: "",
+      firstPaymentAmount: null,
+      secondPaymentDate: "",
+      secondPaymentAmount: null,
       consent: fields.applicationConsent.checked
     };
   }
@@ -948,11 +948,8 @@
     if (data.planType.length < 3 || !data.agreedPrice) {
       return "Completá el tipo de plan y el precio pactado.";
     }
-    if (Boolean(data.firstPaymentDate) !== Boolean(data.firstPaymentAmount) || Boolean(data.secondPaymentDate) !== Boolean(data.secondPaymentAmount)) {
-      return "Cada pago informado debe tener fecha e importe.";
-    }
     if (!data.consent) {
-      return "El vendedor y el cliente deben confirmar los datos antes de generar la minuta.";
+      return "El vendedor y el cliente deben confirmar los datos antes de enviar el datero.";
     }
     return "";
   }
@@ -1061,12 +1058,12 @@
       installments_to_pay: data.installmentsToPay,
       plan_type: data.planType,
       agreed_price: data.agreedPrice,
-      first_payment_date: data.firstPaymentDate || null,
-      first_payment_amount: data.firstPaymentAmount,
-      second_payment_date: data.secondPaymentDate || null,
-      second_payment_amount: data.secondPaymentAmount,
+      first_payment_date: null,
+      first_payment_amount: null,
+      second_payment_date: null,
+      second_payment_amount: null,
       status: "completed",
-      terms_version: "GS-MINUTA-2026-01",
+      terms_version: "GS-DATERO-PROVISORIO-2026-01",
       confirmed_at: new Date().toISOString(),
       commercial_snapshot: {
         plan: state.model.campaign,
@@ -1096,12 +1093,12 @@
 
   function buildMinute(data) {
     var issueDate = new Date();
-    var minuteCode = "MIN-" + state.requestId.replace(/^GS-/, "");
+    var minuteCode = "DAT-" + state.requestId.replace(/^GS-/, "");
     var spouse = data.spouseName ? data.spouseName + (data.spouseDocument ? " · DNI " + data.spouseDocument : "") : "No corresponde";
     minutePrint.innerHTML = '' +
       '<article class="minute-sheet" data-brand-theme="' + escapeHtml(brandTheme(state.brand)) + '">' +
         '<header class="minute-header">' +
-          '<div class="minute-header-brand"><img class="minute-company-logo" src="../assets/logo-header.webp" alt="Grupo Sur Automotores"><div class="minute-brand-lockup"><img class="minute-brand-logo" src="' + escapeHtml(brandLogo(state.brand)) + '" alt="Logo ' + escapeHtml(state.brand) + '"><span>Solicitud comercial · ' + escapeHtml(vehicleTitle(state.model)) + '</span></div></div>' +
+          '<div class="minute-header-brand"><img class="minute-company-logo" src="../assets/logo-header.webp" alt="Grupo Sur Automotores"><div class="minute-brand-lockup"><img class="minute-brand-logo" src="' + escapeHtml(brandLogo(state.brand)) + '" alt="Logo ' + escapeHtml(state.brand) + '"><span>Datero provisorio · ' + escapeHtml(vehicleTitle(state.model)) + '</span></div></div>' +
           '<div class="minute-identifiers"><strong>' + escapeHtml(minuteCode) + '</strong><span>Fecha: ' + escapeHtml(new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(issueDate)) + '</span><span>Precalificación: ' + escapeHtml(state.requestId) + '</span></div>' +
         '</header>' +
         '<section class="minute-vehicle">' +
@@ -1142,19 +1139,17 @@
           minuteRow("Débito automático", data.automaticDebit ? "Sí" : "No") +
           minuteRow("Cuota diferida", data.deferredInstallment ? "Sí" : "No") +
           minuteRow("Asesor", state.seller.name + " · " + state.seller.code) +
-          minuteRow("Primer pago", data.firstPaymentDate ? formatDate(data.firstPaymentDate) + " · " + formatMoney(data.firstPaymentAmount) : "No informado") +
-          minuteRow("Segundo pago", data.secondPaymentDate ? formatDate(data.secondPaymentDate) + " · " + formatMoney(data.secondPaymentAmount) : "No informado") +
           minuteRow("Bonificación", state.model.bonus) +
         '</div></section>' +
-        '<section class="minute-print-section"><h2>Constancia y condiciones</h2><ol class="minute-terms">' +
-          '<li>La presente minuta registra los datos y condiciones comerciales informados durante esta gestión. No constituye una solicitud de adhesión, aprobación financiera, adjudicación ni obligación de entrega.</li>' +
+        '<section class="minute-print-section"><h2>Carácter provisorio</h2><ol class="minute-terms">' +
+          '<li>El presente datero registra información provisoria para que Supervisión evalúe la operación. No constituye una minuta definitiva, solicitud de adhesión, aprobación financiera, adjudicación ni obligación de entrega.</li>' +
           '<li>La operación queda sujeta a validación documental y crediticia, vigencia de la campaña, disponibilidad del modelo y aceptación de las condiciones definitivas por las partes intervinientes.</li>' +
-          '<li>Toda suma declarada deberá contar con el comprobante correspondiente emitido por el receptor autorizado. Esta minuta no acredita por sí misma pago, reserva ni cancelación.</li>' +
+          '<li>Este datero no registra ni acredita pagos, reservas o cancelaciones. Esos datos sólo se incorporarán en la minuta definitiva luego de la aprobación de Supervisión.</li>' +
           '<li>Cuando se entregue un vehículo usado, su valor será determinado al momento de la tasación y peritaje, sujeto a la presentación de la documentación requerida.</li>' +
-          '<li>Únicamente se considerarán los beneficios y bonificaciones expresamente incluidos en esta minuta y vigentes al momento de formalizar la operación.</li>' +
+          '<li>Únicamente se considerarán los beneficios y bonificaciones vigentes al momento de formalizar la operación.</li>' +
         '</ol></section>' +
         '<div class="minute-signatures"><div>Firma del cliente</div><div>Aclaración y DNI</div><div>Asesor responsable</div></div>' +
-        '<footer class="minute-footer">Documento emitido desde el portal interno de Grupo Sur Automotores · Versión GS-MINUTA-2026-01</footer>' +
+        '<footer class="minute-footer">Datero provisorio emitido desde el portal interno de Grupo Sur Automotores · Versión GS-DATERO-PROVISORIO-2026-01</footer>' +
       '</article>';
     minutePrint.setAttribute("aria-hidden", "false");
   }
@@ -1213,7 +1208,7 @@
           '<div><strong>' + escapeHtml(item.name) + '</strong><span>' + escapeHtml(item.cuil) + '</span></div>' +
           '<div><strong>' + escapeHtml(item.vehicle) + '</strong><span>' + escapeHtml(item.campaign) + '</span></div>' +
           '<div><strong>' + escapeHtml(item.requestId) + '</strong><span>' + escapeHtml(new Intl.DateTimeFormat("es-AR", { hour: "2-digit", minute: "2-digit" }).format(item.date)) + '</span></div>' +
-          '<span class="history-status' + (item.application ? ' has-minute' : '') + '">' + (item.application ? 'Minuta generada' : 'Aprobada') + '</span>' +
+          '<span class="history-status' + (item.application ? ' has-minute' : '') + '">' + (item.application ? 'Datero enviado' : 'Aprobada') + '</span>' +
         '</div>';
     }).join("");
   }
@@ -1358,11 +1353,18 @@
       return;
     }
     applicationSubmitButton.disabled = true;
-    applicationSubmitButton.textContent = "Guardando solicitud…";
+    applicationSubmitButton.textContent = "Enviando a supervisión…";
     try {
       response = await saveCommercialApplication(data);
       if (response.error) {
         throw response.error;
+      }
+      var saleResponse = await supabaseClient.rpc("submit_prequalification_sale", {
+        p_application_id: response.data.id,
+        p_notes: "Operación originada en la precalificación " + state.requestId
+      });
+      if (saleResponse.error) {
+        throw saleResponse.error;
       }
       state.applicationId = response.data.id;
       state.application = data;
@@ -1373,11 +1375,11 @@
       });
       renderHistory();
       buildMinute(data);
-      applicationSubmitButton.textContent = "Solicitud guardada";
+      applicationSubmitButton.textContent = "Datero enviado";
       printMinute();
     } catch (saveError) {
-      applicationError.textContent = saveError.message || "No se pudo guardar la solicitud comercial.";
-      applicationSubmitButton.textContent = "Guardar y generar PDF";
+      applicationError.textContent = saveError.message || "No se pudo enviar el datero a Supervisión.";
+      applicationSubmitButton.textContent = "Guardar y enviar a supervisión";
     } finally {
       applicationSubmitButton.disabled = false;
     }
