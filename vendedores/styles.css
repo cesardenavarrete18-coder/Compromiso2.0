@@ -2111,6 +2111,60 @@ a {
     -webkit-print-color-adjust: exact;
   }
 
+  .prequalification-print-sheet {
+    --prequal-accent: #087bd8;
+    --prequal-deep: #052f5f;
+    box-sizing: border-box;
+    display: flex;
+    width: 210mm;
+    height: 297mm;
+    flex-direction: column;
+    gap: 5mm;
+    padding: 8mm;
+    overflow: hidden;
+    color: #10233b;
+    background: #fff;
+    font-family: Inter, Arial, sans-serif;
+    font-size: 9pt;
+    line-height: 1.35;
+    print-color-adjust: exact;
+  }
+  .prequalification-print-sheet[data-brand-theme="volkswagen"] { --prequal-accent: #00a5df; --prequal-deep: #001e50; }
+  .prequalification-print-sheet[data-brand-theme="peugeot"] { --prequal-accent: #00a3e0; --prequal-deep: #050505; }
+  .prequalification-print-sheet[data-brand-theme="fiat"] { --prequal-accent: #e2231a; --prequal-deep: #151515; }
+  .prequalification-print-header { display: flex; align-items: center; justify-content: space-between; padding-bottom: 4mm; border-bottom: 1.2mm solid var(--prequal-accent); }
+  .prequalification-print-header > div { display: grid; gap: 1mm; }
+  .prequalification-print-header > div:last-child { text-align: right; }
+  .prequalification-print-header img { width: 40mm; height: 12mm; object-fit: contain; object-position: left center; }
+  .prequalification-print-header span { color: #60758d; font-size: 7.6pt; }
+  .prequalification-print-header strong { color: var(--prequal-deep); font-size: 11pt; }
+  .prequalification-print-hero { display: grid; min-height: 54mm; grid-template-columns: 72mm 1fr; overflow: hidden; border-radius: 5mm; color: #fff; background: var(--prequal-deep); }
+  .prequalification-print-image { background: #eef4f8; }
+  .prequalification-print-image img { width: 100%; height: 54mm; object-fit: contain; }
+  .prequalification-print-hero > div:last-child { display: flex; flex-direction: column; justify-content: center; padding: 7mm; }
+  .prequalification-print-hero span { width: max-content; padding: 2mm 3mm; border-radius: 99mm; color: var(--prequal-deep); background: #fff; font-size: 7.3pt; font-weight: 900; text-transform: uppercase; }
+  .prequalification-print-hero p { margin: 4mm 0 1mm; color: #b8d9ec; font-weight: 800; text-transform: uppercase; }
+  .prequalification-print-hero h1 { margin: 0 0 4mm; font-size: 22pt; line-height: 1.05; }
+  .prequalification-print-hero strong { color: #fff; font-size: 8pt; }
+  .prequalification-print-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 5mm; }
+  .prequalification-print-columns section { padding: 4mm; border: .35mm solid #d5e1eb; border-radius: 3mm; }
+  .prequalification-print-columns h2 { margin: 0 0 3mm; color: var(--prequal-deep); font-size: 11pt; }
+  .prequalification-print-columns dl { display: grid; gap: 2mm; margin: 0; }
+  .prequalification-print-columns dl div { display: grid; grid-template-columns: 34mm 1fr; gap: 3mm; padding-bottom: 1.5mm; border-bottom: .2mm solid #e5edf3; }
+  .prequalification-print-columns dt { color: #61758b; }
+  .prequalification-print-columns dd { margin: 0; color: #10233b; font-weight: 800; }
+  .prequalification-print-benefits { display: grid; grid-template-columns: .8fr 1.2fr; gap: 3mm; }
+  .prequalification-print-benefits div { padding: 3.5mm 4mm; border-radius: 3mm; background: #eef6fb; }
+  .prequalification-print-benefits span, .prequalification-print-advisor span { display: block; margin-bottom: 1mm; color: #61758b; font-size: 7.4pt; text-transform: uppercase; }
+  .prequalification-print-benefits strong, .prequalification-print-advisor strong { color: var(--prequal-deep); }
+  .prequalification-print-advisor { display: grid; grid-template-columns: 1.5fr .7fr 1fr; gap: 3mm; padding: 4mm; border-radius: 3mm; color: #fff; background: var(--prequal-deep); }
+  .prequalification-print-advisor span { color: #b8d9ec; }
+  .prequalification-print-advisor strong { color: #fff; }
+  .prequalification-print-legal { padding: 4mm; border-left: 1mm solid var(--prequal-accent); background: #f7fafc; }
+  .prequalification-print-legal strong { color: var(--prequal-deep); }
+  .prequalification-print-legal p { margin: 1.5mm 0 0; color: #536a82; font-size: 7.5pt; }
+  .prequalification-print-sheet > footer { margin-top: auto; padding-top: 3mm; border-top: .2mm solid #d5e1eb; color: #718398; font-size: 7pt; text-align: center; }
+
   .minute-sheet[data-brand-theme="volkswagen"] { --minute-accent: #00b0f0; --minute-deep: #001e50; }
   .minute-sheet[data-brand-theme="peugeot"] { --minute-accent: #00a3e0; --minute-deep: #000; }
   .minute-sheet[data-brand-theme="fiat"] { --minute-accent: #e2231a; --minute-deep: #111; }

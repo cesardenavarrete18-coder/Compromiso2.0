@@ -60,25 +60,56 @@ function isConversationalMessage(message: JsonRecord) {
   return ["text", "button", "interactive"].includes(String(message.type ?? "")) && messageText(message).length > 0;
 }
 
-function fallbackDecision(text: string): LeadDecision {
+const advertisedVehicles = [
+  ["peugeot partner", "Peugeot Partner"],
+  ["peugeot expert", "Peugeot Expert"],
+  ["peugeot 2008", "Peugeot 2008"],
+  ["peugeot 208", "Peugeot 208"],
+  ["volkswagen amarok", "Volkswagen Amarok"],
+  ["volkswagen taos", "Volkswagen Taos"],
+  ["volkswagen t-cross", "Volkswagen T-Cross"],
+  ["volkswagen tcross", "Volkswagen T-Cross"],
+  ["volkswagen tera", "Volkswagen Tera"],
+  ["volkswagen nivus", "Volkswagen Nivus"],
+  ["volkswagen virtus", "Volkswagen Virtus"],
+  ["volkswagen polo", "Volkswagen Polo"],
+  ["fiat cronos", "Fiat Cronos"],
+  ["fiat mobi", "Fiat Mobi"],
+  ["fiat strada", "Fiat Strada"],
+  ["fiat toro", "Fiat Toro"],
+  ["fiat fiorino", "Fiat Fiorino"],
+  ["fiat fastback", "Fiat Fastback"],
+] as const;
+
+function advertisedVehicle(referral: JsonRecord | undefined) {
+  const source = `${String(referral?.headline ?? "")} ${String(referral?.body ?? "")}`.toLocaleLowerCase("es-AR");
+  const exact = advertisedVehicles.find(([needle]) => source.includes(needle));
+  if (exact) return exact[1];
+  const uniqueNames = advertisedVehicles.filter(([needle]) => source.includes(needle.split(" ").slice(1).join(" ")));
+  return uniqueNames.length === 1 ? uniqueNames[0][1] : "";
+}
+
+function fallbackDecision(text: string, advertisedInterest = ""): LeadDecision {
   const normalized = text.toLocaleLowerCase("es-AR");
-  const salesIntent = /(0\s?km|auto|veh[ií]culo|modelo|cuota|anticipo|financi|plan|precio|entrega|volkswagen|peugeot|fiat)/i.test(normalized);
+  const salesIntent = Boolean(advertisedInterest) || /(0\s?km|auto|veh[ií]culo|modelo|cuota|anticipo|financi|plan|precio|entrega|volkswagen|peugeot|fiat)/i.test(normalized);
   const urgent = /(hoy|urgente|ya|comprar|seña|entrega inmediata)/i.test(normalized);
   return {
     qualification_status: salesIntent ? "qualified" : "follow_up",
     priority: urgent ? "high" : "normal",
-    intent_summary: salesIntent ? "Consulta comercial recibida por WhatsApp" : "Contacto nuevo pendiente de ampliar información",
-    model_interest: "",
+    intent_summary: advertisedInterest ? `Consulta por ${advertisedInterest} recibida desde Meta Ads` : salesIntent ? "Consulta comercial recibida por WhatsApp" : "Contacto nuevo pendiente de ampliar información",
+    model_interest: advertisedInterest,
     disqualify_reason: "",
     reply_text: salesIntent
-      ? "¡Hola! Soy el asistente de Grupo Sur Automotores. Para orientarte mejor, ¿qué modelo estás buscando y con qué anticipo aproximado contás?"
+      ? advertisedInterest
+        ? `¡Hola! Gracias por tu consulta por ${advertisedInterest}. ¿Pensás avanzar con anticipo y financiación, entregar un usado o comprar al contado?`
+        : "¡Hola! Soy el asistente de Grupo Sur Automotores. Para orientarte mejor, ¿qué modelo estás buscando y con qué anticipo aproximado contás?"
       : "¡Hola! Soy el asistente de Grupo Sur Automotores. ¿Qué vehículo 0 km estás buscando?",
   };
 }
 
-async function analyzeLeadConversation(history: string[], text: string, qualificationRules = "", vectorStoreId = "", referralContext = ""): Promise<LeadDecision> {
+async function analyzeLeadConversation(history: string[], text: string, qualificationRules = "", vectorStoreId = "", referralContext = "", advertisedInterest = ""): Promise<LeadDecision> {
   const apiKey = Deno.env.get("OPENAI_API_KEY") ?? "";
-  if (!apiKey || !text) return fallbackDecision(text);
+  if (!apiKey || !text) return fallbackDecision(text, advertisedInterest);
 
   const conversation = [referralContext, ...history, `Cliente: ${text}`].filter(Boolean).slice(-13).join("\n");
 
@@ -99,6 +130,7 @@ Tu tarea es filtrar el lead y redactar la próxima respuesta de WhatsApp en espa
 Datos que conviene reunir de manera natural: modelo de interés, tipo de operación, anticipo disponible, si entrega usado (marca/modelo/año/km), zona, plazo de compra y experiencia previa con financiación.
 - Hacé como máximo dos preguntas por mensaje y no repitas datos ya informados.
 - Respondé específicamente a lo que dijo el cliente: mencioná el modelo, usado, anticipo, zona o plazo cuando ya estén informados. Evitá respuestas genéricas que podrían servir para cualquier conversación.
+- La referencia del anuncio de Meta es un dato comercial confirmado, no una pista opcional. Si identifica un modelo concreto, asumí que ese es el modelo consultado, guardalo en model_interest y mencioná ese modelo en la primera respuesta. No vuelvas a preguntar qué modelo quiere salvo que el cliente diga expresamente que busca otro o que el anuncio sea ambiguo.
 - Presentate solamente en el primer mensaje de la conversación. En los siguientes, continuá naturalmente sin volver a saludar ni explicar que sos un asistente.
 - Preferí una sola pregunta concreta por turno. Si el cliente ya dio información suficiente, resumila y derivá en lugar de seguir interrogándolo.
 - No inventes precios, cuotas, stock, aprobaciones crediticias ni fechas de entrega.
@@ -144,17 +176,24 @@ Si hay documentos comerciales disponibles, consultalos cuando la respuesta depen
     if (!result.ok) {
       const errorBody = await result.text();
       console.error("OpenAI analysis failed", result.status, errorBody.slice(0, 1200));
-      return fallbackDecision(text);
+      return fallbackDecision(text, advertisedInterest);
     }
     const payload = await result.json();
     const outputText = (payload.output || [])
       .flatMap((item: JsonRecord) => Array.isArray(item.content) ? item.content : [])
       .find((item: JsonRecord) => item.type === "output_text")?.text;
-    if (typeof outputText !== "string") return fallbackDecision(text);
-    return JSON.parse(outputText) as LeadDecision;
+    if (typeof outputText !== "string") return fallbackDecision(text, advertisedInterest);
+    const decision = JSON.parse(outputText) as LeadDecision;
+    if (advertisedInterest) {
+      decision.model_interest = advertisedInterest;
+      if (!history.length && /qu[eé]\s+modelo|cu[aá]l\s+modelo/i.test(decision.reply_text)) {
+        decision.reply_text = `¡Hola! Gracias por tu consulta por ${advertisedInterest}. ¿Pensás avanzar con anticipo y financiación, entregar un usado o comprar al contado?`;
+      }
+    }
+    return decision;
   } catch (error) {
     console.error("OpenAI analysis exception", error instanceof Error ? error.message : String(error));
-    return fallbackDecision(text);
+    return fallbackDecision(text, advertisedInterest);
   }
 }
 
@@ -260,14 +299,11 @@ Deno.serve(async (request) => {
         const body = messageText(message);
         const referral = message.referral as JsonRecord | undefined;
         const hasMetaReferral = Boolean(referral && (referral.ctwa_clid || referral.source_id || referral.source_url));
-        const referralContext = hasMetaReferral
-          ? `Contexto del anuncio de Meta: ${String(referral?.headline ?? "")} ${String(referral?.body ?? "")} ${String(referral?.source_url ?? "")}`.trim()
-          : "";
         const codes = candidateCodes(body);
 
         const existingResult = await db
           .from("leads")
-          .select("id, assigned_seller_user_id, routing_status, qualification_status, do_not_contact")
+          .select("id, assigned_seller_user_id, routing_status, qualification_status, do_not_contact, model_interest, metadata")
           .eq("customer_phone", customerPhone)
           .not("routing_status", "in", "(closed,lost)")
           .gte("last_message_at", new Date(Date.now() - 30 * 86400000).toISOString())
@@ -275,6 +311,13 @@ Deno.serve(async (request) => {
           .limit(1)
           .maybeSingle();
         const existing = existingResult.data;
+        const storedMetadata = existing?.metadata as JsonRecord | undefined;
+        const storedReferral = storedMetadata?.referral as JsonRecord | undefined;
+        const effectiveReferral = hasMetaReferral ? referral : storedReferral;
+        const advertisedInterest = advertisedVehicle(effectiveReferral) || String(existing?.model_interest ?? "");
+        const referralContext = effectiveReferral
+          ? `Referencia comercial confirmada por Meta Ads:\nTítulo: ${String(effectiveReferral.headline ?? "")}\nTexto: ${String(effectiveReferral.body ?? "")}\nModelo identificado: ${advertisedInterest || "no determinado"}\nURL: ${String(effectiveReferral.source_url ?? "")}`.trim()
+          : "";
 
         // Una vez calificado, el lead ya fue transferido al equipo comercial.
         // Los mensajes posteriores se conservan y notifican al supervisor, pero
@@ -336,6 +379,7 @@ Deno.serve(async (request) => {
           String(assistantSettings.qualification_rules || ""),
           String(assistantSettings.vector_store_id || ""),
           referralContext,
+          advertisedInterest,
         );
 
         let seller: JsonRecord | null = null;

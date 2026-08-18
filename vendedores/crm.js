@@ -268,12 +268,13 @@
     var target = document.getElementById("crm" + viewName.charAt(0).toUpperCase() + viewName.slice(1) + "View");
     if (target) target.classList.add("is-active");
     document.getElementById("stepper").hidden = true;
-    document.getElementById("pageTitle").textContent = viewName === "agenda" ? "Mi agenda comercial" : viewName === "pipeline" ? "Embudo de oportunidades" : viewName === "quotes" ? "Presupuestos comerciales" : viewName === "sales" ? "Estado de mis ventas" : "Ranking del equipo";
-    document.getElementById("headerKicker").textContent = "CRM Grupo Sur Automotores";
+    document.getElementById("pageTitle").textContent = viewName === "agenda" ? "Mi agenda comercial" : viewName === "pipeline" ? "Embudo de oportunidades" : viewName === "quotes" ? "Presupuestos comerciales" : viewName === "sales" ? "Estado de mis ventas" : viewName === "recalls" ? "Panel de rellamados" : "Ranking del equipo";
+    document.getElementById("headerKicker").textContent = viewName === "recalls" ? "Base histórica asignada" : "CRM Grupo Sur Automotores";
     document.querySelectorAll(".nav-item").forEach(function (item) { item.classList.toggle("is-active", item.dataset.crmView === viewName); });
     if (viewName === "ranking") loadRanking();
     else if (viewName === "quotes" && window.grupoSurSales) window.grupoSurSales.loadQuotes();
     else if (viewName === "sales" && window.grupoSurSales) window.grupoSurSales.loadSales();
+    else if (viewName === "recalls") document.dispatchEvent(new CustomEvent("grupoSur:recalls-open"));
     else loadLeads(true);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }

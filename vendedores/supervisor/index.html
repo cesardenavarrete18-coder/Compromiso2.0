@@ -10,9 +10,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/vendedores/supervisor/supervisor.css?v=20260815-4">
+  <link rel="stylesheet" href="/vendedores/supervisor/supervisor.css?v=20260818-1">
   <link rel="stylesheet" href="/vendedores/supervisor/operations.css?v=20260817-1">
   <link rel="stylesheet" href="/vendedores/supervisor/navigation.css?v=20260817-1">
+  <link rel="stylesheet" href="/vendedores/supervisor/lead-bases.css?v=20260818-1">
   <link rel="stylesheet" href="/vendedores/auth-loading.css?v=20260817-1">
 </head>
 <body>
@@ -41,6 +42,7 @@
       <a href="/" class="logo"><img src="/assets/logo-light.webp" alt="Grupo Sur Automotores"></a>
       <nav>
         <button class="nav-button active" type="button" data-supervisor-view="leads"><span>⌁</span>Leads</button>
+        <button class="nav-button" type="button" data-supervisor-view="bases"><span>⇩</span>Bases</button>
         <button class="nav-button" type="button" data-supervisor-view="followup"><span>✓</span>Seguimiento</button>
         <button class="nav-button" type="button" data-supervisor-view="sales"><span>◆</span>Ventas</button>
         <button class="nav-button" type="button" data-supervisor-view="administration"><span>▦</span>Administración</button>
@@ -69,6 +71,32 @@
         <section class="operations-panel" data-supervisor-panel="followup" hidden>
           <div class="section-head"><div><h2>Centro de operaciones</h2><p>Controlá el cumplimiento del proceso de seguimiento sin intervenir en la agenda de cada vendedor.</p></div><span id="operationsCaption">0 vencidas · 0 hoy</span></div>
           <div class="operations-layout"><div class="operations-summary" id="operationsSummary"></div><div class="operations-tasks" id="operationsTasks"></div></div>
+        </section>
+
+        <section class="lead-bases-panel" data-supervisor-panel="bases" hidden>
+          <div class="section-head"><div><h2>Importar base de Leads</h2><p>Cargá una planilla, revisá las filas y elegí si ingresan como nuevos o como rellamados.</p></div><button class="button secondary" id="downloadLeadTemplate" type="button">Descargar plantilla</button></div>
+          <div class="lead-import-card">
+            <div class="lead-import-controls">
+              <label>Destino de la base<select id="leadImportType"><option value="new">Nuevos · Leads a asignar</option><option value="recall">Rellamados · Base histórica</option></select></label>
+              <label class="file-picker">Archivo Excel<input id="leadImportFile" type="file" accept=".xlsx,.xls,.csv"></label>
+              <button class="button primary" id="leadImportConfirm" type="button" disabled>Importar base</button>
+            </div>
+            <p class="message" id="leadImportMessage"></p>
+            <div class="lead-import-preview" id="leadImportPreview"><div class="sales-empty">Elegí un archivo para revisar las primeras filas antes de importarlo.</div></div>
+          </div>
+
+          <div class="section-head recall-heading"><div><h2>Base de rellamados</h2><p>Filtrá por el mes de la consulta original, elegí el modelo y asigná una cantidad al vendedor.</p></div><span id="recallAvailableCount">0 disponibles</span></div>
+          <div class="recall-filters">
+            <label>Mes<select id="recallMonthFilter"></select></label>
+            <label>Modelo<select id="recallModelFilter"><option value="">Todos los modelos</option></select></label>
+            <label>Cantidad<input id="recallQuantity" type="number" min="1" step="1" value="10"></label>
+            <label>Vendedor<select id="recallSeller"></select></label>
+            <button class="button primary" id="assignRecallBatch" type="button">Asignar seleccionados</button>
+          </div>
+          <div class="recall-supervisor-list" id="recallSupervisorList"></div>
+
+          <div class="section-head seller-submissions-heading"><div><h2>Leads propuestos por vendedores</h2><p>Aprobá el ingreso antes de que aparezca en la agenda del vendedor.</p></div><span id="sellerSubmissionCount">0 pendientes</span></div>
+          <div class="seller-submission-list" id="sellerSubmissionList"></div>
         </section>
 
         <section class="goals-panel" data-supervisor-panel="goals" hidden>
@@ -126,6 +154,7 @@
       <p class="eyebrow dark">Detalle de conversación</p>
       <h2 id="dialogLeadName"></h2>
       <p id="dialogLeadSummary"></p>
+      <div class="conversation-status"><span id="dialogConversationStatus">Consultando mensajes…</span><button id="conversationRefresh" type="button">Actualizar conversación</button></div>
       <div class="conversation" id="conversation"></div>
       <button class="button secondary" value="cancel">Cerrar</button>
     </form>
@@ -161,7 +190,9 @@
   </dialog>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.2/dist/umd/supabase.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="/vendedores/supabase-config.js?v=20260814-1"></script>
-  <script src="/vendedores/supervisor/supervisor.js?v=20260817-2"></script>
+  <script src="/vendedores/supervisor/supervisor.js?v=20260818-1"></script>
+  <script src="/vendedores/supervisor/lead-bases.js?v=20260818-1"></script>
 </body>
 </html>
