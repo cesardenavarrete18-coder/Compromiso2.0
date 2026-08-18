@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/vendedores/admin/admin.css?v=20260813-4">
+  <link rel="stylesheet" href="/vendedores/admin/admin.css?v=20260818-1">
 </head>
 <body>
   <main class="admin-login" id="adminLogin">
@@ -64,6 +64,10 @@
         <button class="nav-item is-active" type="button" data-admin-view="campaigns">
           <span aria-hidden="true">▦</span>
           Campañas
+        </button>
+        <button class="nav-item" type="button" data-admin-view="credits">
+          <span aria-hidden="true">$</span>
+          Créditos y versiones
         </button>
         <button class="nav-item" type="button" data-admin-view="sellers">
           <span aria-hidden="true">♙</span>
@@ -169,6 +173,13 @@
                 </label>
 
                 <label class="field">
+                  <span>Valor final del plan</span>
+                  <div class="input-prefix"><span>$</span><input id="campaignFinalPrice" name="finalPrice" type="number" min="1" step="1" inputmode="numeric" placeholder="0" required></div>
+                  <small>Importe contractual de referencia. No descuenta bonificaciones ni beneficios.</small>
+                  <small>Obligatorio para generar presupuestos de plan.</small>
+                </label>
+
+                <label class="field">
                   <span>Anticipo</span>
                   <div class="input-prefix"><span>$</span><input id="campaignAdvanceAmount" name="advanceAmount" type="number" min="0" step="1" inputmode="numeric" placeholder="0"></div>
                   <small>Se actualiza cuando cambian las condiciones.</small>
@@ -237,6 +248,29 @@
         </section>
         </div>
 
+        <section class="credit-section" id="creditAdminView" hidden>
+          <div class="section-heading"><div><h2>Créditos de terminal y versiones</h2><p>Definí para qué versiones aplica cada línea y sus componentes de cálculo.</p></div></div>
+          <div class="credit-admin-grid">
+            <div class="version-admin-card">
+              <form class="credit-card" id="versionForm">
+                <span class="card-kicker">Catálogo</span><h3 id="versionFormTitle">Nueva versión</h3>
+                <label class="field"><span>Modelo</span><select name="modelId" id="versionModel" required></select></label>
+                <label class="field"><span>Nombre de versión</span><input name="name" type="text" maxlength="120" placeholder="Ej. Comfortline 170 TSI AT" required></label>
+                <label class="field"><span>Precio sugerido</span><input name="suggestedPrice" type="number" min="0" step="1" inputmode="numeric" placeholder="$ 0"></label>
+                <p class="form-message" id="versionMessage"></p>
+                <div class="credit-form-actions"><button class="secondary-button" id="cancelVersionEdit" type="button" hidden>Cancelar edición</button><button class="primary-button" id="versionSubmit" type="submit">Agregar versión</button></div>
+              </form>
+              <div class="version-library"><div class="version-library-head"><h3>Versiones cargadas</h3><span id="versionCount"></span></div><div id="versionList"></div></div>
+            </div>
+            <form class="credit-card" id="creditForm"><span class="card-kicker">Financiación de marca</span><h3 id="creditFormTitle">Nueva línea de crédito</h3><div class="credit-form-grid">
+              <label class="field"><span>Modelo</span><select name="modelId" id="creditModel" required></select></label><label class="field"><span>Financiera / banco</span><input name="financierName" type="text" maxlength="120" required></label><label class="field"><span>Nombre de la línea</span><input name="offerName" type="text" maxlength="160" required></label><label class="field"><span>Cuotas</span><input name="termMonths" type="number" min="1" max="120" required></label>
+              <label class="field"><span>Mínimo financiable</span><input name="minFinanced" type="number" min="0" step="1"></label><label class="field"><span>Máximo financiable</span><input name="maxFinanced" type="number" min="0" step="1"></label><label class="field"><span>Cuota por cada $1.000</span><input name="installmentPerThousand" type="text" inputmode="decimal" placeholder="Ej. 83,33" required><small>Acepta coma decimal.</small></label><label class="field"><span>Quebranto %</span><input name="breakageRate" type="number" min="0" max="100" step="0.01" value="0"><small>Al presupuesto se suma IVA del 21% sobre este quebranto.</small></label>
+              <label class="field"><span>Patentamiento %</span><input name="patentingRate" type="number" min="0" max="100" step="0.01" value="0"></label><label class="field"><span>Gastos fijos</span><input name="fixedExpenses" type="number" min="0" step="1" value="0"></label><label class="field"><span>TNA %</span><input name="tna" type="number" min="0" step="0.01"></label><label class="field"><span>CFTEA %</span><input name="cftea" type="number" min="0" step="0.01"></label>
+              <label class="field"><span>Válida desde</span><input name="validFrom" type="date"></label><label class="field"><span>Válida hasta</span><input name="validTo" type="date"></label><fieldset class="credit-versions"><legend>Versiones habilitadas</legend><div id="creditVersionOptions"></div></fieldset><label class="field field-wide"><span>Notas · opcional</span><textarea name="notes" rows="3" maxlength="3000" placeholder="Puede quedar vacío"></textarea></label>
+            </div><p class="form-message" id="creditMessage"></p><div class="credit-form-actions"><button class="secondary-button" id="cancelCreditEdit" type="button" hidden>Cancelar edición</button><button class="primary-button" id="creditSubmit" type="submit">Guardar línea de crédito</button></div></form>
+          </div><div class="credit-library"><h3>Condiciones cargadas</h3><div id="creditOfferList"></div></div>
+        </section>
+
         <section class="seller-section" id="sellerAdminView" hidden>
           <div class="section-heading">
             <div><h2>Equipo comercial y accesos</h2><p>Administrá quién puede iniciar gestiones y mantené cada acceso bajo control.</p></div>
@@ -250,7 +284,7 @@
             <form class="seller-create-card" id="sellerForm" novalidate>
               <span class="card-kicker">Incorporación al portal</span>
               <h3>Habilitar integrante</h3>
-              <label class="field"><span>Rol</span><select name="role"><option value="seller">Vendedor</option><option value="supervisor">Supervisor</option></select></label>
+              <label class="field"><span>Rol</span><select name="role"><option value="seller">Vendedor</option><option value="supervisor">Supervisor</option><option value="admventas">Administración de ventas</option></select></label>
               <label class="field"><span>Nombre y apellido</span><input name="fullName" type="text" placeholder="Ej. María González" required></label>
               <label class="field"><span>Código interno</span><input name="sellerCode" type="text" maxlength="20" placeholder="Ej. GS002 o SUP01" required></label>
               <label class="field"><span>Teléfono</span><input name="phone" type="tel" minlength="6" maxlength="30" placeholder="Ej. 11 3456 7890" required></label>
@@ -368,6 +402,6 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.2/dist/umd/supabase.js"></script>
   <script src="/vendedores/supabase-config.js?v=20260813-2"></script>
   <script src="/vendedores/admin/excel-export.js?v=20260813-2"></script>
-  <script src="/vendedores/admin/admin.js?v=20260814-5"></script>
+  <script src="/vendedores/admin/admin.js?v=20260818-1"></script>
 </body>
 </html>

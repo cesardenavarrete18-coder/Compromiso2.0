@@ -22,7 +22,8 @@ function sellerEmail(code: string) {
 }
 
 function normalizeCommercialRole(value: unknown) {
-  return String(value ?? "seller") === "supervisor" ? "supervisor" : "seller";
+  const role = String(value ?? "seller");
+  return ["seller", "supervisor", "admventas"].includes(role) ? role : "seller";
 }
 
 function normalizeContactEmail(value: unknown) {
@@ -125,7 +126,7 @@ Deno.serve(async (request) => {
       return jsonResponse({ error: "La contraseña debe tener al menos 8 caracteres." }, 400);
     }
 
-    const email = role === "supervisor" ? contactEmail : sellerEmail(sellerCode);
+    const email = role === "seller" ? sellerEmail(sellerCode) : contactEmail;
     const { error: inviteError } = await adminClient.from("user_invites").insert({
       email,
       role,
@@ -254,7 +255,7 @@ Deno.serve(async (request) => {
     if (!/^[0-9a-f-]{36}$/i.test(userId) || userId === authData.user.id) {
       return jsonResponse({ error: "No podés modificar el estado de esta cuenta." }, 400);
     }
-    const { error } = await adminClient.from("profiles").update({ active }).eq("user_id", userId).in("role", ["seller", "supervisor"]);
+    const { error } = await adminClient.from("profiles").update({ active }).eq("user_id", userId).in("role", ["seller", "supervisor", "admventas"]);
     if (error) {
       return jsonResponse({ error: "No se pudo actualizar el vendedor." }, 500);
     }
@@ -268,7 +269,7 @@ Deno.serve(async (request) => {
       return jsonResponse({ error: "Datos de contraseña inválidos." }, 400);
     }
     const { data: target } = await adminClient.from("profiles").select("role").eq("user_id", userId).single();
-    if (!target || !["seller", "supervisor"].includes(target.role)) {
+    if (!target || !["seller", "supervisor", "admventas"].includes(target.role)) {
       return jsonResponse({ error: "Solamente se pueden restablecer accesos comerciales." }, 400);
     }
     const { error } = await adminClient.auth.admin.updateUserById(userId, { password });

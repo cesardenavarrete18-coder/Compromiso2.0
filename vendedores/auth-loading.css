@@ -1,0 +1,27 @@
+.auth-loading {
+  min-height: 100vh;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 14px;
+  color: #0b1f38;
+  background: #f4f8fc;
+  font-family: Inter, system-ui, sans-serif;
+}
+
+.auth-loading[hidden] { display: none; }
+
+.auth-loading span {
+  width: 34px;
+  height: 34px;
+  border: 3px solid #cfe2f5;
+  border-top-color: #087bd8;
+  border-radius: 50%;
+  animation: auth-spin .8s linear infinite;
+}
+
+.auth-loading strong { font-size: 14px; }
+
+@keyframes auth-spin { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) { .auth-loading span { animation: none; } }

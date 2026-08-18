@@ -1,0 +1,66 @@
+.quote-dialog-shell { background: linear-gradient(180deg, #f5faff 0, #fff 150px); }
+.quote-dialog-heading { padding: 4px 48px 14px 0; }
+.quote-dialog-heading h2 { margin: 2px 0 5px; font-size: 26px; letter-spacing: -.04em; }
+.quote-dialog-heading > p:not(.eyebrow) { margin: 0; color: var(--muted); font-size: 10px; }
+.quote-form-grid label small { color: var(--muted); font-size: 8px; font-weight: 600; }
+.quote-form-grid input[readonly], #crmSaleVehicle[readonly], #crmSaleAmount[readonly] { color: #29455a; background: #edf4f8; cursor: not-allowed; }
+.quote-calculation { padding: 10px; border: 1px solid #d7e8f3; border-radius: 11px; background: #fff; box-shadow: 0 8px 24px rgba(19, 77, 114, .06); }
+.crm-budget-entry { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin: 14px 0; padding: 13px 14px; border: 1px solid #cfe2ef; border-radius: 10px; background: linear-gradient(135deg, #f3f9fd, #fff); }
+.crm-budget-entry span,.crm-budget-entry strong,.crm-budget-entry small { display: block; }
+.crm-budget-entry span { color: var(--blue-700); font-size: 8px; font-weight: 900; text-transform: uppercase; }
+.crm-budget-entry strong { margin: 2px 0; font-size: 12px; }
+.crm-budget-entry small { color: var(--muted); font-size: 8px; }
+.crm-budget-entry button { flex: 0 0 auto; }
+.crm-dialog.quote-dialog { width: min(1160px, calc(100% - 28px)); }
+.quote-setup-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-top: 10px; }
+.quote-setup-grid label { display: grid; gap: 5px; color: #344b5f; font-size: 9px; font-weight: 800; }
+.quote-setup-grid select, .quote-setup-grid input { min-height: 42px; padding: 9px 10px; border: 1px solid #d6e3ed; border-radius: 8px; background: #fff; }
+.quote-offers-section { margin-top: 22px; }
+.quote-section-title { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 10px; }
+.quote-section-title > div { display: flex; align-items: center; gap: 10px; }
+.quote-section-title span { display: grid; width: 27px; height: 27px; place-items: center; border-radius: 50%; color: #fff; background: var(--blue-600); font-size: 9px; font-weight: 900; }
+.quote-section-title h3 { margin: 0; font-size: 16px; }
+.quote-section-title small { color: var(--muted); font-size: 9px; font-weight: 800; }
+.quote-offer-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.quote-offer-card { display: flex; min-height: 190px; padding: 17px; border: 1px solid #cfe0ec; border-top: 4px solid #b6cad9; border-radius: 11px; flex-direction: column; color: var(--ink); background: #fff; text-align: left; box-shadow: 0 8px 24px rgba(12, 50, 77, .05); transition: transform .15s, border-color .15s, box-shadow .15s; }
+.quote-offer-card:hover, .quote-offer-card.is-selected { border-color: var(--blue-600); border-top-color: var(--blue-600); transform: translateY(-2px); box-shadow: 0 14px 30px rgba(8, 123, 216, .13); }
+.quote-offer-card .quote-offer-badge { width: fit-content; padding: 5px 7px; border-radius: 999px; color: #136b4c; background: #e6f6ef; font-size: 8px; font-weight: 900; text-transform: uppercase; }
+.quote-offer-card > strong { margin: 12px 0 3px; font-size: 17px; }
+.quote-offer-card > small { color: var(--muted); font-size: 9px; }
+.quote-offer-card > div { display: grid; gap: 3px; margin-top: auto; padding-top: 12px; border-top: 1px solid #e3ebf1; color: #3d566a; font-size: 9px; font-weight: 750; }
+.quote-offer-card > em { margin-top: 12px; color: var(--blue-700); font-size: 9px; font-style: normal; font-weight: 900; text-align: right; }
+.quote-offers-empty { grid-column: 1 / -1; padding: 34px; border: 1px dashed #bed1df; border-radius: 10px; color: var(--muted); background: #f8fbfd; font-size: 10px; text-align: center; }
+.quote-configurator { margin-top: 18px; padding: 16px; border: 1px solid #d8e7f1; border-radius: 13px; background: #f8fbfd; }
+.quote-vehicle-panel { display: grid; grid-template-columns: 150px minmax(0, 1fr); align-items: center; gap: 17px; padding-bottom: 15px; border-bottom: 1px solid #dce7ef; }
+.quote-vehicle-panel img { width: 150px; height: 100px; object-fit: contain; border-radius: 9px; background: #fff; }
+.quote-vehicle-panel span { color: var(--blue-700); font-size: 8px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
+.quote-vehicle-panel h3 { margin: 3px 0; font-size: 19px; }
+.quote-vehicle-panel p { margin: 0; color: #425b6f; font-size: 10px; }
+.quote-vehicle-panel small { display: block; margin-top: 6px; color: var(--muted); font-size: 8px; white-space: pre-line; }
+.quote-detail-grid { align-items: end; }
+.quote-financing-control { grid-column: 1 / -1; padding: 13px; border: 1px solid #d6e3ed; border-radius: 9px; background: #fff; }
+.quote-financing-head { display: grid; grid-template-columns: minmax(220px, .5fr) 1fr; align-items: end; gap: 16px; }
+.quote-financing-head strong { color: var(--blue-700); font-size: 21px; text-align: right; }
+#quoteFinancedRange { width: 100%; margin: 15px 0 4px; accent-color: var(--blue-600); }
+.quote-range-limits { display: flex; justify-content: space-between; color: var(--muted); font-size: 8px; font-weight: 700; }
+.quote-calculation { grid-template-columns: repeat(4, 1fr); }
+.quote-calculation div:last-child, .quote-calculation div:nth-last-child(2) { background: #e4f2fb; }
+.quote-dialog-actions { display: flex; justify-content: flex-end; gap: 9px; }
+.quote-dialog-actions button { min-width: 150px; }
+@media(max-width:900px){.quote-setup-grid{grid-template-columns:1fr 1fr}.quote-offer-cards{grid-template-columns:1fr 1fr}.quote-calculation{grid-template-columns:1fr 1fr}}
+@media(max-width:620px){.quote-setup-grid,.quote-offer-cards,.quote-calculation{grid-template-columns:1fr}.quote-vehicle-panel{grid-template-columns:1fr}.quote-dialog-actions{flex-direction:column-reverse}.quote-dialog-actions button{width:100%}}
+
+@media print {
+  .commercial-quote-sheet .quote-print-hero { display: grid; grid-template-columns: 42mm minmax(0, 1fr); align-items: center; gap: 7mm; margin: 8mm 0 5mm; padding: 7mm; border-radius: 4mm; color: #fff; background: linear-gradient(135deg, #06172a, #087bd8); }
+  .commercial-quote-sheet .quote-print-hero > img { width: 42mm; height: 27mm; object-fit: contain; border-radius: 3mm; background: #fff; }
+  .commercial-quote-sheet .quote-print-hero span { font-size: 8pt; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+  .commercial-quote-sheet .quote-print-hero h1 { margin: 3mm 0 1mm; font-size: 23pt; line-height: 1.05; }
+  .commercial-quote-sheet .quote-print-hero p { margin: 0; font-size: 11pt; opacity: .9; }
+  .commercial-quote-sheet .quote-customer-strip { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; margin-bottom: 6mm; }
+  .commercial-quote-sheet .quote-customer-strip div { padding: 4mm; border: .3mm solid #d8e4ed; border-radius: 3mm; }
+  .commercial-quote-sheet .quote-customer-strip span, .commercial-quote-sheet .quote-customer-strip strong { display: block; }
+  .commercial-quote-sheet .quote-customer-strip span { color: #617789; font-size: 7pt; text-transform: uppercase; }
+  .commercial-quote-sheet .quote-customer-strip strong { margin-top: 1mm; font-size: 11pt; }
+  .commercial-quote-sheet .quote-benefits { display: grid; grid-template-columns: 1fr 1fr; gap: 2mm 7mm; margin: 0; padding-left: 5mm; font-size: 9pt; }
+  .commercial-quote-sheet .quote-legal p { color: #526a7c; font-size: 8pt; line-height: 1.5; }
+}

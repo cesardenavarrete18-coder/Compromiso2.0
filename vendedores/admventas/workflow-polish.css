@@ -1,0 +1,25 @@
+.document-checklist {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin: 0 0 12px;
+}
+
+.document-checklist span {
+  padding: 7px 9px;
+  border-radius: 999px;
+  color: #8b5a0d;
+  background: #fff2dc;
+  font-size: 8px;
+  font-weight: 850;
+}
+
+.document-checklist .ready {
+  color: #126f49;
+  background: #e3f7ed;
+}
+
+.document-checklist .optional {
+  color: #5e7180;
+  background: #edf2f5;
+}

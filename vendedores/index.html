@@ -11,10 +11,14 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/vendedores/styles.css?v=20260813-6">
-  <link rel="stylesheet" href="/vendedores/crm.css?v=20260815-1">
+  <link rel="stylesheet" href="/vendedores/crm.css?v=20260815-3">
+  <link rel="stylesheet" href="/vendedores/contact-protocol.css?v=20260817-2">
+  <link rel="stylesheet" href="/vendedores/workflow-polish.css?v=20260818-1">
+  <link rel="stylesheet" href="/vendedores/auth-loading.css?v=20260817-1">
 </head>
 <body>
-  <main class="login-page" id="loginPage">
+  <div class="auth-loading" id="authLoading" role="status"><span></span><strong>Validando tu sesión…</strong></div>
+  <main class="login-page" id="loginPage" hidden>
     <section class="login-showcase" aria-label="Portal comercial Grupo Sur">
       <a href="/" class="showcase-logo" aria-label="Volver a Compromiso Mi 0km">
         <img src="../assets/logo-light.webp" alt="Grupo Sur Automotores">
@@ -74,6 +78,15 @@
         <button class="nav-item" type="button" data-crm-view="ranking">
           <span class="nav-icon" aria-hidden="true">★</span>
           Ranking
+        </button>
+        <button class="nav-item" type="button" data-crm-view="quotes">
+          <span class="nav-icon" aria-hidden="true">$</span>
+          Presupuestos
+        </button>
+        <button class="nav-item" type="button" data-crm-view="sales">
+          <span class="nav-icon" aria-hidden="true">✓</span>
+          Mis ventas
+          <b class="nav-count" id="salesNotificationCount" hidden>0</b>
         </button>
         <button class="nav-item is-active" type="button" data-action="home">
           <span class="nav-icon" aria-hidden="true">⌂</span>
@@ -399,7 +412,17 @@
             <label class="crm-month">Mes<input id="crmRankingMonth" type="month"></label>
           </div>
           <div class="ranking-podium" id="crmPodium"></div>
-          <div class="ranking-table-wrap"><table class="ranking-table"><thead><tr><th>Posición</th><th>Vendedor</th><th>Ventas</th><th>Leads recibidos</th><th>Conversión</th></tr></thead><tbody id="crmRankingBody"></tbody></table></div>
+          <div class="ranking-table-wrap"><table class="ranking-table"><thead><tr><th>Posición</th><th>Vendedor</th><th>Ventas</th><th>Finalizadas</th><th>Leads recibidos</th><th>Conversión</th></tr></thead><tbody id="crmRankingBody"></tbody></table></div>
+        </section>
+
+        <section class="view crm-view" id="crmQuotesView" aria-labelledby="crmQuotesTitle">
+          <div class="crm-hero"><div><p class="eyebrow dark">Propuestas por lead</p><h2 id="crmQuotesTitle">Presupuestos comerciales</h2><p>Generá una propuesta de plan o crédito de terminal y conservá las condiciones entregadas.</p></div><button class="primary-button compact-button" id="newQuoteButton" type="button">Nuevo presupuesto</button></div>
+          <p class="crm-message" id="quotesMessage"></p><div class="sales-tracking-list" id="quotesList"></div>
+        </section>
+
+        <section class="view crm-view" id="crmSalesView" aria-labelledby="crmSalesTitle">
+          <div class="crm-hero"><div><p class="eyebrow dark">Seguimiento limitado</p><h2 id="crmSalesTitle">Estado de mis ventas</h2><p>Después de la aprobación del supervisor, el Lead deja tu CRM y aquí sólo ves su avance administrativo.</p></div><button class="primary-button compact-button" id="refreshSalesButton" type="button">Actualizar</button></div>
+          <div class="seller-notifications" id="salesNotifications"></div><div class="sales-tracking-list" id="salesTrackingList"></div>
         </section>
       </div>
     </section>
@@ -425,9 +448,12 @@
       <div class="crm-detail-grid">
         <section class="crm-detail-main">
           <div class="crm-client-summary" id="crmClientSummary"></div>
-          <div class="crm-quick-actions"><a class="crm-action-link" id="crmCallLink" href="#">Llamar</a><button class="crm-action-link" id="crmCommentButton" type="button">Agregar comentario</button><button class="crm-action-link accent" id="crmSaleButton" type="button">Solicitar venta</button></div>
-          <div class="crm-tabs"><button class="active" type="button" data-crm-tab="manage">Registrar gestión</button><button type="button" data-crm-tab="timeline">Historial</button><button type="button" data-crm-tab="chat">Conversación IA</button></div>
+          <div class="crm-quick-actions"><a class="crm-action-link" id="crmCallLink" href="#">Llamar</a><button class="crm-action-link" id="crmCommentButton" type="button">Agregar comentario</button><button class="crm-action-link" id="crmBudgetButton" type="button">Presupuesto</button><button class="crm-action-link accent" id="crmSaleButton" type="button">Solicitar venta</button></div>
+          <div class="crm-tabs"><button class="active" type="button" data-crm-tab="manage">Gestión y seguimiento</button><button type="button" data-crm-tab="timeline">Historial</button><button type="button" data-crm-tab="customer">Consultas previas</button><button type="button" data-crm-tab="chat">Conversación IA</button></div>
           <div class="crm-tab-panel active" data-crm-panel="manage">
+            <div id="crmProtocol"></div>
+            <div class="crm-budget-entry"><div><span>Propuesta para el cliente</span><strong>Plan o crédito disponible</strong><small>Usá la precalificación para preparar un presupuesto y guardarlo en este Lead.</small></div><button class="crm-action-link" id="crmBudgetFromManagement" type="button">Generar presupuesto</button></div>
+            <div class="crm-management-heading"><div><span>Registrar gestión</span><strong>Resultado y próximo paso</strong></div><small>Actualizá el estado y dejá organizada la próxima acción.</small></div>
             <div class="crm-form-grid">
               <label>Nuevo estado<select id="crmStatusInput"></select></label>
               <label>Prioridad<select id="crmPriorityInput"><option value="low">Baja</option><option value="normal">Normal</option><option value="high">Alta</option></select></label>
@@ -444,6 +470,7 @@
             <button class="primary-button" id="crmSaveManagement" type="button">Guardar gestión</button>
           </div>
           <div class="crm-tab-panel" data-crm-panel="timeline"><div class="crm-timeline" id="crmTimeline"></div></div>
+          <div class="crm-tab-panel" data-crm-panel="customer"><div class="customer-history" id="crmCustomerHistory"></div></div>
           <div class="crm-tab-panel" data-crm-panel="chat"><div class="crm-chat" id="crmChat"></div></div>
         </section>
         <aside class="crm-next-card" id="crmNextCard"></aside>
@@ -453,11 +480,21 @@
 
   <dialog class="crm-dialog small" id="crmCommentDialog"><form method="dialog" class="crm-dialog-shell"><button class="crm-dialog-close" value="cancel" aria-label="Cerrar">×</button><p class="eyebrow dark">Nota interna</p><h2>Agregar comentario</h2><textarea id="crmCommentInput" rows="5" placeholder="Información útil para continuar la gestión"></textarea><p class="crm-form-error" id="crmCommentError"></p><button class="primary-button" id="crmCommentSave" type="button">Guardar comentario</button></form></dialog>
 
-  <dialog class="crm-dialog small" id="crmSaleDialog"><form method="dialog" class="crm-dialog-shell"><button class="crm-dialog-close" value="cancel" aria-label="Cerrar">×</button><p class="eyebrow dark">Confirmación de supervisión</p><h2>Solicitar registro de venta</h2><label>Vehículo vendido<input id="crmSaleVehicle" type="text" placeholder="Ej. Volkswagen Amarok Trendline"></label><label>Importe de la operación · opcional<input id="crmSaleAmount" type="number" min="0" step="1" placeholder="$"></label><label>Observaciones<textarea id="crmSaleNotes" rows="4"></textarea></label><p class="crm-form-error" id="crmSaleError"></p><button class="primary-button" id="crmSaleSubmit" type="button">Enviar a supervisión</button></form></dialog>
+  <dialog class="crm-dialog small" id="crmAnsweredDialog"><form method="dialog" class="crm-dialog-shell"><button class="crm-dialog-close" value="cancel" aria-label="Cancelar">×</button><p class="eyebrow dark">Cliente contactado</p><h2>Definir el próximo paso</h2><p class="crm-dialog-copy">La respuesta se registra únicamente cuando queda programada la próxima acción comercial.</p><div class="crm-form-grid answered-follow-up-grid"><label>Fecha del próximo contacto<input id="crmAnsweredDate" type="text" inputmode="numeric" maxlength="10" placeholder="dd/mm/aaaa" autocomplete="off"></label><label>Hora<input id="crmAnsweredTime" type="time" step="300"></label><label class="wide">Motivo / acción acordada<input id="crmAnsweredNote" type="text" placeholder="Ej. Enviar propuesta y confirmar documentación"></label></div><p class="crm-form-error" id="crmAnsweredError"></p><button class="primary-button" id="crmAnsweredSave" type="button">Guardar respuesta y próximo paso</button></form></dialog>
+
+  <dialog class="crm-dialog small" id="crmSaleDialog"><form method="dialog" class="crm-dialog-shell"><button class="crm-dialog-close" value="cancel" aria-label="Cerrar">×</button><p class="eyebrow dark">Confirmación de supervisión</p><h2>Solicitar registro de venta</h2><label>Presupuesto asociado · opcional<select id="crmSaleQuote"><option value="">Sin presupuesto asociado</option></select></label><p class="crm-form-help" id="crmSaleQuoteHelp">Si elegís un presupuesto de plan, el vehículo y el importe se toman de esa propuesta.</p><label>Vehículo vendido<input id="crmSaleVehicle" type="text" placeholder="Ej. Volkswagen Amarok Trendline"></label><label>Importe de la operación · opcional<input id="crmSaleAmount" type="number" min="0" step="1" placeholder="$"></label><label>Observaciones<textarea id="crmSaleNotes" rows="4"></textarea></label><p class="crm-form-error" id="crmSaleError"></p><button class="primary-button" id="crmSaleSubmit" type="button">Enviar a supervisión</button></form></dialog>
+
+  <dialog class="crm-dialog quote-dialog" id="quoteDialog"><form class="crm-dialog-shell quote-dialog-shell" id="quoteForm"><button class="crm-dialog-close" id="quoteClose" type="button" aria-label="Cerrar">×</button><div class="quote-dialog-heading"><p class="eyebrow dark">Gestión posterior a la precalificación</p><h2>Preparar presupuesto</h2><p>Elegí una propuesta disponible. El presupuesto quedará asociado al Lead y conservará las condiciones utilizadas.</p></div><div class="quote-setup-grid"><label>Lead<select name="leadId" id="quoteLead" required></select></label><label>Modelo<select name="modelId" id="quoteModel" required></select></label><label>Tipo de financiación<select name="offerType" id="quoteOfferType"><option value="savings_plan">Plan de ahorro</option><option value="bank_credit">Crédito de terminal</option></select></label><label>Vigencia<input name="validUntil" type="date" required></label></div><select name="offerId" id="quoteOffer" required hidden></select><section class="quote-offers-section"><div class="quote-section-title"><div><span>Paso 1</span><h3>Elegí una propuesta comercial</h3></div><small id="quoteOfferCount"></small></div><div class="quote-offer-cards" id="quoteOfferCards"></div></section><section class="quote-configurator" id="quoteConfigurator" hidden><div class="quote-vehicle-panel"><img id="quoteModelImage" src="" alt=""><div><span id="quoteSelectedType"></span><h3 id="quoteSelectedTitle"></h3><p id="quoteSelectedMeta"></p><small id="quoteSelectedNotes"></small></div></div><div class="quote-form-grid quote-detail-grid"><label>Versión<select name="vehicleVersion" id="quoteVersion" required><option value="">Seleccionar versión</option></select></label><label>Precio / valor final del plan<input name="salePrice" type="number" min="0" step="1" required><small id="quotePriceHelp">Para planes se completa automáticamente.</small></label><div class="quote-financing-control" data-bank-field><div class="quote-financing-head"><label>Monto a financiar<input name="financedAmount" type="number" min="0" step="100000"></label><strong id="quoteFinancedDisplay">$0</strong></div><input id="quoteFinancedRange" type="range" min="0" max="1000000" step="100000" value="0"><div class="quote-range-limits"><span id="quoteFinancedMin">$0</span><span id="quoteFinancedMax">$0</span></div></div></div><div class="quote-calculation" id="quoteCalculation"></div></section><p class="crm-form-error" id="quoteError"></p><div class="quote-dialog-actions"><button class="secondary-button" id="quoteCancel" type="button">Cancelar</button><button class="primary-button" id="quoteSubmit" type="submit">Guardar y generar PDF</button></div></form></dialog>
+
+  <dialog class="crm-dialog" id="salesMinuteDialog"><form method="dialog" class="crm-dialog-shell application-form" id="salesMinuteForm"><button class="crm-dialog-close" value="cancel" aria-label="Cerrar">×</button><p class="eyebrow dark">Minuta de venta aprobada</p><h2 id="salesMinuteTitle">Completar minuta</h2><p>La información comienza vacía y queda vinculada a esta operación.</p>
+    <section class="application-section"><div class="application-section-heading"><span>01</span><div><h3>Datos del cliente</h3><p>Identificación y domicilio declarado.</p></div></div><div class="application-grid"><label class="field-group"><span>Nombre</span><input class="text-input" name="firstName" required></label><label class="field-group"><span>Apellido</span><input class="text-input" name="lastName" required></label><label class="field-group"><span>Tipo de documento</span><select class="text-input" name="documentType"><option>DNI</option><option>LC</option><option>LE</option><option>Pasaporte</option></select></label><label class="field-group"><span>Número de documento</span><input class="text-input" name="documentNumber" inputmode="numeric" maxlength="12" required></label><label class="field-group"><span>CUIL</span><input class="text-input" name="cuil" inputmode="numeric" maxlength="13" required></label><label class="field-group"><span>Fecha de nacimiento</span><input class="text-input" name="birthDate" type="date" required></label><label class="field-group field-wide"><span>Domicilio</span><input class="text-input" name="address" required></label><label class="field-group"><span>Localidad / Provincia</span><input class="text-input" name="cityProvince" required></label><label class="field-group"><span>Código postal</span><input class="text-input" name="postalCode" maxlength="10" required></label><label class="field-group"><span>Estado civil</span><select class="text-input" name="maritalStatus" required><option value="">Seleccionar</option><option>Soltero/a</option><option>Casado/a</option><option>Conviviente</option><option>Divorciado/a</option><option>Viudo/a</option></select></label><label class="field-group"><span>Nombre del cónyuge</span><input class="text-input" name="spouseName"></label><label class="field-group"><span>DNI del cónyuge</span><input class="text-input" name="spouseDocument" inputmode="numeric" maxlength="12"></label></div></section>
+    <div class="application-columns"><section class="application-section"><div class="application-section-heading"><span>02</span><div><h3>Contacto</h3></div></div><div class="application-grid one-column"><label class="field-group"><span>Teléfono particular</span><input class="text-input" name="primaryPhone" required></label><label class="field-group"><span>Teléfono alternativo</span><input class="text-input" name="alternatePhone"></label><label class="field-group"><span>Correo electrónico</span><input class="text-input" name="email" type="email" required></label><label class="field-group"><span>Forma y horario de contacto</span><input class="text-input" name="contactSchedule" required></label></div></section><section class="application-section"><div class="application-section-heading"><span>03</span><div><h3>Datos laborales</h3></div></div><div class="application-grid one-column"><label class="field-group"><span>Condición laboral</span><select class="text-input" name="employmentStatus" required><option value="">Seleccionar</option><option>Relación de dependencia</option><option>Monotributista / autónomo</option><option>Jubilado/a o pensionado/a</option><option>Actividad informal</option><option>Otro</option></select></label><label class="field-group"><span>Empresa / actividad</span><input class="text-input" name="employerName" required></label><label class="field-group"><span>Antigüedad laboral (años)</span><input class="text-input" name="employmentSeniority" type="number" min="0" max="80" required></label><label class="field-group"><span>Sueldo / ingresos mensuales</span><input class="text-input" name="monthlyIncome" type="number" min="0" step="1" required></label></div></section></div>
+    <section class="application-section"><div class="application-section-heading"><span>04</span><div><h3>Condiciones comerciales</h3></div></div><div class="application-vehicle-summary"><strong id="salesMinuteVehicle"></strong><span id="salesMinuteCampaign"></span></div><div class="application-grid commercial-grid"><label class="field-group"><span>Débito automático</span><select class="text-input" name="automaticDebit" required><option value="">Seleccionar</option><option value="true">Sí</option><option value="false">No</option></select></label><label class="field-group"><span>Cuota diferida</span><select class="text-input" name="deferredInstallment" required><option value="">Seleccionar</option><option value="true">Sí</option><option value="false">No</option></select></label><label class="field-group"><span>Cuotas abonadas</span><input class="text-input" name="installmentsPaid" type="number" min="0" max="999" value="0" required></label><label class="field-group"><span>Cuotas a pagar</span><input class="text-input" name="installmentsToPay" type="number" min="1" max="999" required></label><label class="field-group"><span>Tipo de plan</span><input class="text-input" name="planType" required></label><label class="field-group"><span>Precio pactado</span><input class="text-input" name="agreedPrice" type="number" min="0" step="1" required></label><label class="field-group"><span>Fecha del primer pago</span><input class="text-input" name="firstPaymentDate" type="date"></label><label class="field-group"><span>Importe del primer pago</span><input class="text-input" name="firstPaymentAmount" type="number" min="0" step="1"></label><label class="field-group"><span>Fecha del segundo pago</span><input class="text-input" name="secondPaymentDate" type="date"></label><label class="field-group"><span>Importe del segundo pago</span><input class="text-input" name="secondPaymentAmount" type="number" min="0" step="1"></label></div></section><label class="consent-box application-consent"><input name="applicationConsent" type="checkbox" required><span><strong>Confirmación conjunta</strong>El vendedor leyó la información junto al cliente y ambas partes confirman que los datos son correctos.</span></label><p class="form-error" id="salesMinuteError"></p><button class="primary-button" id="salesMinuteSubmit" type="submit">Guardar y generar PDF</button></form></dialog>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.2/dist/umd/supabase.js"></script>
   <script src="/vendedores/supabase-config.js?v=20260813-2"></script>
-  <script src="/vendedores/app.js?v=20260813-5"></script>
-  <script src="/vendedores/crm.js?v=20260815-2"></script>
+  <script src="/vendedores/app.js?v=20260817-1"></script>
+  <script src="/vendedores/crm.js?v=20260817-3"></script>
+  <script src="/vendedores/sales.js?v=20260818-1"></script>
 </body>
 </html>

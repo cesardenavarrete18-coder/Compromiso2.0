@@ -1,0 +1,52 @@
+.stats { grid-template-columns: repeat(6, 1fr); }
+.stats .alert-stat::after { background: var(--red); }
+.operations-panel { margin-bottom: 22px; padding: 23px; border: 1px solid var(--line); border-radius: 12px; background: var(--white); box-shadow: var(--shadow); }
+.operations-layout { display: grid; grid-template-columns: minmax(260px, .75fr) minmax(520px, 1.5fr); gap: 14px; }
+.operations-summary, .operations-tasks { display: grid; align-content: start; gap: 8px; }
+.operation-seller { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; padding: 11px; border: 1px solid var(--line); border-radius: 8px; background: #fbfcfd; }
+.operation-seller > span { display: grid; width: 32px; height: 32px; place-items: center; border-radius: 50%; color: #fff; background: var(--navy2); font-size: 9px; font-weight: 900; }
+.operation-seller strong, .operation-seller small { display: block; }
+.operation-seller strong { font-size: 10px; }
+.operation-seller small { color: var(--muted); font-size: 8px; }
+.operation-seller b { font-size: 15px; }
+.operation-seller.attention { border-color: #efc0be; background: #fff7f6; }
+.operation-task { display: grid; grid-template-columns: 1fr 1fr minmax(110px, .65fr); align-items: center; gap: 12px; padding: 11px 12px; border: 1px solid var(--line); border-left: 4px solid var(--blue); border-radius: 8px; background: #fff; }
+.operation-task.overdue { border-left-color: var(--red); background: #fffafa; }
+.operation-task strong, .operation-task small { display: block; }
+.operation-task strong { font-size: 9px; }
+.operation-task small, .operation-task > span { color: var(--muted); font-size: 8px; }
+.consent-check { display: grid !important; grid-template-columns: auto 1fr; align-items: start; gap: 9px !important; padding: 11px; border: 1px solid #cfe2ee; border-radius: 8px; background: #f5fafd; }
+.consent-check input { width: 17px; min-height: 17px; margin: 1px 0 0; }
+.consent-check span { color: #40566b; font-weight: 650; line-height: 1.45; }
+.goals-panel, .templates-panel { margin-bottom: 22px; padding: 23px; border: 1px solid var(--line); border-radius: 12px; background: var(--white); box-shadow: var(--shadow); }
+.goals-layout { display: grid; grid-template-columns: minmax(300px, .8fr) minmax(520px, 1.4fr); gap: 18px; }
+.goal-form { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+.goal-form label { display: grid; gap: 5px; color: var(--muted); font-size: 8px; font-weight: 850; text-transform: uppercase; }
+.goal-form input { min-height: 40px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 7px; }
+.goal-form .button { grid-column: 1 / -1; }
+.goal-progress { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+.goal-progress-card { padding: 12px; border: 1px solid var(--line); border-radius: 8px; background: #fbfcfd; }
+.goal-progress-card > div:first-child { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.goal-progress-card span, .goal-progress-card small { color: var(--muted); font-size: 8px; }
+.goal-progress-card strong { font-size: 10px; }
+.goal-bar { height: 7px; margin: 10px 0 6px; overflow: hidden; border-radius: 999px; background: #e8eef3; }
+.goal-bar i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--blue), var(--cyan)); }
+.contact-templates { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.template-card { display: grid; gap: 8px; padding: 13px; border: 1px solid var(--line); border-radius: 9px; background: #fbfcfd; }
+.template-card span, .template-card strong, .template-card small { display: block; }
+.template-card span, .template-card small { color: var(--muted); font-size: 8px; }
+.template-card strong { font-size: 11px; }
+.template-card textarea { width: 100%; padding: 10px; border: 1px solid var(--line); border-radius: 7px; font: inherit; font-size: 9px; line-height: 1.5; resize: vertical; }
+.template-card .button { justify-self: start; }
+
+@media (max-width: 1250px) {
+  .stats { grid-template-columns: repeat(3, 1fr); }
+  .operations-layout { grid-template-columns: 1fr; }
+  .goals-layout { grid-template-columns: 1fr; }
+}
+@media (max-width: 760px) {
+  .stats { grid-template-columns: 1fr 1fr; }
+  .operation-task { grid-template-columns: 1fr; }
+  .goal-progress { grid-template-columns: 1fr; }
+  .contact-templates { grid-template-columns: 1fr; }
+}

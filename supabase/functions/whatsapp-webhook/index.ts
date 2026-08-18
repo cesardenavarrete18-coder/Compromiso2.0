@@ -76,11 +76,11 @@ function fallbackDecision(text: string): LeadDecision {
   };
 }
 
-async function analyzeLeadConversation(history: string[], text: string, qualificationRules = "", vectorStoreId = ""): Promise<LeadDecision> {
+async function analyzeLeadConversation(history: string[], text: string, qualificationRules = "", vectorStoreId = "", referralContext = ""): Promise<LeadDecision> {
   const apiKey = Deno.env.get("OPENAI_API_KEY") ?? "";
   if (!apiKey || !text) return fallbackDecision(text);
 
-  const conversation = [...history, `Cliente: ${text}`].slice(-12).join("\n");
+  const conversation = [referralContext, ...history, `Cliente: ${text}`].filter(Boolean).slice(-13).join("\n");
 
   try {
     const result = await fetch("https://api.openai.com/v1/responses", {
@@ -258,11 +258,16 @@ Deno.serve(async (request) => {
         const profile = contacts[0]?.profile as JsonRecord | undefined;
         const customerName = typeof profile?.name === "string" ? profile.name.slice(0, 120) : null;
         const body = messageText(message);
+        const referral = message.referral as JsonRecord | undefined;
+        const hasMetaReferral = Boolean(referral && (referral.ctwa_clid || referral.source_id || referral.source_url));
+        const referralContext = hasMetaReferral
+          ? `Contexto del anuncio de Meta: ${String(referral?.headline ?? "")} ${String(referral?.body ?? "")} ${String(referral?.source_url ?? "")}`.trim()
+          : "";
         const codes = candidateCodes(body);
 
         const existingResult = await db
           .from("leads")
-          .select("id, assigned_seller_user_id, routing_status, qualification_status")
+          .select("id, assigned_seller_user_id, routing_status, qualification_status, do_not_contact")
           .eq("customer_phone", customerPhone)
           .not("routing_status", "in", "(closed,lost)")
           .gte("last_message_at", new Date(Date.now() - 30 * 86400000).toISOString())
@@ -284,6 +289,29 @@ Deno.serve(async (request) => {
             raw_payload: message,
           });
           await db.from("leads").update({ last_message_at: new Date().toISOString() }).eq("id", existing.id);
+          if (!existing.do_not_contact) {
+            await db.from("lead_crm").update({
+              status: "en_proceso",
+              next_contact_at: null,
+              next_contact_note: "",
+              last_contact_at: new Date().toISOString(),
+              last_contact_outcome: "Respuesta recibida por WhatsApp",
+            }).eq("lead_id", existing.id).in("status", ["nuevo", "no_contesta", "desistir"]);
+          }
+          if (hasMetaReferral) {
+            await db.from("lead_attributions").upsert({
+              lead_id: existing.id,
+              platform: "meta_ads",
+              source_type: String(referral?.source_type ?? "ad"),
+              ad_id: referral?.source_id ? String(referral.source_id) : null,
+              click_id: referral?.ctwa_clid ? String(referral.ctwa_clid) : null,
+              source_url: referral?.source_url ? String(referral.source_url) : null,
+              headline: referral?.headline ? String(referral.headline).slice(0, 1000) : null,
+              body: referral?.body ? String(referral.body).slice(0, 3000) : null,
+              media_type: referral?.media_type ? String(referral.media_type) : null,
+              raw_referral: referral,
+            }, { onConflict: "lead_id" });
+          }
 
           const supervisors = await db.from("profiles").select("user_id").eq("role", "supervisor").eq("active", true);
           if (supervisors.data?.length) {
@@ -307,6 +335,7 @@ Deno.serve(async (request) => {
           body,
           String(assistantSettings.qualification_rules || ""),
           String(assistantSettings.vector_store_id || ""),
+          referralContext,
         );
 
         let seller: JsonRecord | null = null;
@@ -347,7 +376,7 @@ Deno.serve(async (request) => {
           customer_phone: customerPhone,
           customer_name: customerName,
           source_channel: codes.length ? "tiktok" : "whatsapp",
-          source_detail: codes.length ? "seller_code" : "organic",
+          source_detail: codes.length ? "seller_code" : hasMetaReferral ? "meta_ads" : "organic",
           seller_code_received: codes[0] || null,
           qualification_status: classification.qualification_status,
           priority: classification.priority,
@@ -359,13 +388,30 @@ Deno.serve(async (request) => {
           assigned_seller_user_id: assignedSellerId,
           assigned_at: assignedAt,
           last_message_at: new Date().toISOString(),
-          metadata: { phone_number_id: (value?.metadata as JsonRecord | undefined)?.phone_number_id || null },
+          contact_consent_at: new Date().toISOString(),
+          contact_consent_source: "whatsapp_inbound",
+          metadata: { phone_number_id: (value?.metadata as JsonRecord | undefined)?.phone_number_id || null, referral: hasMetaReferral ? referral : null },
         };
 
         const leadResult = existing
           ? await db.from("leads").update(leadValues).eq("id", existing.id).select("id").single()
           : await db.from("leads").insert(leadValues).select("id").single();
         if (leadResult.error || !leadResult.data) continue;
+
+        if (hasMetaReferral) {
+          await db.from("lead_attributions").upsert({
+            lead_id: leadResult.data.id,
+            platform: "meta_ads",
+            source_type: String(referral?.source_type ?? "ad"),
+            ad_id: referral?.source_id ? String(referral.source_id) : null,
+            click_id: referral?.ctwa_clid ? String(referral.ctwa_clid) : null,
+            source_url: referral?.source_url ? String(referral.source_url) : null,
+            headline: referral?.headline ? String(referral.headline).slice(0, 1000) : null,
+            body: referral?.body ? String(referral.body).slice(0, 3000) : null,
+            media_type: referral?.media_type ? String(referral.media_type) : null,
+            raw_referral: referral,
+          }, { onConflict: "lead_id" });
+        }
 
         await db.from("lead_messages").insert({
           lead_id: leadResult.data.id,
