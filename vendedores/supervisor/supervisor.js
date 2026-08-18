@@ -161,11 +161,12 @@
     state.view = view;
     document.querySelectorAll("[data-supervisor-panel]").forEach(function (panel) { panel.hidden = panel.dataset.supervisorPanel !== view; });
     document.querySelectorAll("[data-supervisor-view]").forEach(function (button) { button.classList.toggle("active", button.dataset.supervisorView === view); });
-    var titles = { leads: ["Distribución comercial", "Bandeja de leads"], followup: ["Cumplimiento operativo", "Proceso de seguimiento"], sales: ["Control comercial", "Ventas para confirmar"], administration: ["Circuito posterior a la venta", "Seguimiento administrativo"], goals: ["Rendimiento del equipo", "Objetivos comerciales"] };
+    var titles = { leads: ["Distribución comercial", "Bandeja de leads"], bases: ["Administración de bases", "Nuevos y rellamados"], followup: ["Cumplimiento operativo", "Proceso de seguimiento"], sales: ["Control comercial", "Ventas para confirmar"], administration: ["Circuito posterior a la venta", "Seguimiento administrativo"], goals: ["Rendimiento del equipo", "Objetivos comerciales"] };
     document.querySelector(".topbar .eyebrow").textContent = titles[view][0];
     document.querySelector(".topbar h1").textContent = titles[view][1];
     if (view === "goals") { renderGoals(); renderRanking(); }
     if (view === "administration") renderInstallmentMetrics();
+    if (view === "bases") document.dispatchEvent(new CustomEvent("grupoSur:bases-open"));
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 

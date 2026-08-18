@@ -1,0 +1,24 @@
+.recall-seller-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin: 18px 0; }
+.recall-summary-card { padding: 18px; border: 1px solid #d8e4f0; border-radius: 16px; background: #fff; }
+.recall-summary-card span, .recall-summary-card small { display: block; color: #60758d; }
+.recall-summary-card strong { display: block; margin: 4px 0; color: #071d3a; font-size: 26px; }
+.recall-seller-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+.recall-seller-card { display: grid; gap: 14px; padding: 19px; border: 1px solid #cfe0ef; border-radius: 17px; background: #fff; box-shadow: 0 13px 30px rgba(8, 42, 80, .06); }
+.recall-card-head, .recall-card-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.recall-card-head strong { display: block; color: #071d3a; font-size: 17px; }
+.recall-card-head small, .recall-seller-card p { color: #61758c; }
+.recall-card-progress { display: grid; grid-template-columns: repeat(2, 1fr); gap: 7px; }
+.recall-card-progress span { height: 7px; border-radius: 999px; background: #e1eaf2; }
+.recall-card-progress span.done { background: #0f8d62; }
+.recall-card-actions a { color: #087bd8; font-weight: 800; text-decoration: none; }
+.seller-proposals-panel { margin-top: 28px; }
+.seller-proposals-list { display: grid; gap: 10px; }
+.seller-proposal-row { display: grid; grid-template-columns: 1fr auto; gap: 14px; padding: 14px 16px; border: 1px solid #d9e5ef; border-radius: 13px; background: #fff; }
+.seller-proposal-row strong, .seller-proposal-row small { display: block; }
+.seller-proposal-row small { margin-top: 4px; color: #64788f; }
+.proposal-status { align-self: center; padding: 7px 10px; border-radius: 999px; color: #856100; background: #fff4cf; font-size: 11px; font-weight: 900; text-transform: uppercase; }
+.proposal-status.approved { color: #08633f; background: #e4f7ef; }
+.proposal-status.rejected { color: #a42626; background: #ffeded; }
+.recall-next-contact { margin-top: 15px; padding: 15px; border-radius: 14px; background: #eff8ff; }
+.recall-next-contact > strong { display: block; margin-bottom: 11px; color: #075fa9; }
+@media (max-width: 760px) { .recall-seller-summary { grid-template-columns: 1fr; } }

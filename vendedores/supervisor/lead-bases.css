@@ -1,0 +1,24 @@
+.lead-bases-panel { display: grid; gap: 22px; }
+.lead-import-card, .recall-supervisor-list, .seller-submission-list { border: 1px solid #d8e4f0; border-radius: 18px; background: #fff; box-shadow: 0 12px 32px rgba(10, 40, 80, .06); }
+.lead-import-card { padding: 20px; }
+.lead-import-controls, .recall-filters { display: grid; grid-template-columns: minmax(190px, 1.2fr) minmax(230px, 1.4fr) auto; gap: 14px; align-items: end; }
+.lead-import-controls label, .recall-filters label { display: grid; gap: 7px; color: #33465d; font-size: 12px; font-weight: 800; }
+.lead-import-controls select, .lead-import-controls input, .recall-filters select, .recall-filters input { min-height: 44px; border: 1px solid #cbd9e7; border-radius: 11px; padding: 0 12px; color: #0b1c31; background: #fff; font: inherit; }
+.lead-import-preview { margin-top: 16px; overflow: auto; }
+.lead-import-preview table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.lead-import-preview th, .lead-import-preview td { padding: 10px; border-bottom: 1px solid #e4edf5; text-align: left; white-space: nowrap; }
+.lead-import-preview th { color: #50677f; background: #f5f9fd; }
+.import-summary { display: flex; gap: 9px; flex-wrap: wrap; margin-bottom: 12px; }
+.import-summary span { padding: 7px 10px; border-radius: 999px; color: #075fa9; background: #e9f5ff; font-size: 12px; font-weight: 800; }
+.recall-heading, .seller-submissions-heading { margin-top: 8px; }
+.recall-filters { grid-template-columns: 1fr 1.2fr 110px 1.3fr auto; padding: 18px; border: 1px solid #d8e4f0; border-radius: 16px; background: #f8fbfe; }
+.recall-supervisor-list, .seller-submission-list { overflow: hidden; }
+.recall-row, .seller-submission-row { display: grid; grid-template-columns: 36px 1.1fr 1.2fr .9fr auto; gap: 14px; align-items: center; padding: 15px 18px; border-bottom: 1px solid #e3ecf4; }
+.recall-row:last-child, .seller-submission-row:last-child { border-bottom: 0; }
+.recall-row strong, .seller-submission-row strong { display: block; color: #0b1c31; }
+.recall-row small, .seller-submission-row small { display: block; margin-top: 4px; color: #63778e; }
+.seller-submission-row { grid-template-columns: 1.1fr 1fr 1.4fr auto; }
+.submission-actions { display: flex; gap: 8px; }
+.submission-actions button { min-height: 38px; }
+.submission-actions .reject { color: #a92525; background: #fff3f3; border-color: #efc8c8; }
+@media (max-width: 1050px) { .lead-import-controls, .recall-filters { grid-template-columns: 1fr 1fr; } .recall-row, .seller-submission-row { grid-template-columns: 32px 1fr; } .seller-submission-row { grid-template-columns: 1fr; } }

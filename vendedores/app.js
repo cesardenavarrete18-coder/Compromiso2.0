@@ -1175,6 +1175,32 @@
     });
   }
 
+  function buildPrequalificationPrint() {
+    var benefits = (state.model.benefits || []).join(" · ") || "Sin beneficios adicionales informados";
+    minutePrint.innerHTML = '' +
+      '<article class="prequalification-print-sheet" data-brand-theme="' + escapeHtml(brandTheme(state.brand)) + '">' +
+        '<header class="prequalification-print-header"><div><img src="../assets/logo-header.webp" alt="Grupo Sur Automotores"><span>Constancia comercial preliminar</span></div><div><strong>' + escapeHtml(state.requestId) + '</strong><span>Emitida ' + escapeHtml(new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date())) + '</span></div></header>' +
+        '<section class="prequalification-print-hero"><div class="prequalification-print-image"><img src="' + escapeHtml(state.model.image) + '" alt="' + escapeHtml(state.brand + " " + vehicleTitle(state.model)) + '"></div><div><span>Precalificación aprobada</span><p>' + escapeHtml(state.brand + " · " + planDescription(state.model)) + '</p><h1>' + escapeHtml(vehicleTitle(state.model)) + '</h1><strong>Vigente hasta ' + escapeHtml(new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(state.validUntil)) + '</strong></div></section>' +
+        '<div class="prequalification-print-columns"><section><h2>Cliente</h2><dl>' +
+          '<div><dt>Nombre y apellido</dt><dd>' + escapeHtml(state.client.fullName) + '</dd></div>' +
+          '<div><dt>CUIL</dt><dd>' + escapeHtml(maskCuil(state.client.cuil)) + '</dd></div>' +
+          '<div><dt>Teléfono</dt><dd>' + escapeHtml(state.client.phone) + '</dd></div>' +
+          '<div><dt>Correo</dt><dd>' + escapeHtml(state.client.email) + '</dd></div>' +
+        '</dl></section><section><h2>Condición preliminar</h2><dl>' +
+          '<div><dt>Plan</dt><dd>' + escapeHtml(planDescription(state.model)) + '</dd></div>' +
+          '<div><dt>Versión</dt><dd>' + escapeHtml(vehicleVersion(state.model)) + '</dd></div>' +
+          '<div><dt>Anticipo estimado</dt><dd>' + escapeHtml(state.model.advance) + '</dd></div>' +
+          '<div><dt>Cuota estimada</dt><dd>' + escapeHtml(state.model.installment) + '</dd></div>' +
+          '<div><dt>Disponibilidad</dt><dd>' + escapeHtml(state.model.availability) + '</dd></div>' +
+        '</dl></section></div>' +
+        '<section class="prequalification-print-benefits"><div><span>Bonificación informada</span><strong>' + escapeHtml(state.model.bonus || "Sin bonificación informada") + '</strong></div><div><span>Beneficios</span><strong>' + escapeHtml(benefits) + '</strong></div></section>' +
+        '<section class="prequalification-print-advisor"><div><span>Asesor responsable</span><strong>' + escapeHtml(state.seller.name) + '</strong></div><div><span>Código</span><strong>' + escapeHtml(state.seller.code) + '</strong></div><div><span>Contacto</span><strong>' + escapeHtml(state.seller.phone) + '</strong></div></section>' +
+        '<section class="prequalification-print-legal"><strong>Información importante</strong><p>Resultado comercial preliminar y no vinculante. No constituye una aprobación financiera definitiva, adjudicación ni compromiso de entrega. Sujeto a validación documental, análisis crediticio, disponibilidad, vigencia de campaña y aceptación de las condiciones definitivas.</p></section>' +
+        '<footer>Documento emitido desde el portal interno de Grupo Sur Automotores</footer>' +
+      '</article>';
+    minutePrint.setAttribute("aria-hidden", "false");
+  }
+
   function renderHistory() {
     var list = document.getElementById("historyList");
     if (!state.history.length) {
@@ -1358,8 +1384,8 @@
   });
 
   document.getElementById("printButton").addEventListener("click", function () {
-    document.body.classList.remove("printing-minute");
-    window.print();
+    buildPrequalificationPrint();
+    printMinute();
   });
 
   window.addEventListener("afterprint", function () {
