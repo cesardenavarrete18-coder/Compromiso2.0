@@ -2,7 +2,7 @@
   "use strict";
 
   var supabaseClient = window.grupoSurSupabaseClient;
-  var state = { profile: null, sellers: [], settings: {}, leads: [], tasks: [], goals: [], templates: [], sales: [], adminSales: [], activeSale: null, view: "leads", filter: "pending_supervisor", search: "" };
+  var state = { profile: null, sellers: [], settings: {}, leads: [], tasks: [], goals: [], templates: [], sales: [], adminSales: [], activeSale: null, activeConversationLeadId: null, view: "leads", filter: "pending_supervisor", search: "" };
   var loginView = document.getElementById("loginView");
   var appView = document.getElementById("appView");
   var loginForm = document.getElementById("loginForm");
@@ -219,6 +219,25 @@
     return "Bandeja general";
   }
 
+  async function loadConversation(leadId) {
+    if (!leadId) return;
+    var messages = await supabaseClient.from("lead_messages").select("direction, body, created_at").eq("lead_id", leadId).order("created_at");
+    if (state.activeConversationLeadId !== leadId) return;
+    var conversation = document.getElementById("conversation");
+    var status = document.getElementById("dialogConversationStatus");
+    if (messages.error || !messages.data.length) {
+      conversation.innerHTML = '<div class="message-bubble">Todavía no hay mensajes disponibles.</div>';
+      status.textContent = "Sin mensajes para mostrar";
+      return;
+    }
+    conversation.innerHTML = messages.data.map(function (message) { return '<div class="message-bubble ' + escapeHtml(message.direction) + '">' + escapeHtml(message.body || "Mensaje sin texto") + '<small>' + escapeHtml(formatDate(message.created_at)) + '</small></div>'; }).join("");
+    var lastMessage = messages.data[messages.data.length - 1];
+    status.textContent = lastMessage.direction === "outbound"
+      ? "Pendiente de filtrado · esperando respuesta del cliente desde " + formatDate(lastMessage.created_at)
+      : "El cliente respondió · último mensaje " + formatDate(lastMessage.created_at);
+    conversation.scrollTop = conversation.scrollHeight;
+  }
+
   function renderLeads() {
     var labels = {
       pending_supervisor: ["Leads pendientes", "La IA ya resumió la intención; elegí a quién asignar cada oportunidad."],
@@ -236,7 +255,7 @@
       var sourceLabel = lead.source_channel === "tiktok" ? "TikTok / código " + (lead.seller_code_received || "—") : lead.source_detail === "meta_ads" ? "Meta Ads · " + (attribution && (attribution.ad_name || attribution.headline || attribution.campaign_name) || "Anuncio sin nombre") : lead.source_channel === "manual" ? "Carga manual · " + (lead.source_detail || "Sin detalle") : "WhatsApp orgánico";
       return '<article class="lead-card" data-lead-id="' + lead.id + '">' +
         '<div class="lead-person"><strong>' + escapeHtml(lead.customer_name || "Cliente sin nombre") + '</strong><span>+' + escapeHtml(lead.customer_phone) + ' · ' + escapeHtml(formatDate(lead.last_message_at)) + '</span><span>' + escapeHtml(sourceLabel) + '</span></div>' +
-        '<div class="lead-summary"><p>' + escapeHtml(lead.intent_summary || "Pendiente de resumen") + '</p><div class="badges"><span class="badge ' + escapeHtml(lead.qualification_status) + '">' + escapeHtml(lead.qualification_status === "qualified" ? "Calificado" : lead.qualification_status === "unqualified" ? "No calificado" : "Seguimiento") + '</span><span class="badge ' + escapeHtml((crm && crm.priority) || lead.priority) + '">' + escapeHtml((crm && crm.priority) === "high" || lead.priority === "high" ? "Prioridad alta" : "Prioridad normal") + '</span><span class="badge">' + escapeHtml(crm && crm.status ? crm.status.replace(/_/g, " ") : "nuevo") + '</span><span class="badge">' + escapeHtml(routingLabel(lead)) + '</span></div></div>' +
+        '<div class="lead-summary"><p>' + escapeHtml(lead.intent_summary || "Pendiente de resumen") + '</p><div class="badges"><span class="badge ' + escapeHtml(lead.qualification_status) + '">' + escapeHtml(lead.qualification_status === "qualified" ? "Calificado" : lead.qualification_status === "unqualified" ? "No calificado" : "Pendiente de filtrado") + '</span><span class="badge ' + escapeHtml((crm && crm.priority) || lead.priority) + '">' + escapeHtml((crm && crm.priority) === "high" || lead.priority === "high" ? "Prioridad alta" : "Prioridad normal") + '</span><span class="badge">' + escapeHtml(crm && crm.status ? crm.status.replace(/_/g, " ") : "nuevo") + '</span><span class="badge">' + escapeHtml(routingLabel(lead)) + '</span></div></div>' +
         '<div class="assignment"><select data-seller-select aria-label="Asignar vendedor">' + sellerOptions(lead.assigned_seller_user_id) + '</select><button class="button primary" data-assign type="button">' + (assigned ? "Reasignar" : "Asignar") + '</button></div>' +
         '<button class="details" data-details type="button">Ver chat</button>' +
       '</article>';
@@ -409,13 +428,17 @@
       document.getElementById("dialogLeadName").textContent = lead.customer_name || "+" + lead.customer_phone;
       document.getElementById("dialogLeadSummary").textContent = lead.intent_summary || "Sin resumen disponible.";
       document.getElementById("conversation").innerHTML = '<div class="message-bubble">Cargando conversación…</div>';
+      document.getElementById("dialogConversationStatus").textContent = "Consultando mensajes…";
+      state.activeConversationLeadId = lead.id;
       document.getElementById("leadDialog").showModal();
-      var messages = await supabaseClient.from("lead_messages").select("direction, body, created_at").eq("lead_id", lead.id).order("created_at");
-      document.getElementById("conversation").innerHTML = messages.error || !messages.data.length
-        ? '<div class="message-bubble">Todavía no hay mensajes disponibles.</div>'
-        : messages.data.map(function (message) { return '<div class="message-bubble ' + escapeHtml(message.direction) + '">' + escapeHtml(message.body || "Mensaje sin texto") + '<small>' + escapeHtml(formatDate(message.created_at)) + '</small></div>'; }).join("");
+      await loadConversation(lead.id);
     }
   });
+
+  document.getElementById("conversationRefresh").addEventListener("click", function () {
+    loadConversation(state.activeConversationLeadId).catch(function () {});
+  });
+  document.getElementById("leadDialog").addEventListener("close", function () { state.activeConversationLeadId = null; });
 
   document.getElementById("manualLeadButton").addEventListener("click", function () {
     document.getElementById("manualLeadForm").reset();
@@ -536,4 +559,7 @@
     loginView.hidden = false;
   });
   window.setInterval(function () { if (state.profile) loadData(true).catch(function () {}); }, 30000);
+  window.setInterval(function () {
+    if (state.profile && state.activeConversationLeadId && document.getElementById("leadDialog").open) loadConversation(state.activeConversationLeadId).catch(function () {});
+  }, 10000);
 }());

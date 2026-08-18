@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/vendedores/supervisor/supervisor.css?v=20260815-4">
+  <link rel="stylesheet" href="/vendedores/supervisor/supervisor.css?v=20260818-1">
   <link rel="stylesheet" href="/vendedores/supervisor/operations.css?v=20260817-1">
   <link rel="stylesheet" href="/vendedores/supervisor/navigation.css?v=20260817-1">
   <link rel="stylesheet" href="/vendedores/supervisor/lead-bases.css?v=20260818-1">
@@ -154,6 +154,7 @@
       <p class="eyebrow dark">Detalle de conversación</p>
       <h2 id="dialogLeadName"></h2>
       <p id="dialogLeadSummary"></p>
+      <div class="conversation-status"><span id="dialogConversationStatus">Consultando mensajes…</span><button id="conversationRefresh" type="button">Actualizar conversación</button></div>
       <div class="conversation" id="conversation"></div>
       <button class="button secondary" value="cancel">Cerrar</button>
     </form>
@@ -191,7 +192,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.2/dist/umd/supabase.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="/vendedores/supabase-config.js?v=20260814-1"></script>
-  <script src="/vendedores/supervisor/supervisor.js?v=20260817-2"></script>
+  <script src="/vendedores/supervisor/supervisor.js?v=20260818-1"></script>
   <script src="/vendedores/supervisor/lead-bases.js?v=20260818-1"></script>
 </body>
 </html>

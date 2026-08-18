@@ -29,12 +29,22 @@
     return Number.isNaN(date.getTime()) ? new Date().toISOString() : date.toISOString();
   }
 
+  function normalizeArgentineMobilePhone(value) {
+    var digits = String(value == null ? "" : value).replace(/\D/g, "");
+    if (digits.indexOf("00") === 0) digits = digits.slice(2);
+    if (/^0\d{10}$/.test(digits)) digits = digits.slice(1);
+    if (/^\d{10}$/.test(digits)) return "549" + digits;
+    if (/^9\d{10}$/.test(digits)) return "54" + digits;
+    if (/^54\d{10}$/.test(digits)) return "549" + digits.slice(2);
+    return digits;
+  }
+
   function canonicalRow(row) {
     var normalized = {};
     Object.keys(row).forEach(function (key) { normalized[normalizeHeader(key)] = row[key]; });
     return {
       name: normalized.nombre_y_apellido || normalized.nombre || normalized.cliente || "",
-      phone: normalized.telefono || normalized.celular || normalized.whatsapp || "",
+      phone: normalizeArgentineMobilePhone(normalized.telefono || normalized.celular || normalized.whatsapp || ""),
       model_interest: normalized.modelo_de_interes || normalized.modelo_interes || normalized.modelo || "",
       source_detail: normalized.origen || normalized.fuente || "Importación Excel",
       original_inquiry_at: dateToIso(normalized.fecha_de_consulta || normalized.fecha_consulta || normalized.fecha || ""),
