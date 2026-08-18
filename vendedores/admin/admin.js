@@ -10,8 +10,11 @@
     sellers: [],
     prequalifications: [],
     knowledgeDocuments: [],
+    creditModels: [],
     modelVersions: [],
-    creditOffers: []
+    creditOffers: [],
+    editingVersionId: "",
+    editingCreditId: ""
   };
 
   var adminLogin = document.getElementById("adminLogin");
@@ -161,32 +164,98 @@
     }
   }
 
+  function parseLocalizedDecimal(value) {
+    var clean = String(value == null ? "" : value).trim().replace(/\s/g, "");
+    if (!clean) return NaN;
+    if (clean.includes(",") && clean.includes(".")) clean = clean.lastIndexOf(",") > clean.lastIndexOf(".") ? clean.replace(/\./g, "").replace(",", ".") : clean.replace(/,/g, "");
+    else clean = clean.replace(",", ".");
+    return Number(clean);
+  }
+
   function catalogModels() {
-    var seen = {};
-    return state.campaigns.filter(function (item) { if (seen[item.modelId]) return false; seen[item.modelId] = true; return true; }).map(function (item) { return { id: item.modelId, name: item.brand + " · " + item.name }; });
+    return state.creditModels.map(function (item) {
+      var brand = Array.isArray(item.brand) ? item.brand[0] : item.brand;
+      return { id: item.id, name: (brand && brand.name || "") + " · " + item.name, brandOrder: Number(brand && brand.sort_order || 0), modelOrder: Number(item.sort_order || 0) };
+    }).sort(function (a, b) { return a.brandOrder - b.brandOrder || a.modelOrder - b.modelOrder || a.name.localeCompare(b.name, "es"); });
   }
 
   async function loadCredits() {
     var results = await Promise.all([
-      supabaseClient.from("model_versions").select("id, model_id, name, active").order("sort_order").order("name"),
-      supabaseClient.from("bank_credit_offers").select("id, model_id, financier_name, offer_name, term_months, installment_coefficient, active, versions:bank_credit_offer_versions(version:model_versions(id,name))").order("created_at", { ascending: false })
+      supabaseClient.from("models").select("id, name, sort_order, active, brand:brands!inner(name,sort_order)").eq("active", true),
+      supabaseClient.from("model_versions").select("id, model_id, name, suggested_price, sort_order, active").order("sort_order").order("name"),
+      supabaseClient.from("bank_credit_offers").select("id, model_id, financier_name, offer_name, term_months, min_financed_amount, max_financed_amount, installment_coefficient, breakage_rate, patenting_rate, fixed_expenses, tna, cftea, notes, valid_from, valid_to, active, sort_order, versions:bank_credit_offer_versions(version:model_versions(id,name,suggested_price))").order("created_at", { ascending: false })
     ]);
     var failed = results.find(function (item) { return item.error; }); if (failed) throw failed.error;
-    state.modelVersions = results[0].data || []; state.creditOffers = results[1].data || []; renderCredits();
+    state.creditModels = results[0].data || []; state.modelVersions = results[1].data || []; state.creditOffers = results[2].data || []; renderCredits();
   }
 
   function renderCredits() {
-    var models = catalogModels(); var options = '<option value="">Seleccionar modelo</option>' + models.map(function (model) { return '<option value="' + model.id + '">' + escapeHtml(model.name) + '</option>'; }).join("");
-    document.getElementById("versionModel").innerHTML = options; document.getElementById("creditModel").innerHTML = options; renderCreditVersions();
+    var models = catalogModels(); var versionModel = document.getElementById("versionModel"); var creditModel = document.getElementById("creditModel"); var selectedVersionModel = versionModel.value; var selectedCreditModel = creditModel.value; var options = '<option value="">Seleccionar modelo</option>' + models.map(function (model) { return '<option value="' + model.id + '">' + escapeHtml(model.name) + '</option>'; }).join("");
+    versionModel.innerHTML = options; creditModel.innerHTML = options;
+    if (selectedVersionModel) versionModel.value = selectedVersionModel;
+    if (selectedCreditModel) creditModel.value = selectedCreditModel;
+    renderVersionList(); renderCreditVersions();
     document.getElementById("creditOfferList").innerHTML = state.creditOffers.length ? state.creditOffers.map(function (offer) {
       var model = models.find(function (item) { return item.id === offer.model_id; }); var versions = (offer.versions || []).map(function (link) { var version = Array.isArray(link.version) ? link.version[0] : link.version; return version && version.name; }).filter(Boolean);
-      return '<article class="credit-offer-row" data-credit-id="' + offer.id + '"><div><strong>' + escapeHtml(offer.financier_name + " · " + offer.offer_name) + '</strong><span>' + escapeHtml(model && model.name || "Modelo") + ' · ' + escapeHtml(offer.term_months) + ' cuotas</span><small>' + escapeHtml(versions.join(", ") || "Sin versiones habilitadas") + '</small></div><div><strong>' + escapeHtml(formatMoney(Number(offer.installment_coefficient) * 1000000)) + '</strong><span>por cada $1.000.000</span></div><button class="secondary-button" data-toggle-credit type="button">' + (offer.active ? "Pausar" : "Activar") + '</button></article>';
+      return '<article class="credit-offer-row' + (offer.active ? '' : ' is-paused') + '" data-credit-id="' + offer.id + '"><div><strong>' + escapeHtml(offer.financier_name + " · " + offer.offer_name) + '</strong><span>' + escapeHtml(model && model.name || "Modelo") + ' · ' + escapeHtml(offer.term_months) + ' cuotas</span><small>' + escapeHtml(versions.join(", ") || "Sin versiones habilitadas") + '</small></div><div><strong>$' + escapeHtml(new Intl.NumberFormat("es-AR", { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(Number(offer.installment_coefficient) * 1000)) + '</strong><span>por cada $1.000</span></div><div class="credit-row-actions"><button data-edit-credit type="button">Editar</button><button data-duplicate-credit type="button">Duplicar</button><button data-toggle-credit type="button">' + (offer.active ? "Pausar" : "Activar") + '</button><button class="danger" data-delete-credit type="button">Borrar</button></div></article>';
     }).join("") : '<div class="seller-empty">Todavía no hay líneas de crédito cargadas.</div>';
+  }
+
+  function renderVersionList() {
+    var modelId = document.getElementById("versionModel").value;
+    var models = catalogModels();
+    var versions = state.modelVersions.filter(function (item) { return !modelId || item.model_id === modelId; });
+    document.getElementById("versionCount").textContent = versions.length + (versions.length === 1 ? " versión" : " versiones");
+    document.getElementById("versionList").innerHTML = versions.length ? versions.map(function (item) {
+      var model = models.find(function (row) { return row.id === item.model_id; });
+      return '<article class="version-row' + (item.active ? '' : ' is-paused') + '" data-version-id="' + item.id + '"><div><strong>' + escapeHtml(item.name) + '</strong><span>' + escapeHtml(model && model.name || "Modelo") + '</span><small>' + (item.suggested_price == null ? "Precio sugerido pendiente" : "Precio sugerido " + escapeHtml(formatMoney(item.suggested_price))) + (item.active ? "" : " · Archivada") + '</small></div><div><button data-edit-version type="button">Editar</button><button class="danger" data-delete-version type="button">Borrar</button></div></article>';
+    }).join("") : '<div class="version-empty">No hay versiones para este modelo.</div>';
   }
 
   function renderCreditVersions() {
     var modelId = document.getElementById("creditModel").value; var versions = state.modelVersions.filter(function (item) { return item.model_id === modelId && item.active; });
-    document.getElementById("creditVersionOptions").innerHTML = versions.length ? versions.map(function (item) { return '<label><input type="checkbox" name="versionIds" value="' + item.id + '"><span>' + escapeHtml(item.name) + '</span></label>'; }).join("") : '<small>Primero agregá una versión para este modelo.</small>';
+    document.getElementById("creditVersionOptions").innerHTML = versions.length ? versions.map(function (item) { return '<label><input type="checkbox" name="versionIds" value="' + item.id + '"><span>' + escapeHtml(item.name) + (item.suggested_price == null ? " · sin precio" : " · " + formatMoney(item.suggested_price)) + '</span></label>'; }).join("") : '<small>Primero agregá una versión para este modelo.</small>';
+  }
+
+  function resetVersionForm(modelId) {
+    var form = document.getElementById("versionForm");
+    state.editingVersionId = ""; form.reset();
+    if (modelId) form.elements.modelId.value = modelId;
+    document.getElementById("versionFormTitle").textContent = "Nueva versión";
+    document.getElementById("versionSubmit").textContent = "Agregar versión";
+    document.getElementById("cancelVersionEdit").hidden = true;
+  }
+
+  function editVersion(version) {
+    var form = document.getElementById("versionForm");
+    state.editingVersionId = version.id; form.elements.modelId.value = version.model_id; form.elements.name.value = version.name || ""; form.elements.suggestedPrice.value = version.suggested_price == null ? "" : version.suggested_price;
+    document.getElementById("versionFormTitle").textContent = "Editar versión";
+    document.getElementById("versionSubmit").textContent = "Guardar versión";
+    document.getElementById("cancelVersionEdit").hidden = false;
+    form.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+
+  function resetCreditForm(modelId) {
+    var form = document.getElementById("creditForm");
+    state.editingCreditId = ""; form.reset();
+    if (modelId) form.elements.modelId.value = modelId;
+    form.elements.breakageRate.value = "0"; form.elements.patentingRate.value = "0"; form.elements.fixedExpenses.value = "0";
+    document.getElementById("creditFormTitle").textContent = "Nueva línea de crédito";
+    document.getElementById("creditSubmit").textContent = "Guardar línea de crédito";
+    document.getElementById("cancelCreditEdit").hidden = true;
+    renderCreditVersions();
+  }
+
+  function editCredit(offer) {
+    var form = document.getElementById("creditForm");
+    state.editingCreditId = offer.id; form.elements.modelId.value = offer.model_id; renderCreditVersions();
+    form.elements.financierName.value = offer.financier_name || ""; form.elements.offerName.value = offer.offer_name || ""; form.elements.termMonths.value = offer.term_months || ""; form.elements.minFinanced.value = offer.min_financed_amount == null ? "" : offer.min_financed_amount; form.elements.maxFinanced.value = offer.max_financed_amount == null ? "" : offer.max_financed_amount; form.elements.installmentPerThousand.value = new Intl.NumberFormat("es-AR", { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(Number(offer.installment_coefficient) * 1000); form.elements.breakageRate.value = offer.breakage_rate || 0; form.elements.patentingRate.value = offer.patenting_rate || 0; form.elements.fixedExpenses.value = offer.fixed_expenses || 0; form.elements.tna.value = offer.tna == null ? "" : offer.tna; form.elements.cftea.value = offer.cftea == null ? "" : offer.cftea; form.elements.validFrom.value = offer.valid_from || ""; form.elements.validTo.value = offer.valid_to || ""; form.elements.notes.value = offer.notes || "";
+    var selected = new Set((offer.versions || []).map(function (link) { var version = Array.isArray(link.version) ? link.version[0] : link.version; return version && version.id; }).filter(Boolean));
+    form.querySelectorAll('input[name="versionIds"]').forEach(function (input) { input.checked = selected.has(input.value); });
+    document.getElementById("creditFormTitle").textContent = "Editar línea de crédito";
+    document.getElementById("creditSubmit").textContent = "Guardar cambios";
+    document.getElementById("cancelCreditEdit").hidden = false;
+    form.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   async function enterAdmin() {
@@ -746,13 +815,29 @@
     }
   });
 
+  document.getElementById("versionModel").addEventListener("change", renderVersionList);
   document.getElementById("creditModel").addEventListener("change", renderCreditVersions);
+  document.getElementById("cancelVersionEdit").addEventListener("click", function () { resetVersionForm(document.getElementById("versionModel").value); });
+  document.getElementById("cancelCreditEdit").addEventListener("click", function () { resetCreditForm(document.getElementById("creditModel").value); });
 
   document.getElementById("versionForm").addEventListener("submit", async function (event) {
     event.preventDefault(); var form = this; var message = document.getElementById("versionMessage"); var button = form.querySelector('button[type="submit"]'); message.textContent = ""; setBusy(button, true, "Guardando…");
-    var result = await supabaseClient.from("model_versions").insert({ model_id: form.elements.modelId.value, name: form.elements.name.value.trim() }).select("id").single();
-    if (result.error) { message.textContent = result.error.message; message.classList.add("is-error"); } else { var modelId = form.elements.modelId.value; form.elements.name.value = ""; await loadCredits(); document.getElementById("versionModel").value = modelId; document.getElementById("creditModel").value = modelId; renderCreditVersions(); message.textContent = "Versión agregada correctamente."; }
+    var modelId = form.elements.modelId.value; var payload = { model_id: modelId, name: form.elements.name.value.trim(), suggested_price: form.elements.suggestedPrice.value ? Number(form.elements.suggestedPrice.value) : null, active: true };
+    var query = state.editingVersionId ? supabaseClient.from("model_versions").update(payload).eq("id", state.editingVersionId) : supabaseClient.from("model_versions").insert(payload);
+    var result = await query.select("id").single();
+    if (result.error) { message.textContent = result.error.message; message.classList.add("is-error"); } else { var editing = Boolean(state.editingVersionId); await loadCredits(); document.getElementById("versionModel").value = modelId; document.getElementById("creditModel").value = modelId; resetVersionForm(modelId); renderVersionList(); renderCreditVersions(); message.textContent = editing ? "Versión actualizada correctamente." : "Versión agregada correctamente."; }
     setBusy(button, false);
+  });
+
+  document.getElementById("versionList").addEventListener("click", async function (event) {
+    var row = event.target.closest("[data-version-id]"); if (!row) return; var version = state.modelVersions.find(function (item) { return item.id === row.dataset.versionId; }); if (!version) return;
+    if (event.target.closest("[data-edit-version]")) { editVersion(version); return; }
+    if (!event.target.closest("[data-delete-version]")) return;
+    if (!window.confirm("¿Querés borrar esta versión? Si ya está asociada a créditos se archivará para conservar el historial.")) return;
+    var usage = await supabaseClient.from("bank_credit_offer_versions").select("offer_id", { count: "exact", head: true }).eq("version_id", version.id);
+    var result = usage.error ? usage : usage.count ? await supabaseClient.from("model_versions").update({ active: false }).eq("id", version.id) : await supabaseClient.from("model_versions").delete().eq("id", version.id);
+    if (result.error) { document.getElementById("versionMessage").textContent = result.error.message; document.getElementById("versionMessage").classList.add("is-error"); return; }
+    if (state.editingVersionId === version.id) resetVersionForm(version.model_id); await loadCredits(); document.getElementById("versionModel").value = version.model_id; renderVersionList();
   });
 
   document.getElementById("creditForm").addEventListener("submit", async function (event) {
@@ -760,16 +845,32 @@
     if (!versionIds.length) { message.textContent = "Elegí al menos una versión habilitada."; message.classList.add("is-error"); return; }
     var min = form.elements.minFinanced.value ? Number(form.elements.minFinanced.value) : null; var max = form.elements.maxFinanced.value ? Number(form.elements.maxFinanced.value) : null;
     if (min !== null && max !== null && min > max) { message.textContent = "El mínimo financiable no puede superar al máximo."; message.classList.add("is-error"); return; }
+    var installmentPerThousand = parseLocalizedDecimal(form.elements.installmentPerThousand.value); if (!Number.isFinite(installmentPerThousand) || installmentPerThousand <= 0) { message.textContent = "Ingresá una cuota válida por cada $1.000, por ejemplo 83,33."; message.classList.add("is-error"); return; }
     setBusy(button, true, "Guardando…");
-    var payload = { model_id: form.elements.modelId.value, financier_name: form.elements.financierName.value.trim(), offer_name: form.elements.offerName.value.trim(), term_months: Number(form.elements.termMonths.value), min_financed_amount: min, max_financed_amount: max, installment_coefficient: Number(form.elements.installmentPerMillion.value) / 1000000, breakage_rate: Number(form.elements.breakageRate.value || 0), patenting_rate: Number(form.elements.patentingRate.value || 0), fixed_expenses: Number(form.elements.fixedExpenses.value || 0), tna: form.elements.tna.value ? Number(form.elements.tna.value) : null, cftea: form.elements.cftea.value ? Number(form.elements.cftea.value) : null, valid_from: form.elements.validFrom.value || null, valid_to: form.elements.validTo.value || null, notes: form.elements.notes.value.trim() || null };
-    var result = await supabaseClient.from("bank_credit_offers").insert(payload).select("id").single();
-    if (!result.error) { var links = versionIds.map(function (versionId) { return { offer_id: result.data.id, version_id: versionId }; }); var linkResult = await supabaseClient.from("bank_credit_offer_versions").insert(links); if (linkResult.error) { await supabaseClient.from("bank_credit_offers").delete().eq("id", result.data.id); result = linkResult; } }
-    if (result.error) { message.textContent = result.error.message; message.classList.add("is-error"); } else { form.reset(); await loadCredits(); message.textContent = "Línea de crédito disponible para presupuestos."; }
+    var payload = { model_id: form.elements.modelId.value, financier_name: form.elements.financierName.value.trim(), offer_name: form.elements.offerName.value.trim(), term_months: Number(form.elements.termMonths.value), min_financed_amount: min, max_financed_amount: max, installment_coefficient: installmentPerThousand / 1000, breakage_rate: Number(form.elements.breakageRate.value || 0), patenting_rate: Number(form.elements.patentingRate.value || 0), fixed_expenses: Number(form.elements.fixedExpenses.value || 0), tna: form.elements.tna.value ? Number(form.elements.tna.value) : null, cftea: form.elements.cftea.value ? Number(form.elements.cftea.value) : null, valid_from: form.elements.validFrom.value || null, valid_to: form.elements.validTo.value || null, notes: form.elements.notes.value.trim() || "" };
+    var editingId = state.editingCreditId; var result = editingId ? await supabaseClient.from("bank_credit_offers").update(payload).eq("id", editingId).select("id").single() : await supabaseClient.from("bank_credit_offers").insert(payload).select("id").single();
+    if (!result.error && editingId) { var removeLinks = await supabaseClient.from("bank_credit_offer_versions").delete().eq("offer_id", editingId); if (removeLinks.error) result = removeLinks; }
+    if (!result.error) { var links = versionIds.map(function (versionId) { return { offer_id: result.data.id, version_id: versionId }; }); var linkResult = await supabaseClient.from("bank_credit_offer_versions").insert(links); if (linkResult.error) { if (!editingId) await supabaseClient.from("bank_credit_offers").delete().eq("id", result.data.id); result = linkResult; } }
+    if (result.error) { message.textContent = result.error.message; message.classList.add("is-error"); } else { var modelId = form.elements.modelId.value; await loadCredits(); resetCreditForm(modelId); document.getElementById("creditModel").value = modelId; renderCreditVersions(); message.textContent = editingId ? "Línea de crédito actualizada." : "Línea de crédito disponible para presupuestos."; }
     setBusy(button, false);
   });
 
   document.getElementById("creditOfferList").addEventListener("click", async function (event) {
-    var row = event.target.closest("[data-credit-id]"); if (!row || !event.target.closest("[data-toggle-credit]")) return; var offer = state.creditOffers.find(function (item) { return item.id === row.dataset.creditId; }); if (!offer) return; var result = await supabaseClient.from("bank_credit_offers").update({ active: !offer.active }).eq("id", offer.id); if (!result.error) loadCredits();
+    var row = event.target.closest("[data-credit-id]"); if (!row) return; var offer = state.creditOffers.find(function (item) { return item.id === row.dataset.creditId; }); if (!offer) return;
+    if (event.target.closest("[data-edit-credit]")) { editCredit(offer); return; }
+    if (event.target.closest("[data-toggle-credit]")) { var toggle = await supabaseClient.from("bank_credit_offers").update({ active: !offer.active }).eq("id", offer.id); if (!toggle.error) await loadCredits(); return; }
+    if (event.target.closest("[data-duplicate-credit]")) {
+      var duplicate = { model_id: offer.model_id, financier_name: offer.financier_name, offer_name: offer.offer_name + " (copia)", term_months: offer.term_months, min_financed_amount: offer.min_financed_amount, max_financed_amount: offer.max_financed_amount, installment_coefficient: offer.installment_coefficient, breakage_rate: offer.breakage_rate, patenting_rate: offer.patenting_rate, fixed_expenses: offer.fixed_expenses, tna: offer.tna, cftea: offer.cftea, notes: offer.notes || "", valid_from: offer.valid_from, valid_to: offer.valid_to, active: false, sort_order: Number(offer.sort_order || 0) + 1 };
+      var created = await supabaseClient.from("bank_credit_offers").insert(duplicate).select("id").single();
+      if (!created.error) { var versionIds = (offer.versions || []).map(function (link) { var version = Array.isArray(link.version) ? link.version[0] : link.version; return version && version.id; }).filter(Boolean); if (versionIds.length) { var copiedLinks = await supabaseClient.from("bank_credit_offer_versions").insert(versionIds.map(function (versionId) { return { offer_id: created.data.id, version_id: versionId }; })); if (copiedLinks.error) created = copiedLinks; } }
+      if (!created.error) await loadCredits(); else { document.getElementById("creditMessage").textContent = created.error.message; document.getElementById("creditMessage").classList.add("is-error"); } return;
+    }
+    if (event.target.closest("[data-delete-credit]")) {
+      if (!window.confirm("¿Querés borrar esta campaña de crédito? Si ya tiene presupuestos emitidos quedará archivada.")) return;
+      var usage = await supabaseClient.from("sales_quotes").select("id", { count: "exact", head: true }).eq("bank_credit_offer_id", offer.id);
+      var deleted = usage.error ? usage : usage.count ? await supabaseClient.from("bank_credit_offers").update({ active: false }).eq("id", offer.id) : await supabaseClient.from("bank_credit_offers").delete().eq("id", offer.id);
+      if (!deleted.error) { if (state.editingCreditId === offer.id) resetCreditForm(offer.model_id); await loadCredits(); } else { document.getElementById("creditMessage").textContent = deleted.error.message; document.getElementById("creditMessage").classList.add("is-error"); }
+    }
   });
 
   exportExcelButton.addEventListener("click", downloadPrequalifications);
