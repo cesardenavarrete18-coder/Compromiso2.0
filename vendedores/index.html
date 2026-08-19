@@ -468,9 +468,9 @@
               <label>Nuevo estado<select id="crmStatusInput"></select></label>
               <label>Prioridad<select id="crmPriorityInput"><option value="low">Baja</option><option value="normal">Normal</option><option value="high">Alta</option></select></label>
               <label class="wide">Resultado / comentario<textarea id="crmNoteInput" rows="3" placeholder="Qué se habló y cuál es el próximo paso"></textarea></label>
-              <label>Fecha del próximo contacto<input id="crmNextContactDateInput" type="text" inputmode="numeric" maxlength="10" placeholder="dd/mm/aaaa" autocomplete="off"></label>
-              <label>Hora del próximo contacto<input id="crmNextContactTimeInput" type="time" step="300"></label>
-              <label>Motivo del próximo contacto<input id="crmNextContactNoteInput" type="text" placeholder="Ej. Confirmar documentación"></label>
+              <label data-next-contact-field>Fecha del próximo contacto<input id="crmNextContactDateInput" type="text" inputmode="numeric" maxlength="10" placeholder="dd/mm/aaaa" autocomplete="off"></label>
+              <label data-next-contact-field>Hora del próximo contacto<input id="crmNextContactTimeInput" type="time" step="300"></label>
+              <label data-next-contact-field>Motivo del próximo contacto<input id="crmNextContactNoteInput" type="text" placeholder="Ej. Confirmar documentación"></label>
               <label class="crm-conditional" data-status-field="entrevista">Fecha de la entrevista<input id="crmInterviewDateInput" type="text" inputmode="numeric" maxlength="10" placeholder="dd/mm/aaaa" autocomplete="off"></label>
               <label class="crm-conditional" data-status-field="entrevista">Hora de la entrevista<input id="crmInterviewTimeInput" type="time" step="300"></label>
               <label class="crm-conditional" data-status-field="entrevista">Sucursal / lugar<input id="crmInterviewLocationInput" type="text" placeholder="Ej. Salón Volkswagen"></label>

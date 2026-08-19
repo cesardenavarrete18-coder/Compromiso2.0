@@ -309,7 +309,14 @@
 
   function updateConditionalFields() {
     var status = document.getElementById("crmStatusInput").value;
+    var terminalStatus = ["desistir", "invalido"].includes(status);
     document.querySelectorAll("[data-status-field]").forEach(function (field) { field.classList.toggle("visible", field.dataset.statusField === status); });
+    document.querySelectorAll("[data-next-contact-field]").forEach(function (field) { field.hidden = terminalStatus; });
+    if (terminalStatus) {
+      document.getElementById("crmNextContactDateInput").value = "";
+      document.getElementById("crmNextContactTimeInput").value = "";
+      document.getElementById("crmNextContactNoteInput").value = "";
+    }
     var automated = state.activeLead && nextPendingTask(state.activeLead.id) && ["nuevo", "no_contesta"].includes(status);
     var help = {
       no_contesta: automated ? "El proceso de seguimiento ya programó automáticamente el próximo intento." : "Programá el próximo intento.",
@@ -406,12 +413,17 @@
     var note = document.getElementById("crmNoteInput").value.trim();
     var deposit = document.getElementById("crmDepositInput").value;
     var errorBox = document.getElementById("crmFormError");
+    var terminalStatus = ["desistir", "invalido"].includes(status);
     errorBox.textContent = "";
-    var nextContact;
-    var interview;
+    var nextContact = null;
+    var interview = null;
     try {
-      nextContact = parseArgentineDateTime(document.getElementById("crmNextContactDateInput").value, document.getElementById("crmNextContactTimeInput").value, "próximo contacto");
-      interview = parseArgentineDateTime(document.getElementById("crmInterviewDateInput").value, document.getElementById("crmInterviewTimeInput").value, "la entrevista");
+      if (!terminalStatus) {
+        nextContact = parseArgentineDateTime(document.getElementById("crmNextContactDateInput").value, document.getElementById("crmNextContactTimeInput").value, "próximo contacto");
+      }
+      if (status === "entrevista") {
+        interview = parseArgentineDateTime(document.getElementById("crmInterviewDateInput").value, document.getElementById("crmInterviewTimeInput").value, "la entrevista");
+      }
     } catch (error) {
       errorBox.textContent = error.message;
       return;
@@ -433,7 +445,7 @@
       p_status: status,
       p_note: note,
       p_next_contact_at: nextContact,
-      p_next_contact_note: document.getElementById("crmNextContactNoteInput").value.trim(),
+      p_next_contact_note: terminalStatus ? "" : document.getElementById("crmNextContactNoteInput").value.trim(),
       p_contact_outcome: note,
       p_interview_at: interview,
       p_interview_location: document.getElementById("crmInterviewLocationInput").value.trim(),
