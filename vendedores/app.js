@@ -864,6 +864,29 @@
     }).format(new Date(value + "T12:00:00"));
   }
 
+  function parseDisplayDate(value) {
+    var match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(String(value || "").trim());
+    var parsed;
+    if (!match) {
+      return "";
+    }
+    parsed = new Date(Number(match[3]), Number(match[2]) - 1, Number(match[1]));
+    if (parsed.getFullYear() !== Number(match[3]) || parsed.getMonth() !== Number(match[2]) - 1 || parsed.getDate() !== Number(match[1])) {
+      return "";
+    }
+    return match[3] + "-" + match[2] + "-" + match[1];
+  }
+
+  function displayDateInput(value) {
+    var match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(value || "").slice(0, 10));
+    return match ? match[3] + "/" + match[2] + "/" + match[1] : String(value || "");
+  }
+
+  function maskDateInput(field) {
+    var clean = String(field.value || "").replace(/\D/g, "").slice(0, 8);
+    field.value = [clean.slice(0, 2), clean.slice(2, 4), clean.slice(4, 8)].filter(Boolean).join("/");
+  }
+
   function readApplicationData() {
     var fields = applicationForm.elements;
     return {
@@ -872,7 +895,7 @@
       documentType: String(fields.documentType.value || "").trim(),
       documentNumber: digits(fields.documentNumber.value),
       cuil: digits(fields.cuil.value),
-      birthDate: fields.birthDate.value || "",
+      birthDate: parseDisplayDate(fields.birthDate.value),
       address: String(fields.address.value || "").trim().replace(/\s+/g, " "),
       cityProvince: String(fields.cityProvince.value || "").trim().replace(/\s+/g, " "),
       postalCode: String(fields.postalCode.value || "").trim().toUpperCase(),
@@ -960,7 +983,7 @@
     if (field.type === "checkbox") {
       field.checked = Boolean(value);
     } else if (value !== null && value !== undefined) {
-      field.value = String(value);
+      field.value = name === "birthDate" ? displayDateInput(value) : String(value);
     }
   }
 
@@ -1332,6 +1355,10 @@
   });
 
   applicationButton.addEventListener("click", openCommercialApplication);
+
+  applicationForm.elements.birthDate.addEventListener("input", function () {
+    maskDateInput(this);
+  });
 
   applicationForm.addEventListener("submit", async function (event) {
     var data;
