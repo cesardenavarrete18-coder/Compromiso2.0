@@ -278,7 +278,7 @@
   async function loadCentralCampaigns() {
     var response = await supabaseClient
       .from("campaigns")
-      .select("id, plan_name, version_name, transmission, installment_count, advance_amount, installment_amount, installment_is_from, sort_order, active, bonus, benefits, slots, valid_from, valid_to, timer_hours, model:models!inner(id, name, image_path, short_description, sort_order, active, brand:brands!inner(name, description, image_path, sort_order, active))");
+      .select("id, plan_name, version_name, transmission, installment_count, final_price, advance_amount, installment_amount, installment_is_from, sort_order, active, bonus, benefits, slots, valid_from, valid_to, timer_hours, model:models!inner(id, name, image_path, short_description, sort_order, active, brand:brands!inner(name, description, image_path, sort_order, active))");
     var grouped = {};
     if (response.error) {
       throw response.error;
@@ -316,6 +316,7 @@
         versionName: row.version_name || "",
         transmission: row.transmission || "",
         installmentCount: row.installment_count,
+        finalPrice: row.final_price,
         advanceAmount: row.advance_amount,
         installmentAmount: row.installment_amount,
         installmentIsFrom: row.installment_is_from !== false,
@@ -725,6 +726,7 @@
         version: state.model.versionName,
         transmission: state.model.transmission,
         installmentCount: state.model.installmentCount,
+        finalPrice: state.model.finalPrice,
         advance: state.model.advance,
         installment: state.model.installment,
         bonus: state.model.bonus,
@@ -887,12 +889,11 @@
       monthlyIncome: fields.monthlyIncome.value === "" ? null : Number(fields.monthlyIncome.value),
       automaticDebit: fields.automaticDebit.value === "true",
       automaticDebitSelected: fields.automaticDebit.value !== "",
-      deferredInstallment: fields.deferredInstallment.value === "true",
-      deferredInstallmentSelected: fields.deferredInstallment.value !== "",
-      installmentsPaid: Number(fields.installmentsPaid.value),
-      installmentsToPay: Number(fields.installmentsToPay.value),
+      deferredInstallment: false,
+      installmentsPaid: 0,
+      installmentsToPay: Number(state.model.installmentCount) || 1,
       planType: String(fields.planType.value || "").trim().replace(/\s+/g, " "),
-      agreedPrice: parseMoney(fields.agreedPrice.value),
+      agreedPrice: Number(state.model.finalPrice) || null,
       firstPaymentDate: "",
       firstPaymentAmount: null,
       secondPaymentDate: "",
@@ -939,14 +940,11 @@
     if (!Number.isInteger(data.monthlyIncome) || data.monthlyIncome < 1) {
       return "Ingresá el sueldo mensual como un número entero.";
     }
-    if (!data.automaticDebitSelected || !data.deferredInstallmentSelected) {
-      return "Indicá si corresponde débito automático y cuota diferida.";
-    }
-    if (!Number.isInteger(data.installmentsPaid) || data.installmentsPaid < 0 || !Number.isInteger(data.installmentsToPay) || data.installmentsToPay < 1) {
-      return "Revisá la cantidad de cuotas abonadas y cuotas a pagar.";
+    if (!data.automaticDebitSelected) {
+      return "Indicá si corresponde débito automático.";
     }
     if (data.planType.length < 3 || !data.agreedPrice) {
-      return "Completá el tipo de plan y el precio pactado.";
+      return "El plan seleccionado debe tener un valor final vigente cargado en su ficha.";
     }
     if (!data.consent) {
       return "El vendedor y el cliente deben confirmar los datos antes de enviar el datero.";
@@ -995,11 +993,8 @@
       employmentSeniority: "",
       monthlyIncome: "",
       automaticDebit: "",
-      deferredInstallment: "",
-      installmentsPaid: 0,
-      installmentsToPay: state.model.installmentCount || "",
       planType: planDescription(state.model),
-      agreedPrice: "",
+      agreedPrice: state.model.finalPrice || "",
       firstPaymentDate: "",
       firstPaymentAmount: "",
       secondPaymentDate: "",
@@ -1010,12 +1005,13 @@
     applicationForm.reset();
     Object.keys(data).forEach(function (name) {
       var value = data[name];
-      if (name === "automaticDebit" || name === "deferredInstallment") {
+      if (name === "automaticDebit") {
         value = value === "" ? "" : String(value);
       }
       setApplicationField(name === "consent" ? "applicationConsent" : name, value);
     });
     setApplicationField("cuil", formatCuilInput(data.cuil));
+    setApplicationField("agreedPrice", state.model.finalPrice ? formatMoney(state.model.finalPrice) : "");
     document.getElementById("applicationRequestCode").textContent = state.requestId;
     document.getElementById("applicationVehicle").textContent = state.brand + " " + vehicleTitle(state.model);
     document.getElementById("applicationCampaign").textContent = planDescription(state.model);
@@ -1070,6 +1066,7 @@
         version: state.model.versionName,
         transmission: state.model.transmission,
         installmentCount: state.model.installmentCount,
+        finalPrice: state.model.finalPrice,
         advance: state.model.advance,
         installment: state.model.installment,
         availability: state.model.availability,
@@ -1133,13 +1130,9 @@
           minuteRow("Tipo de plan", planDescription(state.model)) +
           minuteRow("Anticipo informado", state.model.advance) +
           minuteRow("Cuota informada", state.model.installment) +
-          minuteRow("Precio pactado", formatMoney(data.agreedPrice)) +
-          minuteRow("Cuotas abonadas", String(data.installmentsPaid)) +
-          minuteRow("Cuotas a pagar", String(data.installmentsToPay)) +
+          minuteRow("Valor final del plan", formatMoney(data.agreedPrice)) +
           minuteRow("Débito automático", data.automaticDebit ? "Sí" : "No") +
-          minuteRow("Cuota diferida", data.deferredInstallment ? "Sí" : "No") +
           minuteRow("Asesor", state.seller.name + " · " + state.seller.code) +
-          minuteRow("Bonificación", state.model.bonus) +
         '</div></section>' +
         '<section class="minute-print-section"><h2>Carácter provisorio</h2><ol class="minute-terms">' +
           '<li>El presente datero registra información provisoria para que Supervisión evalúe la operación. No constituye una minuta definitiva, solicitud de adhesión, aprobación financiera, adjudicación ni obligación de entrega.</li>' +

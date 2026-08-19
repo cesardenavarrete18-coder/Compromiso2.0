@@ -360,11 +360,8 @@
               <div class="application-vehicle-summary"><strong id="applicationVehicle"></strong><span id="applicationCampaign"></span></div>
               <div class="application-grid commercial-grid">
                 <label class="field-group"><span>Débito automático</span><select class="text-input" name="automaticDebit" required><option value="">Seleccionar</option><option value="true">Sí</option><option value="false">No</option></select></label>
-                <label class="field-group"><span>Cuota diferida</span><select class="text-input" name="deferredInstallment" required><option value="">Seleccionar</option><option value="true">Sí</option><option value="false">No</option></select></label>
-                <label class="field-group"><span>Cuotas abonadas</span><input class="text-input" name="installmentsPaid" type="number" min="0" max="999" value="0" required></label>
-                <label class="field-group"><span>Cuotas a pagar</span><input class="text-input" name="installmentsToPay" type="number" min="0" max="999" required></label>
                 <label class="field-group"><span>Tipo de plan</span><input class="text-input" name="planType" type="text" required></label>
-                <label class="field-group"><span>Precio pactado</span><input class="text-input" name="agreedPrice" type="text" inputmode="numeric" placeholder="$" required></label>
+                <label class="field-group"><span>Valor final del plan</span><input class="text-input" name="agreedPrice" type="text" inputmode="numeric" placeholder="$" readonly required><small>Se toma automáticamente de la ficha vigente del plan.</small></label>
               </div>
             </section>
 

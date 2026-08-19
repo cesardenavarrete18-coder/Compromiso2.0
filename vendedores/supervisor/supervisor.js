@@ -461,8 +461,7 @@
       '<div><small>' + escapeHtml(provisional.document_type) + ' / CUIL</small><strong>' + escapeHtml(provisional.document_number + " · " + provisional.cuil) + '</strong></div>' +
       '<div><small>Contacto</small><strong>' + escapeHtml(provisional.primary_phone + " · " + provisional.email) + '</strong></div>' +
       '<div><small>Vehículo y plan</small><strong>' + escapeHtml([provisional.brand_name, provisional.model_name, provisional.plan_type].filter(Boolean).join(" · ")) + '</strong></div>' +
-      '<div><small>Valor de la operación</small><strong>' + escapeHtml(money(provisional.agreed_price)) + '</strong></div>' +
-      '<div><small>Cuotas del plan</small><strong>' + escapeHtml(provisional.installments_paid + " abonada / " + provisional.installments_to_pay + " a abonar") + '</strong></div>' +
+      '<div><small>Valor final del plan</small><strong>' + escapeHtml(money(provisional.agreed_price)) + '</strong></div>' +
       '<div><small>Situación laboral</small><strong>' + escapeHtml(provisional.employment_status + " · " + provisional.employer_name) + '</strong></div>' +
       '<div><small>Ingreso declarado</small><strong>' + escapeHtml(money(provisional.monthly_income)) + '</strong></div>' +
     '</div><p>Este datero es provisorio y no registra pagos. Si aprobás la venta, la minuta definitiva volverá al vendedor en “Mis ventas”.</p></section>';
