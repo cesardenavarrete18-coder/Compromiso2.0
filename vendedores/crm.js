@@ -268,7 +268,7 @@
     var target = document.getElementById("crm" + viewName.charAt(0).toUpperCase() + viewName.slice(1) + "View");
     if (target) target.classList.add("is-active");
     document.getElementById("stepper").hidden = true;
-    document.getElementById("pageTitle").textContent = viewName === "agenda" ? "Mi agenda comercial" : viewName === "pipeline" ? "Embudo de oportunidades" : viewName === "quotes" ? "Presupuestos comerciales" : viewName === "sales" ? "Estado de mis ventas" : viewName === "recalls" ? "Panel de rellamados" : "Ranking del equipo";
+    document.getElementById("pageTitle").textContent = viewName === "agenda" ? "Mi agenda comercial" : viewName === "pipeline" ? "Embudo de oportunidades" : viewName === "quotes" ? "Presupuestos comerciales" : viewName === "sales" ? "Mis ventas" : viewName === "recalls" ? "Panel de rellamados" : "Ranking del equipo";
     document.getElementById("headerKicker").textContent = viewName === "recalls" ? "Base histórica asignada" : "CRM Grupo Sur Automotores";
     document.querySelectorAll(".nav-item").forEach(function (item) { item.classList.toggle("is-active", item.dataset.crmView === viewName); });
     if (viewName === "ranking") loadRanking();
@@ -309,7 +309,14 @@
 
   function updateConditionalFields() {
     var status = document.getElementById("crmStatusInput").value;
+    var terminalStatus = ["desistir", "invalido"].includes(status);
     document.querySelectorAll("[data-status-field]").forEach(function (field) { field.classList.toggle("visible", field.dataset.statusField === status); });
+    document.querySelectorAll("[data-next-contact-field]").forEach(function (field) { field.hidden = terminalStatus; });
+    if (terminalStatus) {
+      document.getElementById("crmNextContactDateInput").value = "";
+      document.getElementById("crmNextContactTimeInput").value = "";
+      document.getElementById("crmNextContactNoteInput").value = "";
+    }
     var automated = state.activeLead && nextPendingTask(state.activeLead.id) && ["nuevo", "no_contesta"].includes(status);
     var help = {
       no_contesta: automated ? "El proceso de seguimiento ya programó automáticamente el próximo intento." : "Programá el próximo intento.",
@@ -389,7 +396,7 @@
     managementButton.disabled = crm.status === "venta";
     managementButton.textContent = crm.status === "venta" ? "Venta confirmada" : "Guardar gestión";
     saleButton.disabled = crm.sale_confirmation_status === "pending" || crm.sale_confirmation_status === "confirmed";
-    saleButton.textContent = crm.sale_confirmation_status === "pending" ? "Venta pendiente" : crm.sale_confirmation_status === "confirmed" ? "Venta confirmada" : "Solicitar venta";
+    saleButton.textContent = crm.sale_confirmation_status === "pending" ? "Datero pendiente" : crm.sale_confirmation_status === "confirmed" ? "Venta confirmada" : "Enviar datero";
     renderNextCard(lead);
     renderProtocol(lead);
     updateConditionalFields();
@@ -406,12 +413,17 @@
     var note = document.getElementById("crmNoteInput").value.trim();
     var deposit = document.getElementById("crmDepositInput").value;
     var errorBox = document.getElementById("crmFormError");
+    var terminalStatus = ["desistir", "invalido"].includes(status);
     errorBox.textContent = "";
-    var nextContact;
-    var interview;
+    var nextContact = null;
+    var interview = null;
     try {
-      nextContact = parseArgentineDateTime(document.getElementById("crmNextContactDateInput").value, document.getElementById("crmNextContactTimeInput").value, "próximo contacto");
-      interview = parseArgentineDateTime(document.getElementById("crmInterviewDateInput").value, document.getElementById("crmInterviewTimeInput").value, "la entrevista");
+      if (!terminalStatus) {
+        nextContact = parseArgentineDateTime(document.getElementById("crmNextContactDateInput").value, document.getElementById("crmNextContactTimeInput").value, "próximo contacto");
+      }
+      if (status === "entrevista") {
+        interview = parseArgentineDateTime(document.getElementById("crmInterviewDateInput").value, document.getElementById("crmInterviewTimeInput").value, "la entrevista");
+      }
     } catch (error) {
       errorBox.textContent = error.message;
       return;
@@ -433,7 +445,7 @@
       p_status: status,
       p_note: note,
       p_next_contact_at: nextContact,
-      p_next_contact_note: document.getElementById("crmNextContactNoteInput").value.trim(),
+      p_next_contact_note: terminalStatus ? "" : document.getElementById("crmNextContactNoteInput").value.trim(),
       p_contact_outcome: note,
       p_interview_at: interview,
       p_interview_location: document.getElementById("crmInterviewLocationInput").value.trim(),

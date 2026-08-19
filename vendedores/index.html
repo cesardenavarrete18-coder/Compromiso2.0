@@ -307,9 +307,9 @@
           <div class="section-heading compact-heading">
             <div>
               <button class="back-link" type="button" data-action="back-to-result">← Volver a la precalificación</button>
-              <p class="eyebrow dark">Segunda etapa comercial</p>
-              <h2 id="applicationTitle">Completá la solicitud junto al cliente</h2>
-              <p>Los datos iniciales ya están precargados. Revisá la información antes de guardar y generar la minuta.</p>
+              <p class="eyebrow dark">Datero de operación</p>
+              <h2 id="applicationTitle">Completá el datero junto al cliente</h2>
+              <p>Los datos iniciales ya están precargados. Revisalos antes de enviar la operación a Supervisión.</p>
             </div>
             <span class="application-code" id="applicationRequestCode"></span>
           </div>
@@ -323,7 +323,7 @@
                 <label class="field-group"><span>Tipo de documento</span><select class="text-input" name="documentType" required><option value="DNI">DNI</option><option value="LC">LC</option><option value="LE">LE</option><option value="Pasaporte">Pasaporte</option></select></label>
                 <label class="field-group"><span>Número de documento</span><input class="text-input" name="documentNumber" type="text" inputmode="numeric" maxlength="12" required></label>
                 <label class="field-group"><span>CUIL</span><input class="text-input" name="cuil" type="text" readonly></label>
-                <label class="field-group"><span>Fecha de nacimiento</span><input class="text-input" name="birthDate" type="date" required></label>
+                <label class="field-group"><span>Fecha de nacimiento</span><input class="text-input" name="birthDate" type="text" inputmode="numeric" maxlength="10" placeholder="dd/mm/aaaa" autocomplete="off" required></label>
                 <label class="field-group field-wide"><span>Domicilio</span><input class="text-input" name="address" type="text" autocomplete="street-address" required></label>
                 <label class="field-group"><span>Localidad / Provincia</span><input class="text-input" name="cityProvince" type="text" required></label>
                 <label class="field-group"><span>Código postal</span><input class="text-input" name="postalCode" type="text" autocomplete="postal-code" maxlength="10" required></label>
@@ -360,27 +360,20 @@
               <div class="application-vehicle-summary"><strong id="applicationVehicle"></strong><span id="applicationCampaign"></span></div>
               <div class="application-grid commercial-grid">
                 <label class="field-group"><span>Débito automático</span><select class="text-input" name="automaticDebit" required><option value="">Seleccionar</option><option value="true">Sí</option><option value="false">No</option></select></label>
-                <label class="field-group"><span>Cuota diferida</span><select class="text-input" name="deferredInstallment" required><option value="">Seleccionar</option><option value="true">Sí</option><option value="false">No</option></select></label>
-                <label class="field-group"><span>Cuotas abonadas</span><input class="text-input" name="installmentsPaid" type="number" min="0" max="999" value="0" required></label>
-                <label class="field-group"><span>Cuotas a pagar</span><input class="text-input" name="installmentsToPay" type="number" min="0" max="999" required></label>
                 <label class="field-group"><span>Tipo de plan</span><input class="text-input" name="planType" type="text" required></label>
-                <label class="field-group"><span>Precio pactado</span><input class="text-input" name="agreedPrice" type="text" inputmode="numeric" placeholder="$" required></label>
-                <label class="field-group"><span>Fecha del primer pago</span><input class="text-input" name="firstPaymentDate" type="date"></label>
-                <label class="field-group"><span>Importe del primer pago</span><input class="text-input" name="firstPaymentAmount" type="text" inputmode="numeric" placeholder="$"></label>
-                <label class="field-group"><span>Fecha del segundo pago</span><input class="text-input" name="secondPaymentDate" type="date"></label>
-                <label class="field-group"><span>Importe del segundo pago</span><input class="text-input" name="secondPaymentAmount" type="text" inputmode="numeric" placeholder="$"></label>
+                <label class="field-group"><span>Valor final del plan</span><input class="text-input" name="agreedPrice" type="text" inputmode="numeric" placeholder="$" readonly required><small>Se toma automáticamente de la ficha vigente del plan.</small></label>
               </div>
             </section>
 
             <label class="consent-box application-consent">
               <input name="applicationConsent" type="checkbox" required>
-              <span><strong>Confirmación conjunta</strong>El vendedor leyó la información junto al cliente y ambas partes confirman que los datos y condiciones declarados son correctos para emitir esta minuta comercial.</span>
+              <span><strong>Confirmación conjunta</strong>El vendedor leyó la información junto al cliente y ambas partes confirman que los datos declarados son correctos para enviar este datero provisorio a Supervisión.</span>
             </label>
 
             <p class="form-error" id="applicationError" role="alert" aria-live="polite"></p>
             <div class="application-submit-row">
-              <p>Al continuar, la solicitud quedará guardada y se abrirá el diálogo para descargarla como PDF.</p>
-              <button class="primary-button" id="applicationSubmitButton" type="submit">Guardar y generar PDF</button>
+              <p>Al continuar, la operación quedará pendiente de aprobación. No se registran pagos en esta instancia.</p>
+              <button class="primary-button" id="applicationSubmitButton" type="submit">Guardar y enviar a supervisión</button>
             </div>
           </form>
         </section>
@@ -430,7 +423,7 @@
         </section>
 
         <section class="view crm-view" id="crmSalesView" aria-labelledby="crmSalesTitle">
-          <div class="crm-hero"><div><p class="eyebrow dark">Seguimiento limitado</p><h2 id="crmSalesTitle">Estado de mis ventas</h2><p>Después de la aprobación del supervisor, el Lead deja tu CRM y aquí sólo ves su avance administrativo.</p></div><button class="primary-button compact-button" id="refreshSalesButton" type="button">Actualizar</button></div>
+          <div class="crm-hero"><div><p class="eyebrow dark">Seguimiento limitado</p><h2 id="crmSalesTitle">Mis ventas</h2><p>Después de la aprobación del supervisor, la minuta vuelve acá para que la completes y puedas seguir su avance administrativo.</p></div><button class="primary-button compact-button" id="refreshSalesButton" type="button">Actualizar</button></div>
           <div class="seller-notifications" id="salesNotifications"></div><div class="sales-tracking-list" id="salesTrackingList"></div>
         </section>
 
@@ -465,7 +458,7 @@
       <div class="crm-detail-grid">
         <section class="crm-detail-main">
           <div class="crm-client-summary" id="crmClientSummary"></div>
-          <div class="crm-quick-actions"><a class="crm-action-link" id="crmCallLink" href="#">Llamar</a><button class="crm-action-link" id="crmCommentButton" type="button">Agregar comentario</button><button class="crm-action-link" id="crmBudgetButton" type="button">Presupuesto</button><button class="crm-action-link accent" id="crmSaleButton" type="button">Solicitar venta</button></div>
+          <div class="crm-quick-actions"><a class="crm-action-link" id="crmCallLink" href="#">Llamar</a><button class="crm-action-link" id="crmCommentButton" type="button">Agregar comentario</button><button class="crm-action-link" id="crmBudgetButton" type="button">Presupuesto</button><button class="crm-action-link accent" id="crmSaleButton" type="button">Enviar datero</button></div>
           <div class="crm-tabs"><button class="active" type="button" data-crm-tab="manage">Gestión y seguimiento</button><button type="button" data-crm-tab="timeline">Historial</button><button type="button" data-crm-tab="customer">Consultas previas</button><button type="button" data-crm-tab="chat">Conversación IA</button></div>
           <div class="crm-tab-panel active" data-crm-panel="manage">
             <div id="crmProtocol"></div>
@@ -475,9 +468,9 @@
               <label>Nuevo estado<select id="crmStatusInput"></select></label>
               <label>Prioridad<select id="crmPriorityInput"><option value="low">Baja</option><option value="normal">Normal</option><option value="high">Alta</option></select></label>
               <label class="wide">Resultado / comentario<textarea id="crmNoteInput" rows="3" placeholder="Qué se habló y cuál es el próximo paso"></textarea></label>
-              <label>Fecha del próximo contacto<input id="crmNextContactDateInput" type="text" inputmode="numeric" maxlength="10" placeholder="dd/mm/aaaa" autocomplete="off"></label>
-              <label>Hora del próximo contacto<input id="crmNextContactTimeInput" type="time" step="300"></label>
-              <label>Motivo del próximo contacto<input id="crmNextContactNoteInput" type="text" placeholder="Ej. Confirmar documentación"></label>
+              <label data-next-contact-field>Fecha del próximo contacto<input id="crmNextContactDateInput" type="text" inputmode="numeric" maxlength="10" placeholder="dd/mm/aaaa" autocomplete="off"></label>
+              <label data-next-contact-field>Hora del próximo contacto<input id="crmNextContactTimeInput" type="time" step="300"></label>
+              <label data-next-contact-field>Motivo del próximo contacto<input id="crmNextContactNoteInput" type="text" placeholder="Ej. Confirmar documentación"></label>
               <label class="crm-conditional" data-status-field="entrevista">Fecha de la entrevista<input id="crmInterviewDateInput" type="text" inputmode="numeric" maxlength="10" placeholder="dd/mm/aaaa" autocomplete="off"></label>
               <label class="crm-conditional" data-status-field="entrevista">Hora de la entrevista<input id="crmInterviewTimeInput" type="time" step="300"></label>
               <label class="crm-conditional" data-status-field="entrevista">Sucursal / lugar<input id="crmInterviewLocationInput" type="text" placeholder="Ej. Salón Volkswagen"></label>
@@ -499,7 +492,7 @@
 
   <dialog class="crm-dialog small" id="crmAnsweredDialog"><form method="dialog" class="crm-dialog-shell"><button class="crm-dialog-close" value="cancel" aria-label="Cancelar">×</button><p class="eyebrow dark">Cliente contactado</p><h2>Definir el próximo paso</h2><p class="crm-dialog-copy">La respuesta se registra únicamente cuando queda programada la próxima acción comercial.</p><div class="crm-form-grid answered-follow-up-grid"><label>Fecha del próximo contacto<input id="crmAnsweredDate" type="text" inputmode="numeric" maxlength="10" placeholder="dd/mm/aaaa" autocomplete="off"></label><label>Hora<input id="crmAnsweredTime" type="time" step="300"></label><label class="wide">Motivo / acción acordada<input id="crmAnsweredNote" type="text" placeholder="Ej. Enviar propuesta y confirmar documentación"></label></div><p class="crm-form-error" id="crmAnsweredError"></p><button class="primary-button" id="crmAnsweredSave" type="button">Guardar respuesta y próximo paso</button></form></dialog>
 
-  <dialog class="crm-dialog small" id="crmSaleDialog"><form method="dialog" class="crm-dialog-shell"><button class="crm-dialog-close" value="cancel" aria-label="Cerrar">×</button><p class="eyebrow dark">Confirmación de supervisión</p><h2>Solicitar registro de venta</h2><label>Presupuesto asociado · opcional<select id="crmSaleQuote"><option value="">Sin presupuesto asociado</option></select></label><p class="crm-form-help" id="crmSaleQuoteHelp">Si elegís un presupuesto de plan, el vehículo y el importe se toman de esa propuesta.</p><label>Vehículo vendido<input id="crmSaleVehicle" type="text" placeholder="Ej. Volkswagen Amarok Trendline"></label><label>Importe de la operación · opcional<input id="crmSaleAmount" type="number" min="0" step="1" placeholder="$"></label><label>Observaciones<textarea id="crmSaleNotes" rows="4"></textarea></label><p class="crm-form-error" id="crmSaleError"></p><button class="primary-button" id="crmSaleSubmit" type="button">Enviar a supervisión</button></form></dialog>
+  <dialog class="crm-dialog small" id="crmSaleDialog"><form method="dialog" class="crm-dialog-shell"><button class="crm-dialog-close" value="cancel" aria-label="Cerrar">×</button><p class="eyebrow dark">Datero de operación</p><h2>Enviar venta a supervisión</h2><label>Presupuesto asociado · opcional<select id="crmSaleQuote"><option value="">Sin presupuesto asociado</option></select></label><p class="crm-form-help" id="crmSaleQuoteHelp">Si elegís un presupuesto de plan, el vehículo y el importe se toman de esa propuesta.</p><label>Vehículo vendido<input id="crmSaleVehicle" type="text" placeholder="Ej. Volkswagen Amarok Trendline"></label><label>Importe de la operación · opcional<input id="crmSaleAmount" type="number" min="0" step="1" placeholder="$"></label><label>Observaciones<textarea id="crmSaleNotes" rows="4"></textarea></label><p class="crm-form-error" id="crmSaleError"></p><button class="primary-button" id="crmSaleSubmit" type="button">Enviar datero a supervisión</button></form></dialog>
 
   <dialog class="crm-dialog small" id="recallAttemptDialog"><form method="dialog" class="crm-dialog-shell" id="recallAttemptForm"><button class="crm-dialog-close" value="cancel" aria-label="Cerrar">×</button><p class="eyebrow dark">Gestión independiente</p><h2 id="recallAttemptTitle">Registrar rellamado</h2><p class="crm-dialog-copy" id="recallAttemptMeta"></p><div class="crm-form-grid"><label>Fecha de la llamada<input name="contactDate" type="text" inputmode="numeric" maxlength="10" placeholder="dd/mm/aaaa" required></label><label>Franja horaria<select name="timeBand" required><option value="10_12">10:00 a 12:00</option><option value="14_16">14:00 a 16:00</option><option value="17_19">17:00 a 19:00</option></select></label><label class="wide">Resultado<select name="outcome" required><option value="no_answer">No respondió</option><option value="answered">Respondió</option><option value="not_interested">No está interesado</option><option value="invalid">Contacto inválido</option></select></label><label class="wide">Comentario<textarea name="note" rows="3" placeholder="Resultado de la llamada"></textarea></label></div><div class="recall-next-contact" id="recallNextContact" hidden><strong>Pasar a la agenda</strong><div class="crm-form-grid"><label>Próximo contacto<input name="nextDate" type="text" inputmode="numeric" maxlength="10" placeholder="dd/mm/aaaa"></label><label>Hora<input name="nextTime" type="time" step="300"></label><label class="wide">Motivo<input name="nextNote" type="text" placeholder="Ej. Enviar propuesta y confirmar interés"></label></div></div><p class="crm-form-error" id="recallAttemptError"></p><button class="primary-button" id="recallAttemptSubmit" type="submit">Guardar llamada</button></form></dialog>
 

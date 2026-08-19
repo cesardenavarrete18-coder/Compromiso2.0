@@ -278,7 +278,7 @@
   async function loadCentralCampaigns() {
     var response = await supabaseClient
       .from("campaigns")
-      .select("id, plan_name, version_name, transmission, installment_count, advance_amount, installment_amount, installment_is_from, sort_order, active, bonus, benefits, slots, valid_from, valid_to, timer_hours, model:models!inner(id, name, image_path, short_description, sort_order, active, brand:brands!inner(name, description, image_path, sort_order, active))");
+      .select("id, plan_name, version_name, transmission, installment_count, final_price, advance_amount, installment_amount, installment_is_from, sort_order, active, bonus, benefits, slots, valid_from, valid_to, timer_hours, model:models!inner(id, name, image_path, short_description, sort_order, active, brand:brands!inner(name, description, image_path, sort_order, active))");
     var grouped = {};
     if (response.error) {
       throw response.error;
@@ -316,6 +316,7 @@
         versionName: row.version_name || "",
         transmission: row.transmission || "",
         installmentCount: row.installment_count,
+        finalPrice: row.final_price,
         advanceAmount: row.advance_amount,
         installmentAmount: row.installment_amount,
         installmentIsFrom: row.installment_is_from !== false,
@@ -725,6 +726,7 @@
         version: state.model.versionName,
         transmission: state.model.transmission,
         installmentCount: state.model.installmentCount,
+        finalPrice: state.model.finalPrice,
         advance: state.model.advance,
         installment: state.model.installment,
         bonus: state.model.bonus,
@@ -862,6 +864,29 @@
     }).format(new Date(value + "T12:00:00"));
   }
 
+  function parseDisplayDate(value) {
+    var match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(String(value || "").trim());
+    var parsed;
+    if (!match) {
+      return "";
+    }
+    parsed = new Date(Number(match[3]), Number(match[2]) - 1, Number(match[1]));
+    if (parsed.getFullYear() !== Number(match[3]) || parsed.getMonth() !== Number(match[2]) - 1 || parsed.getDate() !== Number(match[1])) {
+      return "";
+    }
+    return match[3] + "-" + match[2] + "-" + match[1];
+  }
+
+  function displayDateInput(value) {
+    var match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(value || "").slice(0, 10));
+    return match ? match[3] + "/" + match[2] + "/" + match[1] : String(value || "");
+  }
+
+  function maskDateInput(field) {
+    var clean = String(field.value || "").replace(/\D/g, "").slice(0, 8);
+    field.value = [clean.slice(0, 2), clean.slice(2, 4), clean.slice(4, 8)].filter(Boolean).join("/");
+  }
+
   function readApplicationData() {
     var fields = applicationForm.elements;
     return {
@@ -870,7 +895,7 @@
       documentType: String(fields.documentType.value || "").trim(),
       documentNumber: digits(fields.documentNumber.value),
       cuil: digits(fields.cuil.value),
-      birthDate: fields.birthDate.value || "",
+      birthDate: parseDisplayDate(fields.birthDate.value),
       address: String(fields.address.value || "").trim().replace(/\s+/g, " "),
       cityProvince: String(fields.cityProvince.value || "").trim().replace(/\s+/g, " "),
       postalCode: String(fields.postalCode.value || "").trim().toUpperCase(),
@@ -887,16 +912,15 @@
       monthlyIncome: fields.monthlyIncome.value === "" ? null : Number(fields.monthlyIncome.value),
       automaticDebit: fields.automaticDebit.value === "true",
       automaticDebitSelected: fields.automaticDebit.value !== "",
-      deferredInstallment: fields.deferredInstallment.value === "true",
-      deferredInstallmentSelected: fields.deferredInstallment.value !== "",
-      installmentsPaid: Number(fields.installmentsPaid.value),
-      installmentsToPay: Number(fields.installmentsToPay.value),
+      deferredInstallment: false,
+      installmentsPaid: 0,
+      installmentsToPay: Number(state.model.installmentCount) || 1,
       planType: String(fields.planType.value || "").trim().replace(/\s+/g, " "),
-      agreedPrice: parseMoney(fields.agreedPrice.value),
-      firstPaymentDate: fields.firstPaymentDate.value || "",
-      firstPaymentAmount: parseMoney(fields.firstPaymentAmount.value),
-      secondPaymentDate: fields.secondPaymentDate.value || "",
-      secondPaymentAmount: parseMoney(fields.secondPaymentAmount.value),
+      agreedPrice: Number(state.model.finalPrice) || null,
+      firstPaymentDate: "",
+      firstPaymentAmount: null,
+      secondPaymentDate: "",
+      secondPaymentAmount: null,
       consent: fields.applicationConsent.checked
     };
   }
@@ -939,20 +963,14 @@
     if (!Number.isInteger(data.monthlyIncome) || data.monthlyIncome < 1) {
       return "Ingresá el sueldo mensual como un número entero.";
     }
-    if (!data.automaticDebitSelected || !data.deferredInstallmentSelected) {
-      return "Indicá si corresponde débito automático y cuota diferida.";
-    }
-    if (!Number.isInteger(data.installmentsPaid) || data.installmentsPaid < 0 || !Number.isInteger(data.installmentsToPay) || data.installmentsToPay < 1) {
-      return "Revisá la cantidad de cuotas abonadas y cuotas a pagar.";
+    if (!data.automaticDebitSelected) {
+      return "Indicá si corresponde débito automático.";
     }
     if (data.planType.length < 3 || !data.agreedPrice) {
-      return "Completá el tipo de plan y el precio pactado.";
-    }
-    if (Boolean(data.firstPaymentDate) !== Boolean(data.firstPaymentAmount) || Boolean(data.secondPaymentDate) !== Boolean(data.secondPaymentAmount)) {
-      return "Cada pago informado debe tener fecha e importe.";
+      return "El plan seleccionado debe tener un valor final vigente cargado en su ficha.";
     }
     if (!data.consent) {
-      return "El vendedor y el cliente deben confirmar los datos antes de generar la minuta.";
+      return "El vendedor y el cliente deben confirmar los datos antes de enviar el datero.";
     }
     return "";
   }
@@ -965,7 +983,7 @@
     if (field.type === "checkbox") {
       field.checked = Boolean(value);
     } else if (value !== null && value !== undefined) {
-      field.value = String(value);
+      field.value = name === "birthDate" ? displayDateInput(value) : String(value);
     }
   }
 
@@ -998,11 +1016,8 @@
       employmentSeniority: "",
       monthlyIncome: "",
       automaticDebit: "",
-      deferredInstallment: "",
-      installmentsPaid: 0,
-      installmentsToPay: state.model.installmentCount || "",
       planType: planDescription(state.model),
-      agreedPrice: "",
+      agreedPrice: state.model.finalPrice || "",
       firstPaymentDate: "",
       firstPaymentAmount: "",
       secondPaymentDate: "",
@@ -1013,12 +1028,13 @@
     applicationForm.reset();
     Object.keys(data).forEach(function (name) {
       var value = data[name];
-      if (name === "automaticDebit" || name === "deferredInstallment") {
+      if (name === "automaticDebit") {
         value = value === "" ? "" : String(value);
       }
       setApplicationField(name === "consent" ? "applicationConsent" : name, value);
     });
     setApplicationField("cuil", formatCuilInput(data.cuil));
+    setApplicationField("agreedPrice", state.model.finalPrice ? formatMoney(state.model.finalPrice) : "");
     document.getElementById("applicationRequestCode").textContent = state.requestId;
     document.getElementById("applicationVehicle").textContent = state.brand + " " + vehicleTitle(state.model);
     document.getElementById("applicationCampaign").textContent = planDescription(state.model);
@@ -1061,18 +1077,19 @@
       installments_to_pay: data.installmentsToPay,
       plan_type: data.planType,
       agreed_price: data.agreedPrice,
-      first_payment_date: data.firstPaymentDate || null,
-      first_payment_amount: data.firstPaymentAmount,
-      second_payment_date: data.secondPaymentDate || null,
-      second_payment_amount: data.secondPaymentAmount,
+      first_payment_date: null,
+      first_payment_amount: null,
+      second_payment_date: null,
+      second_payment_amount: null,
       status: "completed",
-      terms_version: "GS-MINUTA-2026-01",
+      terms_version: "GS-DATERO-PROVISORIO-2026-01",
       confirmed_at: new Date().toISOString(),
       commercial_snapshot: {
         plan: state.model.campaign,
         version: state.model.versionName,
         transmission: state.model.transmission,
         installmentCount: state.model.installmentCount,
+        finalPrice: state.model.finalPrice,
         advance: state.model.advance,
         installment: state.model.installment,
         availability: state.model.availability,
@@ -1096,12 +1113,12 @@
 
   function buildMinute(data) {
     var issueDate = new Date();
-    var minuteCode = "MIN-" + state.requestId.replace(/^GS-/, "");
+    var minuteCode = "DAT-" + state.requestId.replace(/^GS-/, "");
     var spouse = data.spouseName ? data.spouseName + (data.spouseDocument ? " · DNI " + data.spouseDocument : "") : "No corresponde";
     minutePrint.innerHTML = '' +
       '<article class="minute-sheet" data-brand-theme="' + escapeHtml(brandTheme(state.brand)) + '">' +
         '<header class="minute-header">' +
-          '<div class="minute-header-brand"><img class="minute-company-logo" src="../assets/logo-header.webp" alt="Grupo Sur Automotores"><div class="minute-brand-lockup"><img class="minute-brand-logo" src="' + escapeHtml(brandLogo(state.brand)) + '" alt="Logo ' + escapeHtml(state.brand) + '"><span>Solicitud comercial · ' + escapeHtml(vehicleTitle(state.model)) + '</span></div></div>' +
+          '<div class="minute-header-brand"><img class="minute-company-logo" src="../assets/logo-header.webp" alt="Grupo Sur Automotores"><div class="minute-brand-lockup"><img class="minute-brand-logo" src="' + escapeHtml(brandLogo(state.brand)) + '" alt="Logo ' + escapeHtml(state.brand) + '"><span>Datero provisorio · ' + escapeHtml(vehicleTitle(state.model)) + '</span></div></div>' +
           '<div class="minute-identifiers"><strong>' + escapeHtml(minuteCode) + '</strong><span>Fecha: ' + escapeHtml(new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(issueDate)) + '</span><span>Precalificación: ' + escapeHtml(state.requestId) + '</span></div>' +
         '</header>' +
         '<section class="minute-vehicle">' +
@@ -1136,25 +1153,19 @@
           minuteRow("Tipo de plan", planDescription(state.model)) +
           minuteRow("Anticipo informado", state.model.advance) +
           minuteRow("Cuota informada", state.model.installment) +
-          minuteRow("Precio pactado", formatMoney(data.agreedPrice)) +
-          minuteRow("Cuotas abonadas", String(data.installmentsPaid)) +
-          minuteRow("Cuotas a pagar", String(data.installmentsToPay)) +
+          minuteRow("Valor final del plan", formatMoney(data.agreedPrice)) +
           minuteRow("Débito automático", data.automaticDebit ? "Sí" : "No") +
-          minuteRow("Cuota diferida", data.deferredInstallment ? "Sí" : "No") +
           minuteRow("Asesor", state.seller.name + " · " + state.seller.code) +
-          minuteRow("Primer pago", data.firstPaymentDate ? formatDate(data.firstPaymentDate) + " · " + formatMoney(data.firstPaymentAmount) : "No informado") +
-          minuteRow("Segundo pago", data.secondPaymentDate ? formatDate(data.secondPaymentDate) + " · " + formatMoney(data.secondPaymentAmount) : "No informado") +
-          minuteRow("Bonificación", state.model.bonus) +
         '</div></section>' +
-        '<section class="minute-print-section"><h2>Constancia y condiciones</h2><ol class="minute-terms">' +
-          '<li>La presente minuta registra los datos y condiciones comerciales informados durante esta gestión. No constituye una solicitud de adhesión, aprobación financiera, adjudicación ni obligación de entrega.</li>' +
+        '<section class="minute-print-section"><h2>Carácter provisorio</h2><ol class="minute-terms">' +
+          '<li>El presente datero registra información provisoria para que Supervisión evalúe la operación. No constituye una minuta definitiva, solicitud de adhesión, aprobación financiera, adjudicación ni obligación de entrega.</li>' +
           '<li>La operación queda sujeta a validación documental y crediticia, vigencia de la campaña, disponibilidad del modelo y aceptación de las condiciones definitivas por las partes intervinientes.</li>' +
-          '<li>Toda suma declarada deberá contar con el comprobante correspondiente emitido por el receptor autorizado. Esta minuta no acredita por sí misma pago, reserva ni cancelación.</li>' +
+          '<li>Este datero no registra ni acredita pagos, reservas o cancelaciones. Esos datos sólo se incorporarán en la minuta definitiva luego de la aprobación de Supervisión.</li>' +
           '<li>Cuando se entregue un vehículo usado, su valor será determinado al momento de la tasación y peritaje, sujeto a la presentación de la documentación requerida.</li>' +
-          '<li>Únicamente se considerarán los beneficios y bonificaciones expresamente incluidos en esta minuta y vigentes al momento de formalizar la operación.</li>' +
+          '<li>Únicamente se considerarán los beneficios y bonificaciones vigentes al momento de formalizar la operación.</li>' +
         '</ol></section>' +
         '<div class="minute-signatures"><div>Firma del cliente</div><div>Aclaración y DNI</div><div>Asesor responsable</div></div>' +
-        '<footer class="minute-footer">Documento emitido desde el portal interno de Grupo Sur Automotores · Versión GS-MINUTA-2026-01</footer>' +
+        '<footer class="minute-footer">Datero provisorio emitido desde el portal interno de Grupo Sur Automotores · Versión GS-DATERO-PROVISORIO-2026-01</footer>' +
       '</article>';
     minutePrint.setAttribute("aria-hidden", "false");
   }
@@ -1213,7 +1224,7 @@
           '<div><strong>' + escapeHtml(item.name) + '</strong><span>' + escapeHtml(item.cuil) + '</span></div>' +
           '<div><strong>' + escapeHtml(item.vehicle) + '</strong><span>' + escapeHtml(item.campaign) + '</span></div>' +
           '<div><strong>' + escapeHtml(item.requestId) + '</strong><span>' + escapeHtml(new Intl.DateTimeFormat("es-AR", { hour: "2-digit", minute: "2-digit" }).format(item.date)) + '</span></div>' +
-          '<span class="history-status' + (item.application ? ' has-minute' : '') + '">' + (item.application ? 'Minuta generada' : 'Aprobada') + '</span>' +
+          '<span class="history-status' + (item.application ? ' has-minute' : '') + '">' + (item.application ? 'Datero enviado' : 'Aprobada') + '</span>' +
         '</div>';
     }).join("");
   }
@@ -1345,6 +1356,10 @@
 
   applicationButton.addEventListener("click", openCommercialApplication);
 
+  applicationForm.elements.birthDate.addEventListener("input", function () {
+    maskDateInput(this);
+  });
+
   applicationForm.addEventListener("submit", async function (event) {
     var data;
     var error;
@@ -1358,11 +1373,18 @@
       return;
     }
     applicationSubmitButton.disabled = true;
-    applicationSubmitButton.textContent = "Guardando solicitud…";
+    applicationSubmitButton.textContent = "Enviando a supervisión…";
     try {
       response = await saveCommercialApplication(data);
       if (response.error) {
         throw response.error;
+      }
+      var saleResponse = await supabaseClient.rpc("submit_prequalification_sale", {
+        p_application_id: response.data.id,
+        p_notes: "Operación originada en la precalificación " + state.requestId
+      });
+      if (saleResponse.error) {
+        throw saleResponse.error;
       }
       state.applicationId = response.data.id;
       state.application = data;
@@ -1373,11 +1395,11 @@
       });
       renderHistory();
       buildMinute(data);
-      applicationSubmitButton.textContent = "Solicitud guardada";
+      applicationSubmitButton.textContent = "Datero enviado";
       printMinute();
     } catch (saveError) {
-      applicationError.textContent = saveError.message || "No se pudo guardar la solicitud comercial.";
-      applicationSubmitButton.textContent = "Guardar y generar PDF";
+      applicationError.textContent = saveError.message || "No se pudo enviar el datero a Supervisión.";
+      applicationSubmitButton.textContent = "Guardar y enviar a supervisión";
     } finally {
       applicationSubmitButton.disabled = false;
     }
