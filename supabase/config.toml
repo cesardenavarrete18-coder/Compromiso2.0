@@ -1,5 +1,17 @@
 [functions.whatsapp-webhook]
 verify_jwt = false
 
+[functions.whatsapp-human-message]
+verify_jwt = true
+
 [functions.privacy-policy]
+verify_jwt = false
+
+[functions.vehicle-market-reference]
+verify_jwt = true
+
+[functions.mercadolibre-oauth-start]
+verify_jwt = true
+
+[functions.mercadolibre-oauth-callback]
 verify_jwt = false

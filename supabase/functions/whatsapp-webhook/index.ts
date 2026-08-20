@@ -11,6 +11,12 @@ type LeadDecision = {
   reply_text: string;
 };
 
+type TrainingExample = {
+  conversation: string;
+  expected_status: string;
+  expected_reply: string;
+};
+
 const encoder = new TextEncoder();
 
 function response(body: unknown, status = 200) {
@@ -89,10 +95,17 @@ function advertisedVehicle(referral: JsonRecord | undefined) {
   return uniqueNames.length === 1 ? uniqueNames[0][1] : "";
 }
 
-function fallbackDecision(text: string, advertisedInterest = ""): LeadDecision {
+function firstName(value: string | null | undefined) {
+  const cleaned = String(value ?? "").trim().replace(/\s+/g, " ");
+  if (!cleaned || /^\+?\d+$/.test(cleaned)) return "";
+  return cleaned.split(" ")[0].slice(0, 40);
+}
+
+function fallbackDecision(text: string, advertisedInterest = "", customerName = "", isFirstReply = true): LeadDecision {
   const normalized = text.toLocaleLowerCase("es-AR");
   const salesIntent = Boolean(advertisedInterest) || /(0\s?km|auto|veh[ií]culo|modelo|cuota|anticipo|financi|plan|precio|entrega|volkswagen|peugeot|fiat)/i.test(normalized);
   const urgent = /(hoy|urgente|ya|comprar|seña|entrega inmediata)/i.test(normalized);
+  const greeting = isFirstReply ? `¡Hola${firstName(customerName) ? ` ${firstName(customerName)}` : ""}! ` : "";
   return {
     qualification_status: salesIntent ? "qualified" : "follow_up",
     priority: urgent ? "high" : "normal",
@@ -101,17 +114,47 @@ function fallbackDecision(text: string, advertisedInterest = ""): LeadDecision {
     disqualify_reason: "",
     reply_text: salesIntent
       ? advertisedInterest
-        ? `¡Hola! Gracias por tu consulta por ${advertisedInterest}. ¿Pensás avanzar con anticipo y financiación, entregar un usado o comprar al contado?`
-        : "¡Hola! Soy el asistente de Grupo Sur Automotores. Para orientarte mejor, ¿qué modelo estás buscando y con qué anticipo aproximado contás?"
-      : "¡Hola! Soy el asistente de Grupo Sur Automotores. ¿Qué vehículo 0 km estás buscando?",
+        ? `${greeting}Gracias por tu consulta por ${advertisedInterest}. ¿Pensás avanzar con anticipo y financiación, entregar un usado o comprar al contado?`
+        : `${greeting}Soy el asistente de Compromiso mi 0km. Para orientarte mejor, ¿qué modelo estás buscando y qué tipo de operación tenés en mente?`
+      : `${greeting}Soy el asistente de Compromiso mi 0km. ¿Qué vehículo 0 km estás buscando?`,
   };
 }
 
-async function analyzeLeadConversation(history: string[], text: string, qualificationRules = "", vectorStoreId = "", referralContext = "", advertisedInterest = ""): Promise<LeadDecision> {
-  const apiKey = Deno.env.get("OPENAI_API_KEY") ?? "";
-  if (!apiKey || !text) return fallbackDecision(text, advertisedInterest);
+function exampleTokens(value: string) {
+  return new Set(String(value).toLocaleLowerCase("es-AR").match(/[a-záéíóúñ0-9]{4,}/g) || []);
+}
 
-  const conversation = [referralContext, ...history, `Cliente: ${text}`].filter(Boolean).slice(-13).join("\n");
+function selectTrainingExamples(examples: TrainingExample[], text: string, advertisedInterest: string) {
+  const target = exampleTokens(`${text} ${advertisedInterest}`);
+  return examples.map((example) => {
+    const source = exampleTokens(example.conversation);
+    let score = 0;
+    target.forEach((token) => { if (source.has(token)) score += 1; });
+    return { example, score };
+  }).sort((left, right) => right.score - left.score).slice(0, 4).map((item) => item.example);
+}
+
+async function analyzeLeadConversation(
+  history: string[],
+  text: string,
+  qualificationRules = "",
+  conversationStyle = "",
+  vectorStoreId = "",
+  referralContext = "",
+  advertisedInterest = "",
+  customerName = "",
+  customerPhone = "",
+  trainingExamples: TrainingExample[] = [],
+): Promise<LeadDecision> {
+  const apiKey = Deno.env.get("OPENAI_API_KEY") ?? "";
+  if (!apiKey || !text) return fallbackDecision(text, advertisedInterest, customerName, history.length === 0);
+
+  const contactContext = `Datos autorizados del contacto:\nNombre: ${customerName || "no informado"}\nTeléfono: ${customerPhone || "no informado"}`;
+  const conversation = [contactContext, referralContext, ...history, `Cliente: ${text}`].filter(Boolean).slice(-14).join("\n");
+  const examples = selectTrainingExamples(trainingExamples, text, advertisedInterest);
+  const examplesContext = examples.length
+    ? examples.map((example, index) => `Ejemplo aprobado ${index + 1}:\n${example.conversation}\nEstado esperado: ${example.expected_status}\nRespuesta esperada: ${example.expected_reply}`).join("\n\n")
+    : "Todavía no hay ejemplos corregidos aplicables.";
 
   try {
     const result = await fetch("https://api.openai.com/v1/responses", {
@@ -132,6 +175,7 @@ Datos que conviene reunir de manera natural: modelo de interés, tipo de operaci
 - Respondé específicamente a lo que dijo el cliente: mencioná el modelo, usado, anticipo, zona o plazo cuando ya estén informados. Evitá respuestas genéricas que podrían servir para cualquier conversación.
 - La referencia del anuncio de Meta es un dato comercial confirmado, no una pista opcional. Si identifica un modelo concreto, asumí que ese es el modelo consultado, guardalo en model_interest y mencioná ese modelo en la primera respuesta. No vuelvas a preguntar qué modelo quiere salvo que el cliente diga expresamente que busca otro o que el anuncio sea ambiguo.
 - Presentate solamente en el primer mensaje de la conversación. En los siguientes, continuá naturalmente sin volver a saludar ni explicar que sos un asistente.
+- En la primera respuesta saludá usando el nombre de pila si está informado. No repitas el teléfono ni otros datos personales en la respuesta.
 - Preferí una sola pregunta concreta por turno. Si el cliente ya dio información suficiente, resumila y derivá en lugar de seguir interrogándolo.
 - No inventes precios, cuotas, stock, aprobaciones crediticias ni fechas de entrega.
 - Si ya hay al menos tres datos comerciales útiles, confirmá un resumen breve e indicá que un asesor continuará la gestión.
@@ -143,6 +187,12 @@ Datos que conviene reunir de manera natural: modelo de interés, tipo de operaci
 
 Reglas comerciales configuradas por Administración:
 ${qualificationRules || "Aplicá los criterios generales anteriores."}
+
+Personalidad y estilo configurados por Administración:
+${conversationStyle || "Respondé con calidez, naturalidad y una sola pregunta concreta por turno."}
+
+Ejemplos revisados por Supervisión. Usalos como guía de tono y criterio cuando sean pertinentes; no copies datos personales ni detalles de otro cliente:
+${examplesContext}
 
 Si hay documentos comerciales disponibles, consultalos cuando la respuesta dependa de condiciones, modelos, planes o argumentos de venta. Nunca inventes un dato ausente.`,
           },
@@ -176,24 +226,24 @@ Si hay documentos comerciales disponibles, consultalos cuando la respuesta depen
     if (!result.ok) {
       const errorBody = await result.text();
       console.error("OpenAI analysis failed", result.status, errorBody.slice(0, 1200));
-      return fallbackDecision(text, advertisedInterest);
+      return fallbackDecision(text, advertisedInterest, customerName, history.length === 0);
     }
     const payload = await result.json();
     const outputText = (payload.output || [])
       .flatMap((item: JsonRecord) => Array.isArray(item.content) ? item.content : [])
       .find((item: JsonRecord) => item.type === "output_text")?.text;
-    if (typeof outputText !== "string") return fallbackDecision(text, advertisedInterest);
+    if (typeof outputText !== "string") return fallbackDecision(text, advertisedInterest, customerName, history.length === 0);
     const decision = JSON.parse(outputText) as LeadDecision;
     if (advertisedInterest) {
       decision.model_interest = advertisedInterest;
       if (!history.length && /qu[eé]\s+modelo|cu[aá]l\s+modelo/i.test(decision.reply_text)) {
-        decision.reply_text = `¡Hola! Gracias por tu consulta por ${advertisedInterest}. ¿Pensás avanzar con anticipo y financiación, entregar un usado o comprar al contado?`;
+        decision.reply_text = fallbackDecision(text, advertisedInterest, customerName, true).reply_text;
       }
     }
     return decision;
   } catch (error) {
     console.error("OpenAI analysis exception", error instanceof Error ? error.message : String(error));
-    return fallbackDecision(text, advertisedInterest);
+    return fallbackDecision(text, advertisedInterest, customerName, history.length === 0);
   }
 }
 
@@ -266,12 +316,12 @@ Deno.serve(async (request) => {
   if (!supabaseUrl || !serviceRoleKey) return response({ error: "Server configuration incomplete" }, 500);
   const db = createClient(supabaseUrl, serviceRoleKey, { auth: { persistSession: false, autoRefreshToken: false } });
 
-  const assistantSettingsResult = await db
-    .from("ai_assistant_settings")
-    .select("qualification_rules, vector_store_id")
-    .eq("id", true)
-    .maybeSingle();
-  const assistantSettings = assistantSettingsResult.data || { qualification_rules: "", vector_store_id: "" };
+  const [assistantSettingsResult, trainingExamplesResult] = await Promise.all([
+    db.from("ai_assistant_settings").select("qualification_rules, conversation_style, vector_store_id").eq("id", true).maybeSingle(),
+    db.from("ai_training_examples").select("conversation, expected_status, expected_reply").eq("active", true).neq("expected_reply", "").order("updated_at", { ascending: false }).limit(20),
+  ]);
+  const assistantSettings = assistantSettingsResult.data || { qualification_rules: "", conversation_style: "", vector_store_id: "" };
+  const trainingExamples = (trainingExamplesResult.data || []) as TrainingExample[];
 
   const entries = Array.isArray(webhook.entry) ? webhook.entry as JsonRecord[] : [];
   for (const entry of entries) {
@@ -299,17 +349,48 @@ Deno.serve(async (request) => {
         const body = messageText(message);
         const referral = message.referral as JsonRecord | undefined;
         const hasMetaReferral = Boolean(referral && (referral.ctwa_clid || referral.source_id || referral.source_url));
-        const codes = candidateCodes(body);
+        let codes = candidateCodes(body);
+        const initialMetadata = {
+          phone_number_id: (value?.metadata as JsonRecord | undefined)?.phone_number_id || null,
+          referral: hasMetaReferral ? referral : null,
+        };
+        const claimResult = await db.rpc("claim_whatsapp_lead", {
+          p_customer_phone: customerPhone,
+          p_customer_name: customerName,
+          p_source_channel: codes.length ? "tiktok" : "whatsapp",
+          p_source_detail: codes.length ? "seller_code" : hasMetaReferral ? "meta_ads" : "organic",
+          p_metadata: initialMetadata,
+        });
+        const claim = Array.isArray(claimResult.data) ? claimResult.data[0] : null;
+        if (claimResult.error || !claim?.lead_id) {
+          console.error("WhatsApp lead claim failed", claimResult.error?.message || "No lead returned");
+          continue;
+        }
+        const leadId = String(claim.lead_id);
+        const createdNew = Boolean(claim.created_new);
+
+        // Persist first, analyze second. Besides preserving the complete conversation,
+        // the unique WhatsApp id makes concurrent Meta retries harmless.
+        const inboundResult = await db.from("lead_messages").insert({
+          lead_id: leadId,
+          whatsapp_message_id: whatsappMessageId || null,
+          direction: "inbound",
+          message_type: String(message.type ?? "unknown"),
+          body,
+          raw_payload: message,
+          origin: "customer",
+        });
+        if (inboundResult.error) {
+          if (inboundResult.error.code === "23505") continue;
+          console.error("Inbound message persistence failed", inboundResult.error.message);
+          continue;
+        }
 
         const existingResult = await db
           .from("leads")
-          .select("id, assigned_seller_user_id, routing_status, qualification_status, do_not_contact, model_interest, metadata")
-          .eq("customer_phone", customerPhone)
-          .not("routing_status", "in", "(closed,lost)")
-          .gte("last_message_at", new Date(Date.now() - 30 * 86400000).toISOString())
-          .order("last_message_at", { ascending: false })
-          .limit(1)
-          .maybeSingle();
+          .select("id, assigned_seller_user_id, assigned_at, routing_status, qualification_status, do_not_contact, model_interest, source_channel, source_detail, seller_code_received, metadata")
+          .eq("id", leadId)
+          .single();
         const existing = existingResult.data;
         const storedMetadata = existing?.metadata as JsonRecord | undefined;
         const storedReferral = storedMetadata?.referral as JsonRecord | undefined;
@@ -319,18 +400,22 @@ Deno.serve(async (request) => {
           ? `Referencia comercial confirmada por Meta Ads:\nTítulo: ${String(effectiveReferral.headline ?? "")}\nTexto: ${String(effectiveReferral.body ?? "")}\nModelo identificado: ${advertisedInterest || "no determinado"}\nURL: ${String(effectiveReferral.source_url ?? "")}`.trim()
           : "";
 
+        // A human takeover is authoritative. The inbound message remains stored,
+        // but OpenAI is not called and the bot cannot compete with the operator.
+        const conversationControl = await db
+          .from("whatsapp_conversation_controls")
+          .select("mode")
+          .eq("lead_id", leadId)
+          .maybeSingle();
+        if (conversationControl.data?.mode === "human") {
+          await db.from("leads").update({ last_message_at: new Date().toISOString() }).eq("id", leadId);
+          continue;
+        }
+
         // Una vez calificado, el lead ya fue transferido al equipo comercial.
         // Los mensajes posteriores se conservan y notifican al supervisor, pero
         // la IA no reinicia el cuestionario ni compite con la atención humana.
         if (existing?.qualification_status === "qualified") {
-          await db.from("lead_messages").insert({
-            lead_id: existing.id,
-            whatsapp_message_id: whatsappMessageId || null,
-            direction: "inbound",
-            message_type: String(message.type ?? "unknown"),
-            body,
-            raw_payload: message,
-          });
           await db.from("leads").update({ last_message_at: new Date().toISOString() }).eq("id", existing.id);
           if (!existing.do_not_contact) {
             await db.from("lead_crm").update({
@@ -369,18 +454,51 @@ Deno.serve(async (request) => {
           continue;
         }
 
-        const historyResult = existing?.id
-          ? await db.from("lead_messages").select("direction, body").eq("lead_id", existing.id).order("created_at", { ascending: false }).limit(11)
-          : { data: [] };
-        const history = (historyResult.data || []).reverse().map((item) => `${item.direction === "outbound" ? "Asistente" : "Cliente"}: ${item.body}`);
+        const historyResult = await db.from("lead_messages")
+          .select("direction, body, whatsapp_message_id")
+          .eq("lead_id", leadId)
+          .order("created_at", { ascending: false })
+          .limit(12);
+        const historyRows = (historyResult.data || []).reverse();
+        codes = candidateCodes(historyRows.map((item) => item.body || "").join("\n"));
+        const history = historyRows
+          .filter((item) => !whatsappMessageId || item.whatsapp_message_id !== whatsappMessageId)
+          .map((item) => `${item.direction === "outbound" ? "Asistente" : "Cliente"}: ${item.body}`);
         const classification = await analyzeLeadConversation(
           history,
           body,
           String(assistantSettings.qualification_rules || ""),
+          String(assistantSettings.conversation_style || ""),
           String(assistantSettings.vector_store_id || ""),
           referralContext,
           advertisedInterest,
+          customerName || "",
+          customerPhone,
+          trainingExamples,
         );
+
+        // If a newer inbound arrived while OpenAI was working, that newer execution
+        // owns the answer. This prevents two replies and stale questions.
+        const latestInboundResult = await db.from("lead_messages")
+          .select("whatsapp_message_id")
+          .eq("lead_id", leadId)
+          .eq("direction", "inbound")
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (whatsappMessageId && latestInboundResult.data?.whatsapp_message_id !== whatsappMessageId) continue;
+
+        // The conversation may have been taken while OpenAI was processing.
+        // Rechecking here closes that race before any classification or reply is applied.
+        const controlAfterAnalysis = await db
+          .from("whatsapp_conversation_controls")
+          .select("mode")
+          .eq("lead_id", leadId)
+          .maybeSingle();
+        if (controlAfterAnalysis.data?.mode === "human") {
+          await db.from("leads").update({ last_message_at: new Date().toISOString() }).eq("id", leadId);
+          continue;
+        }
 
         let seller: JsonRecord | null = null;
         if (!existing?.assigned_seller_user_id && codes.length) {
@@ -398,7 +516,7 @@ Deno.serve(async (request) => {
         let routingStatus = existing?.routing_status || "pending_supervisor";
         let routingReason = existing?.assigned_seller_user_id ? "existing_owner" : "general_inbox";
         let assignedSellerId = existing?.assigned_seller_user_id || null;
-        let assignedAt: string | null = assignedSellerId ? new Date().toISOString() : null;
+        let assignedAt: string | null = existing?.assigned_at || null;
 
         if (seller?.user_id) {
           const settingsResult = await db.from("seller_routing_settings").select("daily_quota, paused").eq("seller_user_id", seller.user_id).maybeSingle();
@@ -419,9 +537,9 @@ Deno.serve(async (request) => {
         const leadValues = {
           customer_phone: customerPhone,
           customer_name: customerName,
-          source_channel: codes.length ? "tiktok" : "whatsapp",
-          source_detail: codes.length ? "seller_code" : hasMetaReferral ? "meta_ads" : "organic",
-          seller_code_received: codes[0] || null,
+          source_channel: codes.length ? "tiktok" : existing?.source_channel || "whatsapp",
+          source_detail: codes.length ? "seller_code" : hasMetaReferral ? "meta_ads" : existing?.source_detail || "organic",
+          seller_code_received: codes[0] || existing?.seller_code_received || null,
           qualification_status: classification.qualification_status,
           priority: classification.priority,
           intent_summary: classification.intent_summary,
@@ -434,12 +552,14 @@ Deno.serve(async (request) => {
           last_message_at: new Date().toISOString(),
           contact_consent_at: new Date().toISOString(),
           contact_consent_source: "whatsapp_inbound",
-          metadata: { phone_number_id: (value?.metadata as JsonRecord | undefined)?.phone_number_id || null, referral: hasMetaReferral ? referral : null },
+          metadata: {
+            ...(storedMetadata || {}),
+            phone_number_id: (value?.metadata as JsonRecord | undefined)?.phone_number_id || storedMetadata?.phone_number_id || null,
+            referral: hasMetaReferral ? referral : storedReferral || null,
+          },
         };
 
-        const leadResult = existing
-          ? await db.from("leads").update(leadValues).eq("id", existing.id).select("id").single()
-          : await db.from("leads").insert(leadValues).select("id").single();
+        const leadResult = await db.from("leads").update(leadValues).eq("id", leadId).select("id").single();
         if (leadResult.error || !leadResult.data) continue;
 
         if (hasMetaReferral) {
@@ -457,15 +577,6 @@ Deno.serve(async (request) => {
           }, { onConflict: "lead_id" });
         }
 
-        await db.from("lead_messages").insert({
-          lead_id: leadResult.data.id,
-          whatsapp_message_id: whatsappMessageId || null,
-          direction: "inbound",
-          message_type: String(message.type ?? "unknown"),
-          body,
-          raw_payload: message,
-        });
-
         const outgoingBody = classification.reply_text.trim();
         if (outgoingBody) {
           const outgoing = await sendWhatsAppText(customerPhone, outgoingBody);
@@ -477,13 +588,14 @@ Deno.serve(async (request) => {
               message_type: "text",
               body: outgoingBody,
               raw_payload: outgoing.payload,
+              origin: "ai",
             });
           } else {
             console.error("WhatsApp send failed", JSON.stringify(outgoing.payload));
           }
         }
 
-        if (!existing && assignedSellerId) {
+        if (createdNew && assignedSellerId) {
           await db.from("lead_assignments").insert({
             lead_id: leadResult.data.id,
             seller_user_id: assignedSellerId,

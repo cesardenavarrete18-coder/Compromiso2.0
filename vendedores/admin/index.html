@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/vendedores/admin/admin.css?v=20260818-1">
+  <link rel="stylesheet" href="/vendedores/admin/admin.css?v=20260820-1">
 </head>
 <body>
   <main class="admin-login" id="adminLogin">
@@ -342,8 +342,13 @@
                 <span>¿Cuándo consideramos que un lead está calificado?</span>
                 <textarea id="qualificationRules" rows="9" minlength="20" maxlength="10000" required></textarea>
               </label>
+              <label class="field">
+                <span>Personalidad y forma de conversar</span>
+                <textarea id="conversationStyle" rows="8" minlength="40" maxlength="10000" required></textarea>
+                <small>Se aplica desde el próximo mensaje. Las reglas comerciales y los documentos siguen teniendo prioridad para los datos concretos.</small>
+              </label>
               <p class="form-message knowledge-message" id="rulesMessage" role="status"></p>
-              <button class="primary-button" type="submit">Guardar reglas</button>
+              <button class="primary-button" type="submit">Guardar reglas y estilo</button>
             </form>
 
             <form class="knowledge-card" id="knowledgeUploadForm">
@@ -365,6 +370,11 @@
           <div class="knowledge-library">
             <div class="knowledge-library-head"><div><h3>Biblioteca disponible</h3><p>Solo los documentos listos pueden ser consultados por la IA.</p></div><button class="secondary-button" id="refreshKnowledgeButton" type="button">Actualizar</button></div>
             <div id="knowledgeDocumentList" class="knowledge-document-list"></div>
+          </div>
+
+          <div class="knowledge-library">
+            <div class="knowledge-library-head"><div><h3>Aprendizajes revisados</h3><p>Respuestas aprobadas o corregidas por Supervisión que la IA usa como ejemplos.</p></div><span class="knowledge-private-badge" id="trainingExamplesCount">0 ejemplos</span></div>
+            <div id="trainingExamplesList" class="training-example-list"></div>
           </div>
         </section>
       </div>
@@ -402,6 +412,6 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.2/dist/umd/supabase.js"></script>
   <script src="/vendedores/supabase-config.js?v=20260813-2"></script>
   <script src="/vendedores/admin/excel-export.js?v=20260813-2"></script>
-  <script src="/vendedores/admin/admin.js?v=20260818-1"></script>
+  <script src="/vendedores/admin/admin.js?v=20260820-1"></script>
 </body>
 </html>
