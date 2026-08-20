@@ -2,7 +2,7 @@
   "use strict";
 
   var supabaseClient = window.grupoSurSupabaseClient;
-  var state = { profile: null, sellers: [], settings: {}, leads: [], tasks: [], goals: [], templates: [], sales: [], adminSales: [], activeSale: null, view: "leads", filter: "pending_supervisor", search: "" };
+  var state = { profile: null, sellers: [], settings: {}, leads: [], tasks: [], goals: [], templates: [], sales: [], adminSales: [], appraisals: [], activeSale: null, activeAppraisal: null, view: "leads", filter: "pending_supervisor", search: "" };
   var loginView = document.getElementById("loginView");
   var appView = document.getElementById("appView");
   var loginForm = document.getElementById("loginForm");
@@ -48,6 +48,11 @@
     return "$" + new Intl.NumberFormat("es-AR", { maximumFractionDigits: 0 }).format(Number(value));
   }
 
+  function marketMoney(value, currency) {
+    if (value == null || value === "") return "Importe no informado";
+    return (currency === "USD" ? "US$" : "$") + new Intl.NumberFormat("es-AR", { maximumFractionDigits: 0 }).format(Number(value));
+  }
+
   function localDateKey(value) {
     var date = new Date(value);
     return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Argentina/Buenos_Aires", year: "numeric", month: "2-digit", day: "2-digit" }).format(date);
@@ -74,12 +79,13 @@
     var results = await Promise.all([
       supabaseClient.from("profiles").select("user_id, full_name, seller_code, active").eq("role", "seller").order("full_name"),
       supabaseClient.from("seller_routing_settings").select("seller_user_id, daily_quota, paused"),
-      supabaseClient.from("leads").select("id, customer_phone, customer_name, source_channel, source_detail, seller_code_received, qualification_status, priority, intent_summary, model_interest, routing_status, routing_reason, assigned_seller_user_id, assigned_at, last_message_at, created_at, attribution:lead_attributions(platform,campaign_name,adset_name,ad_name,headline), crm:lead_crm(status, priority, next_contact_at, last_contact_at, interview_at, sale_confirmation_status, sale_confirmed_at)").order("last_message_at", { ascending: false }).limit(500),
+      supabaseClient.from("leads").select("id, customer_phone, customer_name, source_channel, source_detail, seller_code_received, qualification_status, priority, intent_summary, model_interest, routing_status, routing_reason, assigned_seller_user_id, assigned_at, last_message_at, created_at, attribution:lead_attributions(platform,campaign_name,adset_name,ad_name,headline), crm:lead_crm(status, priority, status_reason, next_contact_at, next_contact_note, last_contact_at, last_contact_outcome, interview_at, sale_confirmation_status, sale_confirmed_at)").order("last_message_at", { ascending: false }).limit(500),
       supabaseClient.from("lead_sale_requests").select("id, lead_id, seller_user_id, vehicle, sale_amount, notes, status, requested_at, provisional_application_id, seller:profiles!lead_sale_requests_seller_user_id_fkey(full_name, seller_code), lead:leads(customer_name, customer_phone, intent_summary), provisional:commercial_applications!lead_sale_requests_provisional_application_id_fkey(request_code, brand_name, model_name, campaign_name, first_name, last_name, document_type, document_number, cuil, primary_phone, email, employment_status, employer_name, employment_seniority, monthly_income, automatic_debit, deferred_installment, installments_paid, installments_to_pay, plan_type, agreed_price, commercial_snapshot)").eq("status", "pending").order("requested_at"),
       supabaseClient.from("sales_cases").select("id, case_code, seller_user_id, vehicle, status, cdn_scoring_status, dealer_scoring_status, contract_status, finalized_at, cancellation_reason, updated_at, seller:profiles!sales_cases_seller_user_id_fkey(full_name, seller_code), lead:leads!sales_cases_lead_id_fkey(customer_name), events:sales_case_events(stage, outcome, comment, created_at)").order("updated_at", { ascending: false }).limit(250),
       supabaseClient.from("lead_contact_tasks").select("id, lead_id, seller_user_id, channel, call_attempt, message_step, due_start, due_end, status, outcome, lead:leads(customer_name,customer_phone,model_interest), seller:profiles!lead_contact_tasks_seller_user_id_fkey(full_name,seller_code)").eq("status", "pending").order("due_start").limit(1000),
       supabaseClient.from("commercial_goals").select("id, period_month, seller_user_id, target_contacts, target_interviews, target_sales, target_finalized").order("period_month", { ascending: false }).limit(500),
-      supabaseClient.from("contact_message_templates").select("id, step_number, title, body, active, updated_at").order("step_number")
+      supabaseClient.from("contact_message_templates").select("id, step_number, title, body, active, updated_at").order("step_number"),
+      supabaseClient.from("vehicle_appraisals").select("id, lead_id, brand, model, version, vehicle_year, mileage_km, condition, notes, estimated_min, estimated_max, market_median, suggested_value, market_currency, estimate_source, estimate_basis, reference_count, market_references, market_checked_at, status, confirmed_value, confirmed_currency, review_note, updated_at").order("updated_at", { ascending: false }).limit(500)
     ]);
     var failed = results.find(function (item) { return item.error; });
     if (failed) throw failed.error;
@@ -92,12 +98,92 @@
     state.tasks = results[5].data || [];
     state.goals = results[6].data || [];
     state.templates = results[7].data || [];
+    state.appraisals = results[8].data || [];
     renderAll();
     pageMessage.textContent = "";
   }
 
   function sellerById(id) {
     return state.sellers.find(function (seller) { return seller.user_id === id; });
+  }
+
+  function crmOf(lead) {
+    if (!lead || !lead.crm) return { status: "nuevo", priority: lead && lead.priority || "normal" };
+    return Array.isArray(lead.crm) ? lead.crm[0] || {} : lead.crm;
+  }
+
+  function crmStatusLabel(value) {
+    return { nuevo: "Nuevo", no_contesta: "No contesta", en_proceso: "En proceso", invalido: "Inválido / Erróneo", entrevista: "Entrevista", cierre: "Cierre", sena: "Seña", venta: "Venta", desistir: "Desistir" }[value] || "Nuevo";
+  }
+
+  function priorityLabel(value) {
+    return { high: "Alta", normal: "Normal", low: "Baja" }[value] || "Normal";
+  }
+
+  function appraisalForLead(leadId) {
+    return state.appraisals.find(function (item) { return item.lead_id === leadId; }) || null;
+  }
+
+  function renderPortfolio() {
+    var sellerFilter = document.getElementById("portfolioSeller");
+    var selectedSeller = sellerFilter.value;
+    sellerFilter.innerHTML = '<option value="">Todos</option>' + state.sellers.map(function (seller) {
+      return '<option value="' + seller.user_id + '">' + escapeHtml(seller.full_name) + '</option>';
+    }).join("");
+    if (selectedSeller && state.sellers.some(function (seller) { return seller.user_id === selectedSeller; })) sellerFilter.value = selectedSeller;
+
+    var status = document.getElementById("portfolioStatus").value;
+    var priority = document.getElementById("portfolioPriority").value;
+    var search = document.getElementById("portfolioSearch").value.trim().toLocaleLowerCase("es-AR");
+    var showHistorical = document.getElementById("portfolioHistorical").checked;
+    var terminal = ["venta", "desistir", "invalido"];
+    var now = Date.now();
+    var assigned = state.leads.filter(function (lead) { return Boolean(lead.assigned_seller_user_id); });
+    var active = assigned.filter(function (lead) { return !terminal.includes(crmOf(lead).status); });
+    var overdue = active.filter(function (lead) { var next = crmOf(lead).next_contact_at; return next && new Date(next).getTime() < now; });
+    var uncontacted = active.filter(function (lead) { return crmOf(lead).status === "nuevo" && !crmOf(lead).last_contact_at; });
+    var closing = active.filter(function (lead) { return ["cierre", "sena"].includes(crmOf(lead).status); });
+
+    document.getElementById("portfolioStats").innerHTML = [
+      ["Activos", active.length, ""],
+      ["Sin primer contacto", uncontacted.length, uncontacted.length ? "attention" : ""],
+      ["Vencidos", overdue.length, overdue.length ? "attention" : ""],
+      ["Entrevistas", active.filter(function (lead) { return crmOf(lead).status === "entrevista"; }).length, ""],
+      ["Cierre / Seña", closing.length, ""],
+    ].map(function (item) { return '<article class="portfolio-stat ' + item[2] + '"><span>' + item[0] + '</span><strong>' + item[1] + '</strong></article>'; }).join("");
+
+    var rows = assigned.filter(function (lead) {
+      var crm = crmOf(lead);
+      if (!showHistorical && terminal.includes(crm.status)) return false;
+      if (sellerFilter.value && lead.assigned_seller_user_id !== sellerFilter.value) return false;
+      if (status && crm.status !== status) return false;
+      if (priority && (crm.priority || lead.priority) !== priority) return false;
+      if (search && ![lead.customer_name, lead.customer_phone, lead.model_interest, lead.intent_summary].join(" ").toLocaleLowerCase("es-AR").includes(search)) return false;
+      return true;
+    }).sort(function (a, b) {
+      var aNext = crmOf(a).next_contact_at ? new Date(crmOf(a).next_contact_at).getTime() : Number.MAX_SAFE_INTEGER;
+      var bNext = crmOf(b).next_contact_at ? new Date(crmOf(b).next_contact_at).getTime() : Number.MAX_SAFE_INTEGER;
+      return aNext - bNext || new Date(b.last_message_at) - new Date(a.last_message_at);
+    });
+
+    document.getElementById("portfolioCount").textContent = active.length === 1 ? "1 lead activo" : active.length + " leads activos";
+    document.getElementById("portfolioRows").innerHTML = rows.map(function (lead) {
+      var crm = crmOf(lead);
+      var seller = sellerById(lead.assigned_seller_user_id);
+      var appraisal = appraisalForLead(lead.id);
+      var isOverdue = crm.next_contact_at && new Date(crm.next_contact_at).getTime() < now && !terminal.includes(crm.status);
+      return '<tr class="' + (isOverdue ? "is-overdue" : "") + '" data-portfolio-lead="' + lead.id + '">' +
+        '<td><strong>' + escapeHtml(lead.customer_name || "Lead sin nombre") + '</strong><small>+' + escapeHtml(lead.customer_phone) + ' · ' + escapeHtml(lead.model_interest || "Modelo a definir") + '</small></td>' +
+        '<td><strong>' + escapeHtml(seller && seller.full_name || "Sin vendedor") + '</strong><small>' + escapeHtml(seller && seller.seller_code || "") + '</small></td>' +
+        '<td><span class="portfolio-status ' + escapeHtml(crm.status || "nuevo") + '">' + escapeHtml(crmStatusLabel(crm.status)) + '</span></td>' +
+        '<td><span class="portfolio-priority ' + escapeHtml(crm.priority || lead.priority || "normal") + '">' + escapeHtml(priorityLabel(crm.priority || lead.priority)) + '</span></td>' +
+        '<td><strong>' + escapeHtml(crm.next_contact_at ? formatDate(crm.next_contact_at) : "Sin programar") + '</strong><small>' + escapeHtml(crm.next_contact_note || (isOverdue ? "Seguimiento vencido" : "")) + '</small></td>' +
+        '<td>' + (appraisal ? '<strong>' + escapeHtml(appraisal.status === "confirmed" ? marketMoney(appraisal.confirmed_value, appraisal.confirmed_currency || appraisal.market_currency) : appraisal.suggested_value != null ? "Sugerido " + marketMoney(appraisal.suggested_value, appraisal.market_currency) : "Pendiente") + '</strong><small>' + escapeHtml([appraisal.brand, appraisal.model, appraisal.vehicle_year].filter(Boolean).join(" · ")) + '</small>' + (appraisal.status === "pending" ? '<button class="button secondary appraisal-review-button" type="button" data-review-appraisal>Confirmar</button>' : '') : '<small>Sin usado cargado</small>') + '</td>' +
+        '<td>' + escapeHtml(crm.last_contact_at ? formatDate(crm.last_contact_at) : "Sin contacto registrado") + '</td>' +
+        '<td><button class="button secondary" type="button" data-portfolio-details>Ver detalle</button></td></tr>';
+    }).join("");
+    document.getElementById("portfolioEmpty").hidden = Boolean(rows.length);
+    document.querySelector(".portfolio-table-wrap").hidden = !rows.length;
   }
 
   function renderStats() {
@@ -161,11 +247,12 @@
     state.view = view;
     document.querySelectorAll("[data-supervisor-panel]").forEach(function (panel) { panel.hidden = panel.dataset.supervisorPanel !== view; });
     document.querySelectorAll("[data-supervisor-view]").forEach(function (button) { button.classList.toggle("active", button.dataset.supervisorView === view); });
-    var titles = { leads: ["Distribución comercial", "Bandeja de leads"], bases: ["Administración de bases", "Nuevos y rellamados"], followup: ["Cumplimiento operativo", "Proceso de seguimiento"], sales: ["Control comercial", "Ventas para confirmar"], administration: ["Circuito posterior a la venta", "Seguimiento administrativo"], goals: ["Rendimiento del equipo", "Objetivos comerciales"] };
+    var titles = { leads: ["Distribución comercial", "Bandeja de leads"], portfolio: ["Supervisión del equipo", "Cartera comercial"], bases: ["Administración de bases", "Nuevos y rellamados"], followup: ["Cumplimiento operativo", "Proceso de seguimiento"], sales: ["Control comercial", "Ventas para confirmar"], administration: ["Circuito posterior a la venta", "Seguimiento administrativo"], goals: ["Rendimiento del equipo", "Objetivos comerciales"] };
     document.querySelector(".topbar .eyebrow").textContent = titles[view][0];
     document.querySelector(".topbar h1").textContent = titles[view][1];
     if (view === "goals") { renderGoals(); renderRanking(); }
     if (view === "administration") renderInstallmentMetrics();
+    if (view === "portfolio") renderPortfolio();
     if (view === "bases") document.dispatchEvent(new CustomEvent("grupoSur:bases-open"));
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -306,6 +393,7 @@
     renderOperations();
     renderGoals();
     renderTemplates();
+    renderPortfolio();
     document.getElementById("manualSellerSelect").innerHTML = '<option value="">Bandeja general</option>' + state.sellers.filter(function (seller) { return seller.active; }).map(function (seller) { return '<option value="' + seller.user_id + '">' + escapeHtml(seller.full_name + " · " + seller.seller_code) + '</option>'; }).join("");
   }
 
@@ -388,6 +476,17 @@
     if (result.error) { pageMessage.textContent = "No se pudo cambiar el estado de derivación."; setBusy(button, false); } else await loadData(true);
   });
 
+  async function openLeadConversation(lead) {
+    document.getElementById("dialogLeadName").textContent = lead.customer_name || "+" + lead.customer_phone;
+    document.getElementById("dialogLeadSummary").textContent = lead.intent_summary || "Sin resumen disponible.";
+    document.getElementById("conversation").innerHTML = '<div class="message-bubble">Cargando conversación…</div>';
+    document.getElementById("leadDialog").showModal();
+    var messages = await supabaseClient.from("lead_messages").select("direction, body, created_at").eq("lead_id", lead.id).order("created_at");
+    document.getElementById("conversation").innerHTML = messages.error || !messages.data.length
+      ? '<div class="message-bubble">Todavía no hay mensajes disponibles.</div>'
+      : messages.data.map(function (message) { return '<div class="message-bubble ' + escapeHtml(message.direction) + '">' + escapeHtml(message.body || "Mensaje sin texto") + '<small>' + escapeHtml(formatDate(message.created_at)) + '</small></div>'; }).join("");
+  }
+
   document.getElementById("leadList").addEventListener("click", async function (event) {
     var card = event.target.closest("[data-lead-id]");
     if (!card) return;
@@ -407,15 +506,59 @@
       return;
     }
     if (event.target.closest("[data-details]")) {
-      document.getElementById("dialogLeadName").textContent = lead.customer_name || "+" + lead.customer_phone;
-      document.getElementById("dialogLeadSummary").textContent = lead.intent_summary || "Sin resumen disponible.";
-      document.getElementById("conversation").innerHTML = '<div class="message-bubble">Cargando conversación…</div>';
-      document.getElementById("leadDialog").showModal();
-      var messages = await supabaseClient.from("lead_messages").select("direction, body, created_at").eq("lead_id", lead.id).order("created_at");
-      document.getElementById("conversation").innerHTML = messages.error || !messages.data.length
-        ? '<div class="message-bubble">Todavía no hay mensajes disponibles.</div>'
-        : messages.data.map(function (message) { return '<div class="message-bubble ' + escapeHtml(message.direction) + '">' + escapeHtml(message.body || "Mensaje sin texto") + '<small>' + escapeHtml(formatDate(message.created_at)) + '</small></div>'; }).join("");
+      await openLeadConversation(lead);
     }
+  });
+
+  document.querySelector(".portfolio-filters").addEventListener("input", renderPortfolio);
+  document.querySelector(".portfolio-filters").addEventListener("change", renderPortfolio);
+  document.getElementById("meliConnectButton").addEventListener("click", async function () {
+    setBusy(this, true, "Preparando…");
+    var result = await supabaseClient.functions.invoke("mercadolibre-oauth-start", { body: {} });
+    if (result.error || !result.data || !result.data.authorizationUrl) {
+      pageMessage.textContent = result.data && result.data.error || "No se pudo iniciar la conexión con Mercado Libre.";
+      setBusy(this, false);
+      return;
+    }
+    window.location.assign(result.data.authorizationUrl);
+  });
+  document.getElementById("portfolioRows").addEventListener("click", function (event) {
+    var row = event.target.closest("[data-portfolio-lead]");
+    if (!row) return;
+    var lead = state.leads.find(function (item) { return item.id === row.dataset.portfolioLead; });
+    if (event.target.closest("[data-review-appraisal]")) {
+      var appraisal = appraisalForLead(lead.id);
+      if (!appraisal) return;
+      state.activeAppraisal = appraisal;
+      document.getElementById("appraisalReviewTitle").textContent = "Tasación de " + (lead.customer_name || "cliente");
+      document.getElementById("appraisalReviewSummary").innerHTML = '<strong>' + escapeHtml([appraisal.brand, appraisal.model, appraisal.version, appraisal.vehicle_year].filter(Boolean).join(" · ")) + '</strong><span>' + escapeHtml(new Intl.NumberFormat("es-AR").format(appraisal.mileage_km) + " km") + '</span><span>' + escapeHtml(appraisal.market_median != null ? "Mediana publicada: " + marketMoney(appraisal.market_median, appraisal.market_currency) + " · Toma sugerida (-15%): " + marketMoney(appraisal.suggested_value, appraisal.market_currency) + " · " + appraisal.reference_count + " comparables" : "Sin referencia suficiente de Mercado Libre") + '</span><span>Tasación pendiente de confirmación</span>';
+      document.getElementById("appraisalConfirmedValue").value = appraisal.confirmed_value || appraisal.suggested_value || "";
+      document.getElementById("appraisalReviewNote").value = appraisal.review_note || "";
+      document.getElementById("appraisalReviewMessage").textContent = "";
+      document.getElementById("appraisalReviewDialog").showModal();
+      return;
+    }
+    if (event.target.closest("[data-portfolio-details]") && lead) openLeadConversation(lead);
+  });
+
+  document.getElementById("appraisalConfirmButton").addEventListener("click", async function () {
+    if (!state.activeAppraisal) return;
+    var value = Number(document.getElementById("appraisalConfirmedValue").value);
+    var message = document.getElementById("appraisalReviewMessage");
+    message.textContent = "";
+    if (!Number.isFinite(value) || value <= 0) { message.textContent = "Ingresá un valor de tasación válido."; return; }
+    setBusy(this, true, "Confirmando…");
+    var result = await supabaseClient.rpc("review_lead_vehicle_appraisal", {
+      p_appraisal_id: state.activeAppraisal.id,
+      p_confirmed_value: value,
+      p_review_note: document.getElementById("appraisalReviewNote").value.trim()
+    });
+    if (result.error) { message.textContent = result.error.message; setBusy(this, false); return; }
+    document.getElementById("appraisalReviewDialog").close();
+    state.activeAppraisal = null;
+    await loadData(true);
+    pageMessage.textContent = "Tasación confirmada y visible para el vendedor.";
+    setBusy(this, false);
   });
 
   document.getElementById("manualLeadButton").addEventListener("click", function () {

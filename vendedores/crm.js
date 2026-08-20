@@ -16,11 +16,12 @@
     { value: "desistir", label: "Desistir" }
   ];
   var CLOSED_STAGES = ["venta", "desistir", "invalido"];
-  var state = { leads: [], tasks: [], saleQuotes: [], activeLead: null, view: "agenda", searchAgenda: "", searchPipeline: "", loading: false };
+  var state = { leads: [], tasks: [], appraisals: [], saleQuotes: [], activeLead: null, view: "agenda", searchAgenda: "", searchPipeline: "", loading: false };
   var leadDialog = document.getElementById("crmLeadDialog");
   var commentDialog = document.getElementById("crmCommentDialog");
   var saleDialog = document.getElementById("crmSaleDialog");
   var answeredDialog = document.getElementById("crmAnsweredDialog");
+  var appraisalDialog = document.getElementById("crmAppraisalDialog");
   var pendingAnsweredTaskId = null;
 
   function escapeHtml(value) {
@@ -42,6 +43,33 @@
   function attributionOf(lead) {
     if (!lead || !lead.attribution) return null;
     return Array.isArray(lead.attribution) ? lead.attribution[0] || null : lead.attribution;
+  }
+
+  function appraisalForLead(leadId) {
+    return state.appraisals.find(function (item) { return item.lead_id === leadId; }) || null;
+  }
+
+  function conditionLabel(value) {
+    return { excellent: "Excelente", good: "Bueno", fair: "Regular", to_review: "A revisar" }[value] || "A revisar";
+  }
+
+  function marketMoney(value, currency) {
+    if (value == null || value === "") return "Importe no informado";
+    return (currency === "USD" ? "US$" : "$") + new Intl.NumberFormat("es-AR", { maximumFractionDigits: 0 }).format(Number(value));
+  }
+
+  function renderAppraisalSummary(leadId) {
+    var appraisal = appraisalForLead(leadId);
+    var target = document.getElementById("crmAppraisalSummary");
+    target.hidden = !appraisal;
+    if (!appraisal) { target.innerHTML = ""; return; }
+    var valueText = appraisal.status === "confirmed"
+      ? "Valor confirmado: " + marketMoney(appraisal.confirmed_value, appraisal.confirmed_currency || appraisal.market_currency)
+      : appraisal.estimated_min != null && appraisal.estimated_max != null
+        ? "Mercado publicado: " + marketMoney(appraisal.estimated_min, appraisal.market_currency) + " a " + marketMoney(appraisal.estimated_max, appraisal.market_currency)
+        : "Sin referencia de mercado suficiente";
+    var suggestedText = appraisal.suggested_value != null ? " · Toma sugerida (-15%): " + marketMoney(appraisal.suggested_value, appraisal.market_currency) : "";
+    target.innerHTML = '<div><strong>' + escapeHtml([appraisal.brand, appraisal.model, appraisal.version, appraisal.vehicle_year].filter(Boolean).join(" · ")) + '</strong><span>' + escapeHtml(new Intl.NumberFormat("es-AR").format(appraisal.mileage_km) + " km · " + conditionLabel(appraisal.condition) + " · " + valueText + suggestedText) + '</span>' + (appraisal.reference_count ? '<small>' + escapeHtml(appraisal.reference_count + " comparables activos · consulta " + formatDate(appraisal.market_checked_at)) + '</small>' : '') + '</div><b class="' + (appraisal.status === "confirmed" ? "confirmed" : "") + '">' + escapeHtml(appraisal.status === "confirmed" ? "Tasación confirmada" : "Tasación pendiente de confirmación") + '</b>';
   }
 
   function tasksForLead(leadId) {
@@ -156,12 +184,15 @@
         supabaseClient.from("leads").select(
           "id, customer_id, customer_phone, customer_name, source_channel, source_detail, qualification_status, priority, intent_summary, model_interest, assigned_at, last_message_at, created_at, attribution:lead_attributions(platform,source_type,campaign_name,adset_name,ad_name,headline,source_url), crm:lead_crm(status, priority, status_reason, next_contact_at, next_contact_note, last_contact_at, last_contact_outcome, interview_at, interview_location, deposit_amount, deposit_at, cold_base_at, sale_confirmation_status, sale_requested_at, sale_confirmed_at, vehicle_sold, sale_amount, updated_at)"
         ).order("last_message_at", { ascending: false }).limit(500),
-        supabaseClient.from("lead_contact_tasks").select("id, sequence_id, lead_id, sequence_order, channel, call_attempt, message_step, due_start, due_end, status, outcome, note, completed_at, template:contact_message_templates(title,body)").order("due_start", { ascending: true }).limit(3500)
+        supabaseClient.from("lead_contact_tasks").select("id, sequence_id, lead_id, sequence_order, channel, call_attempt, message_step, due_start, due_end, status, outcome, note, completed_at, template:contact_message_templates(title,body)").order("due_start", { ascending: true }).limit(3500),
+        supabaseClient.from("vehicle_appraisals").select("id, lead_id, brand, model, version, vehicle_year, mileage_km, condition, notes, estimated_min, estimated_max, market_median, suggested_value, market_currency, estimate_source, estimate_basis, reference_count, market_references, market_checked_at, status, confirmed_value, confirmed_currency, review_note, updated_at").order("updated_at", { ascending: false }).limit(500)
       ]);
       if (responses[0].error) throw responses[0].error;
       if (responses[1].error) throw responses[1].error;
+      if (responses[2].error) throw responses[2].error;
       state.leads = responses[0].data || [];
       state.tasks = responses[1].data || [];
+      state.appraisals = responses[2].data || [];
       renderAgenda();
       renderPipeline();
       message.textContent = "";
@@ -397,6 +428,7 @@
     managementButton.textContent = crm.status === "venta" ? "Venta confirmada" : "Guardar gestión";
     saleButton.disabled = crm.sale_confirmation_status === "pending" || crm.sale_confirmation_status === "confirmed";
     saleButton.textContent = crm.sale_confirmation_status === "pending" ? "Datero pendiente" : crm.sale_confirmation_status === "confirmed" ? "Venta confirmada" : "Enviar datero";
+    renderAppraisalSummary(lead.id);
     renderNextCard(lead);
     renderProtocol(lead);
     updateConditionalFields();
@@ -580,6 +612,56 @@
   document.getElementById("crmSaveManagement").addEventListener("click", saveManagement);
   document.getElementById("crmCommentButton").addEventListener("click", function () { document.getElementById("crmCommentError").textContent = ""; commentDialog.showModal(); });
   document.getElementById("crmCommentSave").addEventListener("click", saveComment);
+  document.getElementById("crmAppraisalButton").addEventListener("click", function () {
+    if (!state.activeLead) return;
+    var form = document.getElementById("crmAppraisalForm");
+    var appraisal = appraisalForLead(state.activeLead.id) || {};
+    form.elements.brand.value = appraisal.brand || "";
+    form.elements.model.value = appraisal.model || state.activeLead.model_interest || "";
+    form.elements.version.value = appraisal.version || "";
+    form.elements.vehicleYear.value = appraisal.vehicle_year || "";
+    form.elements.mileageKm.value = appraisal.mileage_km || "";
+    form.elements.condition.value = appraisal.condition || "good";
+    form.elements.notes.value = appraisal.notes || "";
+    document.getElementById("crmAppraisalError").textContent = "";
+    appraisalDialog.showModal();
+  });
+  document.querySelector("#crmAppraisalDialog .crm-dialog-close").addEventListener("click", function () { appraisalDialog.close(); });
+  document.getElementById("crmAppraisalForm").addEventListener("submit", async function (event) {
+    event.preventDefault();
+    if (!state.activeLead) return;
+    var form = event.currentTarget;
+    var errorBox = document.getElementById("crmAppraisalError");
+    var button = document.getElementById("crmAppraisalSubmit");
+    errorBox.textContent = "";
+    setBusy(button, true, "Guardando…");
+    var result = await supabaseClient.rpc("save_lead_vehicle_appraisal", {
+      p_lead_id: state.activeLead.id,
+      p_brand: form.elements.brand.value.trim(),
+      p_model: form.elements.model.value.trim(),
+      p_version: form.elements.version.value.trim(),
+      p_vehicle_year: Number(form.elements.vehicleYear.value),
+      p_mileage_km: Number(form.elements.mileageKm.value),
+      p_condition: form.elements.condition.value,
+      p_notes: form.elements.notes.value.trim()
+    });
+    if (result.error) {
+      errorBox.textContent = result.error.message;
+      setBusy(button, false);
+      return;
+    }
+    var appraisalId = result.data;
+    var estimate = await supabaseClient.functions.invoke("vehicle-market-reference", { body: { appraisalId: appraisalId } });
+    await loadLeads(true);
+    renderAppraisalSummary(state.activeLead.id);
+    appraisalDialog.close();
+    setBusy(button, false);
+    if (estimate.error) {
+      document.getElementById("crmFormError").textContent = "La solicitud quedó guardada, pero Mercado Libre todavía no está conectado o no respondió.";
+    } else if (estimate.data && !estimate.data.sufficient) {
+      document.getElementById("crmFormError").textContent = estimate.data.message;
+    }
+  });
   document.getElementById("crmAnsweredSave").addEventListener("click", saveAnsweredFollowUp);
   document.getElementById("crmAnsweredDate").addEventListener("input", function () { maskDateInput(this); });
   document.getElementById("crmSaleButton").addEventListener("click", async function () {

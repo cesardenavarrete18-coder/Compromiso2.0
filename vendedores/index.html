@@ -107,6 +107,21 @@
         </button>
       </nav>
 
+      <details class="mobile-crm-menu" id="mobileCrmMenu">
+        <summary aria-label="Abrir funciones del CRM"><span>Menú</span><strong id="mobileCrmMenuLabel">Nueva gestión</strong><i aria-hidden="true">⌄</i></summary>
+        <nav aria-label="Funciones del CRM en versión móvil">
+          <button type="button" data-crm-view="agenda">Mi agenda</button>
+          <button type="button" data-crm-view="pipeline">Embudo comercial</button>
+          <button type="button" data-crm-view="ranking">Ranking</button>
+          <button type="button" data-crm-view="quotes">Presupuestos</button>
+          <button type="button" data-crm-view="sales">Mis ventas</button>
+          <button type="button" data-crm-view="recalls">Rellamados</button>
+          <button type="button" id="mobileProposeLeadButton">Proponer nuevo Lead</button>
+          <button type="button" data-action="home">Nueva gestión</button>
+          <button type="button" data-action="history">Actividad reciente</button>
+        </nav>
+      </details>
+
       <div class="seller-card">
         <div class="seller-avatar" id="sellerAvatar">AD</div>
         <div>
@@ -458,7 +473,8 @@
       <div class="crm-detail-grid">
         <section class="crm-detail-main">
           <div class="crm-client-summary" id="crmClientSummary"></div>
-          <div class="crm-quick-actions"><a class="crm-action-link" id="crmCallLink" href="#">Llamar</a><button class="crm-action-link" id="crmCommentButton" type="button">Agregar comentario</button><button class="crm-action-link" id="crmBudgetButton" type="button">Presupuesto</button><button class="crm-action-link accent" id="crmSaleButton" type="button">Enviar datero</button></div>
+          <div class="crm-quick-actions"><a class="crm-action-link" id="crmCallLink" href="#">Llamar</a><button class="crm-action-link" id="crmCommentButton" type="button">Agregar comentario</button><button class="crm-action-link" id="crmAppraisalButton" type="button">Tasación del usado</button><button class="crm-action-link" id="crmBudgetButton" type="button">Presupuesto</button><button class="crm-action-link accent" id="crmSaleButton" type="button">Enviar datero</button></div>
+          <div class="crm-appraisal-summary" id="crmAppraisalSummary" hidden></div>
           <div class="crm-tabs"><button class="active" type="button" data-crm-tab="manage">Gestión y seguimiento</button><button type="button" data-crm-tab="timeline">Historial</button><button type="button" data-crm-tab="customer">Consultas previas</button><button type="button" data-crm-tab="chat">Conversación IA</button></div>
           <div class="crm-tab-panel active" data-crm-panel="manage">
             <div id="crmProtocol"></div>
@@ -490,6 +506,8 @@
 
   <dialog class="crm-dialog small" id="crmCommentDialog"><form method="dialog" class="crm-dialog-shell"><button class="crm-dialog-close" value="cancel" aria-label="Cerrar">×</button><p class="eyebrow dark">Nota interna</p><h2>Agregar comentario</h2><textarea id="crmCommentInput" rows="5" placeholder="Información útil para continuar la gestión"></textarea><p class="crm-form-error" id="crmCommentError"></p><button class="primary-button" id="crmCommentSave" type="button">Guardar comentario</button></form></dialog>
 
+  <dialog class="crm-dialog small" id="crmAppraisalDialog"><form class="crm-dialog-shell" id="crmAppraisalForm"><button class="crm-dialog-close" value="cancel" type="button" aria-label="Cerrar">×</button><p class="eyebrow dark">Vehículo usado</p><h2>Solicitar tasación</h2><p class="crm-dialog-copy">Registrá los datos objetivos del vehículo. No se solicita patente ni titularidad.</p><div class="crm-form-grid"><label>Marca<input name="brand" type="text" maxlength="80" required></label><label>Modelo<input name="model" type="text" maxlength="120" required></label><label class="wide">Versión<input name="version" type="text" maxlength="160" placeholder="Ej. 1.6 Comfortline MT"></label><label>Año<input name="vehicleYear" type="number" min="1950" max="2100" required></label><label>Kilometraje<input name="mileageKm" type="number" min="0" max="3000000" step="1" required></label><label class="wide">Estado general<select name="condition" required><option value="excellent">Excelente</option><option value="good" selected>Bueno</option><option value="fair">Regular</option><option value="to_review">A revisar</option></select></label><label class="wide">Observaciones<textarea name="notes" rows="4" maxlength="3000" placeholder="Estado general, detalles visibles o información relevante"></textarea></label></div><div class="appraisal-pending-note"><strong>Tasación pendiente de confirmación</strong><span>Se consultarán vehículos equivalentes publicados en Mercado Libre. La toma sugerida será un 15% menor que la mediana obtenida y deberá ser validada por Supervisión.</span></div><p class="crm-form-error" id="crmAppraisalError"></p><button class="primary-button" id="crmAppraisalSubmit" type="submit">Guardar y consultar Mercado Libre</button></form></dialog>
+
   <dialog class="crm-dialog small" id="crmAnsweredDialog"><form method="dialog" class="crm-dialog-shell"><button class="crm-dialog-close" value="cancel" aria-label="Cancelar">×</button><p class="eyebrow dark">Cliente contactado</p><h2>Definir el próximo paso</h2><p class="crm-dialog-copy">La respuesta se registra únicamente cuando queda programada la próxima acción comercial.</p><div class="crm-form-grid answered-follow-up-grid"><label>Fecha del próximo contacto<input id="crmAnsweredDate" type="text" inputmode="numeric" maxlength="10" placeholder="dd/mm/aaaa" autocomplete="off"></label><label>Hora<input id="crmAnsweredTime" type="time" step="300"></label><label class="wide">Motivo / acción acordada<input id="crmAnsweredNote" type="text" placeholder="Ej. Enviar propuesta y confirmar documentación"></label></div><p class="crm-form-error" id="crmAnsweredError"></p><button class="primary-button" id="crmAnsweredSave" type="button">Guardar respuesta y próximo paso</button></form></dialog>
 
   <dialog class="crm-dialog small" id="crmSaleDialog"><form method="dialog" class="crm-dialog-shell"><button class="crm-dialog-close" value="cancel" aria-label="Cerrar">×</button><p class="eyebrow dark">Datero de operación</p><h2>Enviar venta a supervisión</h2><label>Presupuesto asociado · opcional<select id="crmSaleQuote"><option value="">Sin presupuesto asociado</option></select></label><p class="crm-form-help" id="crmSaleQuoteHelp">Si elegís un presupuesto de plan, el vehículo y el importe se toman de esa propuesta.</p><label>Vehículo vendido<input id="crmSaleVehicle" type="text" placeholder="Ej. Volkswagen Amarok Trendline"></label><label>Importe de la operación · opcional<input id="crmSaleAmount" type="number" min="0" step="1" placeholder="$"></label><label>Observaciones<textarea id="crmSaleNotes" rows="4"></textarea></label><p class="crm-form-error" id="crmSaleError"></p><button class="primary-button" id="crmSaleSubmit" type="button">Enviar datero a supervisión</button></form></dialog>
@@ -508,8 +526,9 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.2/dist/umd/supabase.js"></script>
   <script src="/vendedores/supabase-config.js?v=20260813-2"></script>
   <script src="/vendedores/app.js?v=20260817-1"></script>
-  <script src="/vendedores/crm.js?v=20260817-3"></script>
+  <script src="/vendedores/crm.js?v=20260820-1"></script>
   <script src="/vendedores/sales.js?v=20260818-1"></script>
   <script src="/vendedores/recalls.js?v=20260818-1"></script>
+  <script src="/vendedores/mobile-navigation.js?v=20260820-1"></script>
 </body>
 </html>
