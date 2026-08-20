@@ -14,6 +14,7 @@
   <link rel="stylesheet" href="/vendedores/supervisor/operations.css?v=20260817-1">
   <link rel="stylesheet" href="/vendedores/supervisor/navigation.css?v=20260817-1">
   <link rel="stylesheet" href="/vendedores/supervisor/lead-bases.css?v=20260818-1">
+  <link rel="stylesheet" href="/vendedores/supervisor/portfolio.css?v=20260820-1">
   <link rel="stylesheet" href="/vendedores/auth-loading.css?v=20260817-1">
 </head>
 <body>
@@ -42,6 +43,7 @@
       <a href="/" class="logo"><img src="/assets/logo-light.webp" alt="Grupo Sur Automotores"></a>
       <nav>
         <button class="nav-button active" type="button" data-supervisor-view="leads"><span>⌁</span>Leads</button>
+        <button class="nav-button" type="button" data-supervisor-view="portfolio"><span>◫</span>Cartera</button>
         <button class="nav-button" type="button" data-supervisor-view="bases"><span>⇩</span>Bases</button>
         <button class="nav-button" type="button" data-supervisor-view="followup"><span>✓</span>Seguimiento</button>
         <button class="nav-button" type="button" data-supervisor-view="sales"><span>◆</span>Ventas</button>
@@ -71,6 +73,28 @@
         <section class="operations-panel" data-supervisor-panel="followup" hidden>
           <div class="section-head"><div><h2>Centro de operaciones</h2><p>Controlá el cumplimiento del proceso de seguimiento sin intervenir en la agenda de cada vendedor.</p></div><span id="operationsCaption">0 vencidas · 0 hoy</span></div>
           <div class="operations-layout"><div class="operations-summary" id="operationsSummary"></div><div class="operations-tasks" id="operationsTasks"></div></div>
+        </section>
+
+        <section class="portfolio-panel" data-supervisor-panel="portfolio" hidden>
+          <div class="section-head portfolio-heading">
+            <div><h2>Cartera comercial</h2><p>Visualizá el estado actual de cada lead asignado y detectá gestiones que requieren atención.</p></div>
+            <div class="portfolio-heading-actions"><button class="button secondary" id="meliConnectButton" type="button">Conectar Mercado Libre</button><span id="portfolioCount">0 leads activos</span></div>
+          </div>
+          <div class="portfolio-stats" id="portfolioStats"></div>
+          <div class="portfolio-filters">
+            <label>Vendedor<select id="portfolioSeller"><option value="">Todos</option></select></label>
+            <label>Estado<select id="portfolioStatus"><option value="">Todos los estados</option><option value="nuevo">Nuevo</option><option value="no_contesta">No contesta</option><option value="en_proceso">En proceso</option><option value="entrevista">Entrevista</option><option value="cierre">Cierre</option><option value="sena">Seña</option><option value="venta">Venta</option><option value="desistir">Desistir</option><option value="invalido">Inválido / Erróneo</option></select></label>
+            <label>Prioridad<select id="portfolioPriority"><option value="">Todas</option><option value="high">Alta</option><option value="normal">Normal</option><option value="low">Baja</option></select></label>
+            <label class="portfolio-search">Buscar<input id="portfolioSearch" type="search" placeholder="Nombre, teléfono o modelo"></label>
+            <label class="portfolio-history"><input id="portfolioHistorical" type="checkbox"> Mostrar finalizados</label>
+          </div>
+          <div class="portfolio-table-wrap">
+            <table class="portfolio-table">
+              <thead><tr><th>Lead</th><th>Vendedor</th><th>Estado</th><th>Prioridad</th><th>Próxima acción</th><th>Tasación</th><th>Último contacto</th><th></th></tr></thead>
+              <tbody id="portfolioRows"></tbody>
+            </table>
+          </div>
+          <div class="sales-empty" id="portfolioEmpty" hidden>No hay leads que coincidan con los filtros.</div>
         </section>
 
         <section class="lead-bases-panel" data-supervisor-panel="bases" hidden>
@@ -189,10 +213,22 @@
     </form>
   </dialog>
 
+  <dialog id="appraisalReviewDialog" class="lead-dialog compact-dialog">
+    <form method="dialog" id="appraisalReviewForm">
+      <button class="dialog-close" value="cancel" aria-label="Cerrar">×</button>
+      <p class="eyebrow dark">Control de usado</p><h2 id="appraisalReviewTitle">Confirmar tasación</h2>
+      <div class="sale-review-summary" id="appraisalReviewSummary"></div>
+      <label class="review-note">Valor confirmado<input id="appraisalConfirmedValue" type="number" min="0" step="1" placeholder="$" required></label>
+      <label class="review-note">Observación<textarea id="appraisalReviewNote" rows="4" placeholder="Referencia utilizada o aclaración para el vendedor"></textarea></label>
+      <p class="message error" id="appraisalReviewMessage"></p>
+      <button class="button primary" id="appraisalConfirmButton" type="button">Confirmar tasación</button>
+    </form>
+  </dialog>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.2/dist/umd/supabase.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="/vendedores/supabase-config.js?v=20260814-1"></script>
-  <script src="/vendedores/supervisor/supervisor.js?v=20260818-1"></script>
+  <script src="/vendedores/supervisor/supervisor.js?v=20260820-1"></script>
   <script src="/vendedores/supervisor/lead-bases.js?v=20260818-1"></script>
 </body>
 </html>

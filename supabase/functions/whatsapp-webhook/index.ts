@@ -299,17 +299,47 @@ Deno.serve(async (request) => {
         const body = messageText(message);
         const referral = message.referral as JsonRecord | undefined;
         const hasMetaReferral = Boolean(referral && (referral.ctwa_clid || referral.source_id || referral.source_url));
-        const codes = candidateCodes(body);
+        let codes = candidateCodes(body);
+        const initialMetadata = {
+          phone_number_id: (value?.metadata as JsonRecord | undefined)?.phone_number_id || null,
+          referral: hasMetaReferral ? referral : null,
+        };
+        const claimResult = await db.rpc("claim_whatsapp_lead", {
+          p_customer_phone: customerPhone,
+          p_customer_name: customerName,
+          p_source_channel: codes.length ? "tiktok" : "whatsapp",
+          p_source_detail: codes.length ? "seller_code" : hasMetaReferral ? "meta_ads" : "organic",
+          p_metadata: initialMetadata,
+        });
+        const claim = Array.isArray(claimResult.data) ? claimResult.data[0] : null;
+        if (claimResult.error || !claim?.lead_id) {
+          console.error("WhatsApp lead claim failed", claimResult.error?.message || "No lead returned");
+          continue;
+        }
+        const leadId = String(claim.lead_id);
+        const createdNew = Boolean(claim.created_new);
+
+        // Persist first, analyze second. Besides preserving the complete conversation,
+        // the unique WhatsApp id makes concurrent Meta retries harmless.
+        const inboundResult = await db.from("lead_messages").insert({
+          lead_id: leadId,
+          whatsapp_message_id: whatsappMessageId || null,
+          direction: "inbound",
+          message_type: String(message.type ?? "unknown"),
+          body,
+          raw_payload: message,
+        });
+        if (inboundResult.error) {
+          if (inboundResult.error.code === "23505") continue;
+          console.error("Inbound message persistence failed", inboundResult.error.message);
+          continue;
+        }
 
         const existingResult = await db
           .from("leads")
-          .select("id, assigned_seller_user_id, routing_status, qualification_status, do_not_contact, model_interest, metadata")
-          .eq("customer_phone", customerPhone)
-          .not("routing_status", "in", "(closed,lost)")
-          .gte("last_message_at", new Date(Date.now() - 30 * 86400000).toISOString())
-          .order("last_message_at", { ascending: false })
-          .limit(1)
-          .maybeSingle();
+          .select("id, assigned_seller_user_id, assigned_at, routing_status, qualification_status, do_not_contact, model_interest, source_channel, source_detail, seller_code_received, metadata")
+          .eq("id", leadId)
+          .single();
         const existing = existingResult.data;
         const storedMetadata = existing?.metadata as JsonRecord | undefined;
         const storedReferral = storedMetadata?.referral as JsonRecord | undefined;
@@ -323,14 +353,6 @@ Deno.serve(async (request) => {
         // Los mensajes posteriores se conservan y notifican al supervisor, pero
         // la IA no reinicia el cuestionario ni compite con la atención humana.
         if (existing?.qualification_status === "qualified") {
-          await db.from("lead_messages").insert({
-            lead_id: existing.id,
-            whatsapp_message_id: whatsappMessageId || null,
-            direction: "inbound",
-            message_type: String(message.type ?? "unknown"),
-            body,
-            raw_payload: message,
-          });
           await db.from("leads").update({ last_message_at: new Date().toISOString() }).eq("id", existing.id);
           if (!existing.do_not_contact) {
             await db.from("lead_crm").update({
@@ -369,10 +391,16 @@ Deno.serve(async (request) => {
           continue;
         }
 
-        const historyResult = existing?.id
-          ? await db.from("lead_messages").select("direction, body").eq("lead_id", existing.id).order("created_at", { ascending: false }).limit(11)
-          : { data: [] };
-        const history = (historyResult.data || []).reverse().map((item) => `${item.direction === "outbound" ? "Asistente" : "Cliente"}: ${item.body}`);
+        const historyResult = await db.from("lead_messages")
+          .select("direction, body, whatsapp_message_id")
+          .eq("lead_id", leadId)
+          .order("created_at", { ascending: false })
+          .limit(12);
+        const historyRows = (historyResult.data || []).reverse();
+        codes = candidateCodes(historyRows.map((item) => item.body || "").join("\n"));
+        const history = historyRows
+          .filter((item) => !whatsappMessageId || item.whatsapp_message_id !== whatsappMessageId)
+          .map((item) => `${item.direction === "outbound" ? "Asistente" : "Cliente"}: ${item.body}`);
         const classification = await analyzeLeadConversation(
           history,
           body,
@@ -381,6 +409,17 @@ Deno.serve(async (request) => {
           referralContext,
           advertisedInterest,
         );
+
+        // If a newer inbound arrived while OpenAI was working, that newer execution
+        // owns the answer. This prevents two replies and stale questions.
+        const latestInboundResult = await db.from("lead_messages")
+          .select("whatsapp_message_id")
+          .eq("lead_id", leadId)
+          .eq("direction", "inbound")
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (whatsappMessageId && latestInboundResult.data?.whatsapp_message_id !== whatsappMessageId) continue;
 
         let seller: JsonRecord | null = null;
         if (!existing?.assigned_seller_user_id && codes.length) {
@@ -398,7 +437,7 @@ Deno.serve(async (request) => {
         let routingStatus = existing?.routing_status || "pending_supervisor";
         let routingReason = existing?.assigned_seller_user_id ? "existing_owner" : "general_inbox";
         let assignedSellerId = existing?.assigned_seller_user_id || null;
-        let assignedAt: string | null = assignedSellerId ? new Date().toISOString() : null;
+        let assignedAt: string | null = existing?.assigned_at || null;
 
         if (seller?.user_id) {
           const settingsResult = await db.from("seller_routing_settings").select("daily_quota, paused").eq("seller_user_id", seller.user_id).maybeSingle();
@@ -419,9 +458,9 @@ Deno.serve(async (request) => {
         const leadValues = {
           customer_phone: customerPhone,
           customer_name: customerName,
-          source_channel: codes.length ? "tiktok" : "whatsapp",
-          source_detail: codes.length ? "seller_code" : hasMetaReferral ? "meta_ads" : "organic",
-          seller_code_received: codes[0] || null,
+          source_channel: codes.length ? "tiktok" : existing?.source_channel || "whatsapp",
+          source_detail: codes.length ? "seller_code" : hasMetaReferral ? "meta_ads" : existing?.source_detail || "organic",
+          seller_code_received: codes[0] || existing?.seller_code_received || null,
           qualification_status: classification.qualification_status,
           priority: classification.priority,
           intent_summary: classification.intent_summary,
@@ -434,12 +473,14 @@ Deno.serve(async (request) => {
           last_message_at: new Date().toISOString(),
           contact_consent_at: new Date().toISOString(),
           contact_consent_source: "whatsapp_inbound",
-          metadata: { phone_number_id: (value?.metadata as JsonRecord | undefined)?.phone_number_id || null, referral: hasMetaReferral ? referral : null },
+          metadata: {
+            ...(storedMetadata || {}),
+            phone_number_id: (value?.metadata as JsonRecord | undefined)?.phone_number_id || storedMetadata?.phone_number_id || null,
+            referral: hasMetaReferral ? referral : storedReferral || null,
+          },
         };
 
-        const leadResult = existing
-          ? await db.from("leads").update(leadValues).eq("id", existing.id).select("id").single()
-          : await db.from("leads").insert(leadValues).select("id").single();
+        const leadResult = await db.from("leads").update(leadValues).eq("id", leadId).select("id").single();
         if (leadResult.error || !leadResult.data) continue;
 
         if (hasMetaReferral) {
@@ -456,15 +497,6 @@ Deno.serve(async (request) => {
             raw_referral: referral,
           }, { onConflict: "lead_id" });
         }
-
-        await db.from("lead_messages").insert({
-          lead_id: leadResult.data.id,
-          whatsapp_message_id: whatsappMessageId || null,
-          direction: "inbound",
-          message_type: String(message.type ?? "unknown"),
-          body,
-          raw_payload: message,
-        });
 
         const outgoingBody = classification.reply_text.trim();
         if (outgoingBody) {
@@ -483,7 +515,7 @@ Deno.serve(async (request) => {
           }
         }
 
-        if (!existing && assignedSellerId) {
+        if (createdNew && assignedSellerId) {
           await db.from("lead_assignments").insert({
             lead_id: leadResult.data.id,
             seller_user_id: assignedSellerId,
