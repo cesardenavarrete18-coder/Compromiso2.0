@@ -2,7 +2,7 @@
   "use strict";
 
   var supabaseClient = window.grupoSurSupabaseClient;
-  var state = { profile: null, sellers: [], settings: {}, leads: [], tasks: [], goals: [], templates: [], sales: [], adminSales: [], appraisals: [], activeSale: null, activeAppraisal: null, view: "leads", filter: "pending_supervisor", search: "" };
+  var state = { profile: null, sellers: [], settings: {}, leads: [], tasks: [], goals: [], templates: [], sales: [], adminSales: [], appraisals: [], conversationControls: {}, activeConversationLead: null, activeSale: null, activeAppraisal: null, view: "leads", filter: "pending_supervisor", search: "" };
   var loginView = document.getElementById("loginView");
   var appView = document.getElementById("appView");
   var loginForm = document.getElementById("loginForm");
@@ -101,7 +101,8 @@
       supabaseClient.from("lead_contact_tasks").select("id, lead_id, seller_user_id, channel, call_attempt, message_step, due_start, due_end, status, outcome, lead:leads(customer_name,customer_phone,model_interest), seller:profiles!lead_contact_tasks_seller_user_id_fkey(full_name,seller_code)").eq("status", "pending").order("due_start").limit(1000),
       supabaseClient.from("commercial_goals").select("id, period_month, seller_user_id, target_contacts, target_interviews, target_sales, target_finalized").order("period_month", { ascending: false }).limit(500),
       supabaseClient.from("contact_message_templates").select("id, step_number, title, body, active, updated_at").order("step_number"),
-      supabaseClient.from("vehicle_appraisals").select("id, lead_id, brand, model, version, vehicle_year, mileage_km, condition, notes, estimated_min, estimated_max, market_median, suggested_value, market_currency, estimate_source, estimate_basis, reference_count, market_references, market_checked_at, status, confirmed_value, confirmed_currency, review_note, updated_at").order("updated_at", { ascending: false }).limit(500)
+      supabaseClient.from("vehicle_appraisals").select("id, lead_id, brand, model, version, vehicle_year, mileage_km, condition, notes, estimated_min, estimated_max, market_median, suggested_value, market_currency, estimate_source, estimate_basis, reference_count, market_references, market_checked_at, status, confirmed_value, confirmed_currency, review_note, updated_at").order("updated_at", { ascending: false }).limit(500),
+      supabaseClient.from("whatsapp_conversation_controls").select("lead_id, mode, taken_by_user_id, taken_at, released_at, last_human_message_at, updated_at").limit(500)
     ]);
     var failed = results.find(function (item) { return item.error; });
     if (failed) throw failed.error;
@@ -115,6 +116,8 @@
     state.goals = results[6].data || [];
     state.templates = results[7].data || [];
     state.appraisals = results[8].data || [];
+    state.conversationControls = {};
+    (results[9].data || []).forEach(function (item) { state.conversationControls[item.lead_id] = item; });
     renderAll();
     pageMessage.textContent = "";
   }
@@ -138,6 +141,40 @@
 
   function appraisalForLead(leadId) {
     return state.appraisals.find(function (item) { return item.lead_id === leadId; }) || null;
+  }
+
+  function conversationControlForLead(leadId) {
+    return state.conversationControls[leadId] || { lead_id: leadId, mode: "ai" };
+  }
+
+  function conversationOwnerName(control) {
+    if (!control || !control.taken_by_user_id) return "";
+    if (state.profile && control.taken_by_user_id === state.profile.user_id) return state.profile.full_name;
+    var seller = sellerById(control.taken_by_user_id);
+    return seller ? seller.full_name : "otro usuario del equipo";
+  }
+
+  function renderWhatsAppInbox() {
+    var list = document.getElementById("whatsappInboxList");
+    if (!list) return;
+    var mode = document.getElementById("whatsappModeFilter").value;
+    var query = document.getElementById("whatsappSearch").value.trim().toLocaleLowerCase("es-AR");
+    var rows = state.leads.filter(function (lead) {
+      var isWhatsApp = ["whatsapp", "tiktok"].includes(lead.source_channel) || lead.source_detail === "meta_ads";
+      var control = conversationControlForLead(lead.id);
+      var haystack = [lead.customer_name, lead.customer_phone, lead.model_interest, lead.intent_summary].join(" ").toLocaleLowerCase("es-AR");
+      return isWhatsApp && (mode === "all" || control.mode === mode) && (!query || haystack.includes(query));
+    });
+    document.getElementById("whatsappInboxEmpty").hidden = rows.length > 0;
+    list.innerHTML = rows.map(function (lead) {
+      var control = conversationControlForLead(lead.id);
+      var seller = sellerById(lead.assigned_seller_user_id);
+      return '<article class="whatsapp-inbox-row ' + (control.mode === "human" ? "is-human" : "") + '" data-whatsapp-lead-id="' + lead.id + '">' +
+        '<div class="whatsapp-inbox-customer"><strong>' + escapeHtml(lead.customer_name || "+" + lead.customer_phone) + '</strong><small>+' + escapeHtml(lead.customer_phone) + ' · ' + escapeHtml(formatDate(lead.last_message_at)) + '</small></div>' +
+        '<div class="whatsapp-inbox-summary"><strong>' + escapeHtml(lead.intent_summary || "Conversación sin resumen") + '</strong><small>' + escapeHtml(lead.model_interest || "Modelo a definir") + ' · ' + escapeHtml(seller ? seller.full_name : "Sin vendedor") + '</small></div>' +
+        '<div><span class="conversation-mode ' + control.mode + '">' + (control.mode === "human" ? "Atención humana" : "IA activa") + '</span>' + (control.mode === "human" ? '<small class="whatsapp-inbox-owner">' + escapeHtml(conversationOwnerName(control)) + '</small>' : '') + '</div>' +
+        '<button class="button secondary" type="button" data-open-whatsapp>Ver conversación</button></article>';
+    }).join("");
   }
 
   function renderPortfolio() {
@@ -263,12 +300,13 @@
     state.view = view;
     document.querySelectorAll("[data-supervisor-panel]").forEach(function (panel) { panel.hidden = panel.dataset.supervisorPanel !== view; });
     document.querySelectorAll("[data-supervisor-view]").forEach(function (button) { button.classList.toggle("active", button.dataset.supervisorView === view); });
-    var titles = { leads: ["Distribución comercial", "Bandeja de leads"], portfolio: ["Supervisión del equipo", "Cartera comercial"], bases: ["Administración de bases", "Nuevos y rellamados"], followup: ["Cumplimiento operativo", "Proceso de seguimiento"], sales: ["Control comercial", "Ventas para confirmar"], administration: ["Circuito posterior a la venta", "Seguimiento administrativo"], goals: ["Rendimiento del equipo", "Objetivos comerciales"] };
+    var titles = { leads: ["Distribución comercial", "Bandeja de leads"], whatsapp: ["Atención conversacional", "Bandeja de WhatsApp"], portfolio: ["Supervisión del equipo", "Cartera comercial"], bases: ["Administración de bases", "Nuevos y rellamados"], followup: ["Cumplimiento operativo", "Proceso de seguimiento"], sales: ["Control comercial", "Ventas para confirmar"], administration: ["Circuito posterior a la venta", "Seguimiento administrativo"], goals: ["Rendimiento del equipo", "Objetivos comerciales"] };
     document.querySelector(".topbar .eyebrow").textContent = titles[view][0];
     document.querySelector(".topbar h1").textContent = titles[view][1];
     if (view === "goals") { renderGoals(); renderRanking(); }
     if (view === "administration") renderInstallmentMetrics();
     if (view === "portfolio") renderPortfolio();
+    if (view === "whatsapp") renderWhatsAppInbox();
     if (view === "bases") document.dispatchEvent(new CustomEvent("grupoSur:bases-open"));
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -410,6 +448,7 @@
     renderGoals();
     renderTemplates();
     renderPortfolio();
+    renderWhatsAppInbox();
     document.getElementById("manualSellerSelect").innerHTML = '<option value="">Bandeja general</option>' + state.sellers.filter(function (seller) { return seller.active; }).map(function (seller) { return '<option value="' + seller.user_id + '">' + escapeHtml(seller.full_name + " · " + seller.seller_code) + '</option>'; }).join("");
   }
 
@@ -492,16 +531,97 @@
     if (result.error) { pageMessage.textContent = "No se pudo cambiar el estado de derivación."; setBusy(button, false); } else await loadData(true);
   });
 
-  async function openLeadConversation(lead) {
-    document.getElementById("dialogLeadName").textContent = lead.customer_name || "+" + lead.customer_phone;
-    document.getElementById("dialogLeadSummary").textContent = lead.intent_summary || "Sin resumen disponible.";
-    document.getElementById("conversation").innerHTML = '<div class="message-bubble">Cargando conversación…</div>';
-    document.getElementById("leadDialog").showModal();
+  function renderConversationControl(lead) {
+    var control = conversationControlForLead(lead.id);
+    var isHuman = control.mode === "human";
+    var badge = document.getElementById("dialogConversationMode");
+    badge.className = "conversation-mode " + control.mode;
+    badge.textContent = isHuman ? "Atención humana" : "IA activa";
+    document.getElementById("dialogConversationOwner").textContent = isHuman
+      ? "Tomada por " + conversationOwnerName(control) + (control.taken_at ? " el " + formatDate(control.taken_at) : "") + "."
+      : "La IA puede clasificar y responder automáticamente.";
+    document.getElementById("conversationTakeover").textContent = isHuman ? "Devolver a la IA" : "Tomar conversación";
+    document.getElementById("conversationTakeover").classList.toggle("secondary", isHuman);
+    document.getElementById("conversationTakeover").classList.toggle("primary", !isHuman);
+    document.getElementById("conversationComposer").hidden = !isHuman;
+  }
+
+  async function loadConversationMessages(lead) {
+    document.getElementById("dialogConversationStatus").textContent = "Consultando mensajes…";
     var messages = await supabaseClient.from("lead_messages").select("direction, body, created_at").eq("lead_id", lead.id).order("created_at");
     document.getElementById("conversation").innerHTML = messages.error || !messages.data.length
       ? '<div class="message-bubble">Todavía no hay mensajes disponibles.</div>'
       : messages.data.map(function (message) { return '<div class="message-bubble ' + escapeHtml(message.direction) + '">' + escapeHtml(message.body || "Mensaje sin texto") + '<small>' + escapeHtml(formatDate(message.created_at)) + '</small></div>'; }).join("");
+    document.getElementById("dialogConversationStatus").textContent = messages.error ? "No se pudo actualizar la conversación." : (messages.data.length === 1 ? "1 mensaje" : messages.data.length + " mensajes") + " · actualizado ahora";
+    var conversation = document.getElementById("conversation");
+    conversation.scrollTop = conversation.scrollHeight;
   }
+
+  async function openLeadConversation(lead) {
+    state.activeConversationLead = lead;
+    document.getElementById("dialogLeadName").textContent = lead.customer_name || "+" + lead.customer_phone;
+    document.getElementById("dialogLeadSummary").textContent = lead.intent_summary || "Sin resumen disponible.";
+    document.getElementById("conversation").innerHTML = '<div class="message-bubble">Cargando conversación…</div>';
+    document.getElementById("conversationHumanMessage").value = "";
+    document.getElementById("conversationHumanError").textContent = "";
+    renderConversationControl(lead);
+    if (!document.getElementById("leadDialog").open) document.getElementById("leadDialog").showModal();
+    await loadConversationMessages(lead);
+  }
+
+  document.getElementById("conversationRefresh").addEventListener("click", async function () {
+    if (!state.activeConversationLead) return;
+    setBusy(this, true, "Actualizando…");
+    await loadData(true);
+    renderConversationControl(state.activeConversationLead);
+    await loadConversationMessages(state.activeConversationLead);
+    setBusy(this, false);
+  });
+
+  document.getElementById("conversationTakeover").addEventListener("click", async function () {
+    if (!state.activeConversationLead) return;
+    var control = conversationControlForLead(state.activeConversationLead.id);
+    var nextMode = control.mode === "human" ? "ai" : "human";
+    setBusy(this, true, nextMode === "human" ? "Tomando…" : "Devolviendo…");
+    var result = await supabaseClient.rpc("set_whatsapp_conversation_mode", { p_lead_id: state.activeConversationLead.id, p_mode: nextMode });
+    if (result.error) {
+      document.getElementById("conversationHumanError").textContent = result.error.message;
+      setBusy(this, false);
+      return;
+    }
+    await loadData(true);
+    renderConversationControl(state.activeConversationLead);
+    setBusy(this, false);
+  });
+
+  document.getElementById("conversationHumanSend").addEventListener("click", async function () {
+    if (!state.activeConversationLead) return;
+    var input = document.getElementById("conversationHumanMessage");
+    var errorBox = document.getElementById("conversationHumanError");
+    var message = input.value.trim();
+    errorBox.textContent = "";
+    if (!message) { errorBox.textContent = "Escribí un mensaje antes de enviarlo."; return; }
+    setBusy(this, true, "Enviando…");
+    var result = await supabaseClient.functions.invoke("whatsapp-human-message", { body: { leadId: state.activeConversationLead.id, message: message } });
+    if (result.error || !result.data || !result.data.sent) {
+      errorBox.textContent = result.data && result.data.error || "No se pudo enviar el mensaje por WhatsApp.";
+      setBusy(this, false);
+      return;
+    }
+    input.value = "";
+    await loadData(true);
+    await loadConversationMessages(state.activeConversationLead);
+    setBusy(this, false);
+  });
+
+  document.getElementById("whatsappModeFilter").addEventListener("change", renderWhatsAppInbox);
+  document.getElementById("whatsappSearch").addEventListener("input", renderWhatsAppInbox);
+  document.getElementById("whatsappInboxList").addEventListener("click", async function (event) {
+    var row = event.target.closest("[data-whatsapp-lead-id]");
+    if (!row || !event.target.closest("[data-open-whatsapp]")) return;
+    var lead = state.leads.find(function (item) { return item.id === row.dataset.whatsappLeadId; });
+    if (lead) await openLeadConversation(lead);
+  });
 
   document.getElementById("leadList").addEventListener("click", async function (event) {
     var card = event.target.closest("[data-lead-id]");

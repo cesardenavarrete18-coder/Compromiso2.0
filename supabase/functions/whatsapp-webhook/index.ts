@@ -349,6 +349,18 @@ Deno.serve(async (request) => {
           ? `Referencia comercial confirmada por Meta Ads:\nTítulo: ${String(effectiveReferral.headline ?? "")}\nTexto: ${String(effectiveReferral.body ?? "")}\nModelo identificado: ${advertisedInterest || "no determinado"}\nURL: ${String(effectiveReferral.source_url ?? "")}`.trim()
           : "";
 
+        // A human takeover is authoritative. The inbound message remains stored,
+        // but OpenAI is not called and the bot cannot compete with the operator.
+        const conversationControl = await db
+          .from("whatsapp_conversation_controls")
+          .select("mode")
+          .eq("lead_id", leadId)
+          .maybeSingle();
+        if (conversationControl.data?.mode === "human") {
+          await db.from("leads").update({ last_message_at: new Date().toISOString() }).eq("id", leadId);
+          continue;
+        }
+
         // Una vez calificado, el lead ya fue transferido al equipo comercial.
         // Los mensajes posteriores se conservan y notifican al supervisor, pero
         // la IA no reinicia el cuestionario ni compite con la atención humana.
@@ -420,6 +432,18 @@ Deno.serve(async (request) => {
           .limit(1)
           .maybeSingle();
         if (whatsappMessageId && latestInboundResult.data?.whatsapp_message_id !== whatsappMessageId) continue;
+
+        // The conversation may have been taken while OpenAI was processing.
+        // Rechecking here closes that race before any classification or reply is applied.
+        const controlAfterAnalysis = await db
+          .from("whatsapp_conversation_controls")
+          .select("mode")
+          .eq("lead_id", leadId)
+          .maybeSingle();
+        if (controlAfterAnalysis.data?.mode === "human") {
+          await db.from("leads").update({ last_message_at: new Date().toISOString() }).eq("id", leadId);
+          continue;
+        }
 
         let seller: JsonRecord | null = null;
         if (!existing?.assigned_seller_user_id && codes.length) {

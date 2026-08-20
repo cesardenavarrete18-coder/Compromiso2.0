@@ -1,6 +1,8 @@
 (function () {
   "use strict";
 
+  var APPRAISALS_ENABLED = false;
+
   var supabaseClient = window.grupoSurSupabaseClient;
   if (!supabaseClient) return;
 
@@ -69,6 +71,7 @@
   function renderAppraisalSummary(leadId) {
     var appraisal = appraisalForLead(leadId);
     var target = document.getElementById("crmAppraisalSummary");
+    if (!APPRAISALS_ENABLED) { target.hidden = true; target.innerHTML = ""; return; }
     target.hidden = !appraisal;
     if (!appraisal) { target.innerHTML = ""; return; }
     var displayState = appraisalState(appraisal);
@@ -626,6 +629,7 @@
   document.getElementById("crmCommentButton").addEventListener("click", function () { document.getElementById("crmCommentError").textContent = ""; commentDialog.showModal(); });
   document.getElementById("crmCommentSave").addEventListener("click", saveComment);
   document.getElementById("crmAppraisalButton").addEventListener("click", function () {
+    if (!APPRAISALS_ENABLED) return;
     if (!state.activeLead) return;
     var form = document.getElementById("crmAppraisalForm");
     var appraisal = appraisalForLead(state.activeLead.id) || {};

@@ -106,6 +106,7 @@
 .portfolio-priority.normal { color: #315674; background: #edf4fa; }
 .portfolio-priority.low { color: #65788a; background: #f0f3f5; }
 .portfolio-table .button { min-height: 34px; padding: 7px 10px; white-space: nowrap; }
+.portfolio-table th:nth-child(6), .portfolio-table td:nth-child(6) { display: none; }
 
 @media (max-width: 1100px) {
   .portfolio-stats { grid-template-columns: repeat(3, 1fr); }
