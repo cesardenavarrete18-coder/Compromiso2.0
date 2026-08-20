@@ -1,4 +1,18 @@
 .crm-card-tags .protocol { color: #05603a; background: #e2f7eb; }
+.crm-protocol-disclosure { overflow: hidden; margin-bottom: 12px; border: 1px solid #bdd9eb; border-radius: 12px; background: #f7fbfe; }
+.crm-protocol-disclosure > summary { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 13px 16px; cursor: pointer; list-style: none; }
+.crm-protocol-disclosure > summary::-webkit-details-marker { display: none; }
+.crm-protocol-disclosure > summary div { min-width: 0; }
+.crm-protocol-disclosure > summary span, .crm-protocol-disclosure > summary strong, .crm-protocol-disclosure > summary small { display: block; }
+.crm-protocol-disclosure > summary strong { margin-top: 2px; color: #0b203a; font-size: 12px; }
+.crm-protocol-disclosure > summary small { margin-top: 3px; overflow: hidden; color: var(--muted); font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }
+.crm-protocol-disclosure > summary .protocol-kicker { color: var(--blue-700); font-size: 7px; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; }
+.protocol-toggle-label { flex: 0 0 auto; padding: 6px 9px; border-radius: 999px; color: var(--blue-700); background: #e8f4fc; font-size: 8px; font-weight: 900; text-transform: uppercase; }
+.crm-protocol-disclosure[open] .protocol-toggle-label::before { content: "Ocultar "; }
+.crm-protocol-disclosure[open] .protocol-toggle-label { font-size: 0; }
+.crm-protocol-disclosure[open] .protocol-toggle-label::before { font-size: 8px; }
+.protocol-expanded { padding: 0 12px 12px; border-top: 1px solid #dce9f2; background: #fff; }
+.protocol-expanded .protocol-heading { margin-top: 12px; }
 .protocol-heading { position: relative; display: flex; overflow: hidden; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 14px; padding: 17px 18px; border: 1px solid #bdd9eb; border-radius: 12px; background: linear-gradient(135deg,#f2f9fd 0%,#fff 72%); box-shadow: 0 8px 24px rgba(20,78,117,.07); }
 .protocol-heading:before { position: absolute; inset: 0 auto 0 0; width: 4px; background: var(--blue-600); content: ""; }
 .protocol-heading strong, .protocol-heading span { display: block; }

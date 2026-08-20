@@ -95,7 +95,7 @@
     var results = await Promise.all([
       supabaseClient.from("profiles").select("user_id, full_name, seller_code, active").eq("role", "seller").order("full_name"),
       supabaseClient.from("seller_routing_settings").select("seller_user_id, daily_quota, paused"),
-      supabaseClient.from("leads").select("id, customer_phone, customer_name, source_channel, source_detail, seller_code_received, qualification_status, priority, intent_summary, model_interest, routing_status, routing_reason, assigned_seller_user_id, assigned_at, last_message_at, created_at, attribution:lead_attributions(platform,campaign_name,adset_name,ad_name,headline), crm:lead_crm(status, priority, status_reason, next_contact_at, next_contact_note, last_contact_at, last_contact_outcome, interview_at, sale_confirmation_status, sale_confirmed_at)").order("last_message_at", { ascending: false }).limit(500),
+      supabaseClient.from("leads").select("id, customer_phone, customer_name, source_channel, source_detail, seller_code_received, qualification_status, priority, intent_summary, model_interest, routing_status, routing_reason, assigned_seller_user_id, assigned_at, last_message_at, created_at, attribution:lead_attributions(platform,campaign_name,adset_name,ad_name,headline), tiktok_attributions:lead_tiktok_attributions(identifier_type,raw_identifier,outcome,routing_reason,created_at), crm:lead_crm(status, priority, status_reason, next_contact_at, next_contact_note, last_contact_at, last_contact_outcome, interview_at, sale_confirmation_status, sale_confirmed_at)").order("last_message_at", { ascending: false }).limit(500),
       supabaseClient.from("lead_sale_requests").select("id, lead_id, seller_user_id, vehicle, sale_amount, notes, status, requested_at, provisional_application_id, seller:profiles!lead_sale_requests_seller_user_id_fkey(full_name, seller_code), lead:leads(customer_name, customer_phone, intent_summary), provisional:commercial_applications!lead_sale_requests_provisional_application_id_fkey(request_code, brand_name, model_name, campaign_name, first_name, last_name, document_type, document_number, cuil, primary_phone, email, employment_status, employer_name, employment_seniority, monthly_income, automatic_debit, deferred_installment, installments_paid, installments_to_pay, plan_type, agreed_price, commercial_snapshot)").eq("status", "pending").order("requested_at"),
       supabaseClient.from("sales_cases").select("id, case_code, seller_user_id, vehicle, status, cdn_scoring_status, dealer_scoring_status, contract_status, finalized_at, cancellation_reason, updated_at, seller:profiles!sales_cases_seller_user_id_fkey(full_name, seller_code), lead:leads!sales_cases_lead_id_fkey(customer_name), events:sales_case_events(stage, outcome, comment, created_at)").order("updated_at", { ascending: false }).limit(250),
       supabaseClient.from("lead_contact_tasks").select("id, lead_id, seller_user_id, channel, call_attempt, message_step, due_start, due_end, status, outcome, lead:leads(customer_name,customer_phone,model_interest), seller:profiles!lead_contact_tasks_seller_user_id_fkey(full_name,seller_code)").eq("status", "pending").order("due_start").limit(1000),
@@ -339,7 +339,8 @@
     var query = state.search.toLocaleLowerCase("es-AR");
     return state.leads.filter(function (lead) {
       var matchesFilter = state.filter === "all" || lead.routing_status === state.filter;
-      var haystack = [lead.customer_name, lead.customer_phone, lead.intent_summary, lead.model_interest, lead.seller_code_received].join(" ").toLocaleLowerCase("es-AR");
+      var tiktokIdentifiers = (lead.tiktok_attributions || []).map(function (item) { return item.raw_identifier; }).join(" ");
+      var haystack = [lead.customer_name, lead.customer_phone, lead.intent_summary, lead.model_interest, lead.seller_code_received, tiktokIdentifiers].join(" ").toLocaleLowerCase("es-AR");
       return matchesFilter && (!query || haystack.includes(query));
     });
   }
@@ -352,9 +353,11 @@
   }
 
   function routingLabel(lead) {
-    if (lead.routing_status === "assigned_direct") return "Código válido";
+    if (lead.routing_status === "assigned_direct") return lead.routing_reason === "valid_advisor_name" ? "Asesor identificado" : "Código válido";
     if (lead.routing_status === "assigned_manual") return "Asignación manual";
     if (lead.routing_reason === "invalid_seller_code") return "Código no válido";
+    if (lead.routing_reason === "invalid_advisor_name") return "Asesor no encontrado";
+    if (lead.routing_reason === "ambiguous_advisor_name") return "Nombre ambiguo";
     if (lead.routing_reason === "daily_quota_reached") return "Cupo alcanzado";
     if (lead.routing_reason === "seller_paused") return "Vendedor pausado";
     return "Bandeja general";
@@ -374,7 +377,10 @@
       var assigned = sellerById(lead.assigned_seller_user_id);
       var crm = Array.isArray(lead.crm) ? lead.crm[0] : lead.crm;
       var attribution = Array.isArray(lead.attribution) ? lead.attribution[0] : lead.attribution;
-      var sourceLabel = lead.source_channel === "tiktok" ? "TikTok / código " + (lead.seller_code_received || "—") : lead.source_detail === "meta_ads" ? "Meta Ads · " + (attribution && (attribution.ad_name || attribution.headline || attribution.campaign_name) || "Anuncio sin nombre") : lead.source_channel === "manual" ? "Carga manual · " + (lead.source_detail || "Sin detalle") : "WhatsApp orgánico";
+      var tiktokAttributions = (lead.tiktok_attributions || []).slice().sort(function (a, b) { return new Date(b.created_at) - new Date(a.created_at); });
+      var tiktokAttribution = tiktokAttributions[0];
+      var tiktokIdentifier = tiktokAttribution ? (tiktokAttribution.identifier_type === "advisor_name" ? "asesor " : "código ") + tiktokAttribution.raw_identifier : "código " + (lead.seller_code_received || "—");
+      var sourceLabel = lead.source_channel === "tiktok" ? "TikTok / " + tiktokIdentifier : lead.source_detail === "meta_ads" ? "Meta Ads · " + (attribution && (attribution.ad_name || attribution.headline || attribution.campaign_name) || "Anuncio sin nombre") : lead.source_channel === "manual" ? "Carga manual · " + (lead.source_detail || "Sin detalle") : "WhatsApp orgánico";
       return '<article class="lead-card" data-lead-id="' + lead.id + '">' +
         '<div class="lead-person"><strong>' + escapeHtml(lead.customer_name || "Cliente sin nombre") + '</strong><span>+' + escapeHtml(lead.customer_phone) + ' · ' + escapeHtml(formatDate(lead.last_message_at)) + '</span><span>' + escapeHtml(sourceLabel) + '</span></div>' +
         '<div class="lead-summary"><p>' + escapeHtml(lead.intent_summary || "Pendiente de resumen") + '</p><div class="badges"><span class="badge ' + escapeHtml(lead.qualification_status) + '">' + escapeHtml(lead.qualification_status === "qualified" ? "Calificado" : lead.qualification_status === "unqualified" ? "No calificado" : "Seguimiento") + '</span><span class="badge ' + escapeHtml((crm && crm.priority) || lead.priority) + '">' + escapeHtml((crm && crm.priority) === "high" || lead.priority === "high" ? "Prioridad alta" : "Prioridad normal") + '</span><span class="badge">' + escapeHtml(crm && crm.status ? crm.status.replace(/_/g, " ") : "nuevo") + '</span><span class="badge">' + escapeHtml(routingLabel(lead)) + '</span></div></div>' +

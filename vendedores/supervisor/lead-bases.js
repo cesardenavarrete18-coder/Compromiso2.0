@@ -3,7 +3,7 @@
 
   var supabaseClient = window.grupoSurSupabaseClient;
   if (!supabaseClient) return;
-  var state = { rows: [], file: null, recalls: [], sellers: [], submissions: [], loading: false };
+  var state = { rows: [], file: null, recalls: [], recallPanels: [], sellers: [], submissions: [], loading: false };
 
   function escapeHtml(value) {
     return String(value == null ? "" : value).replace(/[&<>'"]/g, function (char) {
@@ -161,6 +161,19 @@
     }).join("") : '<div class="sales-empty">No hay rellamados disponibles para estos filtros.</div>';
   }
 
+  function renderRecallPanels() {
+    var target = document.getElementById("recallPanelHistory");
+    document.getElementById("recallPanelCount").textContent = state.recallPanels.length + (state.recallPanels.length === 1 ? " panel" : " paneles");
+    target.innerHTML = state.recallPanels.length ? state.recallPanels.map(function (panel) {
+      var seller = Array.isArray(panel.seller) ? panel.seller[0] : panel.seller;
+      var closed = panel.status === "closed";
+      var total = Number(panel.total_items || 0);
+      var completed = Number(panel.completed_items || 0);
+      var percent = total ? Math.round(completed * 100 / total) : 0;
+      return '<article class="recall-panel-history-row"><div><span>Panel #' + panel.panel_number + '</span><strong>' + escapeHtml(seller && seller.full_name || "Vendedor") + '</strong><small>Creado el ' + escapeHtml(formatDate(panel.created_at)) + '</small></div><div class="recall-panel-history-progress"><div><span style="width:' + percent + '%"></span></div><small>' + completed + ' de ' + total + ' tareas completas</small></div><span class="recall-panel-history-status ' + panel.status + '">' + (closed ? "Finalizado" : "En curso") + '</span></article>';
+    }).join("") : '<div class="sales-empty">Todavía no se generaron paneles de rellamados.</div>';
+  }
+
   function renderSubmissions() {
     document.getElementById("sellerSubmissionCount").textContent = state.submissions.length + (state.submissions.length === 1 ? " pendiente" : " pendientes");
     document.getElementById("sellerSubmissionList").innerHTML = state.submissions.length ? state.submissions.map(function (item) {
@@ -175,13 +188,14 @@
     var results = await Promise.all([
       supabaseClient.from("lead_recall_items").select("id, customer_name, customer_phone, model_interest, source_detail, original_inquiry_at, available_at, status, attempt_count, assigned_seller_user_id").in("status", ["available", "assigned", "working"]).order("original_inquiry_at", { ascending: false }).limit(5000),
       supabaseClient.from("profiles").select("user_id, full_name, seller_code").eq("role", "seller").eq("active", true).order("full_name"),
-      supabaseClient.from("seller_lead_submissions").select("id, customer_name, customer_phone, source_detail, model_interest, summary, created_at, seller:profiles!seller_lead_submissions_submitted_by_user_id_fkey(full_name,seller_code)").eq("status", "pending").order("created_at")
+      supabaseClient.from("seller_lead_submissions").select("id, customer_name, customer_phone, source_detail, model_interest, summary, created_at, seller:profiles!seller_lead_submissions_submitted_by_user_id_fkey(full_name,seller_code)").eq("status", "pending").order("created_at"),
+      supabaseClient.from("lead_recall_panels").select("id, panel_number, status, total_items, completed_items, created_at, closed_at, seller:profiles!lead_recall_panels_seller_user_id_fkey(full_name,seller_code)").order("created_at", { ascending: false }).limit(100)
     ]);
     state.loading = false;
     var failed = results.find(function (result) { return result.error; });
     if (failed) { document.getElementById("leadImportMessage").textContent = failed.error.message; return; }
-    state.recalls = results[0].data || []; state.sellers = results[1].data || []; state.submissions = results[2].data || [];
-    renderRecallFilters(); renderRecalls(); renderSubmissions();
+    state.recalls = results[0].data || []; state.sellers = results[1].data || []; state.submissions = results[2].data || []; state.recallPanels = results[3].data || [];
+    renderRecallFilters(); renderRecalls(); renderRecallPanels(); renderSubmissions();
   }
 
   async function assignRecalls() {
@@ -192,7 +206,7 @@
     if (!ids.length) { document.getElementById("leadImportMessage").textContent = "Seleccioná al menos un rellamado."; return; }
     setBusy(button, true, "Asignando…");
     var result = await supabaseClient.rpc("assign_recall_items", { p_item_ids: ids, p_seller_user_id: sellerId });
-    document.getElementById("leadImportMessage").textContent = result.error ? result.error.message : result.data + " rellamados asignados correctamente.";
+    document.getElementById("leadImportMessage").textContent = result.error ? result.error.message : "Panel creado con " + result.data + " rellamados, conservando el orden seleccionado.";
     if (!result.error) await loadBases();
     setBusy(button, false);
   }

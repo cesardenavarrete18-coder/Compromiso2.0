@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { candidateAdvisorName, candidateCodes, normalizedPersonName } from "./routing-identifiers.ts";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -285,10 +286,6 @@ function argentinaDayStart() {
   return `${get("year")}-${get("month")}-${get("day")}T00:00:00-03:00`;
 }
 
-function candidateCodes(text: string) {
-  return Array.from(new Set(text.toUpperCase().match(/\b[A-Z]{2,}[A-Z0-9_-]*\d[A-Z0-9_-]*\b/g) || []));
-}
-
 Deno.serve(async (request) => {
   const verifyToken = Deno.env.get("META_WEBHOOK_VERIFY_TOKEN") ?? "";
   if (request.method === "GET") {
@@ -350,6 +347,8 @@ Deno.serve(async (request) => {
         const referral = message.referral as JsonRecord | undefined;
         const hasMetaReferral = Boolean(referral && (referral.ctwa_clid || referral.source_id || referral.source_url));
         let codes = candidateCodes(body);
+        let advisorName = candidateAdvisorName(body);
+        let tiktokIdentifierType = codes.length ? "seller_code" : advisorName ? "advisor_name" : "";
         const initialMetadata = {
           phone_number_id: (value?.metadata as JsonRecord | undefined)?.phone_number_id || null,
           referral: hasMetaReferral ? referral : null,
@@ -357,8 +356,8 @@ Deno.serve(async (request) => {
         const claimResult = await db.rpc("claim_whatsapp_lead", {
           p_customer_phone: customerPhone,
           p_customer_name: customerName,
-          p_source_channel: codes.length ? "tiktok" : "whatsapp",
-          p_source_detail: codes.length ? "seller_code" : hasMetaReferral ? "meta_ads" : "organic",
+          p_source_channel: tiktokIdentifierType ? "tiktok" : "whatsapp",
+          p_source_detail: tiktokIdentifierType || (hasMetaReferral ? "meta_ads" : "organic"),
           p_metadata: initialMetadata,
         });
         const claim = Array.isArray(claimResult.data) ? claimResult.data[0] : null;
@@ -367,7 +366,6 @@ Deno.serve(async (request) => {
           continue;
         }
         const leadId = String(claim.lead_id);
-        const createdNew = Boolean(claim.created_new);
 
         // Persist first, analyze second. Besides preserving the complete conversation,
         // the unique WhatsApp id makes concurrent Meta retries harmless.
@@ -460,7 +458,10 @@ Deno.serve(async (request) => {
           .order("created_at", { ascending: false })
           .limit(12);
         const historyRows = (historyResult.data || []).reverse();
-        codes = candidateCodes(historyRows.map((item) => item.body || "").join("\n"));
+        const routingConversation = historyRows.map((item) => item.body || "").join("\n");
+        codes = candidateCodes(routingConversation);
+        advisorName = codes.length ? "" : candidateAdvisorName(routingConversation);
+        tiktokIdentifierType = codes.length ? "seller_code" : advisorName ? "advisor_name" : "";
         const history = historyRows
           .filter((item) => !whatsappMessageId || item.whatsapp_message_id !== whatsappMessageId)
           .map((item) => `${item.direction === "outbound" ? "Asistente" : "Cliente"}: ${item.body}`);
@@ -501,7 +502,8 @@ Deno.serve(async (request) => {
         }
 
         let seller: JsonRecord | null = null;
-        if (!existing?.assigned_seller_user_id && codes.length) {
+        let advisorNameAmbiguous = false;
+        if (codes.length) {
           const sellerResult = await db
             .from("profiles")
             .select("user_id, seller_code, full_name")
@@ -511,34 +513,48 @@ Deno.serve(async (request) => {
             .limit(1)
             .maybeSingle();
           seller = sellerResult.data;
+        } else if (advisorName) {
+          const sellerResult = await db
+            .from("profiles")
+            .select("user_id, seller_code, full_name")
+            .eq("role", "seller")
+            .eq("active", true);
+          const normalizedCandidate = normalizedPersonName(advisorName);
+          const matches = (sellerResult.data || []).filter((profile) => normalizedPersonName(String(profile.full_name || "")) === normalizedCandidate);
+          seller = matches.length === 1 ? matches[0] : null;
+          advisorNameAmbiguous = matches.length > 1;
         }
 
         let routingStatus = existing?.routing_status || "pending_supervisor";
         let routingReason = existing?.assigned_seller_user_id ? "existing_owner" : "general_inbox";
         let assignedSellerId = existing?.assigned_seller_user_id || null;
         let assignedAt: string | null = existing?.assigned_at || null;
+        let attributionOutcome = existing?.assigned_seller_user_id && tiktokIdentifierType ? "existing_owner" : "";
 
-        if (seller?.user_id) {
+        if (seller?.user_id && !existing?.assigned_seller_user_id) {
           const settingsResult = await db.from("seller_routing_settings").select("daily_quota, paused").eq("seller_user_id", seller.user_id).maybeSingle();
           const settings = settingsResult.data || { daily_quota: 20, paused: false };
           const assignedToday = await db.from("leads").select("id", { count: "exact", head: true }).eq("assigned_seller_user_id", seller.user_id).gte("assigned_at", argentinaDayStart());
           if (!settings.paused && (assignedToday.count || 0) < settings.daily_quota) {
             routingStatus = "assigned_direct";
-            routingReason = "valid_seller_code";
+            routingReason = tiktokIdentifierType === "advisor_name" ? "valid_advisor_name" : "valid_seller_code";
             assignedSellerId = seller.user_id as string;
             assignedAt = new Date().toISOString();
+            attributionOutcome = "assigned";
           } else {
             routingReason = settings.paused ? "seller_paused" : "daily_quota_reached";
+            attributionOutcome = routingReason;
           }
-        } else if (codes.length && !existing?.assigned_seller_user_id) {
-          routingReason = "invalid_seller_code";
+        } else if (tiktokIdentifierType && !existing?.assigned_seller_user_id) {
+          routingReason = advisorNameAmbiguous ? "ambiguous_advisor_name" : tiktokIdentifierType === "advisor_name" ? "invalid_advisor_name" : "invalid_seller_code";
+          attributionOutcome = advisorNameAmbiguous ? "ambiguous" : "invalid";
         }
 
         const leadValues = {
           customer_phone: customerPhone,
           customer_name: customerName,
-          source_channel: codes.length ? "tiktok" : existing?.source_channel || "whatsapp",
-          source_detail: codes.length ? "seller_code" : hasMetaReferral ? "meta_ads" : existing?.source_detail || "organic",
+          source_channel: tiktokIdentifierType ? "tiktok" : existing?.source_channel || "whatsapp",
+          source_detail: tiktokIdentifierType || (hasMetaReferral ? "meta_ads" : existing?.source_detail || "organic"),
           seller_code_received: codes[0] || existing?.seller_code_received || null,
           qualification_status: classification.qualification_status,
           priority: classification.priority,
@@ -561,6 +577,19 @@ Deno.serve(async (request) => {
 
         const leadResult = await db.from("leads").update(leadValues).eq("id", leadId).select("id").single();
         if (leadResult.error || !leadResult.data) continue;
+
+        if (tiktokIdentifierType) {
+          const attributionResult = await db.from("lead_tiktok_attributions").insert({
+            lead_id: leadResult.data.id,
+            whatsapp_message_id: whatsappMessageId || null,
+            identifier_type: tiktokIdentifierType,
+            raw_identifier: (codes[0] || advisorName).slice(0, 160),
+            matched_seller_user_id: seller?.user_id || null,
+            outcome: attributionOutcome || "invalid",
+            routing_reason: routingReason.slice(0, 300),
+          });
+          if (attributionResult.error) console.error("TikTok attribution audit failed", attributionResult.error.message);
+        }
 
         if (hasMetaReferral) {
           await db.from("lead_attributions").upsert({
@@ -595,7 +624,7 @@ Deno.serve(async (request) => {
           }
         }
 
-        if (createdNew && assignedSellerId) {
+        if (!existing?.assigned_seller_user_id && assignedSellerId) {
           await db.from("lead_assignments").insert({
             lead_id: leadResult.data.id,
             seller_user_id: assignedSellerId,
@@ -610,8 +639,8 @@ Deno.serve(async (request) => {
             recipient_user_id: supervisor.user_id,
             lead_id: leadResult.data.id,
             notification_type: assignedSellerId ? "direct_assignment" : "new_pending_lead",
-            title: assignedSellerId ? "Lead derivado por código" : "Nuevo lead para asignar",
-            body: `${customerName || customerPhone}: ${classification.intent_summary}`.slice(0, 500),
+            title: assignedSellerId ? (tiktokIdentifierType === "advisor_name" ? "Lead derivado por asesor" : "Lead derivado por código") : tiktokIdentifierType ? "TikTok requiere revisión" : "Nuevo lead para asignar",
+            body: `${customerName || customerPhone}: ${classification.intent_summary}${tiktokIdentifierType ? ` · ${routingReason}` : ""}`.slice(0, 500),
           })));
         }
       }

@@ -385,7 +385,8 @@
     }
     var progress = protocolProgress(lead.id);
     var nextTask = nextPendingTask(lead.id);
-    container.innerHTML = '<div class="protocol-heading"><div><span class="protocol-kicker">Organización comercial</span><strong>Proceso de seguimiento</strong><span>3 llamadas · 4 WhatsApp · distribuidos en 3 días hábiles</span></div><span class="protocol-progress"><b>' + progress.completed + '</b><small>de ' + progress.total + '</small></span></div>' +
+    var nextSummary = nextTask ? taskTitle(nextTask) + " · " + formatDate(nextTask.due_start, true) : "Proceso completado";
+    container.innerHTML = '<details class="crm-protocol-disclosure"><summary><div><span class="protocol-kicker">Proceso de seguimiento</span><strong>' + progress.completed + '/' + progress.total + ' completadas</strong><small>Próxima: ' + escapeHtml(nextSummary) + '</small></div><span class="protocol-toggle-label">Ver tareas</span></summary><div class="protocol-expanded"><div class="protocol-heading"><div><span class="protocol-kicker">Organización comercial</span><strong>Proceso de seguimiento</strong><span>3 llamadas · 4 WhatsApp · distribuidos en 3 días hábiles</span></div><span class="protocol-progress"><b>' + progress.completed + '</b><small>de ' + progress.total + '</small></span></div>' +
       '<div class="protocol-task-list">' + tasks.map(function (task) {
         var pending = task.status === "pending";
         var isNext = nextTask && nextTask.id === task.id;
@@ -401,7 +402,7 @@
             '<button class="whatsapp secondary" type="button" data-open-whatsapp="' + encodeURIComponent(body) + '">Abrir WhatsApp</button><button class="whatsapp" type="button" data-contact-task="' + task.id + '" data-contact-outcome="sent">Marcar enviado</button>') + '</div>' :
             '<div class="protocol-result">' + escapeHtml(task.status === "cancelled" ? "Cancelada" : task.outcome === "answered" ? "Respondió" : task.outcome === "no_answer" ? "No respondió" : task.outcome === "sent" ? "Enviado" : "Completada") + (task.completed_at ? " · " + escapeHtml(formatDate(task.completed_at)) + (insideWindow ? " · Cumplida en horario" : " · Fuera de franja") : "") + '</div>') +
           '</div></article>';
-      }).join("") + '</div>';
+      }).join("") + '</div></div></details>';
   }
 
   async function loadCustomerHistory(lead) {
