@@ -226,6 +226,7 @@ Deno.serve(async (request) => {
   url.searchParams.set("limit", "50");
 
   let response;
+  let authenticatedFailure = null;
   try {
     response = await fetch(url, {
       headers: { Authorization: `Bearer ${accessToken}` },
@@ -256,10 +257,45 @@ Deno.serve(async (request) => {
       code: "MELI_REQUEST_FAILED",
     }, 502);
   }
+  if (response.status === 401 || response.status === 403) {
+    authenticatedFailure = await readUpstreamFailure(response);
+    console.warn(JSON.stringify({
+      event: "mercadolibre_authenticated_search_rejected",
+      upstream_status: authenticatedFailure.status,
+      upstream_code: authenticatedFailure.code || null,
+      upstream_message: authenticatedFailure.message || null,
+      category_id: categoryId,
+      retry_mode: "public_search",
+    }));
+    try {
+      response = await fetch(url, { signal: AbortSignal.timeout(9000) });
+    } catch (error) {
+      console.error(JSON.stringify({
+        event: "mercadolibre_public_search_transport_failed",
+        error_name: safeDiagnostic(error?.name, 80),
+        error_message: safeDiagnostic(error?.message),
+        category_id: categoryId,
+      }));
+      return jsonResponse({
+        error: "Mercado Libre rechazó la autorización y la búsqueda pública no respondió. Intentá nuevamente.",
+        code: "MELI_PUBLIC_RETRY_FAILED",
+      }, 502);
+    }
+    if (response.ok) {
+      console.info(JSON.stringify({
+        event: "mercadolibre_public_search_fallback_succeeded",
+        authenticated_status: authenticatedFailure.status,
+        category_id: categoryId,
+      }));
+    }
+  }
   if (!response.ok) {
     const failure = await readUpstreamFailure(response);
     const checkedAt = new Date().toISOString();
-    const basis = upstreamFailureBasis(failure);
+    const basis = [
+      authenticatedFailure ? `La búsqueda autenticada fue rechazada con HTTP ${authenticatedFailure.status}.` : "",
+      upstreamFailureBasis(failure),
+    ].filter(Boolean).join(" ").slice(0, 500);
     await adminClient.from("vehicle_appraisals").update({
       estimated_min: null,
       estimated_max: null,
