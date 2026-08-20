@@ -13,6 +13,28 @@ function jsonResponse(body, status = 200) {
   });
 }
 
+function safeDiagnostic(value, maxLength = 240) {
+  return String(value ?? "").replace(/\s+/g, " ").trim().slice(0, maxLength);
+}
+
+async function readUpstreamFailure(response) {
+  let payload = null;
+  try { payload = await response.clone().json(); } catch { /* Mercado Libre may return an empty/non-JSON body. */ }
+  return {
+    status: response.status,
+    code: safeDiagnostic(payload?.code || payload?.error || payload?.cause?.[0]?.code, 80),
+    message: safeDiagnostic(payload?.message || payload?.error_description || payload?.cause?.[0]?.message),
+  };
+}
+
+function upstreamFailureBasis(failure) {
+  return [
+    `Mercado Libre respondió HTTP ${failure.status}.`,
+    failure.code ? `Código: ${failure.code}.` : "",
+    failure.message ? `Detalle: ${failure.message}` : "",
+  ].filter(Boolean).join(" ").slice(0, 500);
+}
+
 function normalize(value) {
   return String(value ?? "")
     .normalize("NFD")
@@ -209,12 +231,64 @@ Deno.serve(async (request) => {
       headers: { Authorization: `Bearer ${accessToken}` },
       signal: AbortSignal.timeout(9000),
     });
-  } catch {
-    return jsonResponse({ error: "Mercado Libre no respondió a tiempo. Intentá nuevamente." }, 502);
+  } catch (error) {
+    const checkedAt = new Date().toISOString();
+    await adminClient.from("vehicle_appraisals").update({
+      estimated_min: null,
+      estimated_max: null,
+      market_median: null,
+      suggested_value: null,
+      market_currency: null,
+      estimate_source: "mercadolibre_request_failed",
+      estimate_basis: "La consulta a Mercado Libre no pudo completarse por un problema de red o tiempo de espera.",
+      reference_count: 0,
+      market_references: [],
+      market_checked_at: checkedAt,
+    }).eq("id", appraisal.id);
+    console.error(JSON.stringify({
+      event: "mercadolibre_search_transport_failed",
+      error_name: safeDiagnostic(error?.name, 80),
+      error_message: safeDiagnostic(error?.message),
+      category_id: categoryId,
+    }));
+    return jsonResponse({
+      error: "Mercado Libre no respondió a tiempo. Intentá nuevamente.",
+      code: "MELI_REQUEST_FAILED",
+    }, 502);
   }
   if (!response.ok) {
-    const needsAuth = response.status === 401 || response.status === 403;
-    return jsonResponse({ error: needsAuth ? "La conexión con Mercado Libre necesita autorización vigente." : "No se pudo consultar Mercado Libre." }, 502);
+    const failure = await readUpstreamFailure(response);
+    const checkedAt = new Date().toISOString();
+    const basis = upstreamFailureBasis(failure);
+    await adminClient.from("vehicle_appraisals").update({
+      estimated_min: null,
+      estimated_max: null,
+      market_median: null,
+      suggested_value: null,
+      market_currency: null,
+      estimate_source: "mercadolibre_request_failed",
+      estimate_basis: basis,
+      reference_count: 0,
+      market_references: [],
+      market_checked_at: checkedAt,
+    }).eq("id", appraisal.id);
+    console.error(JSON.stringify({
+      event: "mercadolibre_search_failed",
+      upstream_status: failure.status,
+      upstream_code: failure.code || null,
+      upstream_message: failure.message || null,
+      category_id: categoryId,
+    }));
+    const needsAuth = failure.status === 401 || failure.status === 403;
+    return jsonResponse({
+      error: needsAuth
+        ? `Mercado Libre rechazó la autorización de la búsqueda (HTTP ${failure.status}).`
+        : `Mercado Libre rechazó la búsqueda (HTTP ${failure.status}).`,
+      code: "MELI_SEARCH_FAILED",
+      upstreamStatus: failure.status,
+      upstreamCode: failure.code || null,
+      upstreamMessage: failure.message || null,
+    }, 502);
   }
   const market = await response.json();
   const result = calculateReference(Array.isArray(market.results) ? market.results : [], {

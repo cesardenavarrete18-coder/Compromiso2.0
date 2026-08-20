@@ -58,18 +58,31 @@
     return (currency === "USD" ? "US$" : "$") + new Intl.NumberFormat("es-AR", { maximumFractionDigits: 0 }).format(Number(value));
   }
 
+  function appraisalState(appraisal) {
+    if (appraisal.status === "confirmed") return { label: "Tasación confirmada", className: "confirmed" };
+    if (appraisal.estimate_source === "mercadolibre_request_failed") return { label: "Consulta fallida", className: "error" };
+    if (appraisal.estimate_source === "mercadolibre_insufficient_sample") return { label: "Comparables insuficientes", className: "warning" };
+    if (appraisal.suggested_value != null) return { label: "Pendiente de confirmación", className: "" };
+    return { label: "Consulta pendiente", className: "" };
+  }
+
   function renderAppraisalSummary(leadId) {
     var appraisal = appraisalForLead(leadId);
     var target = document.getElementById("crmAppraisalSummary");
     target.hidden = !appraisal;
     if (!appraisal) { target.innerHTML = ""; return; }
+    var displayState = appraisalState(appraisal);
     var valueText = appraisal.status === "confirmed"
       ? "Valor confirmado: " + marketMoney(appraisal.confirmed_value, appraisal.confirmed_currency || appraisal.market_currency)
       : appraisal.estimated_min != null && appraisal.estimated_max != null
         ? "Mercado publicado: " + marketMoney(appraisal.estimated_min, appraisal.market_currency) + " a " + marketMoney(appraisal.estimated_max, appraisal.market_currency)
-        : "Sin referencia de mercado suficiente";
+        : appraisal.estimate_source === "mercadolibre_request_failed"
+          ? appraisal.estimate_basis || "La consulta a Mercado Libre no pudo completarse."
+          : appraisal.estimate_source === "mercadolibre_insufficient_sample"
+            ? "No alcanzó el mínimo de 6 publicaciones comparables válidas."
+            : "La consulta de mercado todavía no se completó.";
     var suggestedText = appraisal.suggested_value != null ? " · Toma sugerida (-15%): " + marketMoney(appraisal.suggested_value, appraisal.market_currency) : "";
-    target.innerHTML = '<div><strong>' + escapeHtml([appraisal.brand, appraisal.model, appraisal.version, appraisal.vehicle_year].filter(Boolean).join(" · ")) + '</strong><span>' + escapeHtml(new Intl.NumberFormat("es-AR").format(appraisal.mileage_km) + " km · " + conditionLabel(appraisal.condition) + " · " + valueText + suggestedText) + '</span>' + (appraisal.reference_count ? '<small>' + escapeHtml(appraisal.reference_count + " comparables activos · consulta " + formatDate(appraisal.market_checked_at)) + '</small>' : '') + '</div><b class="' + (appraisal.status === "confirmed" ? "confirmed" : "") + '">' + escapeHtml(appraisal.status === "confirmed" ? "Tasación confirmada" : "Tasación pendiente de confirmación") + '</b>';
+    target.innerHTML = '<div><strong>' + escapeHtml([appraisal.brand, appraisal.model, appraisal.version, appraisal.vehicle_year].filter(Boolean).join(" · ")) + '</strong><span>' + escapeHtml(new Intl.NumberFormat("es-AR").format(appraisal.mileage_km) + " km · " + conditionLabel(appraisal.condition) + " · " + valueText + suggestedText) + '</span>' + (appraisal.market_checked_at ? '<small>' + escapeHtml((appraisal.reference_count || 0) + " comparables válidos · consulta " + formatDate(appraisal.market_checked_at)) + '</small>' : '') + '</div><b class="' + displayState.className + '">' + escapeHtml(displayState.label) + '</b>';
   }
 
   function tasksForLead(leadId) {
@@ -654,13 +667,19 @@
     var estimate = await supabaseClient.functions.invoke("vehicle-market-reference", { body: { appraisalId: appraisalId } });
     await loadLeads(true);
     renderAppraisalSummary(state.activeLead.id);
-    appraisalDialog.close();
     setBusy(button, false);
     if (estimate.error) {
-      document.getElementById("crmFormError").textContent = "La solicitud quedó guardada, pero Mercado Libre todavía no está conectado o no respondió.";
+      var failure = null;
+      try {
+        if (estimate.error.context && typeof estimate.error.context.clone === "function") failure = await estimate.error.context.clone().json();
+      } catch (_) { /* The fallback below remains user-safe. */ }
+      errorBox.textContent = failure && failure.error || "La tasación quedó guardada, pero la consulta a Mercado Libre falló. Intentá nuevamente.";
+      return;
     } else if (estimate.data && !estimate.data.sufficient) {
-      document.getElementById("crmFormError").textContent = estimate.data.message;
+      errorBox.textContent = estimate.data.message;
+      return;
     }
+    appraisalDialog.close();
   });
   document.getElementById("crmAnsweredSave").addEventListener("click", saveAnsweredFollowUp);
   document.getElementById("crmAnsweredDate").addEventListener("input", function () { maskDateInput(this); });

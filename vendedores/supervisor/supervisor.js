@@ -53,6 +53,22 @@
     return (currency === "USD" ? "US$" : "$") + new Intl.NumberFormat("es-AR", { maximumFractionDigits: 0 }).format(Number(value));
   }
 
+  function appraisalMarketStatus(appraisal) {
+    if (!appraisal) return "Sin usado cargado";
+    if (appraisal.status === "confirmed") return marketMoney(appraisal.confirmed_value, appraisal.confirmed_currency || appraisal.market_currency);
+    if (appraisal.suggested_value != null) return "Sugerido " + marketMoney(appraisal.suggested_value, appraisal.market_currency);
+    if (appraisal.estimate_source === "mercadolibre_request_failed") return "Consulta fallida";
+    if (appraisal.estimate_source === "mercadolibre_insufficient_sample") return "Comparables insuficientes";
+    return "Consulta pendiente";
+  }
+
+  function appraisalMarketDetail(appraisal) {
+    if (appraisal.market_median != null) return "Mediana publicada: " + marketMoney(appraisal.market_median, appraisal.market_currency) + " · Toma sugerida (-15%): " + marketMoney(appraisal.suggested_value, appraisal.market_currency) + " · " + appraisal.reference_count + " comparables";
+    if (appraisal.estimate_source === "mercadolibre_request_failed") return appraisal.estimate_basis || "La consulta a Mercado Libre no pudo completarse.";
+    if (appraisal.estimate_source === "mercadolibre_insufficient_sample") return "No alcanzó el mínimo de 6 publicaciones comparables válidas.";
+    return "La consulta de mercado todavía no se completó.";
+  }
+
   function localDateKey(value) {
     var date = new Date(value);
     return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Argentina/Buenos_Aires", year: "numeric", month: "2-digit", day: "2-digit" }).format(date);
@@ -178,7 +194,7 @@
         '<td><span class="portfolio-status ' + escapeHtml(crm.status || "nuevo") + '">' + escapeHtml(crmStatusLabel(crm.status)) + '</span></td>' +
         '<td><span class="portfolio-priority ' + escapeHtml(crm.priority || lead.priority || "normal") + '">' + escapeHtml(priorityLabel(crm.priority || lead.priority)) + '</span></td>' +
         '<td><strong>' + escapeHtml(crm.next_contact_at ? formatDate(crm.next_contact_at) : "Sin programar") + '</strong><small>' + escapeHtml(crm.next_contact_note || (isOverdue ? "Seguimiento vencido" : "")) + '</small></td>' +
-        '<td>' + (appraisal ? '<strong>' + escapeHtml(appraisal.status === "confirmed" ? marketMoney(appraisal.confirmed_value, appraisal.confirmed_currency || appraisal.market_currency) : appraisal.suggested_value != null ? "Sugerido " + marketMoney(appraisal.suggested_value, appraisal.market_currency) : "Pendiente") + '</strong><small>' + escapeHtml([appraisal.brand, appraisal.model, appraisal.vehicle_year].filter(Boolean).join(" · ")) + '</small>' + (appraisal.status === "pending" ? '<button class="button secondary appraisal-review-button" type="button" data-review-appraisal>Confirmar</button>' : '') : '<small>Sin usado cargado</small>') + '</td>' +
+        '<td>' + (appraisal ? '<strong>' + escapeHtml(appraisalMarketStatus(appraisal)) + '</strong><small>' + escapeHtml([appraisal.brand, appraisal.model, appraisal.vehicle_year].filter(Boolean).join(" · ")) + '</small>' + (appraisal.status === "pending" && appraisal.suggested_value != null ? '<button class="button secondary appraisal-review-button" type="button" data-review-appraisal>Confirmar</button>' : '') : '<small>Sin usado cargado</small>') + '</td>' +
         '<td>' + escapeHtml(crm.last_contact_at ? formatDate(crm.last_contact_at) : "Sin contacto registrado") + '</td>' +
         '<td><button class="button secondary" type="button" data-portfolio-details>Ver detalle</button></td></tr>';
     }).join("");
@@ -531,7 +547,7 @@
       if (!appraisal) return;
       state.activeAppraisal = appraisal;
       document.getElementById("appraisalReviewTitle").textContent = "Tasación de " + (lead.customer_name || "cliente");
-      document.getElementById("appraisalReviewSummary").innerHTML = '<strong>' + escapeHtml([appraisal.brand, appraisal.model, appraisal.version, appraisal.vehicle_year].filter(Boolean).join(" · ")) + '</strong><span>' + escapeHtml(new Intl.NumberFormat("es-AR").format(appraisal.mileage_km) + " km") + '</span><span>' + escapeHtml(appraisal.market_median != null ? "Mediana publicada: " + marketMoney(appraisal.market_median, appraisal.market_currency) + " · Toma sugerida (-15%): " + marketMoney(appraisal.suggested_value, appraisal.market_currency) + " · " + appraisal.reference_count + " comparables" : "Sin referencia suficiente de Mercado Libre") + '</span><span>Tasación pendiente de confirmación</span>';
+      document.getElementById("appraisalReviewSummary").innerHTML = '<strong>' + escapeHtml([appraisal.brand, appraisal.model, appraisal.version, appraisal.vehicle_year].filter(Boolean).join(" · ")) + '</strong><span>' + escapeHtml(new Intl.NumberFormat("es-AR").format(appraisal.mileage_km) + " km") + '</span><span>' + escapeHtml(appraisalMarketDetail(appraisal)) + '</span><span>' + escapeHtml(appraisalMarketStatus(appraisal)) + '</span>';
       document.getElementById("appraisalConfirmedValue").value = appraisal.confirmed_value || appraisal.suggested_value || "";
       document.getElementById("appraisalReviewNote").value = appraisal.review_note || "";
       document.getElementById("appraisalReviewMessage").textContent = "";
