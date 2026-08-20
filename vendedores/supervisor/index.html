@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/vendedores/supervisor/supervisor.css?v=20260818-1">
+  <link rel="stylesheet" href="/vendedores/supervisor/supervisor.css?v=20260820-3">
   <link rel="stylesheet" href="/vendedores/supervisor/operations.css?v=20260817-1">
   <link rel="stylesheet" href="/vendedores/supervisor/navigation.css?v=20260817-1">
   <link rel="stylesheet" href="/vendedores/supervisor/lead-bases.css?v=20260818-1">
@@ -189,6 +189,7 @@
       <div class="conversation-control"><div><span class="conversation-mode ai" id="dialogConversationMode">IA activa</span><small id="dialogConversationOwner">La IA puede responder automáticamente.</small></div><button class="button primary" id="conversationTakeover" type="button">Tomar conversación</button></div>
       <div class="conversation-status"><span id="dialogConversationStatus">Consultando mensajes…</span><button id="conversationRefresh" type="button">Actualizar conversación</button></div>
       <div class="conversation" id="conversation"></div>
+      <p class="message conversation-review-message" id="conversationReviewMessage" role="status"></p>
       <div class="conversation-composer" id="conversationComposer" hidden><label>Responder como atención humana<textarea id="conversationHumanMessage" rows="3" maxlength="4096" placeholder="Escribí el mensaje para el cliente"></textarea></label><p class="message error" id="conversationHumanError"></p><button class="button primary" id="conversationHumanSend" type="button">Enviar por WhatsApp</button><small>Los mensajes libres se envían dentro de la ventana de atención de 24 horas de WhatsApp.</small></div>
       <button class="button secondary" value="cancel">Cerrar</button>
     </form>
@@ -238,7 +239,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.2/dist/umd/supabase.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="/vendedores/supabase-config.js?v=20260814-1"></script>
-  <script src="/vendedores/supervisor/supervisor.js?v=20260820-2"></script>
+  <script src="/vendedores/supervisor/supervisor.js?v=20260820-3"></script>
   <script src="/vendedores/supervisor/lead-bases.js?v=20260818-1"></script>
 </body>
 </html>

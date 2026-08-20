@@ -85,6 +85,7 @@ Deno.serve(async (request) => {
       message_type: "text",
       body: message,
       raw_payload: metaPayload,
+      origin: "human",
     }),
     adminDb.from("whatsapp_conversation_controls").update({ last_human_message_at: now }).eq("lead_id", leadId).eq("mode", "human"),
     adminDb.from("whatsapp_conversation_events").insert({ lead_id: leadId, actor_user_id: user.id, event_type: "message_sent", body: message, metadata: { whatsapp_message_id: whatsappMessageId } }),
@@ -98,4 +99,3 @@ Deno.serve(async (request) => {
 
   return json({ sent: true, whatsappMessageId });
 });
-

@@ -10,6 +10,7 @@
     sellers: [],
     prequalifications: [],
     knowledgeDocuments: [],
+    trainingExamples: [],
     creditModels: [],
     modelVersions: [],
     creditOffers: [],
@@ -641,16 +642,37 @@
     }).join("");
   }
 
+  function renderTrainingExamples() {
+    var container = document.getElementById("trainingExamplesList");
+    var count = state.trainingExamples.length;
+    document.getElementById("trainingExamplesCount").textContent = count + (count === 1 ? " ejemplo" : " ejemplos");
+    if (!count) {
+      container.innerHTML = '<div class="knowledge-empty"><strong>Todavía no hay respuestas revisadas</strong><span>Desde la bandeja de WhatsApp, Supervisión puede aprobar o corregir respuestas de la IA.</span></div>';
+      return;
+    }
+    container.innerHTML = state.trainingExamples.map(function (example) {
+      return '<article class="training-example">' +
+        '<div><strong>' + (example.rating === "correct" ? "Respuesta aprobada" : "Respuesta corregida") + '</strong><span>' + escapeHtml(example.expected_reply || "Sin respuesta registrada") + '</span><small>' + escapeHtml(example.correction_note || "Revisión de Supervisión") + '</small></div>' +
+        '<button class="document-delete" type="button" data-disable-example="' + escapeHtml(example.id) + '">Desactivar</button>' +
+      '</article>';
+    }).join("");
+  }
+
   async function loadKnowledge() {
     var results = await Promise.all([
-      supabaseClient.from("ai_assistant_settings").select("qualification_rules").eq("id", true).single(),
-      supabaseClient.from("ai_knowledge_documents").select("id, title, brand, category, original_filename, processing_status, processing_error, created_at").order("created_at", { ascending: false })
+      supabaseClient.from("ai_assistant_settings").select("qualification_rules, conversation_style").eq("id", true).single(),
+      supabaseClient.from("ai_knowledge_documents").select("id, title, brand, category, original_filename, processing_status, processing_error, created_at").order("created_at", { ascending: false }),
+      supabaseClient.from("ai_training_examples").select("id, rating, expected_reply, correction_note, updated_at").eq("active", true).order("updated_at", { ascending: false }).limit(100)
     ]);
     if (results[0].error) throw results[0].error;
     if (results[1].error) throw results[1].error;
+    if (results[2].error) throw results[2].error;
     document.getElementById("qualificationRules").value = results[0].data.qualification_rules || "";
+    document.getElementById("conversationStyle").value = results[0].data.conversation_style || "";
     state.knowledgeDocuments = results[1].data || [];
+    state.trainingExamples = results[2].data || [];
     renderKnowledgeDocuments();
+    renderTrainingExamples();
   }
 
   rulesForm.addEventListener("submit", async function (event) {
@@ -659,9 +681,13 @@
     var button = rulesForm.querySelector('button[type="submit"]');
     setBusy(button, true, "Guardando…");
     try {
-      var result = await supabaseClient.from("ai_assistant_settings").update({ qualification_rules: document.getElementById("qualificationRules").value.trim(), updated_by: state.profile.user_id }).eq("id", true);
+      var result = await supabaseClient.from("ai_assistant_settings").update({
+        qualification_rules: document.getElementById("qualificationRules").value.trim(),
+        conversation_style: document.getElementById("conversationStyle").value.trim(),
+        updated_by: state.profile.user_id
+      }).eq("id", true);
       if (result.error) throw result.error;
-      rulesMessage.textContent = "Reglas actualizadas. Se aplicarán desde el próximo mensaje.";
+      rulesMessage.textContent = "Reglas y estilo actualizados. Se aplicarán desde el próximo mensaje.";
       rulesMessage.classList.remove("is-error");
     } catch (error) {
       rulesMessage.textContent = error.message;
@@ -728,6 +754,20 @@
       knowledgeMessage.classList.add("is-error");
       setBusy(button, false);
     }
+  });
+
+  document.getElementById("trainingExamplesList").addEventListener("click", async function (event) {
+    var button = event.target.closest("[data-disable-example]");
+    if (!button || !window.confirm("¿Desactivar este aprendizaje? La IA dejará de usarlo como ejemplo.")) return;
+    setBusy(button, true, "Desactivando…");
+    var result = await supabaseClient.from("ai_training_examples").update({ active: false }).eq("id", button.dataset.disableExample);
+    if (result.error) {
+      rulesMessage.textContent = result.error.message;
+      rulesMessage.classList.add("is-error");
+      setBusy(button, false);
+      return;
+    }
+    await loadKnowledge();
   });
 
   document.getElementById("refreshKnowledgeButton").addEventListener("click", function () {

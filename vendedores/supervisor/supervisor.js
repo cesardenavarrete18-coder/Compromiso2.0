@@ -548,10 +548,15 @@
 
   async function loadConversationMessages(lead) {
     document.getElementById("dialogConversationStatus").textContent = "Consultando mensajes…";
-    var messages = await supabaseClient.from("lead_messages").select("direction, body, created_at").eq("lead_id", lead.id).order("created_at");
+    var messages = await supabaseClient.from("lead_messages").select("id, direction, body, created_at, origin").eq("lead_id", lead.id).order("created_at");
     document.getElementById("conversation").innerHTML = messages.error || !messages.data.length
       ? '<div class="message-bubble">Todavía no hay mensajes disponibles.</div>'
-      : messages.data.map(function (message) { return '<div class="message-bubble ' + escapeHtml(message.direction) + '">' + escapeHtml(message.body || "Mensaje sin texto") + '<small>' + escapeHtml(formatDate(message.created_at)) + '</small></div>'; }).join("");
+      : messages.data.map(function (message) {
+        var review = message.direction === "outbound" && message.origin === "ai"
+          ? '<div class="ai-review-actions"><span>¿Esta respuesta ayudó?</span><button type="button" data-review-ai="correct" data-message-id="' + escapeHtml(message.id) + '">Correcta</button><button type="button" data-review-ai="corrected" data-message-id="' + escapeHtml(message.id) + '">Corregir</button></div>'
+          : '';
+        return '<div class="message-bubble ' + escapeHtml(message.direction) + '" data-message-bubble-id="' + escapeHtml(message.id) + '">' + escapeHtml(message.body || "Mensaje sin texto") + '<small>' + escapeHtml(formatDate(message.created_at)) + '</small>' + review + '</div>';
+      }).join("");
     document.getElementById("dialogConversationStatus").textContent = messages.error ? "No se pudo actualizar la conversación." : (messages.data.length === 1 ? "1 mensaje" : messages.data.length + " mensajes") + " · actualizado ahora";
     var conversation = document.getElementById("conversation");
     conversation.scrollTop = conversation.scrollHeight;
@@ -564,6 +569,7 @@
     document.getElementById("conversation").innerHTML = '<div class="message-bubble">Cargando conversación…</div>';
     document.getElementById("conversationHumanMessage").value = "";
     document.getElementById("conversationHumanError").textContent = "";
+    document.getElementById("conversationReviewMessage").textContent = "";
     renderConversationControl(lead);
     if (!document.getElementById("leadDialog").open) document.getElementById("leadDialog").showModal();
     await loadConversationMessages(lead);
@@ -612,6 +618,58 @@
     await loadData(true);
     await loadConversationMessages(state.activeConversationLead);
     setBusy(this, false);
+  });
+
+  async function saveAiReview(messageId, rating, expectedReply, button) {
+    var status = document.getElementById("conversationReviewMessage");
+    status.textContent = "";
+    setBusy(button, true, "Guardando…");
+    var result = await supabaseClient.rpc("review_ai_message", {
+      p_message_id: messageId,
+      p_rating: rating,
+      p_expected_reply: expectedReply || ""
+    });
+    if (result.error) {
+      status.textContent = result.error.message;
+      status.classList.add("error");
+      setBusy(button, false);
+      return;
+    }
+    status.textContent = rating === "correct" ? "Respuesta aprobada. La IA podrá usarla como ejemplo." : "Corrección guardada. La IA podrá usarla como ejemplo desde el próximo mensaje.";
+    status.classList.remove("error");
+    var bubble = document.querySelector('[data-message-bubble-id="' + messageId + '"]');
+    if (bubble) {
+      bubble.classList.add("is-reviewed");
+      var actions = bubble.querySelector(".ai-review-actions");
+      if (actions) actions.innerHTML = '<span>Revisada por Supervisión</span>';
+    }
+  }
+
+  document.getElementById("conversation").addEventListener("click", function (event) {
+    var button = event.target.closest("[data-review-ai]");
+    if (!button) return;
+    var bubble = button.closest("[data-message-bubble-id]");
+    if (button.dataset.reviewAi === "correct") {
+      saveAiReview(button.dataset.messageId, "correct", "", button);
+      return;
+    }
+    var existing = bubble.querySelector(".ai-correction-editor");
+    if (existing) { existing.remove(); return; }
+    var editor = document.createElement("div");
+    editor.className = "ai-correction-editor";
+    editor.innerHTML = '<label>Respuesta que debería enviar la IA<textarea maxlength="4096" rows="4"></textarea></label><div><button class="ai-correction-save" type="button">Guardar corrección</button><button class="ai-correction-cancel" type="button">Cancelar</button></div>';
+    bubble.appendChild(editor);
+    editor.querySelector("textarea").focus();
+    editor.querySelector(".ai-correction-cancel").addEventListener("click", function () { editor.remove(); });
+    editor.querySelector(".ai-correction-save").addEventListener("click", function () {
+      var reply = editor.querySelector("textarea").value.trim();
+      if (reply.length < 2) {
+        document.getElementById("conversationReviewMessage").textContent = "Escribí la respuesta correcta antes de guardarla.";
+        document.getElementById("conversationReviewMessage").classList.add("error");
+        return;
+      }
+      saveAiReview(button.dataset.messageId, "corrected", reply, this);
+    });
   });
 
   document.getElementById("whatsappModeFilter").addEventListener("change", renderWhatsAppInbox);
