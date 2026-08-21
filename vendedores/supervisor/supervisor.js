@@ -131,6 +131,14 @@
     return Array.isArray(lead.crm) ? lead.crm[0] || {} : lead.crm;
   }
 
+  function scheduledContactLeads() {
+    var terminal = ["venta", "desistir", "invalido"];
+    return state.leads.filter(function (lead) {
+      var crm = crmOf(lead);
+      return Boolean(lead.assigned_seller_user_id && crm.next_contact_at && !terminal.includes(crm.status));
+    });
+  }
+
   function crmStatusLabel(value) {
     return { nuevo: "Nuevo", no_contesta: "No contesta", en_proceso: "En proceso", invalido: "Inválido / Erróneo", entrevista: "Entrevista", cierre: "Cierre", sena: "Seña", venta: "Venta", desistir: "Desistir" }[value] || "Nuevo";
   }
@@ -246,27 +254,38 @@
     document.getElementById("assignedStat").textContent = state.leads.filter(function (lead) { return lead.assigned_seller_user_id && lead.assigned_at && localDateKey(lead.assigned_at) === today; }).length;
     document.getElementById("unqualifiedStat").textContent = state.leads.filter(function (lead) { return lead.qualification_status === "unqualified"; }).length;
     document.getElementById("pendingSalesStat").textContent = state.sales.length;
-    document.getElementById("overdueTasksStat").textContent = state.tasks.filter(function (task) { return new Date(task.due_end).getTime() < Date.now(); }).length;
+    document.getElementById("overdueTasksStat").textContent = scheduledContactLeads().filter(function (lead) {
+      return new Date(crmOf(lead).next_contact_at).getTime() < Date.now();
+    }).length;
   }
 
   function renderOperations() {
     var now = Date.now();
     var today = localDateKey(new Date());
-    var overdue = state.tasks.filter(function (task) { return new Date(task.due_end).getTime() < now; });
-    var todayTasks = state.tasks.filter(function (task) { return localDateKey(task.due_start) === today; });
+    var scheduled = scheduledContactLeads();
+    var overdue = scheduled.filter(function (lead) { return new Date(crmOf(lead).next_contact_at).getTime() < now; });
+    var todayContacts = scheduled.filter(function (lead) {
+      var next = crmOf(lead).next_contact_at;
+      return new Date(next).getTime() >= now && localDateKey(next) === today;
+    });
     document.getElementById("operationsSummary").innerHTML = state.sellers.map(function (seller) {
-      var sellerTasks = state.tasks.filter(function (task) { return task.seller_user_id === seller.user_id; });
-      var sellerOverdue = sellerTasks.filter(function (task) { return new Date(task.due_end).getTime() < now; }).length;
-      var sellerToday = sellerTasks.filter(function (task) { return localDateKey(task.due_start) === today; }).length;
-      return '<article class="operation-seller' + (sellerOverdue ? ' attention' : '') + '"><span>' + escapeHtml(initials(seller.full_name)) + '</span><div><strong>' + escapeHtml(seller.full_name) + '</strong><small>' + sellerToday + ' acciones hoy · ' + sellerOverdue + ' vencidas</small></div><b>' + sellerTasks.length + '</b></article>';
+      var sellerContacts = scheduled.filter(function (lead) { return lead.assigned_seller_user_id === seller.user_id; });
+      var sellerOverdue = sellerContacts.filter(function (lead) { return new Date(crmOf(lead).next_contact_at).getTime() < now; }).length;
+      var sellerToday = sellerContacts.filter(function (lead) {
+        var next = crmOf(lead).next_contact_at;
+        return new Date(next).getTime() >= now && localDateKey(next) === today;
+      }).length;
+      return '<article class="operation-seller' + (sellerOverdue ? ' attention' : '') + '"><span>' + escapeHtml(initials(seller.full_name)) + '</span><div><strong>' + escapeHtml(seller.full_name) + '</strong><small>' + sellerToday + ' contactos hoy · ' + sellerOverdue + ' vencidos</small></div><b>' + sellerContacts.length + '</b></article>';
     }).join("") || '<div class="sales-empty">Todavía no hay vendedores activos.</div>';
-    document.getElementById("operationsTasks").innerHTML = overdue.concat(todayTasks.filter(function (task) { return !overdue.some(function (item) { return item.id === task.id; }); })).slice(0, 12).map(function (task) {
-      var lead = Array.isArray(task.lead) ? task.lead[0] : task.lead;
-      var seller = Array.isArray(task.seller) ? task.seller[0] : task.seller;
-      var isOverdue = new Date(task.due_end).getTime() < now;
-      return '<article class="operation-task' + (isOverdue ? ' overdue' : '') + '"><div><strong>' + escapeHtml(task.channel === "call" ? "Llamada " + task.call_attempt + " de 3" : "WhatsApp " + task.message_step + " de 4") + '</strong><small>' + escapeHtml(formatDate(task.due_start)) + '</small></div><div><strong>' + escapeHtml(lead && lead.customer_name || "Cliente") + '</strong><small>' + escapeHtml(lead && lead.model_interest || "Modelo a definir") + '</small></div><span>' + escapeHtml(seller && seller.full_name || "Sin vendedor") + '</span></article>';
-    }).join("") || '<div class="sales-empty">No hay acciones vencidas ni programadas para hoy.</div>';
-    document.getElementById("operationsCaption").textContent = overdue.length + " vencidas · " + todayTasks.length + " programadas para hoy";
+    document.getElementById("operationsTasks").innerHTML = overdue.concat(todayContacts).sort(function (left, right) {
+      return new Date(crmOf(left).next_contact_at).getTime() - new Date(crmOf(right).next_contact_at).getTime();
+    }).slice(0, 12).map(function (lead) {
+      var crm = crmOf(lead);
+      var seller = sellerById(lead.assigned_seller_user_id);
+      var isOverdue = new Date(crm.next_contact_at).getTime() < now;
+      return '<article class="operation-task' + (isOverdue ? ' overdue' : '') + '"><div><strong>' + escapeHtml(crm.next_contact_note || "Próximo contacto acordado") + '</strong><small>' + escapeHtml(formatDate(crm.next_contact_at)) + '</small></div><div><strong>' + escapeHtml(lead.customer_name || "Cliente") + '</strong><small>' + escapeHtml(lead.model_interest || "Modelo a definir") + '</small></div><span>' + escapeHtml(seller && seller.full_name || "Sin vendedor") + '</span></article>';
+    }).join("") || '<div class="sales-empty">No hay contactos vencidos ni programados para hoy.</div>';
+    document.getElementById("operationsCaption").textContent = overdue.length + " vencidos · " + todayContacts.length + " programados para hoy";
   }
 
   function monthContains(value, month) {
