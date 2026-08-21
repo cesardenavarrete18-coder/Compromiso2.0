@@ -95,7 +95,7 @@
     var results = await Promise.all([
       supabaseClient.from("profiles").select("user_id, full_name, seller_code, active").eq("role", "seller").order("full_name"),
       supabaseClient.from("seller_routing_settings").select("seller_user_id, daily_quota, paused"),
-      supabaseClient.from("leads").select("id, customer_phone, customer_name, source_channel, source_detail, seller_code_received, qualification_status, priority, intent_summary, model_interest, routing_status, routing_reason, assigned_seller_user_id, assigned_at, last_message_at, created_at, attribution:lead_attributions(platform,campaign_name,adset_name,ad_name,headline), crm:lead_crm(status, priority, status_reason, next_contact_at, next_contact_note, last_contact_at, last_contact_outcome, interview_at, sale_confirmation_status, sale_confirmed_at)").order("last_message_at", { ascending: false }).limit(500),
+      supabaseClient.from("leads").select("id, customer_phone, customer_name, source_channel, source_detail, seller_code_received, qualification_status, priority, intent_summary, model_interest, routing_status, routing_reason, assigned_seller_user_id, assigned_at, last_message_at, created_at, attribution:lead_attributions(platform,campaign_name,adset_name,ad_name,headline), tiktok_attributions:lead_tiktok_attributions(identifier_type,raw_identifier,outcome,routing_reason,created_at), crm:lead_crm(status, priority, status_reason, next_contact_at, next_contact_note, last_contact_at, last_contact_outcome, interview_at, sale_confirmation_status, sale_confirmed_at)").order("last_message_at", { ascending: false }).limit(500),
       supabaseClient.from("lead_sale_requests").select("id, lead_id, seller_user_id, vehicle, sale_amount, notes, status, requested_at, provisional_application_id, seller:profiles!lead_sale_requests_seller_user_id_fkey(full_name, seller_code), lead:leads(customer_name, customer_phone, intent_summary), provisional:commercial_applications!lead_sale_requests_provisional_application_id_fkey(request_code, brand_name, model_name, campaign_name, first_name, last_name, document_type, document_number, cuil, primary_phone, email, employment_status, employer_name, employment_seniority, monthly_income, automatic_debit, deferred_installment, installments_paid, installments_to_pay, plan_type, agreed_price, commercial_snapshot)").eq("status", "pending").order("requested_at"),
       supabaseClient.from("sales_cases").select("id, case_code, seller_user_id, vehicle, status, cdn_scoring_status, dealer_scoring_status, contract_status, finalized_at, cancellation_reason, updated_at, seller:profiles!sales_cases_seller_user_id_fkey(full_name, seller_code), lead:leads!sales_cases_lead_id_fkey(customer_name), events:sales_case_events(stage, outcome, comment, created_at)").order("updated_at", { ascending: false }).limit(250),
       supabaseClient.from("lead_contact_tasks").select("id, lead_id, seller_user_id, channel, call_attempt, message_step, due_start, due_end, status, outcome, lead:leads(customer_name,customer_phone,model_interest), seller:profiles!lead_contact_tasks_seller_user_id_fkey(full_name,seller_code)").eq("status", "pending").order("due_start").limit(1000),
@@ -129,6 +129,14 @@
   function crmOf(lead) {
     if (!lead || !lead.crm) return { status: "nuevo", priority: lead && lead.priority || "normal" };
     return Array.isArray(lead.crm) ? lead.crm[0] || {} : lead.crm;
+  }
+
+  function scheduledContactLeads() {
+    var terminal = ["venta", "desistir", "invalido"];
+    return state.leads.filter(function (lead) {
+      var crm = crmOf(lead);
+      return Boolean(lead.assigned_seller_user_id && crm.next_contact_at && !terminal.includes(crm.status));
+    });
   }
 
   function crmStatusLabel(value) {
@@ -246,27 +254,38 @@
     document.getElementById("assignedStat").textContent = state.leads.filter(function (lead) { return lead.assigned_seller_user_id && lead.assigned_at && localDateKey(lead.assigned_at) === today; }).length;
     document.getElementById("unqualifiedStat").textContent = state.leads.filter(function (lead) { return lead.qualification_status === "unqualified"; }).length;
     document.getElementById("pendingSalesStat").textContent = state.sales.length;
-    document.getElementById("overdueTasksStat").textContent = state.tasks.filter(function (task) { return new Date(task.due_end).getTime() < Date.now(); }).length;
+    document.getElementById("overdueTasksStat").textContent = scheduledContactLeads().filter(function (lead) {
+      return new Date(crmOf(lead).next_contact_at).getTime() < Date.now();
+    }).length;
   }
 
   function renderOperations() {
     var now = Date.now();
     var today = localDateKey(new Date());
-    var overdue = state.tasks.filter(function (task) { return new Date(task.due_end).getTime() < now; });
-    var todayTasks = state.tasks.filter(function (task) { return localDateKey(task.due_start) === today; });
+    var scheduled = scheduledContactLeads();
+    var overdue = scheduled.filter(function (lead) { return new Date(crmOf(lead).next_contact_at).getTime() < now; });
+    var todayContacts = scheduled.filter(function (lead) {
+      var next = crmOf(lead).next_contact_at;
+      return new Date(next).getTime() >= now && localDateKey(next) === today;
+    });
     document.getElementById("operationsSummary").innerHTML = state.sellers.map(function (seller) {
-      var sellerTasks = state.tasks.filter(function (task) { return task.seller_user_id === seller.user_id; });
-      var sellerOverdue = sellerTasks.filter(function (task) { return new Date(task.due_end).getTime() < now; }).length;
-      var sellerToday = sellerTasks.filter(function (task) { return localDateKey(task.due_start) === today; }).length;
-      return '<article class="operation-seller' + (sellerOverdue ? ' attention' : '') + '"><span>' + escapeHtml(initials(seller.full_name)) + '</span><div><strong>' + escapeHtml(seller.full_name) + '</strong><small>' + sellerToday + ' acciones hoy · ' + sellerOverdue + ' vencidas</small></div><b>' + sellerTasks.length + '</b></article>';
+      var sellerContacts = scheduled.filter(function (lead) { return lead.assigned_seller_user_id === seller.user_id; });
+      var sellerOverdue = sellerContacts.filter(function (lead) { return new Date(crmOf(lead).next_contact_at).getTime() < now; }).length;
+      var sellerToday = sellerContacts.filter(function (lead) {
+        var next = crmOf(lead).next_contact_at;
+        return new Date(next).getTime() >= now && localDateKey(next) === today;
+      }).length;
+      return '<article class="operation-seller' + (sellerOverdue ? ' attention' : '') + '"><span>' + escapeHtml(initials(seller.full_name)) + '</span><div><strong>' + escapeHtml(seller.full_name) + '</strong><small>' + sellerToday + ' contactos hoy · ' + sellerOverdue + ' vencidos</small></div><b>' + sellerContacts.length + '</b></article>';
     }).join("") || '<div class="sales-empty">Todavía no hay vendedores activos.</div>';
-    document.getElementById("operationsTasks").innerHTML = overdue.concat(todayTasks.filter(function (task) { return !overdue.some(function (item) { return item.id === task.id; }); })).slice(0, 12).map(function (task) {
-      var lead = Array.isArray(task.lead) ? task.lead[0] : task.lead;
-      var seller = Array.isArray(task.seller) ? task.seller[0] : task.seller;
-      var isOverdue = new Date(task.due_end).getTime() < now;
-      return '<article class="operation-task' + (isOverdue ? ' overdue' : '') + '"><div><strong>' + escapeHtml(task.channel === "call" ? "Llamada " + task.call_attempt + " de 3" : "WhatsApp " + task.message_step + " de 4") + '</strong><small>' + escapeHtml(formatDate(task.due_start)) + '</small></div><div><strong>' + escapeHtml(lead && lead.customer_name || "Cliente") + '</strong><small>' + escapeHtml(lead && lead.model_interest || "Modelo a definir") + '</small></div><span>' + escapeHtml(seller && seller.full_name || "Sin vendedor") + '</span></article>';
-    }).join("") || '<div class="sales-empty">No hay acciones vencidas ni programadas para hoy.</div>';
-    document.getElementById("operationsCaption").textContent = overdue.length + " vencidas · " + todayTasks.length + " programadas para hoy";
+    document.getElementById("operationsTasks").innerHTML = overdue.concat(todayContacts).sort(function (left, right) {
+      return new Date(crmOf(left).next_contact_at).getTime() - new Date(crmOf(right).next_contact_at).getTime();
+    }).slice(0, 12).map(function (lead) {
+      var crm = crmOf(lead);
+      var seller = sellerById(lead.assigned_seller_user_id);
+      var isOverdue = new Date(crm.next_contact_at).getTime() < now;
+      return '<article class="operation-task' + (isOverdue ? ' overdue' : '') + '"><div><strong>' + escapeHtml(crm.next_contact_note || "Próximo contacto acordado") + '</strong><small>' + escapeHtml(formatDate(crm.next_contact_at)) + '</small></div><div><strong>' + escapeHtml(lead.customer_name || "Cliente") + '</strong><small>' + escapeHtml(lead.model_interest || "Modelo a definir") + '</small></div><span>' + escapeHtml(seller && seller.full_name || "Sin vendedor") + '</span></article>';
+    }).join("") || '<div class="sales-empty">No hay contactos vencidos ni programados para hoy.</div>';
+    document.getElementById("operationsCaption").textContent = overdue.length + " vencidos · " + todayContacts.length + " programados para hoy";
   }
 
   function monthContains(value, month) {
@@ -339,7 +358,8 @@
     var query = state.search.toLocaleLowerCase("es-AR");
     return state.leads.filter(function (lead) {
       var matchesFilter = state.filter === "all" || lead.routing_status === state.filter;
-      var haystack = [lead.customer_name, lead.customer_phone, lead.intent_summary, lead.model_interest, lead.seller_code_received].join(" ").toLocaleLowerCase("es-AR");
+      var tiktokIdentifiers = (lead.tiktok_attributions || []).map(function (item) { return item.raw_identifier; }).join(" ");
+      var haystack = [lead.customer_name, lead.customer_phone, lead.intent_summary, lead.model_interest, lead.seller_code_received, tiktokIdentifiers].join(" ").toLocaleLowerCase("es-AR");
       return matchesFilter && (!query || haystack.includes(query));
     });
   }
@@ -352,9 +372,11 @@
   }
 
   function routingLabel(lead) {
-    if (lead.routing_status === "assigned_direct") return "Código válido";
+    if (lead.routing_status === "assigned_direct") return lead.routing_reason === "valid_advisor_name" ? "Asesor identificado" : "Código válido";
     if (lead.routing_status === "assigned_manual") return "Asignación manual";
     if (lead.routing_reason === "invalid_seller_code") return "Código no válido";
+    if (lead.routing_reason === "invalid_advisor_name") return "Asesor no encontrado";
+    if (lead.routing_reason === "ambiguous_advisor_name") return "Nombre ambiguo";
     if (lead.routing_reason === "daily_quota_reached") return "Cupo alcanzado";
     if (lead.routing_reason === "seller_paused") return "Vendedor pausado";
     return "Bandeja general";
@@ -374,7 +396,10 @@
       var assigned = sellerById(lead.assigned_seller_user_id);
       var crm = Array.isArray(lead.crm) ? lead.crm[0] : lead.crm;
       var attribution = Array.isArray(lead.attribution) ? lead.attribution[0] : lead.attribution;
-      var sourceLabel = lead.source_channel === "tiktok" ? "TikTok / código " + (lead.seller_code_received || "—") : lead.source_detail === "meta_ads" ? "Meta Ads · " + (attribution && (attribution.ad_name || attribution.headline || attribution.campaign_name) || "Anuncio sin nombre") : lead.source_channel === "manual" ? "Carga manual · " + (lead.source_detail || "Sin detalle") : "WhatsApp orgánico";
+      var tiktokAttributions = (lead.tiktok_attributions || []).slice().sort(function (a, b) { return new Date(b.created_at) - new Date(a.created_at); });
+      var tiktokAttribution = tiktokAttributions[0];
+      var tiktokIdentifier = tiktokAttribution ? (tiktokAttribution.identifier_type === "advisor_name" ? "asesor " : "código ") + tiktokAttribution.raw_identifier : "código " + (lead.seller_code_received || "—");
+      var sourceLabel = lead.source_channel === "tiktok" ? "TikTok / " + tiktokIdentifier : lead.source_detail === "meta_ads" ? "Meta Ads · " + (attribution && (attribution.ad_name || attribution.headline || attribution.campaign_name) || "Anuncio sin nombre") : lead.source_channel === "manual" ? "Carga manual · " + (lead.source_detail || "Sin detalle") : "WhatsApp orgánico";
       return '<article class="lead-card" data-lead-id="' + lead.id + '">' +
         '<div class="lead-person"><strong>' + escapeHtml(lead.customer_name || "Cliente sin nombre") + '</strong><span>+' + escapeHtml(lead.customer_phone) + ' · ' + escapeHtml(formatDate(lead.last_message_at)) + '</span><span>' + escapeHtml(sourceLabel) + '</span></div>' +
         '<div class="lead-summary"><p>' + escapeHtml(lead.intent_summary || "Pendiente de resumen") + '</p><div class="badges"><span class="badge ' + escapeHtml(lead.qualification_status) + '">' + escapeHtml(lead.qualification_status === "qualified" ? "Calificado" : lead.qualification_status === "unqualified" ? "No calificado" : "Seguimiento") + '</span><span class="badge ' + escapeHtml((crm && crm.priority) || lead.priority) + '">' + escapeHtml((crm && crm.priority) === "high" || lead.priority === "high" ? "Prioridad alta" : "Prioridad normal") + '</span><span class="badge">' + escapeHtml(crm && crm.status ? crm.status.replace(/_/g, " ") : "nuevo") + '</span><span class="badge">' + escapeHtml(routingLabel(lead)) + '</span></div></div>' +

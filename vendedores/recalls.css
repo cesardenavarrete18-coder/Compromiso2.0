@@ -2,15 +2,36 @@
 .recall-summary-card { padding: 18px; border: 1px solid #d8e4f0; border-radius: 16px; background: #fff; }
 .recall-summary-card span, .recall-summary-card small { display: block; color: #60758d; }
 .recall-summary-card strong { display: block; margin: 4px 0; color: #071d3a; font-size: 26px; }
-.recall-seller-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
-.recall-seller-card { display: grid; gap: 14px; padding: 19px; border: 1px solid #cfe0ef; border-radius: 17px; background: #fff; box-shadow: 0 13px 30px rgba(8, 42, 80, .06); }
-.recall-card-head, .recall-card-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.recall-card-head strong { display: block; color: #071d3a; font-size: 17px; }
-.recall-card-head small, .recall-seller-card p { color: #61758c; }
-.recall-card-progress { display: grid; grid-template-columns: repeat(2, 1fr); gap: 7px; }
-.recall-card-progress span { height: 7px; border-radius: 999px; background: #e1eaf2; }
-.recall-card-progress span.done { background: #0f8d62; }
-.recall-card-actions a { color: #087bd8; font-weight: 800; text-decoration: none; }
+.recall-seller-grid { display: grid; gap: 16px; }
+.recall-panel { overflow: hidden; border: 1px solid #cfdeeb; border-radius: 18px; background: #fff; box-shadow: 0 13px 30px rgba(8, 42, 80, .06); }
+.recall-panel summary { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 19px 22px; cursor: pointer; list-style: none; }
+.recall-panel summary::-webkit-details-marker { display: none; }
+.recall-panel summary::after { content: "⌄"; color: #087bd8; font-size: 23px; font-weight: 900; transition: transform .18s ease; }
+.recall-panel[open] summary::after { transform: rotate(180deg); }
+.recall-panel summary > div:first-child { min-width: 0; flex: 1; }
+.recall-panel summary strong, .recall-panel summary small { display: block; }
+.recall-panel summary > div:first-child > strong { margin-top: 2px; color: #071d3a; font-size: 18px; }
+.recall-panel summary small { margin-top: 4px; color: #667b91; }
+.recall-panel-kicker { color: #087bd8; font-size: 11px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
+.recall-panel-progress { min-width: 118px; text-align: right; }
+.recall-panel-progress strong { color: #071d3a; font-size: 24px; }
+.recall-panel-progress span { color: #61758c; font-size: 11px; font-weight: 800; text-transform: uppercase; }
+.recall-panel.is-closed { border-color: #cce9dd; background: #fbfffd; }
+.recall-panel.is-closed .recall-panel-kicker, .recall-panel.is-closed .recall-panel-progress strong { color: #0f7e58; }
+.recall-table-wrap { border-top: 1px solid #e1eaf2; overflow-x: auto; }
+.recall-table-head, .recall-list-row { display: grid; grid-template-columns: minmax(180px, 1.35fr) minmax(145px, .9fr) minmax(145px, 1fr) minmax(160px, 1fr) minmax(190px, auto); gap: 14px; align-items: center; min-width: 900px; padding: 12px 20px; }
+.recall-table-head { color: #667b91; background: #f5f9fc; font-size: 11px; font-weight: 900; letter-spacing: .04em; text-transform: uppercase; }
+.recall-list-row { min-height: 72px; border-top: 1px solid #e5edf4; }
+.recall-table-head + .recall-list-row { border-top: 0; }
+.recall-list-row strong, .recall-list-row small { display: block; }
+.recall-list-row strong { color: #0b203a; }
+.recall-list-row small { margin-top: 4px; color: #6a7d91; }
+.recall-list-row.is-complete { background: #f8fbfa; }
+.recall-phone { color: #087bd8; font-weight: 800; text-decoration: none; }
+.recall-row-action { display: flex; align-items: center; justify-content: flex-end; gap: 9px; }
+.recall-item-status { padding: 6px 9px; border-radius: 999px; color: #6a5110; background: #fff4cf; font-size: 10px; font-weight: 900; white-space: nowrap; text-transform: uppercase; }
+.recall-item-status.converted { color: #075f42; background: #def5ea; }
+.recall-item-status.exhausted, .recall-item-status.cancelled { color: #596b7b; background: #eaf0f4; }
 .seller-proposals-panel { margin-top: 28px; }
 .seller-proposals-list { display: grid; gap: 10px; }
 .seller-proposal-row { display: grid; grid-template-columns: 1fr auto; gap: 14px; padding: 14px 16px; border: 1px solid #d9e5ef; border-radius: 13px; background: #fff; }
@@ -21,4 +42,10 @@
 .proposal-status.rejected { color: #a42626; background: #ffeded; }
 .recall-next-contact { margin-top: 15px; padding: 15px; border-radius: 14px; background: #eff8ff; }
 .recall-next-contact > strong { display: block; margin-bottom: 11px; color: #075fa9; }
-@media (max-width: 760px) { .recall-seller-summary { grid-template-columns: 1fr; } }
+@media (max-width: 760px) {
+  .recall-seller-summary { grid-template-columns: 1fr; }
+  .recall-panel summary { padding: 16px; }
+  .recall-panel-progress { min-width: 82px; }
+  .recall-panel-progress strong { font-size: 20px; }
+  .recall-table-head, .recall-list-row { padding-left: 16px; padding-right: 16px; }
+}

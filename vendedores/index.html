@@ -12,9 +12,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/vendedores/styles.css?v=20260813-6">
   <link rel="stylesheet" href="/vendedores/crm.css?v=20260815-3">
-  <link rel="stylesheet" href="/vendedores/contact-protocol.css?v=20260817-2">
+  <link rel="stylesheet" href="/vendedores/contact-protocol.css?v=20260821-1">
   <link rel="stylesheet" href="/vendedores/workflow-polish.css?v=20260818-1">
-  <link rel="stylesheet" href="/vendedores/recalls.css?v=20260818-1">
+  <link rel="stylesheet" href="/vendedores/recalls.css?v=20260821-1">
   <link rel="stylesheet" href="/vendedores/auth-loading.css?v=20260817-1">
   <style>#crmAppraisalButton,#crmAppraisalDialog{display:none!important}</style>
 </head>
@@ -444,7 +444,7 @@
         </section>
 
         <section class="view crm-view" id="crmRecallsView" aria-labelledby="crmRecallsTitle">
-          <div class="crm-hero"><div><p class="eyebrow dark">Base histórica asignada</p><h2 id="crmRecallsTitle">Panel de rellamados</h2><p>Trabajá dos llamadas en franjas distintas. Sólo pasarán a la agenda cuando el cliente responda y quede programado el próximo contacto.</p></div><button class="primary-button compact-button" id="refreshRecallsButton" type="button">Actualizar</button></div>
+          <div class="crm-hero"><div><p class="eyebrow dark">Base histórica asignada</p><h2 id="crmRecallsTitle">Paneles de rellamados</h2><p>Cada tanda conserva su orden. Completá dos llamadas en franjas distintas; el panel se cerrará cuando todos sus Leads estén finalizados.</p></div><button class="primary-button compact-button" id="refreshRecallsButton" type="button">Actualizar</button></div>
           <div class="recall-seller-summary" id="recallSellerSummary"></div>
           <p class="crm-message" id="recallSellerMessage"></p>
           <div class="recall-seller-grid" id="recallSellerGrid"></div>
@@ -513,7 +513,7 @@
 
   <dialog class="crm-dialog small" id="crmSaleDialog"><form method="dialog" class="crm-dialog-shell"><button class="crm-dialog-close" value="cancel" aria-label="Cerrar">×</button><p class="eyebrow dark">Datero de operación</p><h2>Enviar venta a supervisión</h2><label>Presupuesto asociado · opcional<select id="crmSaleQuote"><option value="">Sin presupuesto asociado</option></select></label><p class="crm-form-help" id="crmSaleQuoteHelp">Si elegís un presupuesto de plan, el vehículo y el importe se toman de esa propuesta.</p><label>Vehículo vendido<input id="crmSaleVehicle" type="text" placeholder="Ej. Volkswagen Amarok Trendline"></label><label>Importe de la operación · opcional<input id="crmSaleAmount" type="number" min="0" step="1" placeholder="$"></label><label>Observaciones<textarea id="crmSaleNotes" rows="4"></textarea></label><p class="crm-form-error" id="crmSaleError"></p><button class="primary-button" id="crmSaleSubmit" type="button">Enviar datero a supervisión</button></form></dialog>
 
-  <dialog class="crm-dialog small" id="recallAttemptDialog"><form method="dialog" class="crm-dialog-shell" id="recallAttemptForm"><button class="crm-dialog-close" value="cancel" aria-label="Cerrar">×</button><p class="eyebrow dark">Gestión independiente</p><h2 id="recallAttemptTitle">Registrar rellamado</h2><p class="crm-dialog-copy" id="recallAttemptMeta"></p><div class="crm-form-grid"><label>Fecha de la llamada<input name="contactDate" type="text" inputmode="numeric" maxlength="10" placeholder="dd/mm/aaaa" required></label><label>Franja horaria<select name="timeBand" required><option value="10_12">10:00 a 12:00</option><option value="14_16">14:00 a 16:00</option><option value="17_19">17:00 a 19:00</option></select></label><label class="wide">Resultado<select name="outcome" required><option value="no_answer">No respondió</option><option value="answered">Respondió</option><option value="not_interested">No está interesado</option><option value="invalid">Contacto inválido</option></select></label><label class="wide">Comentario<textarea name="note" rows="3" placeholder="Resultado de la llamada"></textarea></label></div><div class="recall-next-contact" id="recallNextContact" hidden><strong>Pasar a la agenda</strong><div class="crm-form-grid"><label>Próximo contacto<input name="nextDate" type="text" inputmode="numeric" maxlength="10" placeholder="dd/mm/aaaa"></label><label>Hora<input name="nextTime" type="time" step="300"></label><label class="wide">Motivo<input name="nextNote" type="text" placeholder="Ej. Enviar propuesta y confirmar interés"></label></div></div><p class="crm-form-error" id="recallAttemptError"></p><button class="primary-button" id="recallAttemptSubmit" type="submit">Guardar llamada</button></form></dialog>
+  <dialog class="crm-dialog small" id="recallAttemptDialog"><form method="dialog" class="crm-dialog-shell" id="recallAttemptForm"><button class="crm-dialog-close" value="cancel" aria-label="Cerrar">×</button><p class="eyebrow dark">Gestión independiente</p><h2 id="recallAttemptTitle">Registrar rellamado</h2><p class="crm-dialog-copy" id="recallAttemptMeta"></p><div class="crm-form-grid"><label class="wide">Franja horaria<select name="timeBand" required><option value="10_12">10:00 a 12:00</option><option value="14_16">14:00 a 16:00</option><option value="17_19">17:00 a 19:00</option></select></label><label class="wide">Resultado<select name="outcome" required><option value="no_answer">No respondió</option><option value="answered">Respondió</option><option value="not_interested">No está interesado</option><option value="invalid">Contacto inválido</option></select></label><label class="wide">Comentario<textarea name="note" rows="3" placeholder="Resultado de la llamada"></textarea></label></div><div class="recall-next-contact" id="recallNextContact" hidden><strong>Pasar a la agenda</strong><p>Completalo solamente si acordaste volver a contactar al cliente.</p><div class="crm-form-grid"><label>Próximo contacto<input name="nextDate" type="text" inputmode="numeric" maxlength="10" placeholder="dd/mm/aaaa"></label><label>Hora<input name="nextTime" type="time" step="300"></label><label class="wide">Motivo<input name="nextNote" type="text" placeholder="Ej. Enviar propuesta y confirmar interés"></label></div></div><p class="crm-form-error" id="recallAttemptError"></p><button class="primary-button" id="recallAttemptSubmit" type="submit">Guardar llamada</button></form></dialog>
 
   <dialog class="crm-dialog small" id="sellerLeadDialog"><form method="dialog" class="crm-dialog-shell" id="sellerLeadForm"><button class="crm-dialog-close" value="cancel" aria-label="Cerrar">×</button><p class="eyebrow dark">Autorización de supervisión</p><h2>Proponer nuevo Lead</h2><p class="crm-dialog-copy">No aparecerá en tu agenda hasta que un supervisor lo apruebe.</p><div class="crm-form-grid"><label>Nombre y apellido<input name="customerName" type="text" maxlength="120" required></label><label>Teléfono<input name="customerPhone" type="tel" maxlength="30" required></label><label>Origen<input name="sourceDetail" type="text" maxlength="300" placeholder="Ej. Referido, salón, redes"></label><label>Modelo de interés<input name="modelInterest" type="text" maxlength="160"></label><label class="wide">Comentario inicial<textarea name="summary" rows="4" maxlength="3000"></textarea></label></div><p class="crm-form-error" id="sellerLeadError"></p><button class="primary-button" id="sellerLeadSubmit" type="submit">Enviar a supervisión</button></form></dialog>
 
@@ -527,9 +527,9 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.2/dist/umd/supabase.js"></script>
   <script src="/vendedores/supabase-config.js?v=20260813-2"></script>
   <script src="/vendedores/app.js?v=20260817-1"></script>
-  <script src="/vendedores/crm.js?v=20260820-1"></script>
+  <script src="/vendedores/crm.js?v=20260821-1"></script>
   <script src="/vendedores/sales.js?v=20260818-1"></script>
-  <script src="/vendedores/recalls.js?v=20260818-1"></script>
+  <script src="/vendedores/recalls.js?v=20260821-2"></script>
   <script src="/vendedores/mobile-navigation.js?v=20260820-1"></script>
 </body>
 </html>

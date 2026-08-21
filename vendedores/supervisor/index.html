@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="/vendedores/supervisor/supervisor.css?v=20260820-3">
   <link rel="stylesheet" href="/vendedores/supervisor/operations.css?v=20260817-1">
   <link rel="stylesheet" href="/vendedores/supervisor/navigation.css?v=20260817-1">
-  <link rel="stylesheet" href="/vendedores/supervisor/lead-bases.css?v=20260818-1">
+  <link rel="stylesheet" href="/vendedores/supervisor/lead-bases.css?v=20260821-1">
   <link rel="stylesheet" href="/vendedores/supervisor/portfolio.css?v=20260820-1">
   <link rel="stylesheet" href="/vendedores/supervisor/whatsapp-inbox.css?v=20260820-1">
   <link rel="stylesheet" href="/vendedores/auth-loading.css?v=20260817-1">
@@ -73,7 +73,7 @@
         </section>
 
         <section class="operations-panel" data-supervisor-panel="followup" hidden>
-          <div class="section-head"><div><h2>Centro de operaciones</h2><p>Controlá el cumplimiento del proceso de seguimiento sin intervenir en la agenda de cada vendedor.</p></div><span id="operationsCaption">0 vencidas · 0 hoy</span></div>
+          <div class="section-head"><div><h2>Centro de operaciones</h2><p>Controlá exclusivamente los próximos contactos acordados en la agenda de cada vendedor.</p></div><span id="operationsCaption">0 vencidos · 0 hoy</span></div>
           <div class="operations-layout"><div class="operations-summary" id="operationsSummary"></div><div class="operations-tasks" id="operationsTasks"></div></div>
         </section>
 
@@ -126,6 +126,9 @@
             <button class="button primary" id="assignRecallBatch" type="button">Asignar seleccionados</button>
           </div>
           <div class="recall-supervisor-list" id="recallSupervisorList"></div>
+
+          <div class="section-head recall-panel-history-heading"><div><h2>Paneles generados</h2><p>Controlá el avance de cada tanda y consultá los paneles que ya finalizaron.</p></div><span id="recallPanelCount">0 paneles</span></div>
+          <div class="recall-panel-history" id="recallPanelHistory"></div>
 
           <div class="section-head seller-submissions-heading"><div><h2>Leads propuestos por vendedores</h2><p>Aprobá el ingreso antes de que aparezca en la agenda del vendedor.</p></div><span id="sellerSubmissionCount">0 pendientes</span></div>
           <div class="seller-submission-list" id="sellerSubmissionList"></div>
@@ -239,7 +242,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.2/dist/umd/supabase.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="/vendedores/supabase-config.js?v=20260814-1"></script>
-  <script src="/vendedores/supervisor/supervisor.js?v=20260820-3"></script>
-  <script src="/vendedores/supervisor/lead-bases.js?v=20260818-1"></script>
+  <script src="/vendedores/supervisor/supervisor.js?v=20260821-2"></script>
+  <script src="/vendedores/supervisor/lead-bases.js?v=20260821-1"></script>
 </body>
 </html>

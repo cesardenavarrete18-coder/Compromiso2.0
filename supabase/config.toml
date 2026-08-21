@@ -4,6 +4,9 @@ verify_jwt = false
 [functions.whatsapp-human-message]
 verify_jwt = true
 
+[functions.whatsapp-follow-up-reminders]
+verify_jwt = true
+
 [functions.privacy-policy]
 verify_jwt = false
 

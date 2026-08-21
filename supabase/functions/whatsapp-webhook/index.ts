@@ -1,4 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
+import { candidateAdvisorName, candidateCodes, knownAdvisorName, mentionsTikTok, normalizedPersonName } from "./routing-identifiers.ts";
+import { enforceVehicleFacts, firstName, handoffReply, hasKnownCommercialOperation, polishCommercialReply, qualifyAndHandoffReply, shouldForceHandoff, tiktokIdentifierReply } from "./conversation-style.ts";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -95,10 +97,14 @@ function advertisedVehicle(referral: JsonRecord | undefined) {
   return uniqueNames.length === 1 ? uniqueNames[0][1] : "";
 }
 
-function firstName(value: string | null | undefined) {
-  const cleaned = String(value ?? "").trim().replace(/\s+/g, " ");
-  if (!cleaned || /^\+?\d+$/.test(cleaned)) return "";
-  return cleaned.split(" ")[0].slice(0, 40);
+function mentionedVehicle(text: string) {
+  const source = String(text || "").toLocaleLowerCase("es-AR");
+  const matches = new Set<string>();
+  for (const [needle, canonical] of advertisedVehicles) {
+    const modelName = needle.split(" ").slice(1).join(" ");
+    if (source.includes(needle) || (modelName && source.includes(modelName))) matches.add(canonical);
+  }
+  return matches.size === 1 ? Array.from(matches)[0] : "";
 }
 
 function fallbackDecision(text: string, advertisedInterest = "", customerName = "", isFirstReply = true): LeadDecision {
@@ -114,7 +120,7 @@ function fallbackDecision(text: string, advertisedInterest = "", customerName = 
     disqualify_reason: "",
     reply_text: salesIntent
       ? advertisedInterest
-        ? `${greeting}Gracias por tu consulta por ${advertisedInterest}. ¿Pensás avanzar con anticipo y financiación, entregar un usado o comprar al contado?`
+        ? `${greeting}Tengo registrada tu consulta por ${advertisedInterest}. Puedo ayudarte con versiones, financiación o compra al contado. ¿Cuál de esas opciones querés ver primero?`
         : `${greeting}Soy el asistente de Compromiso mi 0km. Para orientarte mejor, ¿qué modelo estás buscando y qué tipo de operación tenés en mente?`
       : `${greeting}Soy el asistente de Compromiso mi 0km. ¿Qué vehículo 0 km estás buscando?`,
   };
@@ -147,7 +153,9 @@ async function analyzeLeadConversation(
   trainingExamples: TrainingExample[] = [],
 ): Promise<LeadDecision> {
   const apiKey = Deno.env.get("OPENAI_API_KEY") ?? "";
-  if (!apiKey || !text) return fallbackDecision(text, advertisedInterest, customerName, history.length === 0);
+  const isFirstReply = history.length === 0;
+  const priorAssistantReplies = history.filter((item) => item.startsWith("Asistente:")).length;
+  if (!apiKey || !text) return fallbackDecision(text, advertisedInterest, customerName, isFirstReply);
 
   const contactContext = `Datos autorizados del contacto:\nNombre: ${customerName || "no informado"}\nTeléfono: ${customerPhone || "no informado"}`;
   const conversation = [contactContext, referralContext, ...history, `Cliente: ${text}`].filter(Boolean).slice(-14).join("\n");
@@ -170,15 +178,23 @@ async function analyzeLeadConversation(
             content: `Sos el asistente comercial de Grupo Sur Automotores, una concesionaria argentina de vehículos 0 km.
 Tu tarea es filtrar el lead y redactar la próxima respuesta de WhatsApp en español rioplatense profesional, cálido y breve.
 
-Datos que conviene reunir de manera natural: modelo de interés, tipo de operación, anticipo disponible, si entrega usado (marca/modelo/año/km), zona, plazo de compra y experiencia previa con financiación.
-- Hacé como máximo dos preguntas por mensaje y no repitas datos ya informados.
+Datos que conviene reunir de manera natural: modelo de interés, tipo de operación, anticipo disponible, si entrega usado (marca/modelo/año/km), zona y plazo de compra. No necesitás reunirlos todos para derivar.
+- Tu prioridad es ayudar, no completar un formulario. Primero respondé con información útil y después, solamente si hace falta para avanzar, hacé una pregunta concreta.
+- Hacé como máximo una pregunta por mensaje. También podés responder sin preguntas.
+- No encadenes preguntas de preferencia. Si el cliente pide precios, versiones, equipamiento, ubicación o condiciones, respondé primero esa consulta usando la información disponible y recién después pedí un único dato indispensable.
+- Evitá muletillas repetidas como “para orientarte mejor”, “así podemos ayudarte mejor” o “¿querés que te detalle...?”. No prometas información para volver a preguntar lo mismo en el mensaje siguiente.
+- No repitas datos ya informados como si los estuvieras descubriendo de nuevo.
 - Respondé específicamente a lo que dijo el cliente: mencioná el modelo, usado, anticipo, zona o plazo cuando ya estén informados. Evitá respuestas genéricas que podrían servir para cualquier conversación.
 - La referencia del anuncio de Meta es un dato comercial confirmado, no una pista opcional. Si identifica un modelo concreto, asumí que ese es el modelo consultado, guardalo en model_interest y mencioná ese modelo en la primera respuesta. No vuelvas a preguntar qué modelo quiere salvo que el cliente diga expresamente que busca otro o que el anuncio sea ambiguo.
 - Presentate solamente en el primer mensaje de la conversación. En los siguientes, continuá naturalmente sin volver a saludar ni explicar que sos un asistente.
-- En la primera respuesta saludá usando el nombre de pila si está informado. No repitas el teléfono ni otros datos personales en la respuesta.
+- En la primera respuesta podés saludar usando solamente el nombre de pila. Después no vuelvas a usar el nombre como encabezado o muletilla. No repitas el teléfono ni otros datos personales en la respuesta.
 - Preferí una sola pregunta concreta por turno. Si el cliente ya dio información suficiente, resumila y derivá en lugar de seguir interrogándolo.
 - No inventes precios, cuotas, stock, aprobaciones crediticias ni fechas de entrega.
-- Si ya hay al menos tres datos comerciales útiles, confirmá un resumen breve e indicá que un asesor continuará la gestión.
+- Hecho obligatorio de producto: Volkswagen Tera es un SUV compacto. Nunca lo describas como pick-up. Si no conocés con certeza la carrocería o una especificación de otro modelo, no la inventes.
+- Si el cliente dice que viene de TikTok y todavía no informó un código o asesor identificable, pedí exclusivamente el código de vendedor o el nombre y apellido del asesor. No lo trates como tráfico web u orgánico.
+- Si ya conocés modelo y modalidad de compra, o ya hay tres datos comerciales útiles, dejá de preguntar: confirmá brevemente lo entendido e indicá que un asesor continuará la gestión.
+- Si la persona está lejos de la sucursal, no supongas que quiere viajar ni insistas con una visita; explicá las alternativas reales de atención remota disponibles en la documentación.
+- Nunca prolongues el cuestionario durante más de cinco respuestas de la IA. Derivá antes si ya hay intención comercial clara.
 - qualified: intención comercial concreta y datos suficientes para derivar.
 - follow_up: posible lead, pero todavía faltan datos.
 - unqualified: empleo, proveedor, spam o asunto ajeno. En ese caso respondé cortésmente que el canal es para consultas de vehículos.
@@ -240,6 +256,18 @@ Si hay documentos comerciales disponibles, consultalos cuando la respuesta depen
         decision.reply_text = fallbackDecision(text, advertisedInterest, customerName, true).reply_text;
       }
     }
+    const customerConversation = [...history.filter((item) => item.startsWith("Cliente:")), `Cliente: ${text}`].join("\n");
+    if ((decision.model_interest || advertisedInterest) && hasKnownCommercialOperation(customerConversation) && decision.qualification_status !== "unqualified") {
+      decision.qualification_status = "qualified";
+      decision.reply_text = qualifyAndHandoffReply(decision.reply_text, decision.model_interest || advertisedInterest);
+    } else if (shouldForceHandoff(priorAssistantReplies, decision.qualification_status)) {
+      decision.qualification_status = "qualified";
+      decision.reply_text = handoffReply(decision.model_interest || advertisedInterest);
+    }
+    decision.reply_text = enforceVehicleFacts(
+      polishCommercialReply(decision.reply_text, customerName, isFirstReply),
+      decision.model_interest || advertisedInterest,
+    );
     return decision;
   } catch (error) {
     console.error("OpenAI analysis exception", error instanceof Error ? error.message : String(error));
@@ -283,10 +311,6 @@ function argentinaDayStart() {
   }).formatToParts(new Date());
   const get = (type: string) => parts.find((part) => part.type === type)?.value ?? "";
   return `${get("year")}-${get("month")}-${get("day")}T00:00:00-03:00`;
-}
-
-function candidateCodes(text: string) {
-  return Array.from(new Set(text.toUpperCase().match(/\b[A-Z]{2,}[A-Z0-9_-]*\d[A-Z0-9_-]*\b/g) || []));
 }
 
 Deno.serve(async (request) => {
@@ -349,7 +373,11 @@ Deno.serve(async (request) => {
         const body = messageText(message);
         const referral = message.referral as JsonRecord | undefined;
         const hasMetaReferral = Boolean(referral && (referral.ctwa_clid || referral.source_id || referral.source_url));
+        const incomingMentionsTikTok = mentionsTikTok(body);
         let codes = candidateCodes(body);
+        let advisorName = candidateAdvisorName(body);
+        let tiktokIdentifierType = codes.length ? "seller_code" : advisorName ? "advisor_name" : "";
+        let tiktokMentioned = Boolean(tiktokIdentifierType) || incomingMentionsTikTok;
         const initialMetadata = {
           phone_number_id: (value?.metadata as JsonRecord | undefined)?.phone_number_id || null,
           referral: hasMetaReferral ? referral : null,
@@ -357,8 +385,8 @@ Deno.serve(async (request) => {
         const claimResult = await db.rpc("claim_whatsapp_lead", {
           p_customer_phone: customerPhone,
           p_customer_name: customerName,
-          p_source_channel: codes.length ? "tiktok" : "whatsapp",
-          p_source_detail: codes.length ? "seller_code" : hasMetaReferral ? "meta_ads" : "organic",
+          p_source_channel: tiktokMentioned ? "tiktok" : "whatsapp",
+          p_source_detail: tiktokIdentifierType || (incomingMentionsTikTok ? "pending_identifier" : hasMetaReferral ? "meta_ads" : "organic"),
           p_metadata: initialMetadata,
         });
         const claim = Array.isArray(claimResult.data) ? claimResult.data[0] : null;
@@ -367,7 +395,6 @@ Deno.serve(async (request) => {
           continue;
         }
         const leadId = String(claim.lead_id);
-        const createdNew = Boolean(claim.created_new);
 
         // Persist first, analyze second. Besides preserving the complete conversation,
         // the unique WhatsApp id makes concurrent Meta retries harmless.
@@ -379,11 +406,27 @@ Deno.serve(async (request) => {
           body,
           raw_payload: message,
           origin: "customer",
-        });
+        }).select("id, created_at").single();
         if (inboundResult.error) {
           if (inboundResult.error.code === "23505") continue;
           console.error("Inbound message persistence failed", inboundResult.error.message);
           continue;
+        }
+
+        if (claim.created_new) {
+          const dueAt = new Date(new Date(inboundResult.data.created_at).getTime() + 2 * 60 * 60 * 1000).toISOString();
+          const reminderResult = await db.from("whatsapp_follow_up_reminders").insert({
+            lead_id: leadId,
+            first_inbound_message_id: inboundResult.data.id,
+            due_at: dueAt,
+          });
+          if (reminderResult.error) console.error("Reminder scheduling failed", reminderResult.error.message);
+        } else {
+          const reminderCancellation = await db.from("whatsapp_follow_up_reminders").update({
+            status: "cancelled",
+            last_error: "El cliente respondió antes del recordatorio",
+          }).eq("lead_id", leadId).in("status", ["pending", "processing"]);
+          if (reminderCancellation.error) console.error("Reminder cancellation failed", reminderCancellation.error.message);
         }
 
         const existingResult = await db
@@ -460,21 +503,57 @@ Deno.serve(async (request) => {
           .order("created_at", { ascending: false })
           .limit(12);
         const historyRows = (historyResult.data || []).reverse();
-        codes = candidateCodes(historyRows.map((item) => item.body || "").join("\n"));
+        const routingConversation = historyRows.filter((item) => item.direction === "inbound").map((item) => item.body || "").join("\n");
+        codes = candidateCodes(routingConversation);
+        advisorName = codes.length ? "" : candidateAdvisorName(routingConversation);
+        tiktokMentioned = mentionsTikTok(routingConversation) || existing?.source_channel === "tiktok";
+        let activeSellerProfiles: JsonRecord[] = [];
+        if (tiktokMentioned && !codes.length) {
+          const activeSellers = await db
+            .from("profiles")
+            .select("user_id, seller_code, full_name")
+            .eq("role", "seller")
+            .eq("active", true);
+          activeSellerProfiles = activeSellers.data || [];
+          if (!advisorName) {
+            advisorName = knownAdvisorName(
+              routingConversation,
+              activeSellerProfiles.map((profile) => String(profile.full_name || "")).filter(Boolean),
+            );
+          }
+        }
+        tiktokIdentifierType = codes.length ? "seller_code" : advisorName ? "advisor_name" : "";
         const history = historyRows
           .filter((item) => !whatsappMessageId || item.whatsapp_message_id !== whatsappMessageId)
           .map((item) => `${item.direction === "outbound" ? "Asistente" : "Cliente"}: ${item.body}`);
-        const classification = await analyzeLeadConversation(
-          history,
-          body,
-          String(assistantSettings.qualification_rules || ""),
-          String(assistantSettings.conversation_style || ""),
-          String(assistantSettings.vector_store_id || ""),
-          referralContext,
-          advertisedInterest,
-          customerName || "",
-          customerPhone,
-          trainingExamples,
+        const explicitModelInterest = mentionedVehicle(routingConversation) || advertisedInterest;
+        const classification: LeadDecision = tiktokMentioned && !tiktokIdentifierType
+          ? {
+            qualification_status: "follow_up",
+            priority: "normal",
+            intent_summary: `Lead de TikTok${explicitModelInterest ? ` interesado en ${explicitModelInterest}` : ""}, pendiente de identificar asesor`,
+            model_interest: explicitModelInterest,
+            disqualify_reason: "",
+            reply_text: tiktokIdentifierReply(customerName || "", history.length === 0, explicitModelInterest),
+          }
+          : await analyzeLeadConversation(
+            history,
+            body,
+            String(assistantSettings.qualification_rules || ""),
+            String(assistantSettings.conversation_style || ""),
+            String(assistantSettings.vector_store_id || ""),
+            referralContext,
+            advertisedInterest,
+            customerName || "",
+            customerPhone,
+            trainingExamples,
+          );
+        if (!classification.model_interest && explicitModelInterest) {
+          classification.model_interest = explicitModelInterest;
+        }
+        classification.reply_text = enforceVehicleFacts(
+          classification.reply_text,
+          classification.model_interest || explicitModelInterest,
         );
 
         // If a newer inbound arrived while OpenAI was working, that newer execution
@@ -501,7 +580,8 @@ Deno.serve(async (request) => {
         }
 
         let seller: JsonRecord | null = null;
-        if (!existing?.assigned_seller_user_id && codes.length) {
+        let advisorNameAmbiguous = false;
+        if (codes.length) {
           const sellerResult = await db
             .from("profiles")
             .select("user_id, seller_code, full_name")
@@ -511,34 +591,48 @@ Deno.serve(async (request) => {
             .limit(1)
             .maybeSingle();
           seller = sellerResult.data;
+        } else if (advisorName) {
+          const sellerProfiles = activeSellerProfiles.length
+            ? activeSellerProfiles
+            : (await db.from("profiles").select("user_id, seller_code, full_name").eq("role", "seller").eq("active", true)).data || [];
+          const normalizedCandidate = normalizedPersonName(advisorName);
+          const matches = sellerProfiles.filter((profile) => normalizedPersonName(String(profile.full_name || "")) === normalizedCandidate);
+          seller = matches.length === 1 ? matches[0] : null;
+          advisorNameAmbiguous = matches.length > 1;
         }
 
         let routingStatus = existing?.routing_status || "pending_supervisor";
         let routingReason = existing?.assigned_seller_user_id ? "existing_owner" : "general_inbox";
         let assignedSellerId = existing?.assigned_seller_user_id || null;
         let assignedAt: string | null = existing?.assigned_at || null;
+        let attributionOutcome = existing?.assigned_seller_user_id && tiktokIdentifierType ? "existing_owner" : "";
 
-        if (seller?.user_id) {
+        if (seller?.user_id && !existing?.assigned_seller_user_id) {
           const settingsResult = await db.from("seller_routing_settings").select("daily_quota, paused").eq("seller_user_id", seller.user_id).maybeSingle();
           const settings = settingsResult.data || { daily_quota: 20, paused: false };
           const assignedToday = await db.from("leads").select("id", { count: "exact", head: true }).eq("assigned_seller_user_id", seller.user_id).gte("assigned_at", argentinaDayStart());
           if (!settings.paused && (assignedToday.count || 0) < settings.daily_quota) {
             routingStatus = "assigned_direct";
-            routingReason = "valid_seller_code";
+            routingReason = tiktokIdentifierType === "advisor_name" ? "valid_advisor_name" : "valid_seller_code";
             assignedSellerId = seller.user_id as string;
             assignedAt = new Date().toISOString();
+            attributionOutcome = "assigned";
           } else {
             routingReason = settings.paused ? "seller_paused" : "daily_quota_reached";
+            attributionOutcome = routingReason;
           }
-        } else if (codes.length && !existing?.assigned_seller_user_id) {
-          routingReason = "invalid_seller_code";
+        } else if (tiktokIdentifierType && !existing?.assigned_seller_user_id) {
+          routingReason = advisorNameAmbiguous ? "ambiguous_advisor_name" : tiktokIdentifierType === "advisor_name" ? "invalid_advisor_name" : "invalid_seller_code";
+          attributionOutcome = advisorNameAmbiguous ? "ambiguous" : "invalid";
+        } else if (tiktokMentioned && !existing?.assigned_seller_user_id) {
+          routingReason = "missing_tiktok_identifier";
         }
 
         const leadValues = {
           customer_phone: customerPhone,
           customer_name: customerName,
-          source_channel: codes.length ? "tiktok" : existing?.source_channel || "whatsapp",
-          source_detail: codes.length ? "seller_code" : hasMetaReferral ? "meta_ads" : existing?.source_detail || "organic",
+          source_channel: tiktokMentioned ? "tiktok" : existing?.source_channel || "whatsapp",
+          source_detail: tiktokIdentifierType || (tiktokMentioned ? "pending_identifier" : hasMetaReferral ? "meta_ads" : existing?.source_detail || "organic"),
           seller_code_received: codes[0] || existing?.seller_code_received || null,
           qualification_status: classification.qualification_status,
           priority: classification.priority,
@@ -561,6 +655,19 @@ Deno.serve(async (request) => {
 
         const leadResult = await db.from("leads").update(leadValues).eq("id", leadId).select("id").single();
         if (leadResult.error || !leadResult.data) continue;
+
+        if (tiktokIdentifierType) {
+          const attributionResult = await db.from("lead_tiktok_attributions").insert({
+            lead_id: leadResult.data.id,
+            whatsapp_message_id: whatsappMessageId || null,
+            identifier_type: tiktokIdentifierType,
+            raw_identifier: (codes[0] || advisorName).slice(0, 160),
+            matched_seller_user_id: seller?.user_id || null,
+            outcome: attributionOutcome || "invalid",
+            routing_reason: routingReason.slice(0, 300),
+          });
+          if (attributionResult.error) console.error("TikTok attribution audit failed", attributionResult.error.message);
+        }
 
         if (hasMetaReferral) {
           await db.from("lead_attributions").upsert({
@@ -595,7 +702,7 @@ Deno.serve(async (request) => {
           }
         }
 
-        if (createdNew && assignedSellerId) {
+        if (!existing?.assigned_seller_user_id && assignedSellerId) {
           await db.from("lead_assignments").insert({
             lead_id: leadResult.data.id,
             seller_user_id: assignedSellerId,
@@ -610,8 +717,8 @@ Deno.serve(async (request) => {
             recipient_user_id: supervisor.user_id,
             lead_id: leadResult.data.id,
             notification_type: assignedSellerId ? "direct_assignment" : "new_pending_lead",
-            title: assignedSellerId ? "Lead derivado por código" : "Nuevo lead para asignar",
-            body: `${customerName || customerPhone}: ${classification.intent_summary}`.slice(0, 500),
+            title: assignedSellerId ? (tiktokIdentifierType === "advisor_name" ? "Lead derivado por asesor" : "Lead derivado por código") : tiktokMentioned ? "TikTok requiere identificación" : "Nuevo lead para asignar",
+            body: `${customerName || customerPhone}: ${classification.intent_summary}${tiktokMentioned ? ` · ${routingReason}` : ""}`.slice(0, 500),
           })));
         }
       }
