@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { candidateAdvisorName, candidateCodes, normalizedPersonName } from "./routing-identifiers.ts";
+import { firstName, handoffReply, hasKnownCommercialOperation, polishCommercialReply, qualifyAndHandoffReply, shouldForceHandoff } from "./conversation-style.ts";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -96,12 +97,6 @@ function advertisedVehicle(referral: JsonRecord | undefined) {
   return uniqueNames.length === 1 ? uniqueNames[0][1] : "";
 }
 
-function firstName(value: string | null | undefined) {
-  const cleaned = String(value ?? "").trim().replace(/\s+/g, " ");
-  if (!cleaned || /^\+?\d+$/.test(cleaned)) return "";
-  return cleaned.split(" ")[0].slice(0, 40);
-}
-
 function fallbackDecision(text: string, advertisedInterest = "", customerName = "", isFirstReply = true): LeadDecision {
   const normalized = text.toLocaleLowerCase("es-AR");
   const salesIntent = Boolean(advertisedInterest) || /(0\s?km|auto|veh[ií]culo|modelo|cuota|anticipo|financi|plan|precio|entrega|volkswagen|peugeot|fiat)/i.test(normalized);
@@ -115,7 +110,7 @@ function fallbackDecision(text: string, advertisedInterest = "", customerName = 
     disqualify_reason: "",
     reply_text: salesIntent
       ? advertisedInterest
-        ? `${greeting}Gracias por tu consulta por ${advertisedInterest}. ¿Pensás avanzar con anticipo y financiación, entregar un usado o comprar al contado?`
+        ? `${greeting}Tengo registrada tu consulta por ${advertisedInterest}. Puedo ayudarte con versiones, financiación o compra al contado. ¿Cuál de esas opciones querés ver primero?`
         : `${greeting}Soy el asistente de Compromiso mi 0km. Para orientarte mejor, ¿qué modelo estás buscando y qué tipo de operación tenés en mente?`
       : `${greeting}Soy el asistente de Compromiso mi 0km. ¿Qué vehículo 0 km estás buscando?`,
   };
@@ -148,7 +143,9 @@ async function analyzeLeadConversation(
   trainingExamples: TrainingExample[] = [],
 ): Promise<LeadDecision> {
   const apiKey = Deno.env.get("OPENAI_API_KEY") ?? "";
-  if (!apiKey || !text) return fallbackDecision(text, advertisedInterest, customerName, history.length === 0);
+  const isFirstReply = history.length === 0;
+  const priorAssistantReplies = history.filter((item) => item.startsWith("Asistente:")).length;
+  if (!apiKey || !text) return fallbackDecision(text, advertisedInterest, customerName, isFirstReply);
 
   const contactContext = `Datos autorizados del contacto:\nNombre: ${customerName || "no informado"}\nTeléfono: ${customerPhone || "no informado"}`;
   const conversation = [contactContext, referralContext, ...history, `Cliente: ${text}`].filter(Boolean).slice(-14).join("\n");
@@ -171,15 +168,21 @@ async function analyzeLeadConversation(
             content: `Sos el asistente comercial de Grupo Sur Automotores, una concesionaria argentina de vehículos 0 km.
 Tu tarea es filtrar el lead y redactar la próxima respuesta de WhatsApp en español rioplatense profesional, cálido y breve.
 
-Datos que conviene reunir de manera natural: modelo de interés, tipo de operación, anticipo disponible, si entrega usado (marca/modelo/año/km), zona, plazo de compra y experiencia previa con financiación.
-- Hacé como máximo dos preguntas por mensaje y no repitas datos ya informados.
+Datos que conviene reunir de manera natural: modelo de interés, tipo de operación, anticipo disponible, si entrega usado (marca/modelo/año/km), zona y plazo de compra. No necesitás reunirlos todos para derivar.
+- Tu prioridad es ayudar, no completar un formulario. Primero respondé con información útil y después, solamente si hace falta para avanzar, hacé una pregunta concreta.
+- Hacé como máximo una pregunta por mensaje. También podés responder sin preguntas.
+- No encadenes preguntas de preferencia. Si el cliente pide precios, versiones, equipamiento, ubicación o condiciones, respondé primero esa consulta usando la información disponible y recién después pedí un único dato indispensable.
+- Evitá muletillas repetidas como “para orientarte mejor”, “así podemos ayudarte mejor” o “¿querés que te detalle...?”. No prometas información para volver a preguntar lo mismo en el mensaje siguiente.
+- No repitas datos ya informados como si los estuvieras descubriendo de nuevo.
 - Respondé específicamente a lo que dijo el cliente: mencioná el modelo, usado, anticipo, zona o plazo cuando ya estén informados. Evitá respuestas genéricas que podrían servir para cualquier conversación.
 - La referencia del anuncio de Meta es un dato comercial confirmado, no una pista opcional. Si identifica un modelo concreto, asumí que ese es el modelo consultado, guardalo en model_interest y mencioná ese modelo en la primera respuesta. No vuelvas a preguntar qué modelo quiere salvo que el cliente diga expresamente que busca otro o que el anuncio sea ambiguo.
 - Presentate solamente en el primer mensaje de la conversación. En los siguientes, continuá naturalmente sin volver a saludar ni explicar que sos un asistente.
-- En la primera respuesta saludá usando el nombre de pila si está informado. No repitas el teléfono ni otros datos personales en la respuesta.
+- En la primera respuesta podés saludar usando solamente el nombre de pila. Después no vuelvas a usar el nombre como encabezado o muletilla. No repitas el teléfono ni otros datos personales en la respuesta.
 - Preferí una sola pregunta concreta por turno. Si el cliente ya dio información suficiente, resumila y derivá en lugar de seguir interrogándolo.
 - No inventes precios, cuotas, stock, aprobaciones crediticias ni fechas de entrega.
-- Si ya hay al menos tres datos comerciales útiles, confirmá un resumen breve e indicá que un asesor continuará la gestión.
+- Si ya conocés modelo y modalidad de compra, o ya hay tres datos comerciales útiles, dejá de preguntar: confirmá brevemente lo entendido e indicá que un asesor continuará la gestión.
+- Si la persona está lejos de la sucursal, no supongas que quiere viajar ni insistas con una visita; explicá las alternativas reales de atención remota disponibles en la documentación.
+- Nunca prolongues el cuestionario durante más de cinco respuestas de la IA. Derivá antes si ya hay intención comercial clara.
 - qualified: intención comercial concreta y datos suficientes para derivar.
 - follow_up: posible lead, pero todavía faltan datos.
 - unqualified: empleo, proveedor, spam o asunto ajeno. En ese caso respondé cortésmente que el canal es para consultas de vehículos.
@@ -241,6 +244,15 @@ Si hay documentos comerciales disponibles, consultalos cuando la respuesta depen
         decision.reply_text = fallbackDecision(text, advertisedInterest, customerName, true).reply_text;
       }
     }
+    const customerConversation = [...history.filter((item) => item.startsWith("Cliente:")), `Cliente: ${text}`].join("\n");
+    if ((decision.model_interest || advertisedInterest) && hasKnownCommercialOperation(customerConversation) && decision.qualification_status !== "unqualified") {
+      decision.qualification_status = "qualified";
+      decision.reply_text = qualifyAndHandoffReply(decision.reply_text, decision.model_interest || advertisedInterest);
+    } else if (shouldForceHandoff(priorAssistantReplies, decision.qualification_status)) {
+      decision.qualification_status = "qualified";
+      decision.reply_text = handoffReply(decision.model_interest || advertisedInterest);
+    }
+    decision.reply_text = polishCommercialReply(decision.reply_text, customerName, isFirstReply);
     return decision;
   } catch (error) {
     console.error("OpenAI analysis exception", error instanceof Error ? error.message : String(error));
@@ -377,11 +389,27 @@ Deno.serve(async (request) => {
           body,
           raw_payload: message,
           origin: "customer",
-        });
+        }).select("id, created_at").single();
         if (inboundResult.error) {
           if (inboundResult.error.code === "23505") continue;
           console.error("Inbound message persistence failed", inboundResult.error.message);
           continue;
+        }
+
+        if (claim.created_new) {
+          const dueAt = new Date(new Date(inboundResult.data.created_at).getTime() + 2 * 60 * 60 * 1000).toISOString();
+          const reminderResult = await db.from("whatsapp_follow_up_reminders").insert({
+            lead_id: leadId,
+            first_inbound_message_id: inboundResult.data.id,
+            due_at: dueAt,
+          });
+          if (reminderResult.error) console.error("Reminder scheduling failed", reminderResult.error.message);
+        } else {
+          const reminderCancellation = await db.from("whatsapp_follow_up_reminders").update({
+            status: "cancelled",
+            last_error: "El cliente respondió antes del recordatorio",
+          }).eq("lead_id", leadId).in("status", ["pending", "processing"]);
+          if (reminderCancellation.error) console.error("Reminder cancellation failed", reminderCancellation.error.message);
         }
 
         const existingResult = await db

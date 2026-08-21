@@ -45,13 +45,6 @@
     return new Date(String(year).padStart(4, "0") + "-" + String(month).padStart(2, "0") + "-" + String(day).padStart(2, "0") + "T" + time + ":00-03:00").toISOString();
   }
 
-  function contactedAt(dateValue, band) {
-    var time = ({ "10_12": "11:00", "14_16": "15:00", "17_19": "18:00" })[band];
-    var value = parseDate(dateValue, time, "la llamada");
-    if (localDateParts(new Date()) === dateValue && new Date(value).getTime() > Date.now()) return new Date().toISOString();
-    return value;
-  }
-
   function outcomeLabel(value) {
     return ({ no_answer: "No respondió", answered: "Respondió", invalid: "Inválido", not_interested: "Sin interés" })[value] || value || "Sin historia";
   }
@@ -117,7 +110,6 @@
     state.activeItem = state.items.find(function (item) { return item.id === id; });
     if (!state.activeItem) return;
     attemptForm.reset();
-    attemptForm.elements.contactDate.value = localDateParts(new Date());
     var used = (state.activeItem.attempts || []).map(function (item) { return item.time_band; });
     Array.from(attemptForm.elements.timeBand.options).forEach(function (option) { option.disabled = used.includes(option.value); });
     var available = Array.from(attemptForm.elements.timeBand.options).find(function (option) { return !option.disabled; });
@@ -135,13 +127,11 @@
     var f = attemptForm.elements;
     var errorBox = document.getElementById("recallAttemptError");
     var button = document.getElementById("recallAttemptSubmit");
-    var contacted, next = null;
+    var contacted = new Date().toISOString(), next = null;
     errorBox.textContent = "";
     try {
-      contacted = contactedAt(f.contactDate.value, f.timeBand.value);
       if (f.outcome.value === "answered") next = parseDate(f.nextDate.value, f.nextTime.value, "próximo contacto");
     } catch (error) { errorBox.textContent = error.message; return; }
-    if (new Date(contacted).getTime() > Date.now() + 300000) { errorBox.textContent = "La llamada no puede quedar registrada a futuro."; return; }
     if (f.outcome.value === "answered" && (!next || new Date(next).getTime() <= Date.now() || f.nextNote.value.trim().length < 3)) { errorBox.textContent = "Programá una fecha futura y explicá el próximo paso."; return; }
     setBusy(button, true, "Guardando…");
     var result = await supabaseClient.rpc("record_recall_attempt", { p_item_id: state.activeItem.id, p_time_band: f.timeBand.value, p_outcome: f.outcome.value, p_contacted_at: contacted, p_note: f.note.value.trim(), p_next_contact_at: next, p_next_contact_note: f.nextNote.value.trim() });
@@ -173,7 +163,7 @@
   document.getElementById("proposeLeadButton").addEventListener("click", function () { leadForm.reset(); document.getElementById("sellerLeadError").textContent = ""; leadDialog.showModal(); });
   document.getElementById("refreshRecallsButton").addEventListener("click", function () { var button = this; setBusy(button, true, "Actualizando…"); load().finally(function () { setBusy(button, false); }); });
   attemptForm.elements.outcome.addEventListener("change", function () { document.getElementById("recallNextContact").hidden = this.value !== "answered"; if (this.value === "answered") { var tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1); attemptForm.elements.nextDate.value = localDateParts(tomorrow); attemptForm.elements.nextTime.value = "10:00"; } });
-  [attemptForm.elements.contactDate, attemptForm.elements.nextDate].forEach(function (input) { input.addEventListener("input", function () { maskDate(this); }); });
+  attemptForm.elements.nextDate.addEventListener("input", function () { maskDate(this); });
   attemptForm.addEventListener("submit", saveAttempt);
   leadForm.addEventListener("submit", submitLead);
   document.addEventListener("grupoSur:recalls-open", load);
