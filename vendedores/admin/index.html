@@ -286,7 +286,8 @@
               <h3>Habilitar integrante</h3>
               <label class="field"><span>Rol</span><select name="role"><option value="seller">Vendedor</option><option value="supervisor">Supervisor</option><option value="admventas">Administración de ventas</option></select></label>
               <label class="field"><span>Nombre y apellido</span><input name="fullName" type="text" placeholder="Ej. María González" required></label>
-              <label class="field"><span>Código interno</span><input name="sellerCode" type="text" maxlength="20" placeholder="Ej. GS002 o SUP01" required></label>
+              <label class="field"><span>Código de acceso</span><input name="sellerCode" type="text" maxlength="20" placeholder="Ej. GS002 o SUP01" required><small>Se usa únicamente para ingresar al portal.</small></label>
+              <label class="field" id="sellerTikTokCodeField"><span>Código TikTok</span><input name="tiktokCode" type="text" maxlength="20" placeholder="Ej. GS-01CDN"><small>Es el código público que el lead escribe por WhatsApp.</small></label>
               <label class="field"><span>Teléfono</span><input name="phone" type="tel" minlength="6" maxlength="30" placeholder="Ej. 11 3456 7890" required></label>
               <label class="field"><span>Correo electrónico</span><input name="contactEmail" type="email" maxlength="254" placeholder="Ej. maria@email.com" required></label>
               <label class="field"><span>Contraseña inicial</span><input name="password" type="password" minlength="8" placeholder="Mínimo 8 caracteres" required></label>
@@ -401,7 +402,8 @@
       <h3>Editar vendedor</h3>
       <input id="editSellerUserId" type="hidden">
       <label class="field"><span>Nombre y apellido</span><input id="editSellerFullName" type="text" required></label>
-      <label class="field"><span>Código de vendedor</span><input id="editSellerCode" type="text" maxlength="20" required></label>
+      <label class="field"><span>Código de acceso</span><input id="editSellerCode" type="text" maxlength="20" required><small>Se usa únicamente para ingresar al portal.</small></label>
+      <label class="field"><span>Código TikTok</span><input id="editSellerTikTokCode" type="text" maxlength="20" required><small>Identifica y asigna automáticamente los leads provenientes de TikTok.</small></label>
       <label class="field"><span>Teléfono</span><input id="editSellerPhone" type="tel" minlength="6" maxlength="30" required></label>
       <label class="field"><span>Correo electrónico</span><input id="editSellerEmail" type="email" maxlength="254" required></label>
       <p class="form-message" id="sellerEditMessage" role="status"></p>
@@ -412,6 +414,6 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.2/dist/umd/supabase.js"></script>
   <script src="/vendedores/supabase-config.js?v=20260813-2"></script>
   <script src="/vendedores/admin/excel-export.js?v=20260813-2"></script>
-  <script src="/vendedores/admin/admin.js?v=20260820-1"></script>
+  <script src="/vendedores/admin/admin.js?v=20260821-2"></script>
 </body>
 </html>

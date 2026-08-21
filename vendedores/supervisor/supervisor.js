@@ -372,9 +372,9 @@
   }
 
   function routingLabel(lead) {
-    if (lead.routing_status === "assigned_direct") return lead.routing_reason === "valid_advisor_name" ? "Asesor identificado" : "Código válido";
+    if (lead.routing_status === "assigned_direct") return lead.routing_reason === "valid_advisor_name" ? "Asesor identificado" : "Código TikTok válido";
     if (lead.routing_status === "assigned_manual") return "Asignación manual";
-    if (lead.routing_reason === "invalid_seller_code") return "Código no válido";
+    if (["invalid_seller_code", "invalid_tiktok_code"].includes(lead.routing_reason)) return "Código TikTok no válido";
     if (lead.routing_reason === "invalid_advisor_name") return "Asesor no encontrado";
     if (lead.routing_reason === "ambiguous_advisor_name") return "Nombre ambiguo";
     if (lead.routing_reason === "daily_quota_reached") return "Cupo alcanzado";

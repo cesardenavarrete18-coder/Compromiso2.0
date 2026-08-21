@@ -191,7 +191,7 @@ Datos que conviene reunir de manera natural: modelo de interés, tipo de operaci
 - Preferí una sola pregunta concreta por turno. Si el cliente ya dio información suficiente, resumila y derivá en lugar de seguir interrogándolo.
 - No inventes precios, cuotas, stock, aprobaciones crediticias ni fechas de entrega.
 - Hecho obligatorio de producto: Volkswagen Tera es un SUV compacto. Nunca lo describas como pick-up. Si no conocés con certeza la carrocería o una especificación de otro modelo, no la inventes.
-- Si el cliente dice que viene de TikTok y todavía no informó un código o asesor identificable, pedí exclusivamente el código de vendedor o el nombre y apellido del asesor. No lo trates como tráfico web u orgánico.
+- Si el cliente dice que viene de TikTok y todavía no informó un código o asesor identificable, pedí exclusivamente el código TikTok del vendedor o el nombre y apellido del asesor. No lo trates como tráfico web u orgánico. El código TikTok es público y distinto del código interno de acceso al portal.
 - Si ya conocés modelo y modalidad de compra, o ya hay tres datos comerciales útiles, dejá de preguntar: confirmá brevemente lo entendido e indicá que un asesor continuará la gestión.
 - Si la persona está lejos de la sucursal, no supongas que quiere viajar ni insistas con una visita; explicá las alternativas reales de atención remota disponibles en la documentación.
 - Nunca prolongues el cuestionario durante más de cinco respuestas de la IA. Derivá antes si ya hay intención comercial clara.
@@ -376,7 +376,7 @@ Deno.serve(async (request) => {
         const incomingMentionsTikTok = mentionsTikTok(body);
         let codes = candidateCodes(body);
         let advisorName = candidateAdvisorName(body);
-        let tiktokIdentifierType = codes.length ? "seller_code" : advisorName ? "advisor_name" : "";
+        let tiktokIdentifierType = codes.length ? "tiktok_code" : advisorName ? "advisor_name" : "";
         let tiktokMentioned = Boolean(tiktokIdentifierType) || incomingMentionsTikTok;
         const initialMetadata = {
           phone_number_id: (value?.metadata as JsonRecord | undefined)?.phone_number_id || null,
@@ -511,7 +511,7 @@ Deno.serve(async (request) => {
         if (tiktokMentioned && !codes.length) {
           const activeSellers = await db
             .from("profiles")
-            .select("user_id, seller_code, full_name")
+            .select("user_id, tiktok_code, full_name")
             .eq("role", "seller")
             .eq("active", true);
           activeSellerProfiles = activeSellers.data || [];
@@ -522,7 +522,7 @@ Deno.serve(async (request) => {
             );
           }
         }
-        tiktokIdentifierType = codes.length ? "seller_code" : advisorName ? "advisor_name" : "";
+        tiktokIdentifierType = codes.length ? "tiktok_code" : advisorName ? "advisor_name" : "";
         const history = historyRows
           .filter((item) => !whatsappMessageId || item.whatsapp_message_id !== whatsappMessageId)
           .map((item) => `${item.direction === "outbound" ? "Asistente" : "Cliente"}: ${item.body}`);
@@ -584,17 +584,17 @@ Deno.serve(async (request) => {
         if (codes.length) {
           const sellerResult = await db
             .from("profiles")
-            .select("user_id, seller_code, full_name")
+            .select("user_id, tiktok_code, full_name")
             .eq("role", "seller")
             .eq("active", true)
-            .in("seller_code", codes)
+            .in("tiktok_code", codes)
             .limit(1)
             .maybeSingle();
           seller = sellerResult.data;
         } else if (advisorName) {
           const sellerProfiles = activeSellerProfiles.length
             ? activeSellerProfiles
-            : (await db.from("profiles").select("user_id, seller_code, full_name").eq("role", "seller").eq("active", true)).data || [];
+            : (await db.from("profiles").select("user_id, tiktok_code, full_name").eq("role", "seller").eq("active", true)).data || [];
           const normalizedCandidate = normalizedPersonName(advisorName);
           const matches = sellerProfiles.filter((profile) => normalizedPersonName(String(profile.full_name || "")) === normalizedCandidate);
           seller = matches.length === 1 ? matches[0] : null;
@@ -613,7 +613,7 @@ Deno.serve(async (request) => {
           const assignedToday = await db.from("leads").select("id", { count: "exact", head: true }).eq("assigned_seller_user_id", seller.user_id).gte("assigned_at", argentinaDayStart());
           if (!settings.paused && (assignedToday.count || 0) < settings.daily_quota) {
             routingStatus = "assigned_direct";
-            routingReason = tiktokIdentifierType === "advisor_name" ? "valid_advisor_name" : "valid_seller_code";
+            routingReason = tiktokIdentifierType === "advisor_name" ? "valid_advisor_name" : "valid_tiktok_code";
             assignedSellerId = seller.user_id as string;
             assignedAt = new Date().toISOString();
             attributionOutcome = "assigned";
@@ -622,7 +622,7 @@ Deno.serve(async (request) => {
             attributionOutcome = routingReason;
           }
         } else if (tiktokIdentifierType && !existing?.assigned_seller_user_id) {
-          routingReason = advisorNameAmbiguous ? "ambiguous_advisor_name" : tiktokIdentifierType === "advisor_name" ? "invalid_advisor_name" : "invalid_seller_code";
+          routingReason = advisorNameAmbiguous ? "ambiguous_advisor_name" : tiktokIdentifierType === "advisor_name" ? "invalid_advisor_name" : "invalid_tiktok_code";
           attributionOutcome = advisorNameAmbiguous ? "ambiguous" : "invalid";
         } else if (tiktokMentioned && !existing?.assigned_seller_user_id) {
           routingReason = "missing_tiktok_identifier";

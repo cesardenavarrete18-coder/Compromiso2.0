@@ -17,6 +17,14 @@ function normalizeSellerCode(value: unknown) {
   return String(value ?? "").trim().toUpperCase();
 }
 
+function normalizeTikTokCode(value: unknown) {
+  return String(value ?? "").trim().toUpperCase();
+}
+
+function validTikTokCode(value: string) {
+  return /^[A-Z]{2,}[A-Z0-9_-]*\d[A-Z0-9_-]*$/.test(value) && value.length <= 20;
+}
+
 function sellerEmail(code: string) {
   return `${code.toLowerCase()}@acceso.compromisomi0km.com.ar`;
 }
@@ -93,7 +101,7 @@ Deno.serve(async (request) => {
   if (action === "list") {
     const { data, error } = await adminClient
       .from("profiles")
-      .select("user_id, seller_code, full_name, phone, contact_email, role, active, created_at")
+      .select("user_id, seller_code, tiktok_code, full_name, phone, contact_email, role, active, created_at")
       .order("role")
       .order("full_name");
     if (error) {
@@ -105,6 +113,7 @@ Deno.serve(async (request) => {
   if (action === "create_seller" || action === "create_user") {
     const role = normalizeCommercialRole(payload.role);
     const sellerCode = normalizeSellerCode(payload.sellerCode);
+    const tiktokCode = role === "seller" ? normalizeTikTokCode(payload.tiktokCode) : null;
     const fullName = String(payload.fullName ?? "").trim().replace(/\s+/g, " ");
     const phone = normalizePhone(payload.phone);
     const contactEmail = normalizeContactEmail(payload.contactEmail);
@@ -112,6 +121,9 @@ Deno.serve(async (request) => {
 
     if (!/^[A-Z0-9_-]{3,20}$/.test(sellerCode)) {
       return jsonResponse({ error: "El código debe tener entre 3 y 20 letras o números." }, 400);
+    }
+    if (role === "seller" && !validTikTokCode(tiktokCode || "")) {
+      return jsonResponse({ error: "El código TikTok debe comenzar con dos letras, incluir un número y tener hasta 20 caracteres." }, 400);
     }
     if (fullName.length < 5 || !fullName.includes(" ")) {
       return jsonResponse({ error: "Ingresá nombre y apellido completos." }, 400);
@@ -126,11 +138,26 @@ Deno.serve(async (request) => {
       return jsonResponse({ error: "La contraseña debe tener al menos 8 caracteres." }, 400);
     }
 
+    if (tiktokCode) {
+      const { data: existingTikTokCode, error: tiktokLookupError } = await adminClient
+        .from("profiles")
+        .select("user_id")
+        .eq("tiktok_code", tiktokCode)
+        .maybeSingle();
+      if (tiktokLookupError) {
+        return jsonResponse({ error: "No se pudo verificar el código TikTok." }, 500);
+      }
+      if (existingTikTokCode) {
+        return jsonResponse({ error: "Ese código TikTok ya pertenece a otro vendedor." }, 409);
+      }
+    }
+
     const email = role === "seller" ? sellerEmail(sellerCode) : contactEmail;
     const { error: inviteError } = await adminClient.from("user_invites").insert({
       email,
       role,
       seller_code: sellerCode,
+      tiktok_code: tiktokCode,
       full_name: fullName,
       phone,
       contact_email: contactEmail,
@@ -144,6 +171,11 @@ Deno.serve(async (request) => {
       email,
       password,
       email_confirm: true,
+      app_metadata: {
+        role,
+        seller_code: sellerCode,
+        ...(tiktokCode ? { tiktok_code: tiktokCode } : {}),
+      },
     });
     if (createError || !created.user) {
       await adminClient.from("user_invites").delete().eq("email", email).is("accepted_at", null);
@@ -154,6 +186,7 @@ Deno.serve(async (request) => {
       user: {
         user_id: created.user.id,
         seller_code: sellerCode,
+        tiktok_code: tiktokCode,
         full_name: fullName,
         phone,
         contact_email: contactEmail,
@@ -166,6 +199,7 @@ Deno.serve(async (request) => {
   if (action === "update_seller") {
     const userId = String(payload.userId ?? "");
     const sellerCode = normalizeSellerCode(payload.sellerCode);
+    const tiktokCode = normalizeTikTokCode(payload.tiktokCode);
     const fullName = String(payload.fullName ?? "").trim().replace(/\s+/g, " ");
     const phone = normalizePhone(payload.phone);
     const contactEmail = normalizeContactEmail(payload.contactEmail);
@@ -174,6 +208,9 @@ Deno.serve(async (request) => {
     }
     if (!/^[A-Z0-9_-]{3,20}$/.test(sellerCode)) {
       return jsonResponse({ error: "El código debe tener entre 3 y 20 letras o números." }, 400);
+    }
+    if (!validTikTokCode(tiktokCode)) {
+      return jsonResponse({ error: "El código TikTok debe comenzar con dos letras, incluir un número y tener hasta 20 caracteres." }, 400);
     }
     if (fullName.length < 5 || !fullName.includes(" ")) {
       return jsonResponse({ error: "Ingresá nombre y apellido completos." }, 400);
@@ -187,22 +224,26 @@ Deno.serve(async (request) => {
 
     const { data: current, error: currentError } = await adminClient
       .from("profiles")
-      .select("user_id, email, seller_code, role")
+      .select("user_id, email, seller_code, tiktok_code, role")
       .eq("user_id", userId)
       .single();
     if (currentError || !current || current.role !== "seller") {
       return jsonResponse({ error: "No se encontró el vendedor." }, 404);
     }
 
-    const [codeLookup, emailLookup] = await Promise.all([
+    const [codeLookup, tiktokCodeLookup, emailLookup] = await Promise.all([
       adminClient.from("profiles").select("user_id").eq("seller_code", sellerCode).neq("user_id", userId).maybeSingle(),
+      adminClient.from("profiles").select("user_id").eq("tiktok_code", tiktokCode).neq("user_id", userId).maybeSingle(),
       adminClient.from("profiles").select("user_id").eq("contact_email", contactEmail).neq("user_id", userId).maybeSingle(),
     ]);
-    if (codeLookup.error || emailLookup.error) {
-      return jsonResponse({ error: "No se pudo verificar la disponibilidad del código y correo." }, 500);
+    if (codeLookup.error || tiktokCodeLookup.error || emailLookup.error) {
+      return jsonResponse({ error: "No se pudo verificar la disponibilidad de los códigos y el correo." }, 500);
     }
     if (codeLookup.data) {
-      return jsonResponse({ error: "Ese código de vendedor ya existe." }, 409);
+      return jsonResponse({ error: "Ese código de acceso ya existe." }, 409);
+    }
+    if (tiktokCodeLookup.data) {
+      return jsonResponse({ error: "Ese código TikTok ya pertenece a otro vendedor." }, 409);
     }
     if (emailLookup.data) {
       return jsonResponse({ error: "Ese correo ya pertenece a otro vendedor." }, 409);
@@ -220,6 +261,7 @@ Deno.serve(async (request) => {
         ...(authTarget.user.app_metadata ?? {}),
         role: "seller",
         seller_code: sellerCode,
+        tiktok_code: tiktokCode,
       },
     });
     if (authUpdateError) {
@@ -229,6 +271,7 @@ Deno.serve(async (request) => {
     const { error: profileUpdateError } = await adminClient.from("profiles").update({
       email: loginEmail,
       seller_code: sellerCode,
+      tiktok_code: tiktokCode,
       full_name: fullName,
       phone,
       contact_email: contactEmail,
@@ -241,10 +284,11 @@ Deno.serve(async (request) => {
           ...(authTarget.user.app_metadata ?? {}),
           role: "seller",
           seller_code: current.seller_code,
+          tiktok_code: current.tiktok_code,
         },
       });
       const duplicate = profileUpdateError.code === "23505";
-      return jsonResponse({ error: duplicate ? "El código o correo ya pertenece a otro vendedor." : "No se pudo guardar la edición." }, duplicate ? 409 : 500);
+      return jsonResponse({ error: duplicate ? "El código de acceso, código TikTok o correo ya pertenece a otro vendedor." : "No se pudo guardar la edición." }, duplicate ? 409 : 500);
     }
     return jsonResponse({ success: true });
   }
