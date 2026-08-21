@@ -10,3 +10,16 @@ export function candidateAdvisorName(text: string) {
 export function normalizedPersonName(value: string) {
   return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("es-AR").replace(/[^a-z\s]/g, " ").replace(/\s+/g, " ").trim();
 }
+
+export function mentionsTikTok(text: string) {
+  return /\btik\s*tok\b/i.test(String(text || ""));
+}
+
+export function knownAdvisorName(text: string, advisorNames: string[]) {
+  const source = ` ${normalizedPersonName(text)} `;
+  const matches = advisorNames.filter((name) => {
+    const normalized = normalizedPersonName(name);
+    return normalized.length >= 5 && source.includes(` ${normalized} `);
+  });
+  return matches.length === 1 ? matches[0] : "";
+}

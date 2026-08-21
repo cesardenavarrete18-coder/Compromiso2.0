@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
-import { candidateAdvisorName, candidateCodes, normalizedPersonName } from "./routing-identifiers.ts";
-import { firstName, handoffReply, hasKnownCommercialOperation, polishCommercialReply, qualifyAndHandoffReply, shouldForceHandoff } from "./conversation-style.ts";
+import { candidateAdvisorName, candidateCodes, knownAdvisorName, mentionsTikTok, normalizedPersonName } from "./routing-identifiers.ts";
+import { enforceVehicleFacts, firstName, handoffReply, hasKnownCommercialOperation, polishCommercialReply, qualifyAndHandoffReply, shouldForceHandoff, tiktokIdentifierReply } from "./conversation-style.ts";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -97,6 +97,16 @@ function advertisedVehicle(referral: JsonRecord | undefined) {
   return uniqueNames.length === 1 ? uniqueNames[0][1] : "";
 }
 
+function mentionedVehicle(text: string) {
+  const source = String(text || "").toLocaleLowerCase("es-AR");
+  const matches = new Set<string>();
+  for (const [needle, canonical] of advertisedVehicles) {
+    const modelName = needle.split(" ").slice(1).join(" ");
+    if (source.includes(needle) || (modelName && source.includes(modelName))) matches.add(canonical);
+  }
+  return matches.size === 1 ? Array.from(matches)[0] : "";
+}
+
 function fallbackDecision(text: string, advertisedInterest = "", customerName = "", isFirstReply = true): LeadDecision {
   const normalized = text.toLocaleLowerCase("es-AR");
   const salesIntent = Boolean(advertisedInterest) || /(0\s?km|auto|veh[ií]culo|modelo|cuota|anticipo|financi|plan|precio|entrega|volkswagen|peugeot|fiat)/i.test(normalized);
@@ -180,6 +190,8 @@ Datos que conviene reunir de manera natural: modelo de interés, tipo de operaci
 - En la primera respuesta podés saludar usando solamente el nombre de pila. Después no vuelvas a usar el nombre como encabezado o muletilla. No repitas el teléfono ni otros datos personales en la respuesta.
 - Preferí una sola pregunta concreta por turno. Si el cliente ya dio información suficiente, resumila y derivá en lugar de seguir interrogándolo.
 - No inventes precios, cuotas, stock, aprobaciones crediticias ni fechas de entrega.
+- Hecho obligatorio de producto: Volkswagen Tera es un SUV compacto. Nunca lo describas como pick-up. Si no conocés con certeza la carrocería o una especificación de otro modelo, no la inventes.
+- Si el cliente dice que viene de TikTok y todavía no informó un código o asesor identificable, pedí exclusivamente el código de vendedor o el nombre y apellido del asesor. No lo trates como tráfico web u orgánico.
 - Si ya conocés modelo y modalidad de compra, o ya hay tres datos comerciales útiles, dejá de preguntar: confirmá brevemente lo entendido e indicá que un asesor continuará la gestión.
 - Si la persona está lejos de la sucursal, no supongas que quiere viajar ni insistas con una visita; explicá las alternativas reales de atención remota disponibles en la documentación.
 - Nunca prolongues el cuestionario durante más de cinco respuestas de la IA. Derivá antes si ya hay intención comercial clara.
@@ -252,7 +264,10 @@ Si hay documentos comerciales disponibles, consultalos cuando la respuesta depen
       decision.qualification_status = "qualified";
       decision.reply_text = handoffReply(decision.model_interest || advertisedInterest);
     }
-    decision.reply_text = polishCommercialReply(decision.reply_text, customerName, isFirstReply);
+    decision.reply_text = enforceVehicleFacts(
+      polishCommercialReply(decision.reply_text, customerName, isFirstReply),
+      decision.model_interest || advertisedInterest,
+    );
     return decision;
   } catch (error) {
     console.error("OpenAI analysis exception", error instanceof Error ? error.message : String(error));
@@ -358,9 +373,11 @@ Deno.serve(async (request) => {
         const body = messageText(message);
         const referral = message.referral as JsonRecord | undefined;
         const hasMetaReferral = Boolean(referral && (referral.ctwa_clid || referral.source_id || referral.source_url));
+        const incomingMentionsTikTok = mentionsTikTok(body);
         let codes = candidateCodes(body);
         let advisorName = candidateAdvisorName(body);
         let tiktokIdentifierType = codes.length ? "seller_code" : advisorName ? "advisor_name" : "";
+        let tiktokMentioned = Boolean(tiktokIdentifierType) || incomingMentionsTikTok;
         const initialMetadata = {
           phone_number_id: (value?.metadata as JsonRecord | undefined)?.phone_number_id || null,
           referral: hasMetaReferral ? referral : null,
@@ -368,8 +385,8 @@ Deno.serve(async (request) => {
         const claimResult = await db.rpc("claim_whatsapp_lead", {
           p_customer_phone: customerPhone,
           p_customer_name: customerName,
-          p_source_channel: tiktokIdentifierType ? "tiktok" : "whatsapp",
-          p_source_detail: tiktokIdentifierType || (hasMetaReferral ? "meta_ads" : "organic"),
+          p_source_channel: tiktokMentioned ? "tiktok" : "whatsapp",
+          p_source_detail: tiktokIdentifierType || (incomingMentionsTikTok ? "pending_identifier" : hasMetaReferral ? "meta_ads" : "organic"),
           p_metadata: initialMetadata,
         });
         const claim = Array.isArray(claimResult.data) ? claimResult.data[0] : null;
@@ -486,24 +503,57 @@ Deno.serve(async (request) => {
           .order("created_at", { ascending: false })
           .limit(12);
         const historyRows = (historyResult.data || []).reverse();
-        const routingConversation = historyRows.map((item) => item.body || "").join("\n");
+        const routingConversation = historyRows.filter((item) => item.direction === "inbound").map((item) => item.body || "").join("\n");
         codes = candidateCodes(routingConversation);
         advisorName = codes.length ? "" : candidateAdvisorName(routingConversation);
+        tiktokMentioned = mentionsTikTok(routingConversation) || existing?.source_channel === "tiktok";
+        let activeSellerProfiles: JsonRecord[] = [];
+        if (tiktokMentioned && !codes.length) {
+          const activeSellers = await db
+            .from("profiles")
+            .select("user_id, seller_code, full_name")
+            .eq("role", "seller")
+            .eq("active", true);
+          activeSellerProfiles = activeSellers.data || [];
+          if (!advisorName) {
+            advisorName = knownAdvisorName(
+              routingConversation,
+              activeSellerProfiles.map((profile) => String(profile.full_name || "")).filter(Boolean),
+            );
+          }
+        }
         tiktokIdentifierType = codes.length ? "seller_code" : advisorName ? "advisor_name" : "";
         const history = historyRows
           .filter((item) => !whatsappMessageId || item.whatsapp_message_id !== whatsappMessageId)
           .map((item) => `${item.direction === "outbound" ? "Asistente" : "Cliente"}: ${item.body}`);
-        const classification = await analyzeLeadConversation(
-          history,
-          body,
-          String(assistantSettings.qualification_rules || ""),
-          String(assistantSettings.conversation_style || ""),
-          String(assistantSettings.vector_store_id || ""),
-          referralContext,
-          advertisedInterest,
-          customerName || "",
-          customerPhone,
-          trainingExamples,
+        const explicitModelInterest = mentionedVehicle(routingConversation) || advertisedInterest;
+        const classification: LeadDecision = tiktokMentioned && !tiktokIdentifierType
+          ? {
+            qualification_status: "follow_up",
+            priority: "normal",
+            intent_summary: `Lead de TikTok${explicitModelInterest ? ` interesado en ${explicitModelInterest}` : ""}, pendiente de identificar asesor`,
+            model_interest: explicitModelInterest,
+            disqualify_reason: "",
+            reply_text: tiktokIdentifierReply(customerName || "", history.length === 0, explicitModelInterest),
+          }
+          : await analyzeLeadConversation(
+            history,
+            body,
+            String(assistantSettings.qualification_rules || ""),
+            String(assistantSettings.conversation_style || ""),
+            String(assistantSettings.vector_store_id || ""),
+            referralContext,
+            advertisedInterest,
+            customerName || "",
+            customerPhone,
+            trainingExamples,
+          );
+        if (!classification.model_interest && explicitModelInterest) {
+          classification.model_interest = explicitModelInterest;
+        }
+        classification.reply_text = enforceVehicleFacts(
+          classification.reply_text,
+          classification.model_interest || explicitModelInterest,
         );
 
         // If a newer inbound arrived while OpenAI was working, that newer execution
@@ -542,13 +592,11 @@ Deno.serve(async (request) => {
             .maybeSingle();
           seller = sellerResult.data;
         } else if (advisorName) {
-          const sellerResult = await db
-            .from("profiles")
-            .select("user_id, seller_code, full_name")
-            .eq("role", "seller")
-            .eq("active", true);
+          const sellerProfiles = activeSellerProfiles.length
+            ? activeSellerProfiles
+            : (await db.from("profiles").select("user_id, seller_code, full_name").eq("role", "seller").eq("active", true)).data || [];
           const normalizedCandidate = normalizedPersonName(advisorName);
-          const matches = (sellerResult.data || []).filter((profile) => normalizedPersonName(String(profile.full_name || "")) === normalizedCandidate);
+          const matches = sellerProfiles.filter((profile) => normalizedPersonName(String(profile.full_name || "")) === normalizedCandidate);
           seller = matches.length === 1 ? matches[0] : null;
           advisorNameAmbiguous = matches.length > 1;
         }
@@ -576,13 +624,15 @@ Deno.serve(async (request) => {
         } else if (tiktokIdentifierType && !existing?.assigned_seller_user_id) {
           routingReason = advisorNameAmbiguous ? "ambiguous_advisor_name" : tiktokIdentifierType === "advisor_name" ? "invalid_advisor_name" : "invalid_seller_code";
           attributionOutcome = advisorNameAmbiguous ? "ambiguous" : "invalid";
+        } else if (tiktokMentioned && !existing?.assigned_seller_user_id) {
+          routingReason = "missing_tiktok_identifier";
         }
 
         const leadValues = {
           customer_phone: customerPhone,
           customer_name: customerName,
-          source_channel: tiktokIdentifierType ? "tiktok" : existing?.source_channel || "whatsapp",
-          source_detail: tiktokIdentifierType || (hasMetaReferral ? "meta_ads" : existing?.source_detail || "organic"),
+          source_channel: tiktokMentioned ? "tiktok" : existing?.source_channel || "whatsapp",
+          source_detail: tiktokIdentifierType || (tiktokMentioned ? "pending_identifier" : hasMetaReferral ? "meta_ads" : existing?.source_detail || "organic"),
           seller_code_received: codes[0] || existing?.seller_code_received || null,
           qualification_status: classification.qualification_status,
           priority: classification.priority,
@@ -667,8 +717,8 @@ Deno.serve(async (request) => {
             recipient_user_id: supervisor.user_id,
             lead_id: leadResult.data.id,
             notification_type: assignedSellerId ? "direct_assignment" : "new_pending_lead",
-            title: assignedSellerId ? (tiktokIdentifierType === "advisor_name" ? "Lead derivado por asesor" : "Lead derivado por código") : tiktokIdentifierType ? "TikTok requiere revisión" : "Nuevo lead para asignar",
-            body: `${customerName || customerPhone}: ${classification.intent_summary}${tiktokIdentifierType ? ` · ${routingReason}` : ""}`.slice(0, 500),
+            title: assignedSellerId ? (tiktokIdentifierType === "advisor_name" ? "Lead derivado por asesor" : "Lead derivado por código") : tiktokMentioned ? "TikTok requiere identificación" : "Nuevo lead para asignar",
+            body: `${customerName || customerPhone}: ${classification.intent_summary}${tiktokMentioned ? ` · ${routingReason}` : ""}`.slice(0, 500),
           })));
         }
       }

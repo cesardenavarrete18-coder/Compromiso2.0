@@ -177,7 +177,7 @@ select cron.schedule(
         'x-cron-secret', (select decrypted_secret from vault.decrypted_secrets where name = 'whatsapp_reminder_cron_secret')
       ),
       body := jsonb_build_object('scheduled_at', now()),
-      timeout_milliseconds := 10000
+      timeout_milliseconds := 120000
     ) as request_id;
   $job$
 );
