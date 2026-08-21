@@ -74,5 +74,5 @@ export function tiktokIdentifierReply(customerName: string, isFirstReply: boolea
   const context = /\btera\b/i.test(model)
     ? "La Volkswagen Tera es un SUV compacto"
     : model ? `Tengo registrada tu consulta por ${model}` : "Gracias por escribirnos desde TikTok";
-  return `${greeting}${context}. Para asignarte al asesor del vivo, pasame su código de vendedor o escribí “Asesor: nombre y apellido”.`;
+  return `${greeting}${context}. Para asignarte al asesor del vivo, pasame su código TikTok o escribí “Asesor: nombre y apellido”.`;
 }

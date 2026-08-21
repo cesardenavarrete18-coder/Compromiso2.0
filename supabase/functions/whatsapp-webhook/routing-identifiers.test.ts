@@ -8,7 +8,7 @@ test("detects a TikTok origin with either spelling", () => {
   assert.equal(mentionsTikTok("Consulta desde la web"), false);
 });
 
-test("keeps detecting explicit seller codes", () => {
+test("detects an explicit public TikTok seller code", () => {
   assert.deepEqual(candidateCodes("Código gs-01cdn"), ["GS-01CDN"]);
 });
 

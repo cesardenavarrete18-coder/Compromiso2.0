@@ -418,6 +418,16 @@
     renderSellers();
   }
 
+  function syncTikTokCodeField() {
+    var isSeller = sellerForm.elements.role.value === "seller";
+    var field = document.getElementById("sellerTikTokCodeField");
+    var input = sellerForm.elements.tiktokCode;
+    field.hidden = !isSeller;
+    input.disabled = !isSeller;
+    input.required = isSeller;
+    if (!isSeller) input.value = "";
+  }
+
   function renderSellers() {
     document.getElementById("sellerCount").textContent = state.sellers.length === 1 ? "1 integrante" : state.sellers.length + " integrantes";
     exportSellersButton.disabled = state.sellers.length === 0;
@@ -429,7 +439,7 @@
     list.innerHTML = state.sellers.map(function (seller) {
       return "" +
         '<div class="seller-row">' +
-          '<div class="seller-identity"><span>' + escapeHtml((seller.full_name || "V").charAt(0)) + '</span><div><strong>' + escapeHtml(seller.full_name) + '</strong><small>' + escapeHtml(seller.role === "supervisor" ? "Supervisor" : seller.role === "admventas" ? "Administración de ventas" : "Vendedor") + " · " + escapeHtml(seller.seller_code) + '</small><small>' + escapeHtml(seller.contact_email || "Correo pendiente") + '</small></div></div>' +
+          '<div class="seller-identity"><span>' + escapeHtml((seller.full_name || "V").charAt(0)) + '</span><div><strong>' + escapeHtml(seller.full_name) + '</strong><small>' + escapeHtml(seller.role === "supervisor" ? "Supervisor" : seller.role === "admventas" ? "Administración de ventas" : "Vendedor") + " · Acceso: " + escapeHtml(seller.seller_code) + '</small>' + (seller.role === "seller" ? '<small>TikTok: ' + escapeHtml(seller.tiktok_code || "Sin asignar") + '</small>' : '') + '<small>' + escapeHtml(seller.contact_email || "Correo pendiente") + '</small></div></div>' +
           '<span class="seller-status ' + (seller.active ? "is-active" : "is-paused") + '">' + (seller.active ? "Activo" : "Pausado") + '</span>' +
           '<div class="seller-actions">' + (seller.role === "seller" ? '<button type="button" data-user-action="edit" data-user-id="' + seller.user_id + '">Editar</button>' : '') + '<button type="button" data-user-action="password" data-user-id="' + seller.user_id + '" data-user-name="' + escapeHtml(seller.full_name) + '">Contraseña</button><button type="button" data-user-action="toggle" data-user-id="' + seller.user_id + '" data-active="' + seller.active + '">' + (seller.active ? "Pausar" : "Activar") + '</button></div>' +
         "</div>";
@@ -446,11 +456,12 @@
     }
     setBusy(exportSellersButton, true, "Preparando Excel…");
     try {
-      var rows = [["Nombre", "Rol", "Código", "Teléfono", "Correo", "Estado", "Fecha de alta"]].concat(state.sellers.map(function (seller) {
+      var rows = [["Nombre", "Rol", "Código de acceso", "Código TikTok", "Teléfono", "Correo", "Estado", "Fecha de alta"]].concat(state.sellers.map(function (seller) {
         return [
           seller.full_name,
           seller.role === "supervisor" ? "Supervisor" : seller.role === "admventas" ? "Administración de ventas" : "Vendedor",
           seller.seller_code,
+          seller.tiktok_code || "",
           seller.phone || "",
           seller.contact_email || "",
           seller.active ? "Activo" : "Pausado",
@@ -459,7 +470,7 @@
       }));
       var bytes = window.grupoSurExcel.buildWorkbook(rows, {
         sheetName: "Vendedores",
-        widths: [30, 16, 16, 20, 32, 14, 22]
+        widths: [30, 16, 18, 18, 20, 32, 14, 22]
       });
       var blob = new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
       var url = URL.createObjectURL(blob);
@@ -1118,11 +1129,13 @@
         role: requestedRole,
         fullName: sellerForm.elements.fullName.value,
         sellerCode: sellerForm.elements.sellerCode.value,
+        tiktokCode: sellerForm.elements.tiktokCode.value,
         phone: sellerForm.elements.phone.value,
         contactEmail: sellerForm.elements.contactEmail.value,
         password: sellerForm.elements.password.value
       });
       sellerForm.reset();
+      syncTikTokCodeField();
       sellerFormMessage.textContent = requestedRole === "supervisor" ? "Supervisor creado correctamente." : requestedRole === "admventas" ? "Usuario de Administración de ventas creado correctamente." : "Vendedor creado correctamente.";
       await loadSellers();
     } catch (error) {
@@ -1146,6 +1159,7 @@
       document.getElementById("editSellerUserId").value = seller.user_id;
       document.getElementById("editSellerFullName").value = seller.full_name || "";
       document.getElementById("editSellerCode").value = seller.seller_code || "";
+      document.getElementById("editSellerTikTokCode").value = seller.tiktok_code || "";
       document.getElementById("editSellerPhone").value = seller.phone || "";
       document.getElementById("editSellerEmail").value = seller.contact_email || "";
       document.getElementById("sellerEditMessage").textContent = "";
@@ -1189,6 +1203,7 @@
         userId: document.getElementById("editSellerUserId").value,
         fullName: document.getElementById("editSellerFullName").value,
         sellerCode: document.getElementById("editSellerCode").value,
+        tiktokCode: document.getElementById("editSellerTikTokCode").value,
         phone: document.getElementById("editSellerPhone").value,
         contactEmail: document.getElementById("editSellerEmail").value
       });
@@ -1203,6 +1218,9 @@
       setBusy(button, false);
     }
   });
+
+  sellerForm.elements.role.addEventListener("change", syncTikTokCodeField);
+  syncTikTokCodeField();
 
   document.getElementById("passwordForm").addEventListener("submit", async function (event) {
     event.preventDefault();

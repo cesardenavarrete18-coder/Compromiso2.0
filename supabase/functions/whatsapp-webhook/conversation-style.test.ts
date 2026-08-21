@@ -98,7 +98,7 @@ test("corrects the Tera body type deterministically", () => {
 test("asks TikTok leads for an advisor identifier and states the correct Tera type", () => {
   const reply = tiktokIdentifierReply("Malena", false, "Volkswagen Tera");
   assert.match(reply, /SUV compacto/);
-  assert.match(reply, /código de vendedor/);
+  assert.match(reply, /código TikTok/);
   assert.match(reply, /Asesor: nombre y apellido/);
   assert.doesNotMatch(reply, /pick-up/i);
 });
