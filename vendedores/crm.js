@@ -425,7 +425,16 @@
     document.getElementById("crmLeadStage").textContent = stageLabel(crm.status);
     document.getElementById("crmClientSummary").innerHTML = '<strong>' + escapeHtml(lead.intent_summary || "Sin resumen comercial") + '</strong><p>' + escapeHtml(crm.status_reason || "") + '</p><div class="tags"><span>' + escapeHtml(lead.model_interest || "Modelo a definir") + '</span><span>' + escapeHtml(lead.qualification_status === "qualified" ? "Calificado por IA" : "Seguimiento") + '</span><span>' + escapeHtml(crm.priority === "high" ? "Prioridad alta" : crm.priority === "low" ? "Prioridad baja" : "Prioridad normal") + '</span></div>';
     document.getElementById("crmCallLink").href = "tel:+" + String(lead.customer_phone).replace(/\D/g, "");
-    document.getElementById("crmStatusInput").innerHTML = (crm.status === "venta" ? STAGES.filter(function (stage) { return stage.value === "venta"; }) : STAGES.filter(function (stage) { return stage.value !== "venta"; })).map(function (stage) { return '<option value="' + stage.value + '"' + (stage.value === crm.status ? ' selected' : '') + '>' + escapeHtml(stage.label) + '</option>'; }).join("");
+    var managementStages = crm.status === "venta"
+      ? STAGES.filter(function (stage) { return stage.value === "venta"; })
+      : STAGES.filter(function (stage) { return !["nuevo", "venta"].includes(stage.value); });
+    var statusOptions = managementStages.map(function (stage) {
+      return '<option value="' + stage.value + '"' + (stage.value === crm.status ? ' selected' : '') + '>' + escapeHtml(stage.label) + '</option>';
+    }).join("");
+    if (crm.status === "nuevo") {
+      statusOptions = '<option value="" selected disabled>Seleccioná el resultado</option>' + statusOptions;
+    }
+    document.getElementById("crmStatusInput").innerHTML = statusOptions;
     document.getElementById("crmPriorityInput").value = crm.priority || "normal";
     document.getElementById("crmNoteInput").value = "";
     var nextContactParts = dateParts(crm.next_contact_at);
@@ -464,6 +473,7 @@
     var errorBox = document.getElementById("crmFormError");
     var terminalStatus = ["desistir", "invalido"].includes(status);
     errorBox.textContent = "";
+    if (!status) { errorBox.textContent = "Seleccioná el resultado de la gestión."; return; }
     var nextContact = null;
     var interview = null;
     try {
@@ -483,7 +493,7 @@
     }
     if (status === "no_contesta" && !nextContact) { errorBox.textContent = "Programá el próximo intento de contacto."; return; }
     if (nextContact && new Date(nextContact).getTime() <= Date.now()) { errorBox.textContent = "El próximo contacto debe quedar programado a futuro."; return; }
-    if (["nuevo", "no_contesta", "en_proceso", "cierre", "sena"].includes(status) && !nextContact) { errorBox.textContent = "Programá la próxima acción antes de guardar."; return; }
+    if (["no_contesta", "en_proceso", "cierre", "sena"].includes(status) && !nextContact) { errorBox.textContent = "Programá la próxima acción antes de guardar."; return; }
     if (nextContact && document.getElementById("crmNextContactNoteInput").value.trim().length < 3) { errorBox.textContent = "Indicá el motivo del próximo contacto."; return; }
     if (status === "entrevista" && !interview) { errorBox.textContent = "Indicá la fecha y hora de la entrevista."; return; }
     if (status === "sena" && (!deposit || Number(deposit) <= 0)) { errorBox.textContent = "Indicá el importe de la seña."; return; }
