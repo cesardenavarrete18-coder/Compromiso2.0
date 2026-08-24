@@ -247,6 +247,13 @@
     var isOverdue = next && new Date(next).getTime() < Date.now() && !CLOSED_STAGES.includes(crm.status);
     var pendingSale = crm.sale_confirmation_status === "pending";
     var progress = protocolProgress(lead.id);
+    var nextLabel = next
+      ? (isOverdue ? "Vencido · " : "Próximo · ") + formatDate(next)
+      : crm.status === "nuevo"
+        ? "Pendiente de primer contacto"
+        : progress && progress.pending
+          ? "Protocolo pendiente · " + taskTitle(progress.pending)
+          : "Sin próxima acción acordada";
     return '<article class="crm-lead-card" data-crm-lead-id="' + lead.id + '">' +
       '<div class="crm-card-top"><div><strong>' + escapeHtml(lead.customer_name || "Cliente sin nombre") + '</strong><small>+' + escapeHtml(lead.customer_phone) + '</small></div><span class="crm-stage" data-stage="' + escapeHtml(crm.status || "nuevo") + '">' + escapeHtml(stageLabel(crm.status)) + '</span></div>' +
       '<p class="crm-card-summary">' + escapeHtml(lead.intent_summary || lead.model_interest || "Sin resumen comercial") + '</p>' +
@@ -254,7 +261,7 @@
         '<span class="' + (crm.priority === "high" ? "high" : "") + '">' + escapeHtml(crm.priority === "high" ? "Prioridad alta" : crm.priority === "low" ? "Prioridad baja" : "Prioridad normal") + '</span>' +
         (pendingSale ? '<span class="high">Venta por confirmar</span>' : '') +
         (progress ? '<span class="protocol">Seguimiento ' + progress.completed + '/' + progress.total + '</span>' : '') + '</div>' +
-      '<div class="crm-card-footer"><time class="' + (isOverdue ? "overdue" : "") + '">' + escapeHtml(next ? (isOverdue ? "Vencido · " : "Próximo · ") + formatDate(next) : crm.status === "nuevo" ? "Pendiente de primer contacto" : "Sin próxima tarea") + '</time><button class="crm-open" type="button">Gestionar</button></div>' +
+      '<div class="crm-card-footer"><time class="' + (isOverdue ? "overdue" : "") + '">' + escapeHtml(nextLabel) + '</time><button class="crm-open" type="button">Gestionar</button></div>' +
     '</article>';
   }
 
@@ -328,10 +335,12 @@
 
   function renderNextCard(lead) {
     var crm = crmOf(lead);
+    var protocolTask = nextPendingTask(lead.id);
     var attribution = attributionOf(lead);
     var origin = lead.source_channel === "manual" ? "Carga manual · " + (lead.source_detail || "Sin detalle") : lead.source_channel === "tiktok" ? "TikTok" : lead.source_detail === "meta_ads" ? "Meta Ads · " + (attribution && (attribution.ad_name || attribution.headline || attribution.campaign_name) || "Anuncio de WhatsApp") : "WhatsApp orgánico";
     document.getElementById("crmNextCard").innerHTML = '<span>Próxima acción</span><strong>' + escapeHtml(crm.next_contact_at ? formatDate(crm.next_contact_at, true) : "Sin programar") + '</strong><dl>' +
       '<div><dt>Motivo</dt><dd>' + escapeHtml(crm.next_contact_note || "No indicado") + '</dd></div>' +
+      (protocolTask ? '<div><dt>Protocolo pendiente</dt><dd>' + escapeHtml(taskTitle(protocolTask) + " · " + formatDate(protocolTask.due_start, true)) + '</dd></div>' : '') +
       '<div><dt>Último contacto</dt><dd>' + escapeHtml(crm.last_contact_at ? formatDate(crm.last_contact_at) : "Todavía sin contacto") + '</dd></div>' +
       '<div><dt>Origen</dt><dd>' + escapeHtml(origin) + '</dd></div>' +
       (crm.interview_at ? '<div><dt>Entrevista</dt><dd>' + escapeHtml(formatDate(crm.interview_at, true) + (crm.interview_location ? " · " + crm.interview_location : "")) + '</dd></div>' : '') +
