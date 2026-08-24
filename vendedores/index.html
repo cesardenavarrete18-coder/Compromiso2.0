@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/vendedores/styles.css?v=20260813-6">
-  <link rel="stylesheet" href="/vendedores/crm.css?v=20260815-3">
+  <link rel="stylesheet" href="/vendedores/crm.css?v=20260824-1">
   <link rel="stylesheet" href="/vendedores/contact-protocol.css?v=20260821-1">
   <link rel="stylesheet" href="/vendedores/workflow-polish.css?v=20260818-1">
   <link rel="stylesheet" href="/vendedores/recalls.css?v=20260821-1">
@@ -486,7 +486,16 @@
               <label>Prioridad<select id="crmPriorityInput"><option value="low">Baja</option><option value="normal">Normal</option><option value="high">Alta</option></select></label>
               <label class="wide">Resultado / comentario<textarea id="crmNoteInput" rows="3" placeholder="Qué se habló y cuál es el próximo paso"></textarea></label>
               <label data-next-contact-field>Fecha del próximo contacto<input id="crmNextContactDateInput" type="text" inputmode="numeric" maxlength="10" placeholder="dd/mm/aaaa" autocomplete="off"></label>
-              <label data-next-contact-field>Hora del próximo contacto<input id="crmNextContactTimeInput" type="time" step="300"></label>
+              <label data-next-contact-field>Hora del próximo contacto<input id="crmNextContactTimeInput" type="time" step="60"></label>
+              <div class="crm-next-contact-shortcuts" data-next-contact-field aria-label="Programar próximo contacto desde ahora">
+                <span>Programar desde ahora</span>
+                <div>
+                  <button type="button" data-next-contact-offset="2">+2 horas</button>
+                  <button type="button" data-next-contact-offset="4">+4 horas</button>
+                  <button type="button" data-next-contact-offset="24">+24 hs</button>
+                  <button type="button" data-next-contact-offset="48">+48 hs</button>
+                </div>
+              </div>
               <label data-next-contact-field>Motivo del próximo contacto<input id="crmNextContactNoteInput" type="text" placeholder="Ej. Confirmar documentación"></label>
               <label class="crm-conditional" data-status-field="entrevista">Fecha de la entrevista<input id="crmInterviewDateInput" type="text" inputmode="numeric" maxlength="10" placeholder="dd/mm/aaaa" autocomplete="off"></label>
               <label class="crm-conditional" data-status-field="entrevista">Hora de la entrevista<input id="crmInterviewTimeInput" type="time" step="300"></label>
@@ -527,7 +536,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.2/dist/umd/supabase.js"></script>
   <script src="/vendedores/supabase-config.js?v=20260813-2"></script>
   <script src="/vendedores/app.js?v=20260817-1"></script>
-  <script src="/vendedores/crm.js?v=20260824-1"></script>
+  <script src="/vendedores/crm.js?v=20260824-2"></script>
   <script src="/vendedores/sales.js?v=20260818-1"></script>
   <script src="/vendedores/recalls.js?v=20260821-2"></script>
   <script src="/vendedores/mobile-navigation.js?v=20260820-1"></script>
