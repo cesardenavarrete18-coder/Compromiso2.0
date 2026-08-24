@@ -163,6 +163,15 @@
     return new Date(String(year).padStart(4, "0") + "-" + String(month).padStart(2, "0") + "-" + String(day).padStart(2, "0") + "T" + timeMatch[1] + ":" + timeMatch[2] + ":00-03:00").toISOString();
   }
 
+  function setNextContactFromNow(offsetHours) {
+    var hours = Number(offsetHours);
+    if (![2, 4, 24, 48].includes(hours)) return;
+    var parts = dateParts(new Date(Date.now() + hours * 60 * 60 * 1000));
+    document.getElementById("crmNextContactDateInput").value = parts.date;
+    document.getElementById("crmNextContactTimeInput").value = parts.time;
+    document.getElementById("crmFormError").textContent = "";
+  }
+
   function maskDateInput(input) {
     var digits = input.value.replace(/\D/g, "").slice(0, 8);
     input.value = digits.length > 4 ? digits.slice(0, 2) + "/" + digits.slice(2, 4) + "/" + digits.slice(4) : digits.length > 2 ? digits.slice(0, 2) + "/" + digits.slice(2) : digits;
@@ -621,6 +630,11 @@
   }
 
   document.addEventListener("click", function (event) {
+    var nextContactOffset = event.target.closest("[data-next-contact-offset]");
+    if (nextContactOffset) {
+      setNextContactFromNow(nextContactOffset.dataset.nextContactOffset);
+      return;
+    }
     var nav = event.target.closest("[data-crm-view]");
     if (nav) { openView(nav.dataset.crmView); return; }
     var card = event.target.closest("[data-crm-lead-id]");
