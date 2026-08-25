@@ -10,6 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/vendedores/admventas/admventas.css?v=20260817-1">
+  <link rel="stylesheet" href="/vendedores/admventas/minute-edit.css?v=20260825-1">
   <link rel="stylesheet" href="/vendedores/admventas/workflow-polish.css?v=20260817-1">
   <link rel="stylesheet" href="/vendedores/auth-loading.css?v=20260817-1">
 </head>
@@ -82,18 +83,46 @@
     <p class="eyebrow dark">Control administrativo</p><h2 id="operationTitle">Operación</h2><div class="operation-summary" id="operationSummary"></div>
     <section class="minute-card" id="quoteCard"><div><strong>Presupuesto asociado</strong><span id="quoteStatus">Sin presupuesto</span></div><button class="button secondary" id="printQuoteButton" type="button">Ver / imprimir</button></section>
     <div class="stage-grid" id="stageGrid"></div>
-    <section class="minute-card"><div><strong>Minuta comercial</strong><span id="minuteStatus">Pendiente</span></div><button class="button secondary" id="printMinuteButton" type="button">Ver / imprimir</button></section>
+    <section class="minute-card"><div><strong>Minuta comercial</strong><span id="minuteStatus">Pendiente</span></div><div class="minute-actions"><button class="button secondary" id="printMinuteButton" type="button">Ver / imprimir</button><button class="button primary" id="editMinuteButton" type="button">Editar minuta</button></div></section>
     <section class="documents"><div class="section-head compact"><div><h3>Documentación de la operación</h3><p>DNI del titular, comprobante de pago y, cuando corresponda, documentación del cotitular o cónyuge.</p></div></div><div id="documentChecklist" class="document-checklist"></div><div id="documentList" class="document-list"></div><form id="documentForm" class="document-form"><select name="type"><option value="dni_holder_front">DNI titular · Frente</option><option value="dni_holder_back">DNI titular · Dorso</option><option value="payment_receipt">Comprobante de pago</option><option value="dni_coholder_front">DNI cotitular / cónyuge · Frente</option><option value="dni_coholder_back">DNI cotitular / cónyuge · Dorso</option><option value="signed_contract">Contrato firmado</option><option value="supporting_document">Otra documentación</option></select><input name="file" type="file" accept="application/pdf,image/jpeg,image/png,image/webp"><button class="button secondary" type="submit">Adjuntar</button></form></section>
     <section class="timeline"><h3>Historia administrativa</h3><div id="caseTimeline"></div></section><p class="message" id="dialogMessage"></p>
   </div></dialog>
 
   <dialog id="reviewDialog" class="dialog small"><form method="dialog" class="dialog-shell"><button class="dialog-close" value="cancel">×</button><p class="eyebrow dark" id="reviewKicker">Control</p><h2 id="reviewTitle">Registrar resultado</h2><label>Resultado<select id="reviewOutcome"></select></label><label>Comentario / motivo<textarea id="reviewComment" rows="5" placeholder="Dejá constancia clara del control realizado"></textarea></label><p class="message" id="reviewMessage"></p><button class="button primary" id="saveReviewButton" type="button">Guardar resultado</button></form></dialog>
 
+  <dialog id="minuteEditDialog" class="dialog minute-edit-dialog"><form id="minuteEditForm" class="dialog-shell"><button class="dialog-close" data-close-minute-edit type="button">×</button>
+    <p class="eyebrow dark">Corrección administrativa</p><h2>Editar minuta de venta</h2><p class="dialog-intro">Se guardará una nueva versión y el dato anterior quedará en el historial. El presupuesto emitido no se modifica.</p>
+    <fieldset><legend>Cliente</legend><div class="edit-form-grid">
+      <label>Nombre<input name="first_name" required maxlength="80"></label><label>Apellido<input name="last_name" required maxlength="80"></label>
+      <label>Tipo de documento<select name="document_type" required><option value="DNI">DNI</option><option value="LE">LE</option><option value="LC">LC</option><option value="Pasaporte">Pasaporte</option></select></label><label>Número de documento<input name="document_number" required inputmode="numeric" pattern="[0-9]{7,12}"></label>
+      <label>CUIL<input name="cuil" required inputmode="numeric" pattern="[0-9]{11}"></label><label>Fecha de nacimiento<input name="birth_date" type="date" required></label>
+      <label class="wide">Domicilio<input name="address" required maxlength="180"></label><label>Localidad / Provincia<input name="city_province" required maxlength="160"></label><label>Código postal<input name="postal_code" required maxlength="20"></label>
+      <label>Estado civil<select name="marital_status" required><option value="Soltero/a">Soltero/a</option><option value="Casado/a">Casado/a</option><option value="Conviviente">Conviviente</option><option value="Divorciado/a">Divorciado/a</option><option value="Viudo/a">Viudo/a</option></select></label><label>Nombre del cónyuge<input name="spouse_name" maxlength="160"></label><label>Documento del cónyuge<input name="spouse_document" inputmode="numeric" pattern="[0-9]{7,12}"></label>
+    </div></fieldset>
+    <fieldset><legend>Contacto y trabajo</legend><div class="edit-form-grid">
+      <label>Teléfono principal<input name="primary_phone" required maxlength="30"></label><label>Teléfono alternativo<input name="alternate_phone" maxlength="30"></label>
+      <label>Correo electrónico<input name="email" type="email" required maxlength="254"></label><label>Horario de contacto<input name="contact_schedule" required maxlength="120"></label>
+      <label>Situación laboral<input name="employment_status" required maxlength="120"></label><label>Empresa / actividad<input name="employer_name" required maxlength="160"></label>
+      <label>Antigüedad<input name="employment_seniority" required maxlength="80"></label><label>Ingreso mensual<input name="monthly_income" type="number" required min="0" step="0.01"></label>
+    </div></fieldset>
+    <fieldset><legend>Condición comercial</legend><div class="edit-form-grid">
+      <label>Marca<select name="brand_name" required><option value="Volkswagen">Volkswagen</option><option value="Peugeot">Peugeot</option><option value="Fiat">Fiat</option></select></label><label>Modelo / versión<input name="model_name" required maxlength="160"></label>
+      <label>Campaña<input name="campaign_name" required maxlength="160"></label><label>Tipo de plan<input name="plan_type" required maxlength="120"></label>
+      <label>Precio pactado<input name="agreed_price" type="number" required min="0" step="0.01"></label><label>Cuotas abonadas<input name="installments_paid" type="number" required min="0" step="1"></label>
+      <label>Cuotas restantes<input name="installments_to_pay" type="number" required min="1" step="1"></label><label class="check-field"><input name="automatic_debit" type="checkbox"> Débito automático</label>
+      <label class="check-field"><input name="deferred_installment" type="checkbox"> Cuota diferida</label><span></span>
+      <label>Fecha del primer pago<input name="first_payment_date" type="date"></label><label>Importe del primer pago<input name="first_payment_amount" type="number" min="0" step="0.01"></label>
+      <label>Fecha del segundo pago<input name="second_payment_date" type="date"></label><label>Importe del segundo pago<input name="second_payment_amount" type="number" min="0" step="0.01"></label>
+    </div></fieldset>
+    <label class="reason-field">Motivo de la corrección<textarea name="reason" rows="3" required minlength="5" maxlength="500" placeholder="Ej. Se corrigió el teléfono informado por el cliente"></textarea></label>
+    <p class="message" id="minuteEditMessage"></p><div class="form-actions"><button class="button secondary" data-cancel-minute-edit type="button">Cancelar</button><button class="button primary" id="saveMinuteEditButton" type="submit">Guardar nueva versión</button></div>
+  </form></dialog>
+
   <dialog id="groupDialog" class="dialog small"><form method="dialog" class="dialog-shell"><button class="dialog-close" value="cancel">×</button><p class="eyebrow dark">Formación de grupo</p><h2>Agrupar cliente</h2><p>El mes elegido se registrará como cuota N° 2.</p><label>Mes de agrupación<input id="groupMonth" type="month"></label><p class="message" id="groupMessage"></p><button class="button primary" id="groupButton" type="button">Confirmar agrupación</button></form></dialog>
 
   <section class="minute-print" id="minutePrint" aria-hidden="true"></section>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/vendedores/supabase-config.js?v=20260815-3"></script>
-  <script src="/vendedores/admventas/admventas.js?v=20260817-1"></script>
+  <script src="/vendedores/admventas/admventas.js?v=20260825-1"></script>
 </body>
 </html>
