@@ -1,0 +1,60 @@
+.minute-actions,
+.client-actions,
+.form-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.client-actions { margin-top: 12px; }
+.minute-edit-dialog { width: min(980px, calc(100% - 30px)); }
+.dialog-intro { margin: 7px 0 18px; color: var(--muted); font-size: 10px; }
+
+.minute-edit-dialog fieldset {
+  margin: 0 0 16px;
+  padding: 15px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.minute-edit-dialog legend { padding: 0 7px; font-size: 11px; font-weight: 850; }
+.edit-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 11px; }
+.edit-form-grid label,
+.reason-field { display: grid; gap: 5px; color: #243b4d; font-size: 9px; font-weight: 800; }
+
+.edit-form-grid input,
+.edit-form-grid select,
+.reason-field textarea {
+  width: 100%;
+  min-height: 40px;
+  padding: 9px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: #071b2b;
+}
+
+.edit-form-grid .wide { grid-column: 1 / -1; }
+.edit-form-grid .check-field {
+  display: flex;
+  min-height: 40px;
+  align-items: center;
+  gap: 8px;
+  padding: 9px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.edit-form-grid .check-field input { width: 16px; min-height: 16px; }
+.reason-field { margin-top: 4px; }
+.form-actions { justify-content: flex-end; margin-top: 13px; }
+
+@media (max-width: 720px) {
+  .minute-card { align-items: flex-start; gap: 10px; flex-direction: column; }
+  .edit-form-grid { grid-template-columns: 1fr; }
+  .edit-form-grid .wide { grid-column: auto; }
+  .edit-form-grid > span { display: none; }
+  .form-actions { justify-content: stretch; }
+  .form-actions .button { flex: 1; }
+}
