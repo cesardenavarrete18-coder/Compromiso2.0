@@ -12,6 +12,7 @@
   <link rel="stylesheet" href="/vendedores/admventas/admventas.css?v=20260817-1">
   <link rel="stylesheet" href="/vendedores/admventas/minute-edit.css?v=20260825-1">
   <link rel="stylesheet" href="/vendedores/admventas/workflow-polish.css?v=20260817-1">
+  <link rel="stylesheet" href="/vendedores/admventas/admin-enhancements.css?v=20260826-1">
   <link rel="stylesheet" href="/vendedores/auth-loading.css?v=20260817-1">
 </head>
 <body>
@@ -47,6 +48,7 @@
     <main class="workspace">
       <header class="topbar"><div><p class="eyebrow dark" id="pageKicker">Control de operaciones</p><h1 id="pageTitle">Administración de ventas</h1></div><div class="topbar-actions"><span class="live"><i></i> Conectado</span><button class="button secondary" id="refreshButton" type="button">Actualizar</button></div></header>
       <div class="content">
+        <section class="admin-notifications" id="adminNotifications" aria-live="polite"></section>
         <section class="stats" id="statsPanel">
           <article><span>Minutas pendientes</span><strong id="minuteStat">0</strong><small>Esperando al vendedor</small></article>
           <article><span>En control</span><strong id="reviewStat">0</strong><small>Scoring o firma</small></article>
@@ -61,8 +63,9 @@
         </section>
 
         <section class="view" data-panel="clients">
-          <div class="section-head"><div><h2>Cartera de clientes</h2><p>Se crea automáticamente al aprobarse los tres controles.</p></div><label class="search"><span>⌕</span><input id="clientSearch" type="search" placeholder="Buscar cliente, DNI o vehículo"></label></div>
+          <div class="section-head"><div><h2>Cartera de clientes</h2><p>Se crea automáticamente al aprobarse los tres controles.</p></div><div class="client-head-actions"><button class="button primary" id="historicalImportButton" type="button">Cargar clientes de agosto</button><label class="search"><span>⌕</span><input id="clientSearch" type="search" placeholder="Buscar cliente, DNI o vehículo"></label></div></div>
           <div class="client-grid" id="clientGrid"></div>
+          <section class="historical-section"><div class="section-head compact"><div><h3>Clientes cargados provisoriamente</h3><p>Ventas realizadas desde el 1 de agosto de 2026. Esta carga no altera minutas ni operaciones.</p></div></div><div class="client-grid" id="historicalClientGrid"></div></section>
         </section>
 
         <section class="view" data-panel="installments">
@@ -120,9 +123,18 @@
 
   <dialog id="groupDialog" class="dialog small"><form method="dialog" class="dialog-shell"><button class="dialog-close" value="cancel">×</button><p class="eyebrow dark">Formación de grupo</p><h2>Agrupar cliente</h2><p>El mes elegido se registrará como cuota N° 2.</p><label>Mes de agrupación<input id="groupMonth" type="month"></label><p class="message" id="groupMessage"></p><button class="button primary" id="groupButton" type="button">Confirmar agrupación</button></form></dialog>
 
+  <dialog id="historicalClientDialog" class="dialog small"><div class="dialog-shell"><button class="dialog-close" data-close-historical-import type="button">×</button>
+    <p class="eyebrow dark">Carga provisoria</p><h2>Importar clientes desde Excel</h2><p class="dialog-intro">Columnas requeridas: Nombre, Teléfono, Vendedor, Vehículo y Fecha de venta. La fecha debe ser desde el 01/08/2026.</p>
+    <div class="import-actions"><button class="button secondary" id="historicalTemplateButton" type="button">Descargar plantilla</button><label class="file-picker">Elegir archivo<input id="historicalFileInput" type="file" accept=".xlsx,.xls,.csv"></label></div>
+    <div class="import-preview" id="historicalImportPreview">Elegí un archivo para ver la vista previa.</div>
+    <p class="message" id="historicalImportMessage" aria-live="polite"></p><div class="form-actions"><button class="button secondary" data-close-historical-import type="button">Cancelar</button><button class="button primary" id="historicalConfirmButton" type="button" disabled>Importar clientes</button></div>
+  </div></dialog>
+
   <section class="minute-print" id="minutePrint" aria-hidden="true"></section>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="/vendedores/supabase-config.js?v=20260815-3"></script>
-  <script src="/vendedores/admventas/admventas.js?v=20260825-1"></script>
+  <script src="/vendedores/admventas/historical-clients.js?v=20260826-1"></script>
+  <script src="/vendedores/admventas/admventas.js?v=20260826-1"></script>
 </body>
 </html>
