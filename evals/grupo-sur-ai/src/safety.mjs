@@ -17,11 +17,54 @@ const FORBIDDEN_PRODUCTION_ENVIRONMENT = Object.freeze([
 ]);
 
 export class SafetyError extends Error {
-  constructor(code, detail = "") {
+  constructor(code, detail = "", diagnostic = null) {
     super(`${code}${detail ? `:${detail}` : ""}`);
     this.name = "SafetyError";
     this.code = code;
+    this.diagnostic = diagnostic;
   }
+}
+
+const MAX_DIAGNOSTIC_LENGTH = 500;
+
+export function sanitizeDiagnosticText(value, fallback = null) {
+  if (typeof value !== "string" || !value.trim()) return fallback;
+  return value
+    .replace(/Authorization\s*[:=]\s*(?:Bearer\s+)?[^\s,;]+/gi, "[REDACTED_AUTHORIZATION]")
+    .replace(/\bsk-[^\s,;]+/gi, "[REDACTED_API_KEY]")
+    .replace(/\bBearer\s+[^\s,;]+/gi, "Bearer [REDACTED]")
+    .replace(/[\r\n\t]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, MAX_DIAGNOSTIC_LENGTH);
+}
+
+function vectorStoreFailureCategory(httpStatus) {
+  if (httpStatus === 401) return "credential_invalid_or_unauthenticated";
+  if (httpStatus === 403) return "permission_or_policy_insufficient";
+  if (httpStatus === 404) return "resource_not_visible_or_not_found";
+  return "other_http_error";
+}
+
+async function vectorStoreErrorDiagnostic(response) {
+  let payload = null;
+  try {
+    payload = await response.json();
+  } catch {
+    // Never retain an unstructured response body: it may contain unsafe diagnostics.
+  }
+  const apiError = payload && typeof payload === "object" && payload.error && typeof payload.error === "object"
+    ? payload.error
+    : {};
+  return {
+    http_status: Number(response.status),
+    classification: vectorStoreFailureCategory(Number(response.status)),
+    error: {
+      type: sanitizeDiagnosticText(apiError.type),
+      code: sanitizeDiagnosticText(apiError.code),
+      message_sanitized: sanitizeDiagnosticText(apiError.message, `OpenAI request failed with HTTP ${response.status}`),
+    },
+  };
 }
 
 export function sideEffectBlocked(name) {
@@ -68,7 +111,10 @@ export function createEvalTransport(evalApiKey) {
 export async function assertVectorStoreScope(transport, vectorStoreId) {
   if (!/^vs_[A-Za-z0-9]+$/.test(String(vectorStoreId || ""))) throw new SafetyError("RAG_RESOURCE_SCOPE_MISMATCH", "invalid_vector_store_id");
   const response = await transport(`${ALLOWED_VECTOR_PREFIX}${vectorStoreId}`, { method: "GET" });
-  if (!response.ok) throw new SafetyError("RAG_RESOURCE_SCOPE_MISMATCH", `http_${response.status}`);
+  if (!response.ok) {
+    const diagnostic = await vectorStoreErrorDiagnostic(response);
+    throw new SafetyError("RAG_RESOURCE_SCOPE_MISMATCH", `http_${response.status}`, diagnostic);
+  }
   const payload = await response.json();
   if (payload?.id !== vectorStoreId) throw new SafetyError("RAG_RESOURCE_SCOPE_MISMATCH", "unexpected_resource");
   return { id: payload.id, status: payload.status || "unknown" };

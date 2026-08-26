@@ -125,9 +125,18 @@ async function livePreflight() {
       const vector = await assertVectorStoreScope(transport, state.snapshot.assistant_settings.vector_store_id);
       credential = { status: "valid_for_required_resource" };
       vectorStore = { status: "accessible", id: vector.id, resource_status: vector.status };
-    } catch {
-      credential = { status: "failed" };
-      vectorStore = { status: "inaccessible", id: state.snapshot.assistant_settings.vector_store_id };
+    } catch (error) {
+      const diagnostic = error instanceof SafetyError ? error.diagnostic : null;
+      credential = {
+        status: diagnostic?.classification === "credential_invalid_or_unauthenticated"
+          ? "invalid_or_unauthenticated"
+          : "failed",
+      };
+      vectorStore = {
+        status: "inaccessible",
+        id: state.snapshot.assistant_settings.vector_store_id,
+        ...(diagnostic ? { access_error: diagnostic } : {}),
+      };
       if (!blocks.includes("RAG_RESOURCE_SCOPE_MISMATCH")) blocks.push("RAG_RESOURCE_SCOPE_MISMATCH");
     }
   }

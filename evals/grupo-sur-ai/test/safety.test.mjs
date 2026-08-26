@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readdir, readFile } from "node:fs/promises";
 import {
   assertProductionCredentialIsolation, assertVectorStoreScope, createEvalTransport, createVectorReadOnlyTransport,
-  sideEffectBlocked,
+  sanitizeDiagnosticText, sideEffectBlocked,
 } from "../src/safety.mjs";
 
 test("bloquea todos los destinos salvo OpenAI Responses y lectura de Vector Store", async () => {
@@ -68,4 +68,61 @@ test("el preflight alcanza la comprobación del Vector Store congelado sin Respo
     url: `https://api.openai.com/v1/vector_stores/${vectorStoreId}`,
     method: "GET",
   }]);
+});
+
+for (const [httpStatus, classification] of [
+  [401, "credential_invalid_or_unauthenticated"],
+  [403, "permission_or_policy_insufficient"],
+  [404, "resource_not_visible_or_not_found"],
+  [429, "other_http_error"],
+]) {
+  test(`el diagnóstico del Vector Store conserva HTTP ${httpStatus} y el error seguro`, async () => {
+    const secret = ["sk", "proj", "EXAMPLESECRET123456789"].join("-");
+    const transport = async () => new Response(JSON.stringify({
+      error: {
+        type: "access_error",
+        code: `status_${httpStatus}`,
+        message: `Request rejected. Authorization: Bearer ${secret}`,
+      },
+    }), { status: httpStatus, headers: { "Content-Type": "application/json" } });
+
+    await assert.rejects(
+      () => assertVectorStoreScope(transport, "vs_6a80740821c081918bc10552428e6249"),
+      (error) => {
+        assert.equal(error.code, "RAG_RESOURCE_SCOPE_MISMATCH");
+        assert.equal(error.diagnostic.http_status, httpStatus);
+        assert.equal(error.diagnostic.classification, classification);
+        assert.equal(error.diagnostic.error.type, "access_error");
+        assert.equal(error.diagnostic.error.code, `status_${httpStatus}`);
+        assert.doesNotMatch(JSON.stringify(error.diagnostic), /EXAMPLESECRET|sk-proj-/);
+        assert.match(error.diagnostic.error.message_sanitized, /\[REDACTED_AUTHORIZATION\]/);
+        return true;
+      },
+    );
+  });
+}
+
+test("el diagnóstico no registra bodies no JSON ni secretos", async () => {
+  const secret = ["sk", "proj", "NOTFORLOGGING123456"].join("-");
+  const transport = async () => new Response(`Authorization: Bearer ${secret}`, { status: 502 });
+  await assert.rejects(
+    () => assertVectorStoreScope(transport, "vs_6a80740821c081918bc10552428e6249"),
+    (error) => {
+      assert.deepEqual(error.diagnostic.error, {
+        type: null,
+        code: null,
+        message_sanitized: "OpenAI request failed with HTTP 502",
+      });
+      assert.doesNotMatch(JSON.stringify(error), /NOTFORLOGGING|Authorization/);
+      return true;
+    },
+  );
+});
+
+test("el sanitizador limita longitud y elimina credenciales", () => {
+  const secret = ["sk", "proj", "SECRETSECRET123456"].join("-");
+  const value = `Incorrect key ${secret} Authorization: Bearer token-value\n${"x".repeat(800)}`;
+  const sanitized = sanitizeDiagnosticText(value);
+  assert.ok(sanitized.length <= 500);
+  assert.doesNotMatch(sanitized, /SECRETSECRET|token-value/);
 });

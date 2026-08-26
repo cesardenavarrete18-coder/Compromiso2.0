@@ -55,7 +55,7 @@
     "persistent_outputs": "local runs directory only"
   },
   "verification": {
-    "tests_passed": 13,
+    "tests_passed": 19,
     "tests_failed": 0,
     "compiled_cases": 100,
     "network_used_by_preflight": false,
@@ -63,6 +63,7 @@
     "live_preflight": {
       "enabled": true,
       "allowed_network": "GET frozen Vector Store only",
+      "safe_error_diagnostics": "http_status,error.type,error.code,error.message_sanitized",
       "responses_requests": 0,
       "eval_cases_executed": 0,
       "production_credential_isolation": "fail_closed"

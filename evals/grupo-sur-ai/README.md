@@ -75,7 +75,14 @@ OPENAI_EVAL_API_KEY
 EVAL_EXECUTION_CONFIRMED=YES
 ```
 
-El proceso verifica acceso de lectura al Vector Store congelado. Si falla, termina con `RAG_RESOURCE_SCOPE_MISMATCH`; no ejecuta un baseline degradado.
+El proceso verifica acceso de lectura al Vector Store congelado. Si falla, mantiene el bloqueo `RAG_RESOURCE_SCOPE_MISMATCH` y reporta únicamente un diagnóstico seguro con `http_status`, `error.type`, `error.code`, `error.message_sanitized` y una clasificación explícita:
+
+- `401`: `credential_invalid_or_unauthenticated`;
+- `403`: `permission_or_policy_insufficient`;
+- `404`: `resource_not_visible_or_not_found`;
+- cualquier otro status: `other_http_error`.
+
+El diagnóstico no conserva headers de la respuesta, el header `Authorization`, la API key ni bodies no estructurados. Ningún fallo habilita un baseline degradado.
 
 La ejecución requiere dos barreras simultáneas:
 
