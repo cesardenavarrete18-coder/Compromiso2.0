@@ -63,9 +63,9 @@
         </section>
 
         <section class="view" data-panel="clients">
-          <div class="section-head"><div><h2>Cartera de clientes</h2><p>Se crea automáticamente al aprobarse los tres controles.</p></div><div class="client-head-actions"><button class="button primary" id="historicalImportButton" type="button">Cargar clientes de agosto</button><label class="search"><span>⌕</span><input id="clientSearch" type="search" placeholder="Buscar cliente, DNI o vehículo"></label></div></div>
+          <div class="section-head"><div><h2>Cartera de clientes</h2><p>Incluye las operaciones aprobadas y los clientes finalizados cargados por Administración.</p></div><div class="client-head-actions"><button class="button primary" id="completedClientButton" type="button">Agregar cliente finalizado</button><label class="search"><span>⌕</span><input id="clientSearch" type="search" placeholder="Buscar cliente, DNI o vehículo"></label></div></div>
+          <p class="message" id="clientActionMessage" aria-live="polite"></p>
           <div class="client-grid" id="clientGrid"></div>
-          <section class="historical-section"><div class="section-head compact"><div><h3>Clientes cargados provisoriamente</h3><p>Ventas realizadas desde el 1 de agosto de 2026. Esta carga no altera minutas ni operaciones.</p></div></div><div class="client-grid" id="historicalClientGrid"></div></section>
         </section>
 
         <section class="view" data-panel="installments">
@@ -123,18 +123,41 @@
 
   <dialog id="groupDialog" class="dialog small"><form method="dialog" class="dialog-shell"><button class="dialog-close" value="cancel">×</button><p class="eyebrow dark">Formación de grupo</p><h2>Agrupar cliente</h2><p>El mes elegido se registrará como cuota N° 2.</p><label>Mes de agrupación<input id="groupMonth" type="month"></label><p class="message" id="groupMessage"></p><button class="button primary" id="groupButton" type="button">Confirmar agrupación</button></form></dialog>
 
-  <dialog id="historicalClientDialog" class="dialog small"><div class="dialog-shell"><button class="dialog-close" data-close-historical-import type="button">×</button>
-    <p class="eyebrow dark">Carga provisoria</p><h2>Importar clientes desde Excel</h2><p class="dialog-intro">Columnas requeridas: Nombre, Teléfono, Vendedor, Vehículo y Fecha de venta. La fecha debe ser desde el 01/08/2026.</p>
-    <div class="import-actions"><button class="button secondary" id="historicalTemplateButton" type="button">Descargar plantilla</button><label class="file-picker">Elegir archivo<input id="historicalFileInput" type="file" accept=".xlsx,.xls,.csv"></label></div>
-    <div class="import-preview" id="historicalImportPreview">Elegí un archivo para ver la vista previa.</div>
-    <p class="message" id="historicalImportMessage" aria-live="polite"></p><div class="form-actions"><button class="button secondary" data-close-historical-import type="button">Cancelar</button><button class="button primary" id="historicalConfirmButton" type="button" disabled>Importar clientes</button></div>
-  </div></dialog>
+  <dialog id="completedClientDialog" class="dialog minute-edit-dialog completed-client-dialog"><form id="completedClientForm" class="dialog-shell"><button class="dialog-close" data-close-completed-client type="button">×</button>
+    <p class="eyebrow dark">Alta administrativa</p><h2>Agregar cliente finalizado</h2><p class="dialog-intro">Esta ficha crea la minuta, registra la operación con todos sus controles aprobados y agrega al cliente directamente a la cartera.</p>
+    <fieldset><legend>Registro de la venta</legend><div class="edit-form-grid">
+      <label>Vendedor<select name="seller_user_id" required><option value="">Seleccionar vendedor</option></select></label><label>Fecha de venta<input name="sale_date" type="date" min="2026-08-01" required></label>
+      <label class="wide">Observaciones administrativas<textarea name="admin_notes" rows="3" maxlength="1000" placeholder="Información útil sobre la operación finalizada"></textarea></label>
+    </div></fieldset>
+    <fieldset><legend>Cliente</legend><div class="edit-form-grid">
+      <label>Nombre<input name="first_name" required maxlength="80"></label><label>Apellido<input name="last_name" required maxlength="80"></label>
+      <label>Tipo de documento<select name="document_type" required><option value="DNI">DNI</option><option value="LE">LE</option><option value="LC">LC</option><option value="Pasaporte">Pasaporte</option></select></label><label>Número de documento<input name="document_number" required inputmode="numeric" pattern="[0-9]{7,12}"></label>
+      <label>CUIL<input name="cuil" required inputmode="numeric" pattern="[0-9]{11}"></label><label>Fecha de nacimiento<input name="birth_date" type="date" required></label>
+      <label class="wide">Domicilio<input name="address" required maxlength="180"></label><label>Localidad / Provincia<input name="city_province" required maxlength="160"></label><label>Código postal<input name="postal_code" required maxlength="20"></label>
+      <label>Estado civil<select name="marital_status" required><option value="Soltero/a">Soltero/a</option><option value="Casado/a">Casado/a</option><option value="Conviviente">Conviviente</option><option value="Divorciado/a">Divorciado/a</option><option value="Viudo/a">Viudo/a</option></select></label><label>Nombre del cónyuge<input name="spouse_name" maxlength="160"></label><label>Documento del cónyuge<input name="spouse_document" inputmode="numeric" pattern="[0-9]{7,12}"></label>
+    </div></fieldset>
+    <fieldset><legend>Contacto y trabajo</legend><div class="edit-form-grid">
+      <label>Teléfono principal<input name="primary_phone" required maxlength="30"></label><label>Teléfono alternativo<input name="alternate_phone" maxlength="30"></label>
+      <label>Correo electrónico<input name="email" type="email" required maxlength="254"></label><label>Horario de contacto<input name="contact_schedule" required maxlength="120"></label>
+      <label>Situación laboral<input name="employment_status" required maxlength="120"></label><label>Empresa / actividad<input name="employer_name" required maxlength="160"></label>
+      <label>Antigüedad<input name="employment_seniority" required maxlength="80"></label><label>Ingreso mensual<input name="monthly_income" type="number" required min="0" step="0.01"></label>
+    </div></fieldset>
+    <fieldset><legend>Condición comercial</legend><div class="edit-form-grid">
+      <label>Marca<select name="brand_name" required><option value="Volkswagen">Volkswagen</option><option value="Peugeot">Peugeot</option><option value="Fiat">Fiat</option></select></label><label>Modelo / versión<input name="model_name" required maxlength="160"></label>
+      <label>Campaña<input name="campaign_name" required maxlength="160"></label><label>Tipo de plan<input name="plan_type" required maxlength="120"></label>
+      <label>Precio pactado<input name="agreed_price" type="number" required min="0" step="0.01"></label><label>Cuotas abonadas<input name="installments_paid" type="number" required min="0" step="1" value="1"></label>
+      <label>Cuotas restantes<select name="installments_to_pay" required><option value="83">83 cuotas</option><option value="119">119 cuotas</option></select></label><label class="check-field"><input name="automatic_debit" type="checkbox"> Débito automático</label>
+      <label class="check-field"><input name="deferred_installment" type="checkbox"> Cuota diferida</label><span></span>
+      <label>Fecha del primer pago<input name="first_payment_date" type="date"></label><label>Importe del primer pago<input name="first_payment_amount" type="number" min="0" step="0.01"></label>
+      <label>Fecha del segundo pago<input name="second_payment_date" type="date"></label><label>Importe del segundo pago<input name="second_payment_amount" type="number" min="0" step="0.01"></label>
+    </div></fieldset>
+    <p class="message" id="completedClientMessage" aria-live="polite"></p><div class="form-actions"><button class="button secondary" data-close-completed-client type="button">Cancelar</button><button class="button primary" id="saveCompletedClientButton" type="submit">Agregar a cartera</button></div>
+  </form></dialog>
 
   <section class="minute-print" id="minutePrint" aria-hidden="true"></section>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="/vendedores/supabase-config.js?v=20260815-3"></script>
-  <script src="/vendedores/admventas/historical-clients.js?v=20260826-1"></script>
-  <script src="/vendedores/admventas/admventas.js?v=20260826-1"></script>
+  <script src="/vendedores/admventas/completed-client.js?v=20260826-1"></script>
+  <script src="/vendedores/admventas/admventas.js?v=20260826-2"></script>
 </body>
 </html>
