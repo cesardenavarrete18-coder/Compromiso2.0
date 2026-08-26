@@ -12,6 +12,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/vendedores/styles.css?v=20260813-6">
   <link rel="stylesheet" href="/vendedores/crm.css?v=20260824-1">
+  <link rel="stylesheet" href="/vendedores/seller-enhancements.css?v=20260826-1">
   <link rel="stylesheet" href="/vendedores/contact-protocol.css?v=20260821-1">
   <link rel="stylesheet" href="/vendedores/workflow-polish.css?v=20260818-1">
   <link rel="stylesheet" href="/vendedores/recalls.css?v=20260821-1">
@@ -440,7 +441,7 @@
 
         <section class="view crm-view" id="crmSalesView" aria-labelledby="crmSalesTitle">
           <div class="crm-hero"><div><p class="eyebrow dark">Seguimiento limitado</p><h2 id="crmSalesTitle">Mis ventas</h2><p>Después de la aprobación del supervisor, la minuta vuelve acá para que la completes y puedas seguir su avance administrativo.</p></div><button class="primary-button compact-button" id="refreshSalesButton" type="button">Actualizar</button></div>
-          <div class="seller-notifications" id="salesNotifications"></div><div class="sales-tracking-list" id="salesTrackingList"></div>
+          <div class="seller-notifications" id="salesNotifications"></div><p class="sales-action-message" id="salesActionMessage"></p><div class="sales-tracking-list" id="salesTrackingList"></div>
         </section>
 
         <section class="view crm-view" id="crmRecallsView" aria-labelledby="crmRecallsTitle">
@@ -470,7 +471,7 @@
   <dialog class="crm-dialog" id="crmLeadDialog">
     <form method="dialog" class="crm-dialog-shell" id="crmLeadForm">
       <button class="crm-dialog-close" value="cancel" aria-label="Cerrar">×</button>
-      <div class="crm-dialog-head"><div><p class="eyebrow dark">Ficha comercial</p><h2 id="crmLeadName">Cliente</h2><p id="crmLeadMeta"></p></div><span class="crm-stage-badge" id="crmLeadStage"></span></div>
+      <div class="crm-dialog-head"><div><p class="eyebrow dark">Ficha comercial</p><div class="crm-lead-title"><h2 id="crmLeadName">Cliente</h2><button id="crmEditLeadName" type="button">Editar nombre</button></div><p class="crm-lead-meta" id="crmLeadMeta"></p></div><span class="crm-stage-badge" id="crmLeadStage"></span></div>
       <div class="crm-detail-grid">
         <section class="crm-detail-main">
           <div class="crm-client-summary" id="crmClientSummary"></div>
@@ -514,6 +515,8 @@
     </form>
   </dialog>
 
+  <dialog class="crm-dialog small" id="crmNameDialog"><form class="crm-dialog-shell" id="crmNameForm"><button class="crm-dialog-close" value="cancel" type="button" aria-label="Cerrar">×</button><p class="eyebrow dark">Datos del Lead</p><h2>Editar nombre del cliente</h2><p class="crm-dialog-copy">El cambio también actualizará la ficha unificada y quedará registrado en el historial.</p><label>Nombre y apellido<input id="crmNameInput" type="text" minlength="2" maxlength="120" required></label><p class="crm-form-error" id="crmNameError"></p><button class="primary-button" id="crmNameSave" type="submit">Guardar nombre</button></form></dialog>
+
   <dialog class="crm-dialog small" id="crmCommentDialog"><form method="dialog" class="crm-dialog-shell"><button class="crm-dialog-close" value="cancel" aria-label="Cerrar">×</button><p class="eyebrow dark">Nota interna</p><h2>Agregar comentario</h2><textarea id="crmCommentInput" rows="5" placeholder="Información útil para continuar la gestión"></textarea><p class="crm-form-error" id="crmCommentError"></p><button class="primary-button" id="crmCommentSave" type="button">Guardar comentario</button></form></dialog>
 
   <dialog class="crm-dialog small" id="crmAppraisalDialog"><form class="crm-dialog-shell" id="crmAppraisalForm"><button class="crm-dialog-close" value="cancel" type="button" aria-label="Cerrar">×</button><p class="eyebrow dark">Vehículo usado</p><h2>Solicitar tasación</h2><p class="crm-dialog-copy">Registrá los datos objetivos del vehículo. No se solicita patente ni titularidad.</p><div class="crm-form-grid"><label>Marca<input name="brand" type="text" maxlength="80" required></label><label>Modelo<input name="model" type="text" maxlength="120" required></label><label class="wide">Versión<input name="version" type="text" maxlength="160" placeholder="Ej. 1.6 Comfortline MT"></label><label>Año<input name="vehicleYear" type="number" min="1950" max="2100" required></label><label>Kilometraje<input name="mileageKm" type="number" min="0" max="3000000" step="1" required></label><label class="wide">Estado general<select name="condition" required><option value="excellent">Excelente</option><option value="good" selected>Bueno</option><option value="fair">Regular</option><option value="to_review">A revisar</option></select></label><label class="wide">Observaciones<textarea name="notes" rows="4" maxlength="3000" placeholder="Estado general, detalles visibles o información relevante"></textarea></label></div><div class="appraisal-pending-note"><strong>Tasación pendiente de confirmación</strong><span>Se consultarán vehículos equivalentes publicados en Mercado Libre. La toma sugerida será un 15% menor que la mediana obtenida y deberá ser validada por Supervisión.</span></div><p class="crm-form-error" id="crmAppraisalError"></p><button class="primary-button" id="crmAppraisalSubmit" type="submit">Guardar y consultar Mercado Libre</button></form></dialog>
@@ -536,8 +539,8 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.2/dist/umd/supabase.js"></script>
   <script src="/vendedores/supabase-config.js?v=20260813-2"></script>
   <script src="/vendedores/app.js?v=20260817-1"></script>
-  <script src="/vendedores/crm.js?v=20260824-2"></script>
-  <script src="/vendedores/sales.js?v=20260818-1"></script>
+  <script src="/vendedores/crm.js?v=20260826-1"></script>
+  <script src="/vendedores/sales.js?v=20260826-1"></script>
   <script src="/vendedores/recalls.js?v=20260821-2"></script>
   <script src="/vendedores/mobile-navigation.js?v=20260820-1"></script>
 </body>
