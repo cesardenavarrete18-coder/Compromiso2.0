@@ -67,7 +67,6 @@
     state.clients = results[6].data || [];
     state.notifications = results[7].data || [];
     renderAll();
-    if (window.grupoSurHistoricalClients) await window.grupoSurHistoricalClients.load();
   }
 
   function renderStats() {
@@ -283,6 +282,6 @@
   window.addEventListener("afterprint", function () { document.getElementById("minutePrint").setAttribute("aria-hidden", "true"); });
   var now = new Date(); document.getElementById("installmentMonth").value = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0");
   if (!supabaseClient) { document.getElementById("authLoading").hidden = true; loginView.hidden = false; document.getElementById("loginMessage").textContent = "No se pudo conectar con Supabase."; return; }
-  if (window.grupoSurHistoricalClients) window.grupoSurHistoricalClients.init(supabaseClient);
+  if (window.grupoSurCompletedClient) window.grupoSurCompletedClient.init(supabaseClient, loadData);
   supabaseClient.auth.getSession().then(function (result) { if (result.data.session) { enterApp().catch(function (error) { document.getElementById("authLoading").hidden = true; loginView.hidden = false; document.getElementById("loginMessage").textContent = error.message; }); return; } document.getElementById("authLoading").hidden = true; loginView.hidden = false; });
 }());
