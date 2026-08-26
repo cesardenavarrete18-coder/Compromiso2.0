@@ -1,0 +1,9 @@
+{
+  "status": "unverified",
+  "effective_model": null,
+  "source_type": null,
+  "source_reference": null,
+  "verified_at": null,
+  "verified_by": null,
+  "note": "The deployed source fallback is gpt-4.1-mini, but the effective OPENAI_LEAD_MODEL value has not been verified from a non-mutating source. The run must remain blocked."
+}

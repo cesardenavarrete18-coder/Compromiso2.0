@@ -1,0 +1,32 @@
+{
+  "artifact": "Grupo Sur Golden Dataset",
+  "version": "1.0.0",
+  "status": "approved_immutable",
+  "approved_at": "2026-08-26",
+  "matrix": {
+    "version": "1.4",
+    "file": "matriz_calificacion_handoff_grupo_sur.md",
+    "sha256": "b05bce2f43a160e22acbff0e107bfe1ee041f3a45fc1424ce3717f92098f17c9",
+    "size_bytes": 58830
+  },
+  "dataset": {
+    "file": "golden_dataset_ia_comercial_grupo_sur_v1.md",
+    "sha256": "934d70c25c69c7543e2faf74e0ee5667fc258a273fcf39237a4bb8c4c394cdd0",
+    "size_bytes": 77948,
+    "eval_case_count": 100,
+    "first_eval_id": "GSV1-001",
+    "last_eval_id": "GSV1-100"
+  },
+  "immutability_policy": {
+    "patch_version": "Use v1.0.1 for metadata, wording or corrections that do not change the semantic evaluation contract.",
+    "major_version": "Use v2 when expected outcomes, graders, gates or normative coverage change.",
+    "direct_eval_to_training_conversion_allowed": false,
+    "baseline_may_change_expected_outcomes": false
+  },
+  "changelog": [
+    "Formalized Matriz v1.4 from v1.3 plus the approved 2026-08-26 policy revision.",
+    "Set matrix_version=1.4 across all 100 Eval Cases and removed matrix_policy_revision.",
+    "Preserved every approved expected outcome.",
+    "Declared Golden Dataset v1.0.0 approved and immutable."
+  ]
+}

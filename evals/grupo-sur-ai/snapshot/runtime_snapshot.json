@@ -1,0 +1,140 @@
+{
+  "project_id": "cdtvuovsqwwopktdahgj",
+  "captured_at": "2026-08-26T20:39:02.671613+00:00",
+  "training_examples": [
+    {
+      "id": "deb2a7f4-3897-4c68-bdb3-f4f2a2ef065d",
+      "active": true,
+      "updated_at": "2026-08-26T18:24:54.664806+00:00",
+      "conversation": "Cliente: ¡Hola! Quiero mi nuevo Peugeot 208\nAsistente: Hola [nombre], gracias por tu mensaje. El Peugeot 208 es una gran elección, tenemos condiciones especiales con entrega pactada en cuota 2 y descuentos para clientes bancarizados, monotributistas o RSI. ¿Tenés pensado financiar, hacer un pago al contado o entregar un usado como parte de pago?\nCliente: Financiar",
+      "expected_reply": "Derivación prematura. Modelo + financiación no alcanzan para calificar. Debe obtener efectivo disponible y cuota objetivo antes del handoff normal.",
+      "expected_status": "qualified"
+    },
+    {
+      "id": "18c44cca-27f3-40d7-955e-c9f6808336b8",
+      "active": true,
+      "updated_at": "2026-08-24T18:50:24.04551+00:00",
+      "conversation": "Cliente: ¡Hola! Quiero mi nuevo Peugeot 208\nAsistente: Hola [nombre], gracias por comunicarte. El Peugeot 208 es una gran elección, especialmente con las condiciones especiales que tenemos ahora. ¿Pensás financiar, hacer un pago al contado o entregar un usado como parte de pago?\nAsistente: Te escribo por tu consulta sobre Peugeot 208. Si todavía te interesa, decime qué información necesitás y te ayudo por acá.\nCliente: Si cual es el costo total\nAsistente: El costo total del Peugeot 208 depende de la versión y la forma de pago que elijas. Tenemos opciones con entrega pactada en cuota 2 y financiación en pesos. ¿Contás con algún anticipo o pensás entregar un usado como parte de pago?\nCliente: Cuento con anticipo pero me gustaria saber el valor total",
+      "expected_reply": "El precio total del 208 es de $40.370.000 pero actualmente tenemos unidades en promocion. \nEl valor de cuota publicado te queda bien?",
+      "expected_status": "qualified"
+    },
+    {
+      "id": "ca91a178-347f-4e54-8493-19e87a8662a6",
+      "active": true,
+      "updated_at": "2026-08-24T18:29:56.649056+00:00",
+      "conversation": "Cliente: Efectivo",
+      "expected_reply": "Perfecto Carmen!\nEl anticipo minimo para esta financiacion es de $4.000.000 de pesos.\nComo te queda una cuota mensual de $400.000 pesos?",
+      "expected_status": "follow_up"
+    },
+    {
+      "id": "b1e9a9ca-a4b3-451c-a6a5-eb2e7069f30b",
+      "active": true,
+      "updated_at": "2026-08-24T18:29:06.144592+00:00",
+      "conversation": "Cliente: Quiero conocer las opciones\nAsistente: ¡Hola Orlando! El Peugeot 208 tiene varias opciones para facilitar la compra: cuotas desde $400.000, alternativas de entrega y la posibilidad de entregar tu usado como parte de pago. ¿Con cuánto disponés aproximadamente para el anticipo?\nCliente: Pregunte y no me contestaron más xq será lastima\nAsistente: Lamento que no te hayan respondido aún. El Peugeot 208 tiene opciones con cuotas desde $400.000 y podés entregar tu usado como parte de pago. ¿Podés contarme con cuánto aproximado disponés para el anticipo o si querés que te explique otras formas de financiación?\nCliente: Cual es la financiación más posible hoy q no hay plata según vuestro pte abrazo gracias lo necesito pero si es factible",
+      "expected_reply": "La mejor financiacion que hay hoy en dia es la 100%, te permite financiar la totalidad del auto en cuotas, y retirar con un anticipo minimo",
+      "expected_status": "qualified"
+    },
+    {
+      "id": "7324c05f-3e58-47fc-96c7-756c60482ae5",
+      "active": true,
+      "updated_at": "2026-08-24T18:28:28.930117+00:00",
+      "conversation": "Cliente: Quiero conocer las opciones",
+      "expected_reply": "¡Hola Orlando! El Peugeot 208 tiene varias opciones para facilitar la compra: cuotas desde $400.000, alternativas de entrega y la posibilidad de entregar tu usado como parte de pago. Podes retirarlo con $4.000.000 de pesos o un usado que cubra ese anticipo. \n¿Contame, como queres hacer la compra vos?",
+      "expected_status": "qualified"
+    },
+    {
+      "id": "2e3f0ff6-bbce-4176-bf6c-52e7465df83d",
+      "active": true,
+      "updated_at": "2026-08-22T21:00:53.562406+00:00",
+      "conversation": "Cliente: Quiero conocer las opciones\nAsistente: ¡Hola Agustín! El Peugeot 208 tiene varias opciones para facilitarte la compra: podés financiar con cuotas desde $400.000, entregar tu usado como parte de pago o combinar ambas alternativas. ¿Querés contarme qué auto tenés para entregar o preferís que te detalle las opciones de financiación primero?\nCliente: FINANCIACION",
+      "expected_reply": "Excelente! \nTiene la opción de entregar un usado o de poner un anticipó mínimo de $5.000.000 de pesos.\nCómo te gustaria retirar tu auto?",
+      "expected_status": "qualified"
+    },
+    {
+      "id": "9b18eda1-99c4-41e8-a199-1a264d73ff55",
+      "active": true,
+      "updated_at": "2026-08-22T18:05:51.332603+00:00",
+      "conversation": "Cliente: Quiero conocer las opciones",
+      "expected_reply": "¡Claro! 😊 Para el Peugeot 208 tenemos distintas alternativas. Podés avanzar con el ingreso promocionado de $5.000.000, utilizar un usado como parte de pago o evaluar otras opciones de financiación.\n\nPara recomendarte la más conveniente, ¿con cuánto disponés aproximadamente para realizar el ingreso?",
+      "expected_status": "follow_up"
+    },
+    {
+      "id": "2192a0cf-39b9-4d57-9955-993d5f236988",
+      "active": true,
+      "updated_at": "2026-08-22T15:40:58.378489+00:00",
+      "conversation": "Cliente: ¡Hola! Quiero mi nuevo Peugeot 208\nAsistente: Hola [nombre], gracias por tu mensaje. El Peugeot 208 es una excelente opción, moderno y eficiente. ¿Estás pensando en una compra con financiación, contado o tal vez entregar tu usado como parte de pago?\nCliente: Financiación si me puedes explicar cómo es porque yo me estoy recuperando de un grave accidente trabajando en camión desde el año 2013 y todavía me falta no se cuánto pero menos que antes seguro",
+      "expected_reply": "Entiendo, [nombre]. La financiación para el Peugeot 208 permite pagar con un anticipo y cuotas en pesos, y tenemos descuentos especiales según el perfil. ¿Que valor de cuota te queda comodo?",
+      "expected_status": "qualified"
+    },
+    {
+      "id": "2c3a1edf-aead-41a4-9e48-9716ac86a257",
+      "active": true,
+      "updated_at": "2026-08-21T21:47:01.417895+00:00",
+      "conversation": "Cliente: ¡Hola! Quiero mi nuevo Peugeot 208\nAsistente: Hola Herminio, gracias por tu interés en el Peugeot 208, un auto muy valorado por su diseño y tecnología. ¿Tenés pensado financiar con anticipo, pago al contado o entregar un usado como parte de pago?\nCliente: Entregar usado q motor tiene\nAsistente: El Peugeot 208 tiene varias opciones de motor según la versión, ¿querés que te cuente sobre alguna en particular? Además, ¿podrías contarme qué auto tenés para entregar?\nCliente: Si decimes las opciones tengo peugeot 208 2020",
+      "expected_reply": "Perfecto! Hermoso modelo\nCual estas buscando la version manual o automatica?",
+      "expected_status": "follow_up"
+    },
+    {
+      "id": "06155c55-c2cb-4a93-aadb-22094276a5f9",
+      "active": true,
+      "updated_at": "2026-08-21T20:42:17.217255+00:00",
+      "conversation": "Cliente: ¡Hola! Quiero mi nuevo Peugeot\nAsistente: Hola, gracias por tu mensaje. La Peugeot Partner es ideal para el trabajo diario, ¿tenés pensado financiar con anticipo o contado? También podemos ver si tenés un usado para entregar. ¿Qué opción preferís?\nCliente: Hola\nAsistente: Gracias por tu interés en la Peugeot Partner, ideal para tu trabajo. ¿Tenés en mente financiar con algún anticipo, pago al contado o querés entregar un usado para parte de pago?\nCliente: Entrego mi auto y lo demás a  financiar  , mi auto aprox 8.500.000",
+      "expected_reply": "Perfecto. Contame, que auto tenes para entregar?",
+      "expected_status": "qualified"
+    },
+    {
+      "id": "c533d1a3-45e1-4e0c-a622-fe11541d8881",
+      "active": true,
+      "updated_at": "2026-08-21T12:27:42.30913+00:00",
+      "conversation": "Cliente: ¡Hola! Quiero mi nuevo Peugeot 208",
+      "expected_reply": "Hola [nombre], gracias por contactarnos. Qué bueno que quieras tu Peugeot 208 nuevo. ¿Estás pensando en compra con financiación o contado?",
+      "expected_status": "follow_up"
+    }
+  ],
+  "assistant_settings": {
+    "vector_store_id": "vs_6a80740821c081918bc10552428e6249",
+    "conversation_style": "Respondé con calidez, naturalidad y español rioplatense profesional. Saludá por el nombre de pila solamente al comenzar la conversación. Primero reconocé lo que dijo la persona y después hacé una sola pregunta concreta. Evitá respuestas secas, interrogatorios, frases robóticas y repetir información ya aportada. Si ya hay datos suficientes, resumí lo entendido y avisá que un asesor continuará la gestión.",
+    "qualification_rules": "Calificar cuando exista un modelo o tipo de vehículo definido, una modalidad de compra y al menos un dato concreto de capacidad o intención (anticipo, usado, plazo, visita o seña)."
+  },
+  "runtime": {
+    "edge_function": {
+      "slug": "whatsapp-webhook",
+      "version": 25,
+      "status": "ACTIVE",
+      "ezbr_sha256": "d2b47cc325ef11cbedc40dadd93e1b3b5283e30f8fc6921f318bc593193b52d2",
+      "verify_jwt": false
+    },
+    "source_exact_match_verified": true,
+    "source_files": {
+      "index.ts": "772ec7f64702fc295e60685586eeac9dc8c2bfd798e427e6608ddfff95ba3796",
+      "conversation-style.ts": "3a65ac1478e4387fac2b3e6eb92f35cf6d591c626c50b0bb78bcdd2520c59591",
+      "routing-identifiers.ts": "3c2a5ae7aa15f42c313ad012fc255982014c279cf4270b224ca3eb7399cdec01",
+      "deno.json": "adf9df9da776a91804688fa85b87abdc049201a4ab65d32a1919e1625cb0b909"
+    },
+    "effective_model": {
+      "status": "unverified",
+      "value": null,
+      "source": null,
+      "verified_at": null,
+      "note": "Fallback source value is gpt-4.1-mini, but OPENAI_LEAD_MODEL effective value could not be established from a non-mutating source."
+    },
+    "responses_api": {
+      "endpoint": "https://api.openai.com/v1/responses",
+      "store": false,
+      "max_output_tokens": 650
+    },
+    "training_retrieval": {
+      "query_limit": 20,
+      "selected_limit": 4,
+      "method": "lexical_token_overlap_current_runtime",
+      "minimum_score": null
+    }
+  },
+  "dataset": {
+    "version": "1.0.0",
+    "matrix_version": "1.4",
+    "sha256": "934d70c25c69c7543e2faf74e0ee5667fc258a273fcf39237a4bb8c4c394cdd0",
+    "path": "../golden_dataset_ia_comercial_grupo_sur_v1.md"
+  }
+}
+

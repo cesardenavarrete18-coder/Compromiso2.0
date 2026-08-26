@@ -1,0 +1,48 @@
+{
+  "captured_for": "TikTok routing reproduction",
+  "advisors": [
+    {
+      "user_id": "02c29e37-6182-4b3a-97ae-ce8bf9a67f3c",
+      "full_name": "Alejandro Montoya",
+      "tiktok_code": "MA1301",
+      "active": true
+    },
+    {
+      "user_id": "c63d6984-8299-4dcc-975e-72988a9a3ab3",
+      "full_name": "Cesar de Navarrete",
+      "tiktok_code": "GS-01CDN",
+      "active": true
+    },
+    {
+      "user_id": "878ced52-6a3a-429f-81e9-88fbcdc11703",
+      "full_name": "Joaquin Vera",
+      "tiktok_code": "JV02",
+      "active": true
+    },
+    {
+      "user_id": "a0216e62-8e56-433f-a997-e0941c79b3c3",
+      "full_name": "Juan Castro",
+      "tiktok_code": "JMC10",
+      "active": true
+    },
+    {
+      "user_id": "cc334908-6ba4-4d6c-a4ed-bef1c9250d5b",
+      "full_name": "Malena Rojas",
+      "tiktok_code": "MR1",
+      "active": true
+    },
+    {
+      "user_id": "d4dc327b-bd20-4488-bcce-ca4b5ce4a7a7",
+      "full_name": "Matias Torres",
+      "tiktok_code": "MT-2509",
+      "active": true
+    },
+    {
+      "user_id": "2082bd46-2cc2-4692-a179-06d082477b83",
+      "full_name": "Milagros Camila Zampelli",
+      "tiktok_code": "MCZ03",
+      "active": true
+    }
+  ]
+}
+

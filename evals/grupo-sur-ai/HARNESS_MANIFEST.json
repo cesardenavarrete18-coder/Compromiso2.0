@@ -1,0 +1,71 @@
+{
+  "harness": "Grupo Sur AI Eval Shadow",
+  "version": "1.0.0-pre-run",
+  "prepared_at": "2026-08-26T17:48:26-03:00",
+  "status": "READY_BUT_BLOCKED",
+  "inferences_executed": 0,
+  "production_mutations": 0,
+  "edge_function": {
+    "slug": "whatsapp-webhook",
+    "deployed_version": 25,
+    "deployed_bundle_sha256": "d2b47cc325ef11cbedc40dadd93e1b3b5283e30f8fc6921f318bc593193b52d2",
+    "snapshot_source_exact_match": true
+  },
+  "model": {
+    "effective_value": null,
+    "verification_status": "unverified",
+    "fallback_observed_in_source": "gpt-4.1-mini",
+    "fallback_accepted_as_effective_evidence": false
+  },
+  "dataset": {
+    "version": "1.0.0",
+    "matrix_version": "1.4",
+    "source_sha256": "934d70c25c69c7543e2faf74e0ee5667fc258a273fcf39237a4bb8c4c394cdd0",
+    "compiled_sha256": "3ee643a00e67d65474f08ccd9465e41bd354c1d21da34c94d8f50b387cd5c884",
+    "case_count": 100
+  },
+  "snapshot": {
+    "runtime_snapshot_sha256": "71c88b366084c9cebcfcd55471ad23770bdfec2b9b7a1eaba607c53c8f9d7423",
+    "routing_snapshot_sha256": "eefc3c449153d10ebad0947ec1b38549896358946e6bfc3009fc0661e2b1e67f",
+    "model_verification_sha256": "5211497511131fb3933e152b3f7c22435a698b69ca4e107bb41dfa0d40e753ed",
+    "vector_store_id": "vs_6a80740821c081918bc10552428e6249",
+    "active_training_examples": 11
+  },
+  "source_hashes": {
+    "index.ts": "772ec7f64702fc295e60685586eeac9dc8c2bfd798e427e6608ddfff95ba3796",
+    "conversation-style.ts": "3a65ac1478e4387fac2b3e6eb92f35cf6d591c626c50b0bb78bcdd2520c59591",
+    "routing-identifiers.ts": "3c2a5ae7aa15f42c313ad012fc255982014c279cf4270b224ca3eb7399cdec01",
+    "deno.json": "adf9df9da776a91804688fa85b87abdc049201a4ab65d32a1919e1625cb0b909"
+  },
+  "preflight_blocks": [
+    "PRODUCTIVE_MODEL_UNVERIFIED",
+    "OPENAI_EVAL_API_KEY_MISSING"
+  ],
+  "security": {
+    "allowed_network": [
+      "GET https://api.openai.com/v1/vector_stores/{snapshot_vector_store_id}",
+      "POST https://api.openai.com/v1/responses"
+    ],
+    "credential_variable": "OPENAI_EVAL_API_KEY",
+    "production_credential_accessed": false,
+    "supabase_runtime_client_present": false,
+    "meta_runtime_client_present": false,
+    "webhook_invocation_present": false,
+    "side_effect_adapters": "fail_closed",
+    "persistent_outputs": "local runs directory only"
+  },
+  "verification": {
+    "tests_passed": 11,
+    "tests_failed": 0,
+    "compiled_cases": 100,
+    "network_used_by_preflight": false,
+    "rag_scope_check_executed": false,
+    "live_preflight": {
+      "enabled": true,
+      "allowed_network": "GET frozen Vector Store only",
+      "responses_requests": 0,
+      "eval_cases_executed": 0,
+      "production_credential_isolation": "fail_closed"
+    }
+  }
+}
