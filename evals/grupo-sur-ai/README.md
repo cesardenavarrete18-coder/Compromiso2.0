@@ -2,6 +2,16 @@
 
 Runner independiente y sin efectos laterales para medir la IA comercial desplegada contra Golden Dataset v1.0.0 y Matriz v1.4.
 
+## Runtime TypeScript aislado
+
+El harness registra `tsx` mediante `node --import tsx` para cargar en memoria los snapshots TypeScript del runtime productivo. La dependencia está fijada en `package-lock.json`, vive únicamente en esta carpeta y no transpila, reescribe ni altera los archivos congelados de `snapshot/runtime_source/`.
+
+Instalación reproducible:
+
+```bash
+npm ci
+```
+
 ## Estado actual
 
 El harness está preparado pero deliberadamente bloqueado:

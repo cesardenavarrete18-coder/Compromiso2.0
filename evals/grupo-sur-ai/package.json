@@ -7,10 +7,13 @@
     "node": ">=22"
   },
   "scripts": {
-    "preflight:offline": "node src/cli.mjs preflight --offline",
-    "preflight:live": "node src/cli.mjs preflight --live",
-    "compile": "node src/cli.mjs compile",
-    "test": "node --test test/*.test.mjs",
-    "run": "node src/cli.mjs run --execute"
+    "preflight:offline": "node --import tsx src/cli.mjs preflight --offline",
+    "preflight:live": "node --import tsx src/cli.mjs preflight --live",
+    "compile": "node --import tsx src/cli.mjs compile",
+    "test": "node --import tsx --test test/*.test.mjs",
+    "run": "node --import tsx src/cli.mjs run --execute"
+  },
+  "devDependencies": {
+    "tsx": "4.23.12"
   }
 }

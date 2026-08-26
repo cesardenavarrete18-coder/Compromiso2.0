@@ -55,7 +55,7 @@
     "persistent_outputs": "local runs directory only"
   },
   "verification": {
-    "tests_passed": 11,
+    "tests_passed": 13,
     "tests_failed": 0,
     "compiled_cases": 100,
     "network_used_by_preflight": false,
@@ -66,6 +66,12 @@
       "responses_requests": 0,
       "eval_cases_executed": 0,
       "production_credential_isolation": "fail_closed"
+    },
+    "typescript_runtime": {
+      "loader": "tsx",
+      "version": "4.23.12",
+      "registration": "node --import tsx",
+      "snapshot_transpilation_on_disk": false
     }
   }
 }

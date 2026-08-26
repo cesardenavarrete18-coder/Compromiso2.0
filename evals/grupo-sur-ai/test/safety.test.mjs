@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readdir, readFile } from "node:fs/promises";
 import {
-  assertProductionCredentialIsolation, createEvalTransport, createVectorReadOnlyTransport,
+  assertProductionCredentialIsolation, assertVectorStoreScope, createEvalTransport, createVectorReadOnlyTransport,
   sideEffectBlocked,
 } from "../src/safety.mjs";
 
@@ -49,4 +49,23 @@ test("el preflight falla si hereda una credencial productiva", () => {
     isolated: true,
     forbidden_variables_present: [],
   });
+});
+
+test("el preflight alcanza la comprobación del Vector Store congelado sin Responses", async () => {
+  const requests = [];
+  const vectorStoreId = "vs_6a80740821c081918bc10552428e6249";
+  const transport = async (url, options) => {
+    requests.push({ url, method: options.method });
+    return new Response(JSON.stringify({ id: vectorStoreId, status: "completed" }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  };
+
+  const result = await assertVectorStoreScope(transport, vectorStoreId);
+  assert.deepEqual(result, { id: vectorStoreId, status: "completed" });
+  assert.deepEqual(requests, [{
+    url: `https://api.openai.com/v1/vector_stores/${vectorStoreId}`,
+    method: "GET",
+  }]);
 });

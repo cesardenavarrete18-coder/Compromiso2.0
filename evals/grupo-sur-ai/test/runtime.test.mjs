@@ -3,6 +3,13 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { buildExactDeveloperPrompt, deriveTikTokRouting, selectTrainingExamples, verifySnapshotSource } from "../src/runtime-replica.mjs";
 
+test("carga conversation-style.ts con el loader TypeScript aislado", async () => {
+  const snapshotModule = await import("../snapshot/runtime_source/conversation-style.ts");
+  assert.equal(typeof snapshotModule.polishCommercialReply, "function");
+  assert.equal(typeof snapshotModule.qualifyAndHandoffReply, "function");
+  assert.equal(typeof snapshotModule.tiktokIdentifierReply, "function");
+});
+
 test("el snapshot conserva byte a byte el código desplegado verificado", async () => {
   const snapshot = JSON.parse(await readFile(new URL("../snapshot/runtime_snapshot.json", import.meta.url)));
   await verifySnapshotSource(snapshot);
