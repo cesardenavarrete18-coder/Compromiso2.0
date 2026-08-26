@@ -24,6 +24,7 @@
   var saleDialog = document.getElementById("crmSaleDialog");
   var answeredDialog = document.getElementById("crmAnsweredDialog");
   var appraisalDialog = document.getElementById("crmAppraisalDialog");
+  var nameDialog = document.getElementById("crmNameDialog");
   var pendingAnsweredTaskId = null;
 
   function escapeHtml(value) {
@@ -439,7 +440,8 @@
     state.activeLead = lead;
     var crm = crmOf(lead);
     document.getElementById("crmLeadName").textContent = lead.customer_name || "Cliente sin nombre";
-    document.getElementById("crmLeadMeta").textContent = "+" + lead.customer_phone + " · ingresó " + formatDate(lead.created_at);
+    var phoneDigits = String(lead.customer_phone || "").replace(/\D/g, "");
+    document.getElementById("crmLeadMeta").innerHTML = '<a class="crm-lead-phone" href="tel:+' + phoneDigits + '">+' + escapeHtml(lead.customer_phone) + '</a><span>Ingresó ' + escapeHtml(formatDate(lead.created_at)) + '</span>';
     document.getElementById("crmLeadStage").textContent = stageLabel(crm.status);
     document.getElementById("crmClientSummary").innerHTML = '<strong>' + escapeHtml(lead.intent_summary || "Sin resumen comercial") + '</strong><p>' + escapeHtml(crm.status_reason || "") + '</p><div class="tags"><span>' + escapeHtml(lead.model_interest || "Modelo a definir") + '</span><span>' + escapeHtml(lead.qualification_status === "qualified" ? "Calificado por IA" : "Seguimiento") + '</span><span>' + escapeHtml(crm.priority === "high" ? "Prioridad alta" : crm.priority === "low" ? "Prioridad baja" : "Prioridad normal") + '</span></div>';
     document.getElementById("crmCallLink").href = "tel:+" + String(lead.customer_phone).replace(/\D/g, "");
@@ -552,6 +554,32 @@
     setBusy(button, false);
   }
 
+  function openNameEditor() {
+    if (!state.activeLead) return;
+    document.getElementById("crmNameInput").value = state.activeLead.customer_name || "";
+    document.getElementById("crmNameError").textContent = "";
+    nameDialog.showModal();
+    document.getElementById("crmNameInput").focus();
+  }
+
+  async function saveLeadName(event) {
+    event.preventDefault();
+    if (!state.activeLead) return;
+    var leadId = state.activeLead.id;
+    var name = document.getElementById("crmNameInput").value.trim().replace(/\s+/g, " ");
+    var errorBox = document.getElementById("crmNameError");
+    var button = document.getElementById("crmNameSave");
+    errorBox.textContent = "";
+    if (name.length < 2 || name.length > 120) { errorBox.textContent = "Ingresá un nombre válido."; return; }
+    setBusy(button, true, "Guardando…");
+    var result = await supabaseClient.rpc("update_assigned_lead_name", { p_lead_id: leadId, p_customer_name: name });
+    if (result.error) { errorBox.textContent = result.error.message; setBusy(button, false); return; }
+    nameDialog.close();
+    await loadLeads(true);
+    await openLead(leadId);
+    setBusy(button, false);
+  }
+
   async function requestSale() {
     if (!state.activeLead) return;
     var vehicle = document.getElementById("crmSaleVehicle").value.trim();
@@ -571,13 +599,17 @@
 
   async function completeContactTask(taskId, outcome) {
     if (!state.activeLead) return;
+    var leadId = state.activeLead.id;
+    var protocolWasOpen = !!document.querySelector("#crmProtocol details[open]");
     var result = await supabaseClient.rpc("complete_contact_task_with_follow_up", { p_task_id: taskId, p_outcome: outcome, p_note: "", p_next_contact_at: null, p_next_contact_note: "" });
     if (result.error) {
       document.getElementById("crmFormError").textContent = result.error.message;
       return;
     }
     await loadLeads(true);
-    leadDialog.close();
+    await openLead(leadId);
+    var protocol = document.querySelector("#crmProtocol details");
+    if (protocol && protocolWasOpen) protocol.open = true;
   }
 
   function suggestedFollowUp() {
@@ -613,6 +645,8 @@
     }
     if (!nextContact || new Date(nextContact).getTime() <= Date.now()) { errorBox.textContent = "Elegí una fecha y hora futura."; return; }
     if (note.length < 3) { errorBox.textContent = "Indicá brevemente cuál es el próximo paso."; return; }
+    var leadId = state.activeLead && state.activeLead.id;
+    var protocolWasOpen = !!document.querySelector("#crmProtocol details[open]");
     setBusy(button, true, "Guardando…");
     var result = await supabaseClient.rpc("complete_contact_task_with_follow_up", {
       p_task_id: pendingAnsweredTaskId,
@@ -625,7 +659,9 @@
     pendingAnsweredTaskId = null;
     answeredDialog.close();
     await loadLeads(true);
-    leadDialog.close();
+    if (leadId) await openLead(leadId);
+    var protocol = document.querySelector("#crmProtocol details");
+    if (protocol && protocolWasOpen) protocol.open = true;
     setBusy(button, false);
   }
 
@@ -662,6 +698,9 @@
   document.getElementById("crmSaveManagement").addEventListener("click", saveManagement);
   document.getElementById("crmCommentButton").addEventListener("click", function () { document.getElementById("crmCommentError").textContent = ""; commentDialog.showModal(); });
   document.getElementById("crmCommentSave").addEventListener("click", saveComment);
+  document.getElementById("crmEditLeadName").addEventListener("click", openNameEditor);
+  document.getElementById("crmNameForm").addEventListener("submit", saveLeadName);
+  document.querySelector("#crmNameDialog .crm-dialog-close").addEventListener("click", function () { nameDialog.close(); });
   document.getElementById("crmAppraisalButton").addEventListener("click", function () {
     if (!APPRAISALS_ENABLED) return;
     if (!state.activeLead) return;

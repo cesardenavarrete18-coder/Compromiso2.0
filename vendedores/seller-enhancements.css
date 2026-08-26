@@ -1,0 +1,53 @@
+.crm-lead-title {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-wrap: wrap;
+}
+
+.crm-lead-title button {
+  padding: 5px 8px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  color: var(--blue-700);
+  background: #fff;
+  font-size: 9px;
+  font-weight: 850;
+}
+
+.crm-lead-meta {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  flex-wrap: wrap;
+}
+
+.crm-lead-meta .crm-lead-phone {
+  color: var(--navy-900);
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: .015em;
+  text-decoration: none;
+}
+
+.crm-lead-meta span { color: var(--muted); font-size: 10px; }
+
+.admin-call-check {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 12px;
+  padding: 11px 12px;
+  border: 1px solid #bcd9ca;
+  border-radius: 9px;
+  color: #155f43;
+  background: #eefaf4;
+  font-size: 10px;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.admin-call-check input { width: 17px; height: 17px; accent-color: #12805b; }
+.admin-call-check.sent { cursor: default; opacity: .8; }
+.sales-action-message { min-height: 18px; margin: 7px 0; color: #155f43; font-size: 10px; }
+.sales-action-message.error { color: var(--error); }
