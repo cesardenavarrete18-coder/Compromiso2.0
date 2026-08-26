@@ -3,6 +3,3 @@
 create index if not exists sales_cases_admin_call_requested_by_idx
   on public.sales_cases (admin_call_requested_by)
   where admin_call_requested_by is not null;
-
-create index if not exists historical_clients_imported_by_idx
-  on public.historical_clients (imported_by);
