@@ -2,7 +2,7 @@
   "use strict";
 
   var supabaseClient = window.grupoSurSupabaseClient;
-  var state = { profile: null, view: "operations", filter: "all", search: "", cases: [], sellers: {}, leads: {}, quotes: {}, applications: {}, events: {}, documents: {}, clients: [], activeCase: null, activeStage: null, activeClient: null };
+  var state = { profile: null, view: "operations", filter: "all", search: "", cases: [], sellers: {}, leads: {}, quotes: {}, applications: {}, events: {}, documents: {}, clients: [], notifications: [], activeCase: null, activeStage: null, activeClient: null };
   var loginView = document.getElementById("loginView");
   var appView = document.getElementById("appView");
   var loginForm = document.getElementById("loginForm");
@@ -40,7 +40,7 @@
   }
 
   async function loadData() {
-    var casesResult = await supabaseClient.from("sales_cases").select("id, case_code, sale_request_id, lead_id, seller_user_id, quote_id, vehicle, sale_amount, status, cdn_scoring_status, dealer_scoring_status, contract_status, cancellation_reason, finalized_at, cancelled_at, created_at, updated_at").order("updated_at", { ascending: false }).limit(1000);
+    var casesResult = await supabaseClient.from("sales_cases").select("id, case_code, sale_request_id, lead_id, seller_user_id, quote_id, vehicle, sale_amount, status, cdn_scoring_status, dealer_scoring_status, contract_status, admin_call_requested_at, admin_call_requested_by, cancellation_reason, finalized_at, cancelled_at, created_at, updated_at").order("updated_at", { ascending: false }).limit(1000);
     if (casesResult.error) throw casesResult.error;
     state.cases = casesResult.data || [];
     var caseIds = state.cases.map(function (item) { return item.id; });
@@ -53,7 +53,8 @@
       caseIds.length ? supabaseClient.from("commercial_applications").select("*").in("sales_case_id", caseIds).order("revision_number", { ascending: false }) : Promise.resolve({ data: [], error: null }),
       caseIds.length ? supabaseClient.from("sales_case_events").select("id, sales_case_id, actor_user_id, event_type, stage, outcome, comment, created_at").in("sales_case_id", caseIds).order("created_at", { ascending: false }) : Promise.resolve({ data: [], error: null }),
       caseIds.length ? supabaseClient.from("sales_documents").select("id, sales_case_id, client_id, document_type, file_name, storage_path, created_at").in("sales_case_id", caseIds).order("created_at", { ascending: false }) : Promise.resolve({ data: [], error: null }),
-      supabaseClient.from("clients").select("id, sales_case_id, status, grouped_month, automatic_debit, created_at, updated_at").order("updated_at", { ascending: false })
+      supabaseClient.from("clients").select("id, sales_case_id, status, grouped_month, automatic_debit, created_at, updated_at").order("updated_at", { ascending: false }),
+      supabaseClient.from("sales_notifications").select("id,sales_case_id,notification_type,title,body,read_at,created_at").eq("recipient_user_id", state.profile.user_id).eq("notification_type", "admin_call_requested").order("created_at", { ascending: false }).limit(100)
     ]);
     var failed = results.find(function (item) { return item.error; });
     if (failed) throw failed.error;
@@ -64,7 +65,9 @@
     state.events = {}; (results[4].data || []).forEach(function (item) { (state.events[item.sales_case_id] || (state.events[item.sales_case_id] = [])).push(item); });
     state.documents = {}; (results[5].data || []).forEach(function (item) { (state.documents[item.sales_case_id] || (state.documents[item.sales_case_id] = [])).push(item); });
     state.clients = results[6].data || [];
+    state.notifications = results[7].data || [];
     renderAll();
+    if (window.grupoSurHistoricalClients) await window.grupoSurHistoricalClients.load();
   }
 
   function renderStats() {
@@ -106,7 +109,22 @@
     }).join("") : '<div class="timeline-item">Todavía no hay clientes en cartera.</div>';
   }
 
-  function renderAll() { renderStats(); renderOperations(); renderClients(); if (state.view === "installments") loadInstallments(); }
+  function renderNotifications() {
+    var unread = state.notifications.filter(function (item) { return !item.read_at; });
+    document.getElementById("adminNotifications").innerHTML = unread.map(function (item) {
+      return '<article class="admin-notification" data-notification-id="' + item.id + '"><div><strong>' + escapeHtml(item.title) + '</strong><span>' + escapeHtml(item.body) + '</span><small>' + escapeHtml(formatDate(item.created_at, true)) + '</small></div><div class="notification-actions"><button class="button primary" data-open-notification="' + escapeHtml(item.sales_case_id || "") + '" type="button">Ver operación</button><button class="button secondary" data-dismiss-notification type="button">Marcar leída</button></div></article>';
+    }).join("");
+  }
+
+  async function markNotificationRead(notificationId) {
+    var result = await supabaseClient.from("sales_notifications").update({ read_at: new Date().toISOString() }).eq("id", notificationId);
+    if (result.error) { alert(result.error.message); return false; }
+    var item = state.notifications.find(function (notification) { return notification.id === notificationId; });
+    if (item) item.read_at = new Date().toISOString();
+    renderNotifications(); return true;
+  }
+
+  function renderAll() { renderNotifications(); renderStats(); renderOperations(); renderClients(); if (state.view === "installments") loadInstallments(); }
 
   function stageCard(salesCase, stage, value, enabled) {
     return '<article class="stage-card"><h3>' + escapeHtml(stageLabel(stage)) + '</h3><p>Estado actual: <strong>' + escapeHtml(outcomeLabel(value)) + '</strong></p><button class="button ' + (enabled ? "primary" : "secondary") + '" data-review-stage="' + stage + '" type="button"' + (enabled ? "" : " disabled") + '>' + (value === "pending" ? "Registrar resultado" : "Actualizar control") + '</button></article>';
@@ -246,6 +264,7 @@
   document.getElementById("clientSearch").addEventListener("input", renderClients);
   document.getElementById("operationList").addEventListener("click", function (event) { var row = event.target.closest("[data-case-id]"); if (row && event.target.closest("[data-open-case]")) openCase(row.dataset.caseId); });
   document.getElementById("clientGrid").addEventListener("click", function (event) { var card = event.target.closest("[data-client-id]"); if (event.target.closest("[data-group-client]") && card) openGroup(card.dataset.clientId); var open = event.target.closest("[data-open-case-from-client]"); if (open) openCase(open.dataset.openCaseFromClient); var edit = event.target.closest("[data-edit-minute]"); if (edit) openMinuteEditor(edit.dataset.editMinute); });
+  document.getElementById("adminNotifications").addEventListener("click", async function (event) { var card = event.target.closest("[data-notification-id]"); if (!card) return; var open = event.target.closest("[data-open-notification]"); if (open) { await markNotificationRead(card.dataset.notificationId); if (open.dataset.openNotification) openCase(open.dataset.openNotification); return; } if (event.target.closest("[data-dismiss-notification]")) await markNotificationRead(card.dataset.notificationId); });
   document.getElementById("stageGrid").addEventListener("click", function (event) { var button = event.target.closest("[data-review-stage]"); if (button && !button.disabled) openReview(button.dataset.reviewStage); });
   document.getElementById("saveReviewButton").addEventListener("click", saveReview);
   document.getElementById("printMinuteButton").addEventListener("click", printMinute);
@@ -264,5 +283,6 @@
   window.addEventListener("afterprint", function () { document.getElementById("minutePrint").setAttribute("aria-hidden", "true"); });
   var now = new Date(); document.getElementById("installmentMonth").value = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0");
   if (!supabaseClient) { document.getElementById("authLoading").hidden = true; loginView.hidden = false; document.getElementById("loginMessage").textContent = "No se pudo conectar con Supabase."; return; }
+  if (window.grupoSurHistoricalClients) window.grupoSurHistoricalClients.init(supabaseClient);
   supabaseClient.auth.getSession().then(function (result) { if (result.data.session) { enterApp().catch(function (error) { document.getElementById("authLoading").hidden = true; loginView.hidden = false; document.getElementById("loginMessage").textContent = error.message; }); return; } document.getElementById("authLoading").hidden = true; loginView.hidden = false; });
 }());
