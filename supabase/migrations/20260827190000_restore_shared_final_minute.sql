@@ -1,6 +1,29 @@
 -- Keep the provisional Datero separate and make every new definitive plan
 -- minute authoritative from the campaign linked to the sales operation.
 
+create or replace function private.sales_case_offer_type(p_sales_case_id uuid)
+returns text
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select case
+    when sale_request.quote_id is not null
+      and sales_case.quote_id = sale_request.quote_id then quote.offer_type
+    when sale_request.provisional_application_id is not null
+      and provisional.prequalification_event_id is not null then 'savings_plan'
+    else null
+  end
+  from public.sales_cases sales_case
+  join public.lead_sale_requests sale_request on sale_request.id = sales_case.sale_request_id
+  left join public.sales_quotes quote on quote.id = sale_request.quote_id
+  left join public.commercial_applications provisional on provisional.id = sale_request.provisional_application_id
+  where sales_case.id = p_sales_case_id;
+$$;
+
+revoke all on function private.sales_case_offer_type(uuid) from public, anon, authenticated;
+
 create or replace function private.resolve_current_sales_plan(p_sales_case_id uuid)
 returns table (
   campaign_id uuid,
@@ -108,6 +131,7 @@ set search_path = ''
 as $$
 declare
   v_plan record;
+  v_offer_type text;
   v_expected_updated_at timestamptz;
   v_plan_description text;
 begin
@@ -123,6 +147,11 @@ begin
       raise exception 'La Minuta Definitiva es inmutable. Creá una nueva revisión para corregirla';
     end if;
     return new;
+  end if;
+
+  v_offer_type := private.sales_case_offer_type(new.sales_case_id);
+  if v_offer_type = 'bank_credit' then
+    raise exception 'Las operaciones de crédito bancario o de terminal no admiten Minuta Definitiva';
   end if;
 
   select * into v_plan from private.resolve_current_sales_plan(new.sales_case_id);
@@ -218,10 +247,15 @@ as $$
 declare
   v_actor uuid := auth.uid();
   v_plan record;
+  v_offer_type text;
   v_plan_description text;
 begin
   if v_actor is null or not private.current_user_can_administer_sales() then
     raise exception 'No tenés permisos para consultar la condición comercial de esta minuta';
+  end if;
+  v_offer_type := private.sales_case_offer_type(p_sales_case_id);
+  if v_offer_type = 'bank_credit' then
+    raise exception 'Las operaciones de crédito bancario o de terminal no requieren Minuta Definitiva';
   end if;
   select * into v_plan from private.resolve_current_sales_plan(p_sales_case_id);
   if not found then
@@ -291,6 +325,7 @@ declare
   v_new public.commercial_applications%rowtype;
   v_client public.clients%rowtype;
   v_plan record;
+  v_offer_type text;
   v_customer_id uuid;
   v_phone text;
   v_full_name text;
@@ -308,6 +343,11 @@ begin
   select * into v_case from public.sales_cases where id = p_sales_case_id for update;
   if not found then raise exception 'No se encontró la operación'; end if;
   if v_case.status = 'cancelled' then raise exception 'No se puede editar la minuta de una operación dada de baja'; end if;
+
+  v_offer_type := private.sales_case_offer_type(p_sales_case_id);
+  if v_offer_type = 'bank_credit' then
+    raise exception 'Las operaciones de crédito bancario o de terminal no requieren revisiones de Minuta Definitiva';
+  end if;
 
   select * into v_current
   from public.commercial_applications
@@ -504,3 +544,269 @@ $$;
 
 revoke all on function public.revise_sales_minute(uuid, jsonb, text) from public, anon;
 grant execute on function public.revise_sales_minute(uuid, jsonb, text) to authenticated;
+
+-- Business rule: savings plans require a definitive minute; bank/terminal
+-- credits enter the existing administrative circuit without one.
+create or replace function private.create_sales_case_after_confirmation()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_quote_id uuid;
+  v_offer_type text;
+  v_case_id uuid;
+begin
+  if new.status = 'confirmed' and old.status is distinct from 'confirmed' then
+    v_quote_id := new.quote_id;
+    if v_quote_id is null then
+      select id into v_quote_id
+      from public.sales_quotes
+      where lead_id = new.lead_id and seller_user_id = new.seller_user_id and status in ('issued', 'converted')
+      order by issued_at desc
+      limit 1;
+    end if;
+
+    select quote.offer_type into v_offer_type
+    from public.sales_quotes quote
+    where quote.id = v_quote_id;
+    if v_offer_type is null and new.provisional_application_id is not null then
+      v_offer_type := 'savings_plan';
+    end if;
+
+    insert into public.sales_cases (
+      sale_request_id, lead_id, seller_user_id, quote_id, vehicle, sale_amount, status
+    ) values (
+      new.id, new.lead_id, new.seller_user_id, v_quote_id, new.vehicle, new.sale_amount,
+      case when v_offer_type = 'bank_credit' then 'quality_control' else 'minute_pending' end
+    )
+    on conflict (sale_request_id) do update set
+      quote_id = coalesce(public.sales_cases.quote_id, excluded.quote_id),
+      status = case
+        when v_offer_type = 'bank_credit' and public.sales_cases.status = 'minute_pending' then 'quality_control'
+        else public.sales_cases.status
+      end,
+      updated_at = now()
+    returning id into v_case_id;
+
+    if v_quote_id is not null then
+      update public.sales_quotes set status = 'converted', updated_at = now() where id = v_quote_id;
+    end if;
+
+    insert into public.sales_case_events (sales_case_id, actor_user_id, event_type, comment)
+    values (
+      v_case_id,
+      new.reviewed_by,
+      'case_created',
+      case when v_offer_type = 'bank_credit'
+        then 'Venta por crédito confirmada por supervisión; control administrativo habilitado sin Minuta Definitiva.'
+        else 'Venta confirmada por supervisión; minuta habilitada.'
+      end
+    );
+
+    insert into public.sales_notifications (recipient_user_id, sales_case_id, notification_type, title, body)
+    values (
+      new.seller_user_id,
+      v_case_id,
+      'sale_confirmed',
+      'Venta confirmada',
+      case when v_offer_type = 'bank_credit'
+        then 'La venta por crédito fue aprobada y continúa directamente en el control administrativo.'
+        else 'La venta fue aprobada por supervisión. Completá la minuta para iniciar el control administrativo.'
+      end
+    );
+  end if;
+  return new;
+end;
+$$;
+
+revoke all on function private.create_sales_case_after_confirmation() from public, anon, authenticated;
+
+update public.sales_cases sales_case
+set status = 'quality_control', updated_at = now()
+from public.lead_sale_requests sale_request
+join public.sales_quotes quote on quote.id = sale_request.quote_id
+where sales_case.sale_request_id = sale_request.id
+  and sales_case.quote_id = sale_request.quote_id
+  and quote.offer_type = 'bank_credit'
+  and sales_case.status = 'minute_pending'
+  and not exists (
+    select 1 from public.commercial_applications application
+    where application.sales_case_id = sales_case.id and application.status = 'submitted'
+  );
+
+create or replace function public.request_admin_sales_call(p_sales_case_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_actor uuid := auth.uid();
+  v_case public.sales_cases%rowtype;
+  v_offer_type text;
+  v_customer_name text;
+begin
+  if v_actor is null or not private.current_user_active() then
+    raise exception 'Acceso no autorizado';
+  end if;
+
+  select * into v_case from public.sales_cases where id = p_sales_case_id for update;
+  if not found then raise exception 'No se encontró la operación'; end if;
+  if v_case.seller_user_id <> v_actor then raise exception 'La venta no corresponde a este vendedor'; end if;
+  if v_case.status = 'cancelled' then raise exception 'La operación está dada de baja'; end if;
+
+  v_offer_type := private.sales_case_offer_type(p_sales_case_id);
+  if v_offer_type is distinct from 'bank_credit' and not exists (
+    select 1 from public.commercial_applications
+    where sales_case_id = p_sales_case_id and status = 'submitted'
+  ) then
+    raise exception 'Primero debés rendir la minuta';
+  end if;
+  if v_case.admin_call_requested_at is not null then return; end if;
+
+  select coalesce(nullif(trim(lead.customer_name), ''), 'Cliente')
+  into v_customer_name
+  from public.leads lead
+  where lead.id = v_case.lead_id;
+
+  update public.sales_cases
+  set admin_call_requested_at = now(), admin_call_requested_by = v_actor, updated_at = now()
+  where id = p_sales_case_id;
+
+  insert into public.sales_case_events (
+    sales_case_id, actor_user_id, event_type, stage, outcome, comment
+  ) values (
+    p_sales_case_id, v_actor, 'admin_call_requested', 'administrative_call',
+    'pending', 'El vendedor indicó que la venta está lista para llamar.'
+  );
+
+  insert into public.sales_notifications (
+    recipient_user_id, sales_case_id, notification_type, title, body
+  )
+  select profile.user_id, p_sales_case_id, 'admin_call_requested', 'Venta lista para llamar',
+         v_customer_name || ' · ' || v_case.vehicle || ' · ' || v_case.case_code
+  from public.profiles profile
+  where profile.role::text in ('admventas', 'admin') and profile.active;
+end;
+$$;
+
+revoke all on function public.request_admin_sales_call(uuid) from public, anon;
+grant execute on function public.request_admin_sales_call(uuid) to authenticated;
+
+create or replace function public.record_sales_stage(
+  p_sales_case_id uuid,
+  p_stage text,
+  p_outcome text,
+  p_comment text default ''
+)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_user_id uuid := auth.uid();
+  v_case public.sales_cases%rowtype;
+  v_offer_type text;
+  v_cancel boolean := false;
+  v_title text;
+begin
+  if v_user_id is null or not private.current_user_can_administer_sales() then
+    raise exception 'Se requiere permiso de Administración de Ventas';
+  end if;
+  select * into v_case from public.sales_cases where id = p_sales_case_id for update;
+  if not found then raise exception 'No se encontró la operación'; end if;
+  if v_case.status = 'cancelled' then raise exception 'La operación ya está dada de baja'; end if;
+  if p_stage not in ('cdn_scoring', 'dealer_scoring', 'contract') then raise exception 'Etapa inválida'; end if;
+  if p_outcome in ('observed', 'baja', 'rejected') and char_length(trim(coalesce(p_comment, ''))) < 3 then
+    raise exception 'Indicá el motivo del resultado';
+  end if;
+
+  v_offer_type := private.sales_case_offer_type(p_sales_case_id);
+
+  if p_stage = 'cdn_scoring' then
+    if p_outcome not in ('approved', 'observed', 'baja') then raise exception 'Resultado inválido para Scoring CDN'; end if;
+    if v_offer_type is distinct from 'bank_credit' and not exists (
+      select 1 from public.commercial_applications
+      where sales_case_id = p_sales_case_id and status = 'submitted'
+    ) then
+      raise exception 'La operación todavía no tiene una minuta vigente';
+    end if;
+    update public.sales_cases set
+      cdn_scoring_status = p_outcome,
+      status = case p_outcome when 'approved' then 'dealer_scoring' when 'observed' then 'quality_control' else 'cancelled' end,
+      cancellation_reason = case when p_outcome = 'baja' then trim(p_comment) else cancellation_reason end,
+      cancelled_at = case when p_outcome = 'baja' then now() else cancelled_at end,
+      updated_at = now()
+    where id = p_sales_case_id;
+    v_title := 'Scoring CDN';
+  elsif p_stage = 'dealer_scoring' then
+    if v_case.cdn_scoring_status <> 'approved' then raise exception 'Primero debe aprobarse el Scoring CDN'; end if;
+    if p_outcome not in ('approved', 'observed', 'baja') then raise exception 'Resultado inválido para Scoring Concesionario'; end if;
+    update public.sales_cases set
+      dealer_scoring_status = p_outcome,
+      status = case p_outcome when 'approved' then 'contract_signature' when 'observed' then 'dealer_scoring' else 'cancelled' end,
+      cancellation_reason = case when p_outcome = 'baja' then trim(p_comment) else cancellation_reason end,
+      cancelled_at = case when p_outcome = 'baja' then now() else cancelled_at end,
+      updated_at = now()
+    where id = p_sales_case_id;
+    v_title := 'Scoring Concesionario';
+  else
+    if v_case.cdn_scoring_status <> 'approved' or v_case.dealer_scoring_status <> 'approved' then
+      raise exception 'Primero deben aprobarse ambos controles de scoring';
+    end if;
+    if p_outcome not in ('approved', 'rejected', 'baja') then raise exception 'Resultado inválido para Firma de contrato'; end if;
+    v_cancel := p_outcome in ('rejected', 'baja');
+    update public.sales_cases set
+      contract_status = p_outcome,
+      status = case when p_outcome = 'approved' then 'formation_group' else 'cancelled' end,
+      cancellation_reason = case when v_cancel then trim(p_comment) else cancellation_reason end,
+      cancelled_at = case when v_cancel then now() else cancelled_at end,
+      finalized_at = case when p_outcome = 'approved' then now() else finalized_at end,
+      updated_at = now()
+    where id = p_sales_case_id;
+    if p_outcome = 'approved' then
+      insert into public.clients (sales_case_id, automatic_debit)
+      values (
+        p_sales_case_id,
+        coalesce((
+          select application.automatic_debit
+          from public.commercial_applications application
+          where application.sales_case_id = p_sales_case_id and application.status = 'submitted'
+          order by application.revision_number desc
+          limit 1
+        ), false)
+      )
+      on conflict (sales_case_id) do nothing;
+    end if;
+    v_title := 'Firma de contrato';
+  end if;
+
+  insert into public.sales_case_events (sales_case_id, actor_user_id, event_type, stage, outcome, comment, visible_to_seller)
+  values (
+    p_sales_case_id,
+    v_user_id,
+    case when p_outcome in ('baja', 'rejected') then 'sale_cancelled'
+      when p_stage = 'contract' and p_outcome = 'approved' then 'sale_finalized'
+      else 'stage_review'
+    end,
+    p_stage, p_outcome, trim(coalesce(p_comment, '')), true
+  );
+
+  if p_outcome = 'observed' then
+    insert into public.sales_notifications (recipient_user_id, sales_case_id, notification_type, title, body)
+    values (v_case.seller_user_id, p_sales_case_id, 'observed', v_title || ' observado', trim(p_comment));
+  elsif p_outcome in ('baja', 'rejected') then
+    insert into public.sales_notifications (recipient_user_id, sales_case_id, notification_type, title, body)
+    values (v_case.seller_user_id, p_sales_case_id, 'cancelled', 'Operación dada de baja', trim(p_comment));
+  elsif p_stage = 'contract' and p_outcome = 'approved' then
+    insert into public.sales_notifications (recipient_user_id, sales_case_id, notification_type, title, body)
+    values (v_case.seller_user_id, p_sales_case_id, 'finalized', 'Venta finalizada', 'La operación completó satisfactoriamente el proceso administrativo.');
+  end if;
+end;
+$$;
+
+revoke all on function public.record_sales_stage(uuid, text, text, text) from public, anon;
+grant execute on function public.record_sales_stage(uuid, text, text, text) to authenticated;

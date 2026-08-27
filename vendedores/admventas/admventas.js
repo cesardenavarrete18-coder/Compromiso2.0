@@ -30,6 +30,8 @@
     var list = state.applications[caseId] || [];
     return list.slice().sort(function (a, b) { return Number(b.revision_number) - Number(a.revision_number); })[0] || null;
   }
+  function caseQuote(salesCase) { return salesCase && state.quotes[salesCase.quote_id] || null; }
+  function requiresFinalMinute(salesCase) { var quote = caseQuote(salesCase); return !quote || quote.offer_type !== "bank_credit"; }
 
   async function getProfile() {
     var auth = await supabaseClient.auth.getUser();
@@ -71,7 +73,7 @@
   }
 
   function renderStats() {
-    document.getElementById("minuteStat").textContent = state.cases.filter(function (item) { return item.status === "minute_pending"; }).length;
+    document.getElementById("minuteStat").textContent = state.cases.filter(function (item) { return requiresFinalMinute(item) && item.status === "minute_pending"; }).length;
     document.getElementById("reviewStat").textContent = state.cases.filter(function (item) { return ["quality_control", "dealer_scoring", "contract_signature"].includes(item.status); }).length;
     document.getElementById("observedStat").textContent = state.cases.filter(function (item) { return item.cdn_scoring_status === "observed" || item.dealer_scoring_status === "observed"; }).length;
     document.getElementById("finalizedStat").textContent = state.cases.filter(function (item) { return !!item.finalized_at; }).length;
@@ -105,7 +107,8 @@
       var application = latestApplication(client.sales_case_id) || {};
       var salesCase = state.cases.find(function (item) { return item.id === client.sales_case_id; }) || {};
       var groupingAction = client.status === "formation_group" ? '<button class="button primary" data-group-client type="button">Marcar como agrupado</button>' : '';
-      return '<article class="client-card" data-client-id="' + client.id + '"><div class="client-card-head"><div><h3>' + escapeHtml(clientName(client)) + '</h3><p>' + escapeHtml(salesCase.case_code || "") + ' · ' + escapeHtml(salesCase.vehicle || application.model_name || "") + '</p></div><span class="status-badge">' + escapeHtml(client.status === "grouped" ? "Agrupado" : "Formación de grupo") + '</span></div><div class="client-meta"><div><span>DNI</span><strong>' + escapeHtml(text(application.document_number)) + '</strong></div><div><span>Teléfono</span><strong>' + escapeHtml(text(application.primary_phone)) + '</strong></div><div><span>Débito automático</span><strong>' + (client.automatic_debit ? "Sí" : "No") + '</strong></div><div><span>Mes de agrupación</span><strong>' + escapeHtml(client.grouped_month ? formatDate(client.grouped_month + "T12:00:00") : "Pendiente") + '</strong></div></div><div class="client-actions"><button class="button secondary" data-open-case-from-client="' + salesCase.id + '" type="button">Ver operación</button><button class="button secondary" data-edit-minute="' + salesCase.id + '" type="button">Editar datos</button>' + groupingAction + '</div></article>';
+      var minuteEditAction = requiresFinalMinute(salesCase) ? '<button class="button secondary" data-edit-minute="' + salesCase.id + '" type="button">Editar datos</button>' : '';
+      return '<article class="client-card" data-client-id="' + client.id + '"><div class="client-card-head"><div><h3>' + escapeHtml(clientName(client)) + '</h3><p>' + escapeHtml(salesCase.case_code || "") + ' · ' + escapeHtml(salesCase.vehicle || application.model_name || "") + '</p></div><span class="status-badge">' + escapeHtml(client.status === "grouped" ? "Agrupado" : "Formación de grupo") + '</span></div><div class="client-meta"><div><span>DNI</span><strong>' + escapeHtml(text(application.document_number)) + '</strong></div><div><span>Teléfono</span><strong>' + escapeHtml(text(application.primary_phone)) + '</strong></div><div><span>Débito automático</span><strong>' + (client.automatic_debit ? "Sí" : "No") + '</strong></div><div><span>Mes de agrupación</span><strong>' + escapeHtml(client.grouped_month ? formatDate(client.grouped_month + "T12:00:00") : "Pendiente") + '</strong></div></div><div class="client-actions"><button class="button secondary" data-open-case-from-client="' + salesCase.id + '" type="button">Ver operación</button>' + minuteEditAction + groupingAction + '</div></article>';
     }).join("") : '<div class="timeline-item">Todavía no hay clientes en cartera.</div>';
   }
 
@@ -136,18 +139,18 @@
     var application = latestApplication(item.id);
     document.getElementById("operationTitle").textContent = item.case_code + " · " + (lead.customer_name || item.vehicle);
     document.getElementById("operationSummary").innerHTML = '<div><span>Cliente</span><strong>' + escapeHtml(lead.customer_name || (application && application.first_name + " " + application.last_name) || "Pendiente") + '</strong></div><div><span>Vehículo</span><strong>' + escapeHtml(item.vehicle) + '</strong></div><div><span>Vendedor</span><strong>' + escapeHtml(seller.full_name || "—") + '</strong></div><div><span>Importe</span><strong>' + escapeHtml(money(item.sale_amount)) + '</strong></div>';
-    var quote = state.quotes[item.quote_id]; document.getElementById("quoteStatus").textContent = quote ? quote.quote_code + " · " + money(quote.final_advance_amount) + " anticipo final · " + money(quote.installment_amount) + " por cuota" : "La operación no tiene un presupuesto asociado"; document.getElementById("printQuoteButton").disabled = !quote;
+    var quote = state.quotes[item.quote_id]; var minuteRequired = requiresFinalMinute(item); document.getElementById("quoteStatus").textContent = quote ? quote.quote_code + " · " + money(quote.final_advance_amount) + " anticipo final · " + money(quote.installment_amount) + " por cuota" : "La operación no tiene un presupuesto asociado"; document.getElementById("printQuoteButton").disabled = !quote;
     var closed = item.status === "cancelled" || !!item.finalized_at;
-    document.getElementById("stageGrid").innerHTML = stageCard(item, "cdn_scoring", item.cdn_scoring_status, !closed && !!application) + stageCard(item, "dealer_scoring", item.dealer_scoring_status, !closed && item.cdn_scoring_status === "approved") + stageCard(item, "contract", item.contract_status, !closed && item.cdn_scoring_status === "approved" && item.dealer_scoring_status === "approved");
-    document.getElementById("minuteStatus").textContent = application ? "Versión " + application.revision_number + " · enviada " + formatDate(application.submitted_at || application.created_at, true) : "El vendedor todavía no la cargó";
-    document.getElementById("printMinuteButton").disabled = !application;
-    document.getElementById("editMinuteButton").disabled = !application || item.status === "cancelled";
+    document.getElementById("stageGrid").innerHTML = stageCard(item, "cdn_scoring", item.cdn_scoring_status, !closed && (!minuteRequired || !!application)) + stageCard(item, "dealer_scoring", item.dealer_scoring_status, !closed && item.cdn_scoring_status === "approved") + stageCard(item, "contract", item.contract_status, !closed && item.cdn_scoring_status === "approved" && item.dealer_scoring_status === "approved");
+    document.getElementById("minuteStatus").textContent = application ? "Versión " + application.revision_number + " · enviada " + formatDate(application.submitted_at || application.created_at, true) : minuteRequired ? "El vendedor todavía no la cargó" : "No requerida para créditos bancarios o de terminal";
+    document.getElementById("printMinuteButton").disabled = !minuteRequired || !application;
+    document.getElementById("editMinuteButton").disabled = !minuteRequired || !application || item.status === "cancelled";
     var documents = state.documents[item.id] || [];
     var requiredDocuments = [["dni_holder_front", "DNI titular · Frente"], ["dni_holder_back", "DNI titular · Dorso"], ["payment_receipt", "Comprobante de pago"]];
     document.getElementById("documentChecklist").innerHTML = requiredDocuments.map(function (required) { var ready = documents.some(function (doc) { return doc.document_type === required[0]; }); return '<span class="' + (ready ? "ready" : "pending") + '">' + (ready ? "✓ " : "○ ") + escapeHtml(required[1]) + '</span>'; }).join("") + '<span class="optional">Cotitular / cónyuge · si corresponde</span>';
     document.getElementById("documentList").innerHTML = documents.map(function (doc) { return '<article class="document-item"><span><strong>' + escapeHtml(doc.file_name) + '</strong> · ' + escapeHtml(documentLabel(doc.document_type)) + '</span><button class="button secondary" data-open-document="' + doc.id + '" type="button">Abrir</button></article>'; }).join("") || '<div class="timeline-item">Todavía no se adjuntó documentación.</div>';
     document.getElementById("caseTimeline").innerHTML = (state.events[item.id] || []).map(function (event) { return '<article class="timeline-item"><strong>' + escapeHtml(event.stage ? stageLabel(event.stage) + " · " + outcomeLabel(event.outcome) : event.event_type.replace(/_/g, " ")) + '</strong>' + (event.comment ? '<span>' + escapeHtml(event.comment) + '</span>' : '') + '<small>' + escapeHtml(formatDate(event.created_at, true)) + '</small></article>'; }).join("") || '<div class="timeline-item">Sin movimientos.</div>';
-    document.getElementById("dialogMessage").textContent = item.status === "cancelled" ? "Operación dada de baja: " + item.cancellation_reason : !application ? "La gestión administrativa se habilitará cuando el vendedor complete la minuta." : "";
+    document.getElementById("dialogMessage").textContent = item.status === "cancelled" ? "Operación dada de baja: " + item.cancellation_reason : !minuteRequired ? "El crédito continúa directamente por el circuito administrativo; no requiere Minuta Definitiva." : !application ? "La gestión administrativa se habilitará cuando el vendedor complete la minuta." : "";
   }
   function openCase(caseId) { state.activeCase = state.cases.find(function (item) { return item.id === caseId; }) || null; if (!state.activeCase) return; renderCaseDialog(); operationDialog.showModal(); }
 
@@ -186,6 +189,7 @@
   }
   async function openMinuteEditor(caseId) {
     var salesCase = state.cases.find(function (item) { return item.id === caseId; });
+    if (salesCase && !requiresFinalMinute(salesCase)) return;
     var application = salesCase && latestApplication(caseId); if (!salesCase || !application || salesCase.status === "cancelled") return;
     state.activeCase = salesCase;
     var form = document.getElementById("minuteEditForm"); form.reset();
