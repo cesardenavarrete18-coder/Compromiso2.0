@@ -110,6 +110,19 @@ Cada run registra:
 
 Los Eval Cases nunca se incorporan al prompt ni al retrieval de conversaciones reales.
 
+## Candidate v1 — Matriz v1.4
+
+La nueva arquitectura shadow está documentada en `CANDIDATE_V1.md`. Mantiene el modelo, Training Examples, selección léxica, Vector Store y fuentes comerciales congelados, pero reemplaza la autoridad de decisión del LLM por un motor determinístico de Matriz v1.4.
+
+Pruebas exclusivamente offline:
+
+```bash
+npm run candidate:test
+npm run candidate:demo:gsv1-001
+```
+
+Estos comandos no leen credenciales, no usan red, no llaman Responses y no ejecutan el baseline de 100 casos.
+
 ## Contrato de entrada y réplica
 
 El harness mantiene dos componentes separados:

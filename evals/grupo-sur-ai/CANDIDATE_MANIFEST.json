@@ -1,0 +1,31 @@
+{
+  "candidate": "ai-matrix-v1.4-candidate-v1",
+  "status": "shadow_offline_only",
+  "created_at": "2026-08-27",
+  "base_branch": "eval-harness-shadow",
+  "matrix_version": "1.4",
+  "golden_dataset_version": "1.0.0",
+  "protected_artifacts": {
+    "matrix_sha256": "b05bce2f43a160e22acbff0e107bfe1ee041f3a45fc1424ce3717f92098f17c9",
+    "golden_dataset_sha256": "934d70c25c69c7543e2faf74e0ee5667fc258a273fcf39237a4bb8c4c394cdd0",
+    "integrity_manifest_sha256": "eb70244b76338de79969b3f63e213cb0d7c201e7bf86c1bc0c6f6a0dc630e955",
+    "compiled_dataset_sha256": "2e096d0230421ac694086e3b2cb85ab8bf87d526cbb9cb9642a3e33ccad1f806"
+  },
+  "frozen_runtime_dependencies": {
+    "effective_model": "gpt-4.1-mini-2025-04-14",
+    "vector_store_id": "vs_6a80740821c081918bc10552428e6249",
+    "training_examples_count": 11,
+    "training_selection": "lexical_token_overlap_current_runtime_positive_scores_only_in_shadow",
+    "file_search_max_results": 3,
+    "runtime_snapshot_sha256": "b3925648b309d7932b877ec0a19c2941b85957271d4ea098212b886bb981c365",
+    "routing_snapshot_sha256": "eefc3c449153d10ebad0947ec1b38549896358946e6bfc3009fc0661e2b1e67f",
+    "model_verification_sha256": "ffd31c9a5daf80e250a7dfea738d4a03da22801c948d8a9dd779ce906890e4f6"
+  },
+  "execution": {
+    "responses_executed": 0,
+    "eval_cases_executed_as_baseline": 0,
+    "production_mutations": 0,
+    "deployment_performed": false,
+    "baseline_authorized": false
+  }
+}

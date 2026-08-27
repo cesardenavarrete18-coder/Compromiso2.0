@@ -40,6 +40,17 @@ function gradeExtraction(evalCase, output) {
   const model = expectedModel(expected);
   const modelOk = !model || String(output.model_interest || "").toLocaleLowerCase("es-AR").includes(model.toLocaleLowerCase("es-AR"));
   const unsupportedFields = expectedFields.filter((field) => field !== "model_interest");
+  if (output.extraction && output.profile) {
+    const unavailable = expectedFields.filter((path) => {
+      if (["source", "confidence"].includes(path)) return false;
+      const field = path.split(".").reduce((current, key) => current?.[key], output.profile);
+      return !field || typeof field !== "object" || !("status" in field);
+    });
+    const score = modelOk && unavailable.length === 0 ? 1 : 0;
+    return graderResult(score, `structured_contract=true;model=${modelOk ? "ok" : "fail"};unavailable=${unavailable.join(",") || "none"}`, {
+      details: { expected_fields: expectedFields, unavailable_fields: unavailable, model_match: modelOk },
+    });
+  }
   if (unsupportedFields.length) {
     return graderResult(modelOk && model ? 0.5 : 0, `Contrato sin campos: ${unsupportedFields.join(", ")}; model_interest=${modelOk ? "ok" : "fail"}`, {
       available: false, details: { expected_fields: expectedFields, unsupported_fields: unsupportedFields, model_match: modelOk },
@@ -137,7 +148,11 @@ function prohibitionChecks(evalCase, output, questionAnalysis) {
 function gradeNextAction(evalCase, output, questionAnalysis, requirements) {
   const reply = String(output.reply_text || "");
   const candidates = actionCandidates(reply);
-  const observed = reply ? (candidates[0]?.action || "answer_only") : "no_ai_response";
+  const deterministicAction = output.next_action_plan?.after_answer || output.next_action;
+  const candidateActionFamily = deterministicAction === "pause_ai_and_handoff" ? "handoff"
+    : deterministicAction === "no_automatic_response" || deterministicAction === "human_owned_conversation" ? "no_ai_response"
+    : deterministicAction;
+  const observed = deterministicAction ? candidateActionFamily : reply ? (candidates[0]?.action || "answer_only") : "no_ai_response";
   const expected = expectedActionFamily(String(evalCase.expected.next_action || "").toLocaleLowerCase("es-AR"));
   const primaryMatch = expected === "semantic_requirement" ? requirements.every((item) => item.pass) : observed === expected;
   const exclusiveExpected = ["obtain_cash_available", "obtain_target_installment", "ask_tiktok_identifier_once"].includes(expected);
@@ -171,10 +186,18 @@ export function gradeCase(evalCase, output) {
   const graders = {
     extraction: gradeExtraction(evalCase, output),
     qualification: graderResult(output.qualification_status === evalCase.expected.qualification_status ? 1 : 0, `observed=${output.qualification_status}`),
-    temperature: graderResult(0, "Dimensión ausente en el contrato desplegado.", { available: false }),
-    handoff: graderResult(0, `Dimensión ausente; señal textual=${hasHandoffCopy(reply)}`, { available: false }),
-    commercial_profile: graderResult(0, "Perfil y missing fields ausentes en el contrato desplegado.", { available: false }),
-    conversation_status: graderResult(0, "conversation_status/do_not_contact ausentes en el contrato desplegado.", { available: false }),
+    temperature: typeof output.commercial_temperature === "string"
+      ? graderResult(output.commercial_temperature === evalCase.expected.commercial_temperature ? 1 : 0, `observed=${output.commercial_temperature}`)
+      : graderResult(0, "Dimensión ausente en el contrato desplegado.", { available: false }),
+    handoff: typeof output.handoff_status === "string"
+      ? graderResult(output.handoff_status === evalCase.expected.handoff_status ? 1 : 0, `observed=${output.handoff_status}`)
+      : graderResult(0, `Dimensión ausente; señal textual=${hasHandoffCopy(reply)}`, { available: false }),
+    commercial_profile: typeof output.commercial_profile_complete === "boolean" && Array.isArray(output.missing_commercial_fields)
+      ? graderResult(output.commercial_profile_complete === evalCase.expected.commercial_profile_complete && JSON.stringify(output.missing_commercial_fields) === JSON.stringify(evalCase.expected.missing_commercial_fields) ? 1 : 0, `complete=${output.commercial_profile_complete};missing=${JSON.stringify(output.missing_commercial_fields)}`)
+      : graderResult(0, "Perfil y missing fields ausentes en el contrato desplegado.", { available: false }),
+    conversation_status: typeof output.conversation_status === "string" && typeof output.do_not_contact === "boolean"
+      ? graderResult(output.conversation_status === evalCase.expected.conversation_status && output.do_not_contact === evalCase.expected.do_not_contact ? 1 : 0, `status=${output.conversation_status};dnc=${output.do_not_contact}`)
+      : graderResult(0, "conversation_status/do_not_contact ausentes en el contrato desplegado.", { available: false }),
     next_action: nextAction.grader,
     conversational_compliance: graderResult([
       reply.length === 0 ? output._shadow?.responses_called === 0 : reply.length <= 600,
@@ -211,7 +234,13 @@ export function gradeCase(evalCase, output) {
     severity: evalCase.error_severity, difficulty: evalCase.difficulty, brand: evalCase.brand,
     channel: evalCase.source_channel, modality: evalCase.primary_modality,
     graders, critical_failures: critical, prohibition_checks: prohibitions,
-    observed: { qualification_status: output.qualification_status, next_action: nextAction.observed, reply_text: reply, responses_called: output._shadow?.responses_called ?? null },
+    observed: {
+      qualification_status: output.qualification_status, commercial_temperature: output.commercial_temperature,
+      handoff_status: output.handoff_status, commercial_profile_complete: output.commercial_profile_complete,
+      missing_commercial_fields: output.missing_commercial_fields, conversation_status: output.conversation_status,
+      do_not_contact: output.do_not_contact, next_action: nextAction.observed, reply_text: reply,
+      responses_called: output._shadow?.responses_called ?? null,
+    },
     expected: evalCase.expected, responsible_layers: [...responsibleLayers],
     context_observed: { training_examples_present: output._shadow?.training_examples_present || [], rag },
   };

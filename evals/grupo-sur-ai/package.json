@@ -10,6 +10,8 @@
     "preflight:offline": "node --import tsx src/cli.mjs preflight --offline",
     "preflight:live": "node --import tsx src/cli.mjs preflight --live",
     "compile": "node --import tsx src/cli.mjs compile",
+    "candidate:test": "node --import tsx --test test/candidate-v1.test.mjs",
+    "candidate:demo:gsv1-001": "node --import tsx src/candidate-v1/demo-gsv1-001.mjs",
     "test": "node --import tsx --test test/*.test.mjs",
     "run": "node --import tsx src/cli.mjs run --execute"
   },
