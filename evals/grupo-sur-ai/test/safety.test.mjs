@@ -126,3 +126,42 @@ test("el sanitizador limita longitud y elimina credenciales", () => {
   assert.ok(sanitized.length <= 500);
   assert.doesNotMatch(sanitized, /SECRETSECRET|token-value/);
 });
+
+for (const scenario of [
+  { label: "DNS", classification: "dns_resolution", causeCode: "ENOTFOUND", causeName: "Error" },
+  { label: "TLS", classification: "tls_certificate", causeCode: "CERT_HAS_EXPIRED", causeName: "Error" },
+  { label: "conexión rechazada", classification: "connection_refused", causeCode: "ECONNREFUSED", causeName: "Error" },
+  { label: "timeout", classification: "timeout", errorCode: "ETIMEDOUT", errorName: "TimeoutError" },
+  { label: "política/red/proxy", classification: "network_policy_or_proxy", causeCode: "ENETUNREACH", causeName: "Error" },
+  { label: "otro transporte", classification: "other_transport_error", errorCode: "UNKNOWN_TRANSPORT", errorName: "TypeError" },
+]) {
+  test(`clasifica y sanitiza el error de transporte: ${scenario.label}`, async () => {
+    const secret = ["sk", "proj", "TRANSPORTSECRET123456"].join("-");
+    const cause = scenario.causeCode ? Object.assign(new Error("socket failure"), {
+      code: scenario.causeCode,
+      name: scenario.causeName,
+    }) : undefined;
+    const transportError = Object.assign(
+      new Error(`fetch failed Authorization: Bearer ${secret}`),
+      { name: scenario.errorName || "TypeError", code: scenario.errorCode, cause },
+    );
+    const transport = async () => { throw transportError; };
+
+    await assert.rejects(
+      () => assertVectorStoreScope(transport, "vs_6a80740821c081918bc10552428e6249"),
+      (error) => {
+        assert.equal(error.code, "RAG_RESOURCE_SCOPE_MISMATCH");
+        assert.equal(error.diagnostic.transport_error, true);
+        assert.equal(error.diagnostic.hostname, "api.openai.com");
+        assert.equal(error.diagnostic.classification, scenario.classification);
+        assert.equal(error.diagnostic.error.name, scenario.errorName || "TypeError");
+        assert.equal(error.diagnostic.error.code, scenario.errorCode || null);
+        assert.equal(error.diagnostic.error.cause.code, scenario.causeCode || null);
+        assert.equal(error.diagnostic.error.cause.name, scenario.causeName || null);
+        assert.match(error.diagnostic.error.message_sanitized, /\[REDACTED_AUTHORIZATION\]/);
+        assert.doesNotMatch(JSON.stringify(error.diagnostic), /TRANSPORTSECRET|sk-proj-|headers|environment/i);
+        return true;
+      },
+    );
+  });
+}

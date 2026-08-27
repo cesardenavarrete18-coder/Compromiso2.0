@@ -84,6 +84,8 @@ El proceso verifica acceso de lectura al Vector Store congelado. Si falla, manti
 
 El diagnóstico no conserva headers de la respuesta, el header `Authorization`, la API key ni bodies no estructurados. Ningún fallo habilita un baseline degradado.
 
+Si `fetch()` falla antes de recibir una respuesta HTTP, el mismo bloqueo incluye `transport_error=true`, hostname, clasificación y únicamente `error.name`, `error.code`, `error.cause.code`, `error.cause.name` y `message_sanitized`. Las clasificaciones posibles son `dns_resolution`, `tls_certificate`, `connection_refused`, `timeout`, `network_policy_or_proxy` y `other_transport_error`. No se registran headers, cuerpos, credenciales ni variables de entorno.
+
 La ejecución requiere dos barreras simultáneas:
 
 ```bash
