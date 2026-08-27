@@ -1,0 +1,60 @@
+{
+  "protocol": "grupo-sur-ai-ab-v1",
+  "status": "infrastructure_only_not_executed",
+  "historical_baseline": {
+    "run_id": "baseline-2026-08-27T15-57-43-140Z",
+    "status": "NOT_REPLAYABLE",
+    "official_score": 63.31,
+    "normalized_existing_capabilities_score": 88.76,
+    "must_not_be_overwritten": true
+  },
+  "control": {
+    "name": "contemporary_control",
+    "source_commit": "79f1a9ef537c103efbe6a58082191501e3622e0c",
+    "runtime": "src/runtime-replica.mjs",
+    "runtime_sha256": "758b21b7e0f51485ffcbd52f6b5574bbd9ee42f469f7d1fcecf5b7b1d9c07d38",
+    "contract": "legacy",
+    "candidate_logic_forbidden": true
+  },
+  "candidate": {
+    "name": "candidate_v1",
+    "source_commit": "29338872d1660225cfd24fad259941f224b576a7",
+    "source_tree": "75cdbe206e67ba1e9f2de9453e723ceed3282dc3",
+    "runtime": "src/candidate-v1/candidate-runtime.mjs",
+    "runtime_sha256": "aad89e7ba2261e5d5b46a859a91c5c087d315e0989f5705acc261eee41b11348",
+    "contract": "structured_extraction_plus_matrix_v1.4",
+    "frozen": true
+  },
+  "canonical_grader": {
+    "source_commit": "29338872d1660225cfd24fad259941f224b576a7",
+    "path": "src/graders.mjs",
+    "sha256": "151158dd6c65a410daf95a0dc6d9e7520d970d45ccfb58f1864e302f20dea203",
+    "legacy_missing_capabilities_policy": "CAPABILITY_MISSING"
+  },
+  "frozen_inputs": {
+    "golden_dataset_version": "1.0.0",
+    "golden_dataset_sha256": "934d70c25c69c7543e2faf74e0ee5667fc258a273fcf39237a4bb8c4c394cdd0",
+    "matrix_version": "1.4",
+    "matrix_sha256": "b05bce2f43a160e22acbff0e107bfe1ee041f3a45fc1424ce3717f92098f17c9",
+    "runtime_snapshot_sha256": "b3925648b309d7932b877ec0a19c2941b85957271d4ea098212b886bb981c365",
+    "routing_snapshot_sha256": "eefc3c449153d10ebad0947ec1b38549896358946e6bfc3009fc0661e2b1e67f",
+    "model_verification_sha256": "ffd31c9a5daf80e250a7dfea738d4a03da22801c948d8a9dd779ce906890e4f6",
+    "model": "gpt-4.1-mini-2025-04-14",
+    "vector_store_id": "vs_6a80740821c081918bc10552428e6249",
+    "training_examples_count": 11,
+    "training_examples_json_sha256": "f671419157707ef5822da2abe17a5f9eafb1a2ff72e507ed79e5899728306ba5"
+  },
+  "candidate_source_sha256": {
+    "src/candidate-v1/extraction-schema.mjs": "e322f83bbac1e7d72115fa476567d26ff3de7ad637bac2f849dcda61bb43cc6a",
+    "src/candidate-v1/hard-rules.mjs": "3526fb5d9a32131fe20a1396881e15796b428396a16c047fb7679f5e1003dfa7",
+    "src/candidate-v1/matrix-engine.mjs": "75d923c058fc0d4956733b54c0d6237fbcc2a840b7e1b3c7d12584961234ec55",
+    "src/candidate-v1/profile-accumulator.mjs": "de5d7e0e5f6b384e0013664ec292ec731884c4b6405d24ef957721ead32a97e8"
+  },
+  "execution_policy": {
+    "authorized": false,
+    "required_arms": ["control", "candidate"],
+    "responses_allowed_now": false,
+    "artifact_branch": "eval-ab-v1-artifacts",
+    "synthetic_eval_data_only": true
+  }
+}
