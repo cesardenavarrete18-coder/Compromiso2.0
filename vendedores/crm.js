@@ -208,7 +208,7 @@
     try {
       var responses = await Promise.all([
         supabaseClient.from("leads").select(
-          "id, customer_id, customer_phone, customer_name, source_channel, source_detail, qualification_status, priority, intent_summary, model_interest, assigned_at, last_message_at, created_at, attribution:lead_attributions(platform,source_type,campaign_name,adset_name,ad_name,headline,source_url), crm:lead_crm(status, priority, status_reason, next_contact_at, next_contact_note, last_contact_at, last_contact_outcome, interview_at, interview_location, deposit_amount, deposit_at, cold_base_at, sale_confirmation_status, sale_requested_at, sale_confirmed_at, vehicle_sold, sale_amount, updated_at)"
+          "id, customer_id, customer_phone, customer_name, source_channel, source_detail, qualification_status, priority, intent_summary, model_interest, assigned_at, last_message_at, created_at, customer:customers(full_name,primary_phone,email,document_number,cuil), attribution:lead_attributions(platform,source_type,campaign_name,adset_name,ad_name,headline,source_url), crm:lead_crm(status, priority, status_reason, next_contact_at, next_contact_note, last_contact_at, last_contact_outcome, interview_at, interview_location, deposit_amount, deposit_at, cold_base_at, sale_confirmation_status, sale_requested_at, sale_confirmed_at, vehicle_sold, sale_amount, updated_at)"
         ).order("last_message_at", { ascending: false }).limit(500),
         supabaseClient.from("lead_contact_tasks").select("id, sequence_id, lead_id, sequence_order, channel, call_attempt, message_step, due_start, due_end, status, outcome, note, completed_at, template:contact_message_templates(title,body)").order("due_start", { ascending: true }).limit(3500),
         supabaseClient.from("vehicle_appraisals").select("id, lead_id, brand, model, version, vehicle_year, mileage_km, condition, notes, estimated_min, estimated_max, market_median, suggested_value, market_currency, estimate_source, estimate_basis, reference_count, market_references, market_checked_at, status, confirmed_value, confirmed_currency, review_note, updated_at").order("updated_at", { ascending: false }).limit(500)
@@ -760,18 +760,12 @@
   });
   document.getElementById("crmAnsweredSave").addEventListener("click", saveAnsweredFollowUp);
   document.getElementById("crmAnsweredDate").addEventListener("input", function () { maskDateInput(this); });
-  document.getElementById("crmSaleButton").addEventListener("click", async function () {
+  document.getElementById("crmSaleButton").addEventListener("click", function () {
     if (this.disabled || !state.activeLead) return;
-    document.getElementById("crmSaleVehicle").value = crmOf(state.activeLead).vehicle_sold || state.activeLead.model_interest || "";
-    document.getElementById("crmSaleAmount").value = "";
-    document.getElementById("crmSaleNotes").value = "";
-    var quotes = await supabaseClient.from("sales_quotes").select("id, quote_code, offer_type, vehicle_version, sale_price, final_advance_amount, commercial_snapshot").eq("lead_id", state.activeLead.id).eq("status", "issued").order("issued_at", { ascending: false });
-    state.saleQuotes = quotes.data || [];
-    document.getElementById("crmSaleQuote").innerHTML = '<option value="">Sin presupuesto asociado</option>' + state.saleQuotes.map(function (quote) { var snapshot = quote.commercial_snapshot || {}; return '<option value="' + quote.id + '">' + escapeHtml(quote.quote_code + " · " + (snapshot.model || "") + " " + quote.vehicle_version) + '</option>'; }).join("");
-    document.getElementById("crmSaleVehicle").readOnly = false;
-    document.getElementById("crmSaleAmount").readOnly = false;
-    document.getElementById("crmSaleError").textContent = "";
-    saleDialog.showModal();
+    if (!window.grupoSurCommercialApplication || typeof window.grupoSurCommercialApplication.open !== "function") return;
+    var lead = state.activeLead;
+    leadDialog.close();
+    window.grupoSurCommercialApplication.open({ origin: "crm_lead", lead: lead });
   });
   document.getElementById("crmSaleSubmit").addEventListener("click", requestSale);
   document.getElementById("crmSaleQuote").addEventListener("change", function () {
@@ -796,5 +790,5 @@
 
   var now = new Date();
   document.getElementById("crmRankingMonth").value = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0");
-  window.grupoSurCRM = { open: openView, refresh: loadLeads, getActiveLead: function () { return state.activeLead; } };
+  window.grupoSurCRM = { open: openView, openLead: openLead, refresh: loadLeads, getActiveLead: function () { return state.activeLead; } };
 }());

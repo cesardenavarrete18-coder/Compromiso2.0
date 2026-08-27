@@ -205,7 +205,8 @@
     requestId: "",
     prequalificationId: "",
     applicationId: "",
-    application: null
+    application: null,
+    applicationContext: null
   };
 
   var loginPage = document.getElementById("loginPage");
@@ -563,6 +564,7 @@
     state.prequalificationId = "";
     state.applicationId = "";
     state.application = null;
+    state.applicationContext = null;
     state.visibleOffers = [];
     portal.removeAttribute("data-brand-theme");
     if (state.countdownTimer) {
@@ -916,7 +918,9 @@
       installmentsPaid: 0,
       installmentsToPay: Number(state.model.installmentCount) || 1,
       planType: String(fields.planType.value || "").trim().replace(/\s+/g, " "),
-      agreedPrice: Number(state.model.finalPrice) || null,
+      agreedPrice: state.applicationContext && state.applicationContext.origin === "crm_lead"
+        ? parseMoney(fields.agreedPrice.value)
+        : Number(state.model.finalPrice) || null,
       firstPaymentDate: "",
       firstPaymentAmount: null,
       secondPaymentDate: "",
@@ -987,19 +991,67 @@
     }
   }
 
-  function openCommercialApplication() {
+  function crmApplicationClient(lead) {
+    var customer = lead && lead.customer;
+    customer = Array.isArray(customer) ? customer[0] || {} : customer || {};
+    return {
+      fullName: customer.full_name || lead.customer_name || "",
+      phone: customer.primary_phone || lead.customer_phone || "",
+      email: customer.email || "",
+      cuil: customer.cuil || "",
+      documentNumber: customer.document_number || ""
+    };
+  }
+
+  function crmApplicationModel(lead) {
+    return {
+      name: lead.model_interest || "Vehículo a definir",
+      versionName: "",
+      transmission: "",
+      campaign: "",
+      installmentCount: 0,
+      finalPrice: null,
+      advance: "A confirmar",
+      installment: "A confirmar",
+      availability: "A confirmar",
+      bonus: "",
+      benefits: [],
+      image: "../assets/logo-header.webp"
+    };
+  }
+
+  function openCommercialApplication(context) {
     var names;
     var data;
-    if (!state.prequalificationId) {
-      return;
+    var isCrmLead = context && context.origin === "crm_lead";
+    var client;
+    if (isCrmLead) {
+      if (!context.lead || !context.lead.id) {
+        return;
+      }
+      client = crmApplicationClient(context.lead);
+      state.applicationContext = { origin: "crm_lead", leadId: context.lead.id };
+      state.prequalificationId = "";
+      state.applicationId = "";
+      state.application = null;
+      state.requestId = "CRM-" + context.lead.id;
+      state.client = client;
+      state.brand = "A definir";
+      state.model = crmApplicationModel(context.lead);
+    } else {
+      if (!state.prequalificationId) {
+        return;
+      }
+      state.applicationContext = { origin: "prequalification" };
+      client = state.client;
     }
-    names = splitClientName(state.client.fullName);
+    names = splitClientName(client.fullName);
     data = state.application || {
       firstName: names.firstName,
       lastName: names.lastName,
       documentType: "DNI",
-      documentNumber: "",
-      cuil: state.client.cuil,
+      documentNumber: client.documentNumber || "",
+      cuil: client.cuil,
       birthDate: "",
       address: "",
       cityProvince: "",
@@ -1007,9 +1059,9 @@
       maritalStatus: "",
       spouseName: "",
       spouseDocument: "",
-      primaryPhone: state.client.phone,
+      primaryPhone: client.phone,
       alternatePhone: "",
-      email: state.client.email,
+      email: client.email,
       contactSchedule: "",
       employmentStatus: "",
       employerName: "",
@@ -1034,23 +1086,26 @@
       setApplicationField(name === "consent" ? "applicationConsent" : name, value);
     });
     setApplicationField("cuil", formatCuilInput(data.cuil));
+    applicationForm.elements.cuil.readOnly = !isCrmLead;
+    applicationForm.elements.agreedPrice.readOnly = !isCrmLead;
     setApplicationField("agreedPrice", state.model.finalPrice ? formatMoney(state.model.finalPrice) : "");
     document.getElementById("applicationRequestCode").textContent = state.requestId;
     document.getElementById("applicationVehicle").textContent = state.brand + " " + vehicleTitle(state.model);
-    document.getElementById("applicationCampaign").textContent = planDescription(state.model);
+    document.getElementById("applicationCampaign").textContent = planDescription(state.model) || "Sin presupuesto asociado";
+    document.querySelector('[data-action="back-to-result"]').textContent = isCrmLead ? "← Volver al Lead" : "← Volver a la precalificación";
     applicationError.textContent = "";
     setView("application");
     applicationForm.elements.firstName.focus();
   }
 
   function saveCommercialApplication(data) {
-    return supabaseClient.from("commercial_applications").upsert({
-      prequalification_event_id: state.prequalificationId,
+    var isCrmLead = state.applicationContext && state.applicationContext.origin === "crm_lead";
+    var payload = {
       seller_user_id: state.userId,
       request_code: state.requestId,
       brand_name: state.brand,
       model_name: state.model.name,
-      campaign_name: planDescription(state.model),
+      campaign_name: isCrmLead ? data.planType : planDescription(state.model),
       first_name: data.firstName,
       last_name: data.lastName,
       document_type: data.documentType,
@@ -1100,7 +1155,15 @@
         sellerCode: state.seller.code,
         sellerPhone: state.seller.phone
       }
-    }, { onConflict: "prequalification_event_id" }).select("id").single();
+    };
+    if (isCrmLead) {
+      payload.lead_id = state.applicationContext.leadId;
+    } else {
+      payload.prequalification_event_id = state.prequalificationId;
+    }
+    return supabaseClient.from("commercial_applications").upsert(payload, {
+      onConflict: isCrmLead ? "lead_id" : "prequalification_event_id"
+    }).select("id").single();
   }
 
   function minuteValue(value) {
@@ -1325,7 +1388,18 @@
       renderOffers();
       setView("offer");
     } else if (action === "back-to-result") {
-      setView("result");
+      if (state.applicationContext && state.applicationContext.origin === "crm_lead") {
+        if (window.grupoSurCRM && typeof window.grupoSurCRM.open === "function") {
+          window.grupoSurCRM.open("agenda");
+        } else {
+          setView("crmAgenda");
+        }
+        if (window.grupoSurCRM && typeof window.grupoSurCRM.openLead === "function") {
+          window.grupoSurCRM.openLead(state.applicationContext.leadId);
+        }
+      } else {
+        setView("result");
+      }
     }
   });
 
@@ -1354,10 +1428,16 @@
     runProcessing();
   });
 
-  applicationButton.addEventListener("click", openCommercialApplication);
+  applicationButton.addEventListener("click", function () {
+    openCommercialApplication({ origin: "prequalification" });
+  });
 
   applicationForm.elements.birthDate.addEventListener("input", function () {
     maskDateInput(this);
+  });
+
+  applicationForm.elements.cuil.addEventListener("input", function () {
+    this.value = formatCuilInput(this.value);
   });
 
   applicationForm.addEventListener("submit", async function (event) {
@@ -1375,13 +1455,22 @@
     applicationSubmitButton.disabled = true;
     applicationSubmitButton.textContent = "Enviando a supervisión…";
     try {
+      if (state.applicationContext && state.applicationContext.origin === "crm_lead") {
+        state.model.campaign = data.planType;
+        state.model.finalPrice = data.agreedPrice;
+      }
       response = await saveCommercialApplication(data);
       if (response.error) {
         throw response.error;
       }
-      var saleResponse = await supabaseClient.rpc("submit_prequalification_sale", {
+      var saleFunction = state.applicationContext && state.applicationContext.origin === "crm_lead"
+        ? "submit_crm_lead_sale"
+        : "submit_prequalification_sale";
+      var saleResponse = await supabaseClient.rpc(saleFunction, {
         p_application_id: response.data.id,
-        p_notes: "Operación originada en la precalificación " + state.requestId
+        p_notes: state.applicationContext && state.applicationContext.origin === "crm_lead"
+          ? "Operación originada en el Lead " + state.applicationContext.leadId
+          : "Operación originada en la precalificación " + state.requestId
       });
       if (saleResponse.error) {
         throw saleResponse.error;
@@ -1437,6 +1526,10 @@
       return;
     }
   });
+
+  window.grupoSurCommercialApplication = {
+    open: openCommercialApplication
+  };
 
   formatCurrentDate();
   renderHistory();
