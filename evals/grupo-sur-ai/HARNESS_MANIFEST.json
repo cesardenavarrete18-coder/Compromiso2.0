@@ -12,8 +12,12 @@
     "snapshot_source_exact_match": true
   },
   "model": {
-    "effective_value": null,
-    "verification_status": "unverified",
+    "effective_value": "gpt-4.1-mini-2025-04-14",
+    "verification_status": "verified",
+    "verification_source": "OpenAI Platform Usage / Default project / Responses and Chat Completions",
+    "verification_date": "2026-08-26",
+    "verified_productive_requests": 244,
+    "eval_responses_requests_at_verification": 0,
     "fallback_observed_in_source": "gpt-4.1-mini",
     "fallback_accepted_as_effective_evidence": false
   },
@@ -27,7 +31,7 @@
   "snapshot": {
     "runtime_snapshot_sha256": "71c88b366084c9cebcfcd55471ad23770bdfec2b9b7a1eaba607c53c8f9d7423",
     "routing_snapshot_sha256": "eefc3c449153d10ebad0947ec1b38549896358946e6bfc3009fc0661e2b1e67f",
-    "model_verification_sha256": "5211497511131fb3933e152b3f7c22435a698b69ca4e107bb41dfa0d40e753ed",
+    "model_verification_sha256": "ffd31c9a5daf80e250a7dfea738d4a03da22801c948d8a9dd779ce906890e4f6",
     "vector_store_id": "vs_6a80740821c081918bc10552428e6249",
     "active_training_examples": 11
   },
@@ -38,7 +42,6 @@
     "deno.json": "adf9df9da776a91804688fa85b87abdc049201a4ab65d32a1919e1625cb0b909"
   },
   "preflight_blocks": [
-    "PRODUCTIVE_MODEL_UNVERIFIED",
     "OPENAI_EVAL_API_KEY_MISSING"
   ],
   "security": {

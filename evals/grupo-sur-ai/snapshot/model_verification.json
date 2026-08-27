@@ -1,9 +1,9 @@
 {
-  "status": "unverified",
-  "effective_model": null,
-  "source_type": null,
-  "source_reference": null,
-  "verified_at": null,
-  "verified_by": null,
-  "note": "The deployed source fallback is gpt-4.1-mini, but the effective OPENAI_LEAD_MODEL value has not been verified from a non-mutating source. The run must remain blocked."
+  "status": "verified",
+  "effective_model": "gpt-4.1-mini-2025-04-14",
+  "source_type": "openai_platform_usage_manual_verification",
+  "source_reference": "OpenAI Platform Usage / Default project / Responses and Chat Completions",
+  "verified_at": "2026-08-26",
+  "verified_by": "human_verification",
+  "note": "OpenAI Platform Usage showed 244 requests during the preceding 7 days, all processed by gpt-4.1-mini-2025-04-14. OPENAI_EVAL_API_KEY had made 0 Responses requests, so the observed activity corresponds to prior/productive project usage."
 }
