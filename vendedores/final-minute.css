@@ -1,0 +1,115 @@
+@media print {
+  @page { size: A4; margin: 0; }
+
+  body.printing-minute {
+    width: 210mm;
+    min-width: 210mm;
+    max-width: 210mm;
+    min-height: 297mm;
+    margin: 0;
+    padding: 0;
+    color: #111827;
+    background: #fff;
+  }
+
+  body.printing-minute > *:not(.minute-print),
+  body.printing-minute .login-page,
+  body.printing-minute .portal,
+  body.printing-minute .processing-overlay,
+  body.printing-minute .app,
+  body.printing-minute .login {
+    display: none !important;
+  }
+
+  body.printing-minute .minute-print {
+    display: block !important;
+    width: 210mm;
+    min-width: 210mm;
+    max-width: 210mm;
+    min-height: 297mm;
+    margin: 0;
+  }
+
+  .minute-sheet {
+    --minute-accent: #087bd8;
+    --minute-deep: #052f5f;
+    box-sizing: border-box;
+    display: flex;
+    width: 210mm;
+    min-height: 297mm;
+    flex-direction: column;
+    padding: 5mm;
+    color: #111827;
+    background: #fff;
+    font-family: Inter, Arial, sans-serif;
+    font-size: 8.4pt;
+    line-height: 1.34;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .minute-sheet[data-brand-theme="volkswagen"] { --minute-accent: #00b0f0; --minute-deep: #001e50; }
+  .minute-sheet[data-brand-theme="peugeot"] { --minute-accent: #00a3e0; --minute-deep: #000; }
+  .minute-sheet[data-brand-theme="fiat"] { --minute-accent: #e2231a; --minute-deep: #111; }
+
+  .minute-header {
+    display: grid;
+    align-items: center;
+    margin-bottom: 4mm;
+    padding-bottom: 3mm;
+    border-bottom: 2px solid var(--minute-accent);
+    grid-template-columns: 1fr auto;
+    gap: 8mm;
+  }
+
+  .minute-header-brand { display: flex; align-items: center; gap: 5mm; }
+  .minute-company-logo { width: 42mm; height: auto; }
+  .minute-brand-lockup { padding-left: 5mm; border-left: 1px solid #cbd5e1; }
+  .minute-brand-logo,
+  .minute-brand-lockup span { display: block; }
+  .minute-brand-logo { width: 38mm; height: 12.7mm; object-fit: contain; object-position: left center; }
+  .minute-sheet[data-brand-theme="volkswagen"] .minute-brand-logo { width: 14mm; height: 14mm; }
+  .minute-sheet[data-brand-theme="peugeot"] .minute-brand-logo { width: 13mm; height: 15mm; }
+  .minute-sheet[data-brand-theme="fiat"] .minute-brand-logo { width: 38mm; height: 12mm; }
+  .minute-brand-lockup span { margin-top: 1mm; color: #64748b; font-size: 7.8pt; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+
+  .minute-identifiers { text-align: right; }
+  .minute-identifiers strong,
+  .minute-identifiers span { display: block; }
+  .minute-identifiers strong { color: var(--minute-deep); font-size: 11pt; }
+  .minute-identifiers span { margin-top: 1mm; color: #64748b; font-size: 7.8pt; }
+
+  .minute-vehicle {
+    display: grid;
+    overflow: hidden;
+    min-height: 54mm;
+    margin-bottom: 3.5mm;
+    border: 1px solid #cbd5e1;
+    background: linear-gradient(135deg, #f8fafc, #eef4f8);
+    grid-template-columns: 42% 58%;
+    break-inside: avoid;
+  }
+
+  .minute-vehicle-image { display: grid; overflow: hidden; min-height: 54mm; place-items: center; border-right: 1px solid #cbd5e1; background: #edf1f4; }
+  .minute-vehicle-image img { width: 100%; height: 54mm; object-fit: contain; object-position: center; }
+  .minute-vehicle-copy { display: flex; min-width: 0; flex-direction: column; justify-content: center; padding: 5mm 6mm; }
+  .minute-vehicle-copy > span { color: var(--minute-accent); font-size: 7.5pt; font-weight: 850; letter-spacing: .09em; text-transform: uppercase; }
+  .minute-vehicle-copy h1 { margin: 1mm 0 0; color: var(--minute-deep); font-size: 22pt; line-height: 1; letter-spacing: -.035em; }
+  .minute-vehicle-copy p { margin: 2mm 0 0; color: #475569; font-size: 9pt; line-height: 1.35; }
+  .minute-vehicle-copy strong { display: inline-block; width: fit-content; margin-top: 4mm; padding: 1.7mm 3mm; border-radius: 999px; color: #fff; background: var(--minute-deep); font-size: 7.4pt; letter-spacing: .04em; text-transform: uppercase; }
+
+  .minute-print-section { margin-bottom: 3.5mm; border: 1px solid #cbd5e1; break-inside: avoid; }
+  .minute-print-section h2 { margin: 0; padding: 2mm 2.8mm; color: #fff; background: var(--minute-deep); font-size: 9pt; letter-spacing: .035em; text-transform: uppercase; }
+  .minute-data-grid { display: grid; padding: 2.6mm 2.8mm; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2mm 5mm; }
+  .minute-data-grid.three-columns { padding-top: 2mm; padding-bottom: 2mm; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.2mm 4mm; }
+  .minute-data-grid.three-columns div { min-height: 4.4mm; }
+  .minute-data-grid div { display: grid; min-width: 0; min-height: 5mm; border-bottom: .35mm dotted #94a3b8; grid-template-columns: minmax(20mm, 42%) minmax(0, 1fr); gap: 2mm; }
+  .minute-data-grid span { color: #64748b; }
+  .minute-data-grid strong { overflow-wrap: anywhere; text-align: right; font-weight: 750; }
+
+  .minute-terms { margin: 0; padding: 3.5mm 5mm 3.5mm 8mm; color: #334155; font-size: 7.3pt; line-height: 1.45; }
+  .minute-terms li + li { margin-top: 2mm; }
+  .minute-signatures { display: grid; margin-top: auto; padding-top: 13mm; grid-template-columns: repeat(3, 1fr); gap: 9mm; font-size: 8.3pt; text-align: center; }
+  .minute-signatures div { padding-top: 3mm; border-top: 1px solid #111827; }
+  .minute-footer { margin-top: 6mm; color: #64748b; font-size: 6.8pt; text-align: center; }
+}
