@@ -1,5 +1,9 @@
 import { readFile } from "node:fs/promises";
 import { createHash } from "node:crypto";
+import {
+  BRAND_BY_CASE, CASE_STATE_OVERRIDES, EXPECTED_SEGMENT_COUNTS, MODALITY_BY_CASE,
+} from "./canonical-case-contract.mjs";
+import { buildCanonicalRuntimeInput } from "./production-state-adapter.mjs";
 
 const EXPECTED_DATASET_HASH = "934d70c25c69c7543e2faf74e0ee5667fc258a273fcf39237a4bb8c4c394cdd0";
 
@@ -11,35 +15,6 @@ function canonicalChannel(value) {
   if (/tiktok/i.test(value)) return "tiktok";
   if (/meta/i.test(value)) return "meta_ads";
   return "whatsapp_organic";
-}
-
-function canonicalBrand(value) {
-  if (/volkswagen/i.test(value)) return "Volkswagen";
-  if (/peugeot/i.test(value)) return "Peugeot";
-  if (/fiat/i.test(value)) return "Fiat";
-  return "unknown";
-}
-
-function canonicalModality(value) {
-  if (/plan_de_ahorro|\bplan\b/i.test(value)) return "savings_plan";
-  if (/\bcontado\b|\bcash\b/i.test(value)) return "cash";
-  if (/\bcr[eé]dito\b|\bcredit\b/i.test(value)) return "credit";
-  if (/usado\s*\+\s*fin|used_plus/i.test(value)) return "used_plus_financing";
-  if (/financi/i.test(value)) return "financing";
-  return "unknown";
-}
-
-const models = [
-  "Peugeot Partner", "Peugeot Expert", "Peugeot 2008", "Peugeot 208",
-  "Volkswagen Amarok", "Volkswagen Taos", "Volkswagen T-Cross", "Volkswagen Tera",
-  "Volkswagen Nivus", "Volkswagen Virtus", "Volkswagen Polo Robust", "Volkswagen Polo",
-  "Fiat Cronos", "Fiat Mobi", "Fiat Strada", "Fiat Toro", "Fiat Fiorino", "Fiat Fastback",
-];
-
-function advertisedModel(value) {
-  const hits = models.filter((model) => value.toLocaleLowerCase("es-AR").includes(model.toLocaleLowerCase("es-AR")));
-  if (hits.length !== 1) return "";
-  return hits[0] === "Volkswagen Polo" ? "Volkswagen Polo Robust" : hits[0];
 }
 
 function extractQuotedCustomerText(value) {
@@ -75,19 +50,13 @@ function expandedCases(markdown) {
     const fields = {};
     for (const item of match[3].matchAll(/^- `([^`]+)`: (.+)$/gm)) fields[item[1]] = clean(item[2]);
     const conversation = splitConversation(fields.conversation || "");
-    const context = fields.structured_context || "";
     const channel = canonicalChannel(fields.source_channel);
     return {
       eval_id: match[1], title: match[2].trim(), scenario_type: fields.scenario_type,
-      source_channel: channel, brand: canonicalBrand(context), modality: canonicalModality(`${context} ${fields.expected_commercial_tags}`),
+      source_channel: channel,
       matrix_version: fields.matrix_version,
-      structured_context: context, conversation: fields.conversation,
-      runtime_input: {
-        history: conversation.history, text: conversation.text,
-        referral_context: channel === "meta_ads" ? context : "",
-        advertised_interest: channel === "meta_ads" ? advertisedModel(context) : "",
-        customer_name: "", customer_phone: "",
-      },
+      structured_context: fields.structured_context || "", conversation: fields.conversation,
+      parsed_history: conversation.history, parsed_text: conversation.text,
       expected: {
         extraction: fields.expected_extraction,
         qualification_status: fields.expected_qualification_status,
@@ -125,17 +94,11 @@ function compactCases(markdown) {
     const text = quoted || scenario.replace(/^`[^`]+`,?\s*/, "");
     const action = nextAction.match(/`([^`]+)`/)?.[1] || nextAction.split(";")[0].trim();
     const [severity, difficulty] = severityDifficulty.split("/").map((item) => item.trim());
-    const model = advertisedModel(scenario);
     return {
       eval_id: evalId, title: scenarioType, scenario_type: scenarioType,
-      source_channel: channel, brand: canonicalBrand(scenario), modality: canonicalModality(`${scenario} ${tagsPart}`),
+      source_channel: channel,
       matrix_version: "1.4", structured_context: scenario, conversation: text,
-      runtime_input: {
-        history: [], text,
-        referral_context: scenario,
-        advertised_interest: channel === "meta_ads" ? model : "",
-        customer_name: "", customer_phone: "",
-      },
+      parsed_history: [], parsed_text: text,
       expected: {
         extraction,
         qualification_status: dimensions[0], commercial_temperature: dimensions[1], handoff_status: dimensions[2],
@@ -154,13 +117,33 @@ export async function compileGoldenDataset(path) {
   const markdown = await readFile(path, "utf8");
   const sha256 = createHash("sha256").update(markdown).digest("hex");
   if (sha256 !== EXPECTED_DATASET_HASH) throw new Error(`DATASET_HASH_MISMATCH:${sha256}`);
-  const cases = [...expandedCases(markdown), ...compactCases(markdown)].sort((a, b) => a.eval_id.localeCompare(b.eval_id));
+  const parsedCases = [...expandedCases(markdown), ...compactCases(markdown)].sort((a, b) => a.eval_id.localeCompare(b.eval_id));
+  const cases = parsedCases.map((item) => {
+    const brand = BRAND_BY_CASE.get(item.eval_id);
+    const primaryModality = MODALITY_BY_CASE.get(item.eval_id);
+    if (!brand || !primaryModality) throw new Error(`CANONICAL_METADATA_MISSING:${item.eval_id}`);
+    const runtimeInput = buildCanonicalRuntimeInput(item, CASE_STATE_OVERRIDES[item.eval_id] || {});
+    const { parsed_history: _history, parsed_text: _text, ...datasetCase } = item;
+    return {
+      ...datasetCase,
+      brand,
+      primary_modality: primaryModality,
+      modality: primaryModality,
+      runtime_input: runtimeInput,
+    };
+  });
   const ids = new Set(cases.map((item) => item.eval_id));
   if (cases.length !== 100 || ids.size !== 100 || cases[0]?.eval_id !== "GSV1-001" || cases.at(-1)?.eval_id !== "GSV1-100") {
     throw new Error(`GOLDEN_DATASET_COMPILE_FAILED:count=${cases.length}:unique=${ids.size}`);
   }
   if (cases.some((item) => item.matrix_version !== "1.4")) throw new Error("MATRIX_VERSION_MISMATCH");
+  for (const [dimension, expected] of Object.entries(EXPECTED_SEGMENT_COUNTS)) {
+    for (const [value, count] of Object.entries(expected)) {
+      const observed = cases.filter((item) => item[dimension === "primary_modality" ? "primary_modality" : dimension] === value).length;
+      if (observed !== count) throw new Error(`CANONICAL_SEGMENT_COUNT_MISMATCH:${dimension}:${value}:${observed}:${count}`);
+    }
+  }
   return { version: "1.0.0", matrix_version: "1.4", sha256, cases };
 }
 
-export const internals = { canonicalBrand, canonicalChannel, canonicalModality, advertisedModel, extractQuotedCustomerText };
+export const internals = { canonicalChannel, extractQuotedCustomerText };

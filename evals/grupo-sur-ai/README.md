@@ -14,13 +14,14 @@ npm ci
 
 ## Estado actual
 
-El harness está preparado pero deliberadamente bloqueado:
+El harness está preparado, pero no tiene autorización para ejecutar el baseline:
 
-- `OPENAI_EVAL_API_KEY` todavía no fue confirmada;
-- el valor efectivo de `OPENAI_LEAD_MODEL` no pudo verificarse mediante una fuente no mutante;
+- la credencial se inyecta exclusivamente como secreto `OPENAI_EVAL_API_KEY` del entorno shadow y nunca se guarda aquí;
+- el modelo efectivo quedó verificado como `gpt-4.1-mini-2025-04-14` en `snapshot/model_verification.json`;
+- `EVAL_EXECUTION_CONFIRMED` no debe configurarse hasta una autorización posterior;
 - no se ejecutó ninguna inferencia.
 
-El fallback `gpt-4.1-mini` observado en el código no constituye prueba del valor efectivo.
+El fallback `gpt-4.1-mini` observado en el código se conserva como dato histórico, no como evidencia del modelo efectivo.
 
 ## Límites de seguridad
 
@@ -39,7 +40,7 @@ No contiene cliente Supabase, webhook, Meta API ni adaptadores de leads, mensaje
 npm run preflight:offline
 ```
 
-Debe terminar bloqueado mientras el modelo no esté verificado y la credencial no esté confirmada. Este comando nunca usa red.
+Este comando nunca usa red. En un checkout local sin el secreto inyectado informa `OPENAI_EVAL_API_KEY_MISSING`; en Cloud valida el resto del snapshot sin mostrar ni utilizar la credencial.
 
 ## Carga segura de la credencial y preflight live
 
@@ -108,3 +109,22 @@ Cada run registra:
 - resultado de cada grader y segmentos.
 
 Los Eval Cases nunca se incorporan al prompt ni al retrieval de conversaciones reales.
+
+## Contrato de entrada y réplica
+
+El harness mantiene dos componentes separados:
+
+1. `golden-compiler.mjs` + `canonical-case-contract.mjs` convierten el Dataset congelado en un `runtime_input` canónico. Marca, modalidad y estados previos se declaran explícitamente; no se reconstruyen desde prosa.
+2. `production-state-adapter.mjs` traduce ese contrato a la forma exacta que consumía `analyzeLeadConversation`. `runtime-replica.mjs` sólo reproduce prompt, Responses, routing y postprocesadores; no interpreta expectativas del Dataset.
+
+Todo `runtime_input` distingue mensaje entrante, `existing_model_interest`, historial, referral Meta, modelo/modalidad anunciados, calificación previa, control conversacional, DNC, takeover, routing y datos persistidos. Los casos con estado conocido declaran rutas obligatorias y fallan con `STATEFUL_INPUT_NOT_DELIVERED` si el dato no llega a la réplica.
+
+Los bypasses anteriores a Responses incluyen DNC/cierre determinístico, takeover humano, calificación previa y handoff ya iniciado. Por eso el número de llamadas a Responses puede ser menor que el número de Eval Cases.
+
+## Graders de capacidad y fidelidad
+
+Cada grader distingue `FAIL_FUNCTIONAL` de `CAPABILITY_MISSING`. El score oficial permanece comparable con el contrato v1.0.0 y se acompaña de `available_score`, `available_max`, `normalized_existing_capabilities_score`, `official_pass`, `existing_capabilities_pass` y `blocked_by_missing_capabilities`.
+
+El análisis conversacional detecta preguntas directas e indirectas, grupos comerciales, alternativas múltiples y repetición de datos conocidos. `next_action` valida acción principal, exclusividad, acciones incorrectas adicionales y requisitos de respuesta. Las prohibiciones críticas se emiten como checks estructurados.
+
+`training_examples_present` registra `{id, score}` sin atribuir causalidad y excluye ejemplos con score cero sólo en el harness. La traza RAG separa `retrieval_attempted`, `retrieval_returned`, `evidence_available`, `claim_supported` y `source_current_authorized`; observar un `file_search_call` no aprueba grounding.

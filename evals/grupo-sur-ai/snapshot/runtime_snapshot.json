@@ -112,22 +112,24 @@
       "deno.json": "adf9df9da776a91804688fa85b87abdc049201a4ab65d32a1919e1625cb0b909"
     },
     "effective_model": {
-      "status": "unverified",
-      "value": null,
-      "source": null,
-      "verified_at": null,
-      "note": "Fallback source value is gpt-4.1-mini, but OPENAI_LEAD_MODEL effective value could not be established from a non-mutating source."
+      "status": "verified",
+      "value": "gpt-4.1-mini-2025-04-14",
+      "source": "OpenAI Platform Usage / Default project / Responses and Chat Completions",
+      "verified_at": "2026-08-26",
+      "note": "244 requests productivas/previas y 0 requests de la credencial Evals al momento de la verificación."
     },
     "responses_api": {
       "endpoint": "https://api.openai.com/v1/responses",
       "store": false,
       "max_output_tokens": 650
     },
-    "training_retrieval": {
+    "training_examples_present": {
       "query_limit": 20,
       "selected_limit": 4,
       "method": "lexical_token_overlap_current_runtime",
-      "minimum_score": null
+      "harness_minimum_score": 1,
+      "production_minimum_score": null,
+      "causality_attribution": "not_inferred"
     }
   },
   "dataset": {
@@ -137,4 +139,3 @@
     "path": "../golden_dataset_ia_comercial_grupo_sur_v1.md"
   }
 }
-

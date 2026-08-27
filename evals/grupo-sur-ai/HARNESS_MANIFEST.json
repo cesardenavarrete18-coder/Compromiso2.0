@@ -1,8 +1,8 @@
 {
   "harness": "Grupo Sur AI Eval Shadow",
-  "version": "1.0.0-pre-run",
+  "version": "1.1.0-pre-run",
   "prepared_at": "2026-08-26T17:48:26-03:00",
-  "status": "READY_BUT_BLOCKED",
+  "status": "HARNESS_CORRECTED_BASELINE_NOT_AUTHORIZED",
   "inferences_executed": 0,
   "production_mutations": 0,
   "edge_function": {
@@ -25,11 +25,11 @@
     "version": "1.0.0",
     "matrix_version": "1.4",
     "source_sha256": "934d70c25c69c7543e2faf74e0ee5667fc258a273fcf39237a4bb8c4c394cdd0",
-    "compiled_sha256": "3ee643a00e67d65474f08ccd9465e41bd354c1d21da34c94d8f50b387cd5c884",
+    "compiled_sha256": "2e096d0230421ac694086e3b2cb85ab8bf87d526cbb9cb9642a3e33ccad1f806",
     "case_count": 100
   },
   "snapshot": {
-    "runtime_snapshot_sha256": "71c88b366084c9cebcfcd55471ad23770bdfec2b9b7a1eaba607c53c8f9d7423",
+    "runtime_snapshot_sha256": "b3925648b309d7932b877ec0a19c2941b85957271d4ea098212b886bb981c365",
     "routing_snapshot_sha256": "eefc3c449153d10ebad0947ec1b38549896358946e6bfc3009fc0661e2b1e67f",
     "model_verification_sha256": "ffd31c9a5daf80e250a7dfea738d4a03da22801c948d8a9dd779ce906890e4f6",
     "vector_store_id": "vs_6a80740821c081918bc10552428e6249",
@@ -42,7 +42,7 @@
     "deno.json": "adf9df9da776a91804688fa85b87abdc049201a4ab65d32a1919e1625cb0b909"
   },
   "preflight_blocks": [
-    "OPENAI_EVAL_API_KEY_MISSING"
+    "EVAL_EXECUTION_NOT_AUTHORIZED"
   ],
   "security": {
     "allowed_network": [
@@ -58,7 +58,7 @@
     "persistent_outputs": "local runs directory only"
   },
   "verification": {
-    "tests_passed": 25,
+    "tests_passed": 33,
     "tests_failed": 0,
     "compiled_cases": 100,
     "network_used_by_preflight": false,
@@ -77,6 +77,42 @@
       "version": "4.23.12",
       "registration": "node --import tsx",
       "snapshot_transpilation_on_disk": false
+    },
+    "input_fidelity": {
+      "canonical_runtime_input": true,
+      "dataset_to_production_state_adapter_separate": true,
+      "production_runtime_replica_separate": true,
+      "stateful_known_data_fail_closed": true,
+      "compact_context_used_as_customer_message": false,
+      "gsv1_001_existing_model_interest": "Peugeot 208"
+    },
+    "canonical_segments": {
+      "brands": { "Volkswagen": 34, "Peugeot": 33, "Fiat": 33 },
+      "primary_modality": {
+        "financing": 45,
+        "savings_plan": 8,
+        "cash": 6,
+        "credit": 8,
+        "used_plus_financing": 7,
+        "neutral_or_unknown": 26
+      }
+    },
+    "evaluation_contract": {
+      "outcomes": ["PASS", "FAIL_FUNCTIONAL", "CAPABILITY_MISSING"],
+      "available_capability_scores": true,
+      "structured_question_analysis": true,
+      "structured_next_action": true,
+      "structured_requirements_and_prohibitions": true,
+      "training_examples_present_with_scores": true,
+      "zero_score_training_examples_selected": false,
+      "rag_trace_dimensions": [
+        "retrieval_attempted",
+        "retrieval_returned",
+        "evidence_available",
+        "claim_supported",
+        "source_current_authorized"
+      ],
+      "pre_responses_bypasses": true
     }
   }
 }

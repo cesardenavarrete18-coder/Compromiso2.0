@@ -5,6 +5,7 @@ import {
   polishCommercialReply, qualifyAndHandoffReply, shouldForceHandoff, tiktokIdentifierReply,
 } from "../snapshot/runtime_source/conversation-style.ts";
 import { candidateAdvisorName, candidateCodes, knownAdvisorName, mentionsTikTok, normalizedPersonName } from "../snapshot/runtime_source/routing-identifiers.ts";
+import { adaptToProductionState } from "./production-state-adapter.mjs";
 
 const RESPONSE_SCHEMA = {
   type: "object", additionalProperties: false,
@@ -38,7 +39,7 @@ export function selectTrainingExamples(examples, text, advertisedInterest) {
     const source = exampleTokens(example.conversation); let score = 0;
     target.forEach((token) => { if (source.has(token)) score += 1; });
     return { example, score };
-  }).sort((left, right) => right.score - left.score).slice(0, 4).map((item) => item.example);
+  }).filter((item) => item.score > 0).sort((left, right) => right.score - left.score).slice(0, 4);
 }
 
 function fallbackDecision(text, advertisedInterest = "", customerName = "", isFirstReply = true) {
@@ -92,6 +93,16 @@ export async function verifySnapshotSource(snapshot) {
 }
 
 export function deriveTikTokRouting(input, routingSnapshot) {
+  if (input.routing_state?.tiktok_identifier_status) {
+    const status = input.routing_state.tiktok_identifier_status;
+    return {
+      mentioned: input.source_channel === "tiktok" || status !== null,
+      codes: [], advisor_name: "", identifier_type: status === "absent" ? "" : "canonical_fixture",
+      resolution: status === "valid" ? "resolved" : status === "conflicting" ? "conflicting" : status === "absent" ? "absent" : "invalid_or_inactive",
+      resolved_user_id: input.routing_state.resolved ? "canonical-fixture-advisor" : null,
+      known_name: "", source: "canonical_runtime_input",
+    };
+  }
   const conversation = [...input.history, `Cliente: ${input.text}`].join("\n");
   const tiktokMentioned = mentionsTikTok(conversation) || input.source_channel === "tiktok";
   const advisors = routingSnapshot.advisors || [];
@@ -110,12 +121,77 @@ export function deriveTikTokRouting(input, routingSnapshot) {
   };
 }
 
-export async function runCurrentRuntimeCase({ evalCase, snapshot, routingSnapshot, model, transport }) {
-  const input = evalCase.runtime_input;
+function noResponseBypass(input, routing, bypass) {
+  return {
+    qualification_status: input.prior_qualification.status || "follow_up",
+    priority: "normal", intent_summary: "Runtime productivo omitió Responses por estado previo",
+    model_interest: input.existing_model_interest || input.advertised_interest || "",
+    disqualify_reason: "", reply_text: "",
+    _shadow: {
+      bypass, routing, responses_called: 0, training_examples_present: [],
+      selected_training_examples: [], fallback: false,
+      rag: {
+        retrieval_attempted: false, retrieval_returned: false, evidence_available: false,
+        claim_supported: null, source_current_authorized: null,
+      },
+    },
+  };
+}
+
+export function applyDeterministicPostprocessors(decision, input) {
+  const output = { ...decision };
   const isFirstReply = input.history.length === 0;
   const priorAssistantReplies = input.history.filter((item) => item.startsWith("Asistente:")).length;
-  const routing = deriveTikTokRouting({ ...input, source_channel: evalCase.source_channel }, routingSnapshot);
+  if (input.advertised_interest) {
+    output.model_interest = input.advertised_interest;
+    if (!input.history.length && /qu[eé]\s+modelo|cu[aá]l\s+modelo/i.test(output.reply_text)) {
+      output.reply_text = fallbackDecision(input.text, input.advertised_interest, input.customer_name, true).reply_text;
+    }
+  }
+  const customerConversation = [...input.history.filter((item) => item.startsWith("Cliente:")), `Cliente: ${input.text}`].join("\n");
+  if ((output.model_interest || input.advertised_interest) && hasKnownCommercialOperation(customerConversation) && output.qualification_status !== "unqualified") {
+    output.qualification_status = "qualified";
+    output.reply_text = qualifyAndHandoffReply(output.reply_text, output.model_interest || input.advertised_interest);
+  } else if (shouldForceHandoff(priorAssistantReplies, output.qualification_status)) {
+    output.qualification_status = "qualified";
+    output.reply_text = handoffReply(output.model_interest || input.advertised_interest);
+  }
+  output.reply_text = enforceVehicleFacts(polishCommercialReply(output.reply_text, input.customer_name, isFirstReply), output.model_interest || input.advertised_interest);
+  return output;
+}
+
+function ragTrace(payload, attempted, claimText = "") {
+  const calls = (payload.output || []).filter((item) => item.type === "file_search_call");
+  const results = calls.flatMap((item) => Array.isArray(item.results) ? item.results : []);
+  const hasAuthorizationMetadata = results.length > 0 && results.every((item) => item?.metadata && "authorized" in item.metadata && "status" in item.metadata);
+  const authorizedCurrent = hasAuthorizationMetadata ? results.every((item) => item.metadata.authorized === true && item.metadata.status === "current") : null;
+  const claimAmounts = String(claimText).match(/\$\s*\d[\d.,]*|\b\d[\d.,]*\s*(?:pesos|cuotas?|mensual)/gi) || [];
+  const evidenceText = results.map((item) => String(item.text || item.content || "")).join("\n").toLocaleLowerCase("es-AR");
+  const supported = claimAmounts.length && results.length
+    ? claimAmounts.every((claim) => evidenceText.includes(claim.toLocaleLowerCase("es-AR")))
+    : claimAmounts.length ? false : null;
+  return {
+    retrieval_attempted: attempted,
+    retrieval_returned: calls.length > 0,
+    evidence_available: results.length > 0,
+    claim_supported: supported,
+    source_current_authorized: authorizedCurrent,
+    result_count: results.length,
+  };
+}
+
+export async function runCurrentRuntimeCase({ evalCase, snapshot, routingSnapshot, model, transport }) {
+  const input = adaptToProductionState(evalCase);
+  const isFirstReply = input.history.length === 0;
+  const routing = deriveTikTokRouting(input, routingSnapshot);
   const explicitModel = sourceModel(`${input.text}\n${input.referral_context}`) || input.advertised_interest;
+
+  if (evalCase.runtime_input.inbound_message.event_type !== "customer_message") return noResponseBypass(input, routing, `event_${evalCase.runtime_input.inbound_message.event_type}`);
+  if (input.do_not_contact || input.conversation_control.status === "closed") return noResponseBypass(input, routing, input.do_not_contact ? "do_not_contact_or_closed" : "conversation_closed");
+  if (input.takeover.active) return noResponseBypass(input, routing, "human_takeover");
+  if (input.prior_qualification.status === "qualified" || ["handoff_required", "handed_off"].includes(input.conversation_control.handoff_status)) {
+    return noResponseBypass(input, routing, input.prior_qualification.status === "qualified" ? "already_qualified" : "handoff_in_progress");
+  }
 
   if (routing.mentioned && !routing.identifier_type) {
     return {
@@ -123,13 +199,17 @@ export async function runCurrentRuntimeCase({ evalCase, snapshot, routingSnapsho
       intent_summary: `Lead de TikTok${explicitModel ? ` interesado en ${explicitModel}` : ""}, pendiente de identificar asesor`,
       model_interest: explicitModel, disqualify_reason: "",
       reply_text: tiktokIdentifierReply(input.customer_name || "", input.history.length === 0, explicitModel),
-      _shadow: { bypass: "tiktok_missing_identifier", routing, selected_training_example_ids: [], fallback: false },
+      _shadow: {
+        bypass: "tiktok_missing_identifier", routing, responses_called: 0,
+        training_examples_present: [], selected_training_examples: [], fallback: false,
+        rag: { retrieval_attempted: false, retrieval_returned: false, evidence_available: false, claim_supported: null, source_current_authorized: null },
+      },
     };
   }
 
-  const examples = selectTrainingExamples(snapshot.training_examples, input.text, input.advertised_interest);
-  const examplesContext = examples.length
-    ? examples.map((example, index) => `Ejemplo aprobado ${index + 1}:\n${example.conversation}\nEstado esperado: ${example.expected_status}\nRespuesta esperada: ${example.expected_reply}`).join("\n\n")
+  const selectedExamples = selectTrainingExamples(snapshot.training_examples, input.text, input.advertised_interest);
+  const examplesContext = selectedExamples.length
+    ? selectedExamples.map(({ example }, index) => `Ejemplo aprobado ${index + 1}:\n${example.conversation}\nEstado esperado: ${example.expected_status}\nRespuesta esperada: ${example.expected_reply}`).join("\n\n")
     : "Todavía no hay ejemplos corregidos aplicables.";
   const prompt = await buildExactDeveloperPrompt(snapshot, examplesContext);
   const contactContext = `Datos autorizados del contacto:\nNombre: ${input.customer_name || "no informado"}\nTeléfono: ${input.customer_phone || "no informado"}`;
@@ -146,36 +226,24 @@ export async function runCurrentRuntimeCase({ evalCase, snapshot, routingSnapsho
   });
   if (!response.ok) {
     const fallback = fallbackDecision(input.text, input.advertised_interest, input.customer_name, isFirstReply);
-    return { ...fallback, _shadow: { routing, selected_training_example_ids: examples.map((x) => x.id), fallback: true, api_status: response.status } };
+    return { ...fallback, _shadow: { routing, responses_called: 1, training_examples_present: selectedExamples.map(({ example, score }) => ({ id: example.id, score })), selected_training_examples: selectedExamples.map(({ example, score }) => ({ id: example.id, score })), fallback: true, api_status: response.status, rag: { retrieval_attempted: Boolean(snapshot.assistant_settings.vector_store_id), retrieval_returned: false, evidence_available: false, claim_supported: null, source_current_authorized: null } } };
   }
   const payload = await response.json();
   const outputText = (payload.output || []).flatMap((item) => Array.isArray(item.content) ? item.content : []).find((item) => item.type === "output_text")?.text;
   if (typeof outputText !== "string") {
     const fallback = fallbackDecision(input.text, input.advertised_interest, input.customer_name, isFirstReply);
-    return { ...fallback, _shadow: { routing, selected_training_example_ids: examples.map((x) => x.id), fallback: true, api_status: response.status } };
+    return { ...fallback, _shadow: { routing, responses_called: 1, training_examples_present: selectedExamples.map(({ example, score }) => ({ id: example.id, score })), selected_training_examples: selectedExamples.map(({ example, score }) => ({ id: example.id, score })), fallback: true, api_status: response.status, rag: ragTrace(payload, Boolean(snapshot.assistant_settings.vector_store_id)) } };
   }
-  const decision = JSON.parse(outputText);
-  if (input.advertised_interest) {
-    decision.model_interest = input.advertised_interest;
-    if (!input.history.length && /qu[eé]\s+modelo|cu[aá]l\s+modelo/i.test(decision.reply_text)) {
-      decision.reply_text = fallbackDecision(input.text, input.advertised_interest, input.customer_name, true).reply_text;
-    }
-  }
-  const customerConversation = [...input.history.filter((item) => item.startsWith("Cliente:")), `Cliente: ${input.text}`].join("\n");
-  if ((decision.model_interest || input.advertised_interest) && hasKnownCommercialOperation(customerConversation) && decision.qualification_status !== "unqualified") {
-    decision.qualification_status = "qualified";
-    decision.reply_text = qualifyAndHandoffReply(decision.reply_text, decision.model_interest || input.advertised_interest);
-  } else if (shouldForceHandoff(priorAssistantReplies, decision.qualification_status)) {
-    decision.qualification_status = "qualified";
-    decision.reply_text = handoffReply(decision.model_interest || input.advertised_interest);
-  }
-  decision.reply_text = enforceVehicleFacts(polishCommercialReply(decision.reply_text, input.customer_name, isFirstReply), decision.model_interest || input.advertised_interest);
+  const decision = applyDeterministicPostprocessors(JSON.parse(outputText), input);
   return {
     ...decision,
     _shadow: {
-      routing, selected_training_example_ids: examples.map((x) => x.id), fallback: false,
+      routing, responses_called: 1,
+      training_examples_present: selectedExamples.map(({ example, score }) => ({ id: example.id, score })),
+      selected_training_examples: selectedExamples.map(({ example, score }) => ({ id: example.id, score })), fallback: false,
       response_id: payload.id || null, model_reported: payload.model || null,
       file_search_used: (payload.output || []).some((item) => item.type === "file_search_call"),
+      rag: ragTrace(payload, Boolean(snapshot.assistant_settings.vector_store_id), decision.reply_text),
     },
   };
 }

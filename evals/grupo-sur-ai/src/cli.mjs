@@ -55,6 +55,7 @@ function markdownReport(metadata, results, summary) {
 ## Resultado
 
 **Score global:** ${summary.global.score}/100  
+**Score normalizado sobre capacidades existentes:** ${summary.global.normalized_existing_capabilities_score}/100
 **PASS:** ${summary.global.pass}  
 **FAIL:** ${summary.global.fail}
 
@@ -197,6 +198,7 @@ async function executeRun() {
     results.push(gradeCase(evalCase, output));
   }
   if (outputs.length !== 100) throw new Error(`RUN_INCOMPLETE:${outputs.length}`);
+  const inferenceCount = outputs.reduce((sum, item) => sum + Number(item.output?._shadow?.responses_called || 0), 0);
   const summary = buildRunSummary(results);
   const metadata = {
     run_id: runId, timestamp, model: state.modelVerification.effective_model,
@@ -204,7 +206,8 @@ async function executeRun() {
     edge_function_hash: state.snapshot.runtime.edge_function.ezbr_sha256,
     dataset_hash: state.dataset.sha256, snapshot_hash: state.hashes.runtime_snapshot,
     routing_snapshot_hash: state.hashes.routing_snapshot, vector_store_id: vector.id,
-    inference_count: 100, retry_count: 0, side_effect_adapters: "absent_and_blocked",
+    inference_count: inferenceCount, bypassed_cases: 100 - inferenceCount,
+    retry_count: 0, side_effect_adapters: "absent_and_blocked",
   };
   await Promise.all([
     writeFile(resolve(runDir, "metadata.json"), JSON.stringify(metadata, null, 2) + "\n"),
