@@ -4,9 +4,8 @@
   var state = { userId: "", profile: null, cases: [], events: {}, applications: {}, notifications: [], leads: [], quotes: [], models: [], campaigns: [], credits: [], activeCase: null, activeQuote: null, activeCampaign: null, activeCampaignFingerprint: "" };
   var quoteDialog = document.getElementById("quoteDialog");
   var quoteForm = document.getElementById("quoteForm");
-  var minuteDialog = document.getElementById("salesMinuteDialog");
-  var minuteForm = document.getElementById("salesMinuteForm");
   var finalMinute = window.grupoSurFinalMinute;
+  var minuteUi = window.grupoSurFinalMinuteForm.mount();
 
   function escapeHtml(value) { return String(value == null ? "" : value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;"); }
   function money(value) { return value == null || value === "" ? "A confirmar" : "$" + new Intl.NumberFormat("es-AR", { maximumFractionDigits: 0 }).format(Number(value)); }
@@ -162,7 +161,10 @@
   function one(value) { return Array.isArray(value) ? value[0] : value; }
   function campaignIdForCase(salesCase) {
     var request = saleRequest(salesCase); var provisional = provisionalApplication(salesCase); var event = provisional && one(provisional.prequalification); var quote = one(salesCase.quote);
-    if (event && event.campaign_id) return event.campaign_id;
+    if (event && event.campaign_id) {
+      if (request && request.quote_id && (!quote || quote.id !== request.quote_id || quote.offer_type !== "savings_plan" || quote.campaign_id !== event.campaign_id)) return "";
+      return event.campaign_id;
+    }
     return request && request.quote_id && quote && quote.id === request.quote_id && quote.offer_type === "savings_plan" ? quote.campaign_id : "";
   }
   async function fetchCurrentCampaign(campaignId) {
@@ -171,72 +173,43 @@
     if (result.error || !result.data) throw new Error(result.error && result.error.message || "No se encontró la ficha actual del plan.");
     var campaign = finalMinute.normalizeCampaign(result.data); var today = new Date().toISOString().slice(0, 10); var model = one(result.data.model); var brand = model && one(model.brand);
     if (!campaign.active || !model || model.active === false || !brand || brand.active === false || (campaign.validFrom && campaign.validFrom > today) || (campaign.validTo && campaign.validTo < today)) throw new Error("La campaña asociada ya no está vigente. Administración debe revisar la ficha antes de emitir la minuta.");
-    if (!campaign.brand || !campaign.model || !campaign.version || !campaign.planName || !Number.isInteger(campaign.installmentCount) || campaign.installmentCount < 2 || !Number.isFinite(campaign.finalPrice) || campaign.finalPrice <= 0 || !campaign.image) throw new Error("La ficha actual del plan está incompleta. Debe incluir marca, modelo, versión, cuotas, valor final e imagen.");
+    if (!campaign.brand || !campaign.model || !campaign.version || !campaign.planName || !Number.isInteger(campaign.installmentCount) || campaign.installmentCount < 2 || !Number.isFinite(campaign.finalPrice) || campaign.finalPrice <= 0 || !Number.isFinite(campaign.advanceAmount) || campaign.advanceAmount < 0 || !Number.isFinite(campaign.installmentAmount) || campaign.installmentAmount <= 0 || !campaign.bonus || !campaign.image) throw new Error("La ficha actual del plan está incompleta. Debe incluir marca, modelo, versión, plan, cuotas, valor final, anticipo, cuota, bonificación e imagen.");
     return campaign;
   }
-  function setMinuteField(name, value) { var field = minuteForm.elements[name]; if (field && value !== null && value !== undefined) field.value = String(value); }
-  function campaignMoney(value, isFrom) { var label = value === null || value === undefined || value === "" ? "A confirmar" : money(value); return label === "A confirmar" ? label : (isFrom ? "Desde " : "") + label; }
-  function applyStoredMinute(application) {
-    if (!application) return; var seniority = parseInt(String(application.employment_seniority || "").replace(/\D/g, ""), 10);
-    [["firstName", application.first_name], ["lastName", application.last_name], ["documentType", application.document_type], ["documentNumber", application.document_number], ["cuil", application.cuil], ["birthDate", finalMinute.displayDateInput(application.birth_date)], ["address", application.address], ["cityProvince", application.city_province], ["postalCode", application.postal_code], ["maritalStatus", application.marital_status], ["spouseName", application.spouse_name], ["spouseDocument", application.spouse_document], ["primaryPhone", application.primary_phone], ["alternatePhone", application.alternate_phone], ["email", application.email], ["contactSchedule", application.contact_schedule], ["employmentStatus", application.employment_status], ["employerName", application.employer_name], ["employmentSeniority", Number.isFinite(seniority) ? seniority : ""], ["monthlyIncome", application.monthly_income], ["automaticDebit", String(Boolean(application.automatic_debit))], ["deferredInstallment", String(Boolean(application.deferred_installment))], ["firstPaymentDate", finalMinute.displayDateInput(application.first_payment_date)], ["firstPaymentAmount", application.first_payment_amount], ["secondPaymentDate", finalMinute.displayDateInput(application.second_payment_date)], ["secondPaymentAmount", application.second_payment_amount]].forEach(function (item) { setMinuteField(item[0], item[1]); });
-  }
-  function applyProvisionalMinute(provisional) { applyStoredMinute(provisional); }
   function applyCampaign(campaign) {
     state.activeCampaign = campaign; state.activeCampaignFingerprint = finalMinute.campaignFingerprint(campaign);
-    setMinuteField("brandName", campaign.brand); setMinuteField("modelName", campaign.model); setMinuteField("versionName", campaign.version); setMinuteField("planType", campaign.planDescription); setMinuteField("totalInstallments", campaign.installmentCount); setMinuteField("agreedPrice", money(campaign.finalPrice)); setMinuteField("advanceAmount", campaignMoney(campaign.advanceAmount, false)); setMinuteField("installmentAmount", campaignMoney(campaign.installmentAmount, campaign.installmentIsFrom)); setMinuteField("bonus", campaign.bonus || "No informada"); setMinuteField("installmentsPaid", 1); setMinuteField("installmentsToPay", campaign.installmentCount - 1);
-    document.getElementById("salesMinuteVehicle").textContent = [campaign.brand, campaign.model, campaign.version].filter(Boolean).join(" "); document.getElementById("salesMinuteCampaign").textContent = campaign.planDescription + " · Valor final vigente " + money(campaign.finalPrice);
+    minuteUi.applyCampaign(campaign);
   }
   async function openMinute(caseId) {
     state.activeCase = state.cases.find(function (item) { return item.id === caseId; }); if (!state.activeCase) return;
     if (!(state.activeCase.status === "minute_pending" || state.activeCase.cdn_scoring_status === "observed")) return;
-    var current = latestApplication(caseId); var provisional = provisionalApplication(state.activeCase); var errorBox = document.getElementById("salesMinuteError"); var button = document.getElementById("salesMinuteSubmit");
-    minuteForm.reset(); applyStoredMinute(current); if (!current) applyProvisionalMinute(provisional); minuteForm.elements.applicationConsent.checked = false; button.disabled = true; document.getElementById("salesMinuteTitle").textContent = (current ? "Corregir minuta · " : "Completar minuta · ") + state.activeCase.case_code; errorBox.textContent = "Consultando la ficha vigente del plan…"; minuteDialog.showModal();
-    try { applyCampaign(await fetchCurrentCampaign(campaignIdForCase(state.activeCase))); errorBox.textContent = ""; button.disabled = false; } catch (error) { state.activeCampaign = null; state.activeCampaignFingerprint = ""; errorBox.textContent = error.message; }
-  }
-  function digits(value) { return String(value || "").replace(/\D/g, ""); }
-  function validCuil(value) {
-    var clean = digits(value); if (clean.length !== 11 || /^(\d)\1{10}$/.test(clean)) return false;
-    var weights = [5,4,3,2,7,6,5,4,3,2]; var sum = weights.reduce(function (total, weight, index) { return total + Number(clean[index]) * weight; }, 0); var check = 11 - sum % 11; if (check === 11) check = 0; if (check === 10) check = 9; return check === Number(clean[10]);
-  }
-  function readMinuteData() {
-    var f = minuteForm.elements; var birthDate = finalMinute.parseDisplayDate(f.birthDate.value); var firstDate = f.firstPaymentDate.value ? finalMinute.parseDisplayDate(f.firstPaymentDate.value) : ""; var secondDate = f.secondPaymentDate.value ? finalMinute.parseDisplayDate(f.secondPaymentDate.value) : ""; var documentNumber = digits(f.documentNumber.value); var cuil = digits(f.cuil.value); var spouseDocument = digits(f.spouseDocument.value); var email = f.email.value.trim().toLowerCase(); var seniority = Number(f.employmentSeniority.value); var income = Number(f.monthlyIncome.value); var firstAmount = f.firstPaymentAmount.value === "" ? null : Number(f.firstPaymentAmount.value); var secondAmount = f.secondPaymentAmount.value === "" ? null : Number(f.secondPaymentAmount.value);
-    if (f.firstName.value.trim().length < 2 || f.lastName.value.trim().length < 2) return { error: "Completá el nombre y el apellido del cliente." };
-    if (!f.documentType.value || documentNumber.length < 7 || documentNumber.length > 12 || !validCuil(cuil)) return { error: "Revisá el tipo y número de documento y el CUIL informado." };
-    if (!birthDate) return { error: "Ingresá una fecha de nacimiento real con formato dd/mm/aaaa." };
-    var adultDate = new Date(); adultDate.setFullYear(adultDate.getFullYear() - 18); if (new Date(birthDate + "T12:00:00") > adultDate) return { error: "La minuta debe corresponder a una persona mayor de 18 años." };
-    if (f.address.value.trim().length < 5 || f.cityProvince.value.trim().length < 3 || f.postalCode.value.trim().length < 3 || !f.maritalStatus.value) return { error: "Completá el domicilio, localidad/provincia, código postal y estado civil." };
-    if (["Casado/a", "Conviviente"].includes(f.maritalStatus.value) && (f.spouseName.value.trim().length < 3 || spouseDocument.length < 7)) return { error: "Completá el nombre y DNI del cónyuge o conviviente." };
-    if (digits(f.primaryPhone.value).length < 8 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || f.contactSchedule.value.trim().length < 3) return { error: "Revisá el teléfono, el correo y el horario de contacto." };
-    if (!f.employmentStatus.value || f.employerName.value.trim().length < 2 || !Number.isInteger(seniority) || seniority < 0 || seniority > 80 || !Number.isInteger(income) || income < 1) return { error: "Revisá la situación laboral, antigüedad e ingresos mensuales." };
-    if (f.automaticDebit.value === "" || f.deferredInstallment.value === "") return { error: "Indicá si corresponde débito automático y cuota diferida." };
-    if ((f.firstPaymentDate.value && !firstDate) || (f.secondPaymentDate.value && !secondDate)) return { error: "Las fechas de pago deben ser reales y tener formato dd/mm/aaaa." };
-    if (Boolean(firstDate) !== (firstAmount !== null) || Boolean(secondDate) !== (secondAmount !== null)) return { error: "Cada pago informado debe tener fecha e importe." };
-    if ((firstAmount !== null && (!Number.isFinite(firstAmount) || firstAmount < 0)) || (secondAmount !== null && (!Number.isFinite(secondAmount) || secondAmount < 0))) return { error: "Los importes de pago deben ser números válidos mayores o iguales a cero." };
-    if (!f.applicationConsent.checked) return { error: "Confirmá la lectura conjunta de la minuta y de las condiciones vigentes." };
-    return { data: { firstName: f.firstName.value.trim(), lastName: f.lastName.value.trim(), documentType: f.documentType.value, documentNumber: documentNumber, cuil: cuil, birthDate: birthDate, address: f.address.value.trim(), cityProvince: f.cityProvince.value.trim(), postalCode: f.postalCode.value.trim().toUpperCase(), maritalStatus: f.maritalStatus.value, spouseName: f.spouseName.value.trim(), spouseDocument: spouseDocument, primaryPhone: f.primaryPhone.value.trim(), alternatePhone: f.alternatePhone.value.trim(), email: email, contactSchedule: f.contactSchedule.value.trim(), employmentStatus: f.employmentStatus.value, employerName: f.employerName.value.trim(), employmentSeniority: seniority, monthlyIncome: income, automaticDebit: f.automaticDebit.value === "true", deferredInstallment: f.deferredInstallment.value === "true", firstPaymentDate: firstDate || null, firstPaymentAmount: firstAmount, secondPaymentDate: secondDate || null, secondPaymentAmount: secondAmount } };
+    var current = latestApplication(caseId); var provisional = provisionalApplication(state.activeCase); var origin = provisional ? "prequalification" : "sales";
+    minuteUi.open({ origin: origin, currentApplication: current, provisionalApplication: provisional, application: current, title: (current ? "Corregir minuta · " : "Completar minuta · ") + state.activeCase.case_code });
+    minuteUi.setLoading("Consultando la ficha vigente del plan…");
+    try { applyCampaign(await fetchCurrentCampaign(campaignIdForCase(state.activeCase))); minuteUi.setReady(); } catch (error) { state.activeCampaign = null; state.activeCampaignFingerprint = ""; minuteUi.setLoading(error.message); }
   }
   async function verifyCaseCanSubmit() {
     var result = await supabaseClient.from("sales_cases").select("id,seller_user_id,status,cdn_scoring_status").eq("id", state.activeCase.id).eq("seller_user_id", state.userId).single();
     if (result.error || !result.data || !(result.data.status === "minute_pending" || result.data.cdn_scoring_status === "observed")) throw new Error("La Minuta Definitiva solo puede emitirse después de la aprobación de Supervisión o para corregir una observación.");
   }
-  async function revalidateCampaign(errorBox) {
+  async function revalidateCampaign() {
     var previous = state.activeCampaign; var current = await fetchCurrentCampaign(campaignIdForCase(state.activeCase)); var changed = finalMinute.campaignFingerprint(current) !== state.activeCampaignFingerprint;
     if (!changed) return current;
-    applyCampaign(current); minuteForm.elements.applicationConsent.checked = false;
-    errorBox.textContent = "Las condiciones comerciales de este plan fueron actualizadas desde que abriste la minuta. El valor final vigente es " + money(current.finalPrice) + ". Revisá la nueva condición con el cliente y volvé a confirmar antes de continuar.";
-    errorBox.dataset.previousPrice = previous ? String(previous.finalPrice) : ""; return null;
+    applyCampaign(current);
+    minuteUi.requireConfirmation("Las condiciones comerciales de este plan fueron actualizadas desde que abriste la minuta. El valor final vigente es " + money(current.finalPrice) + ". Revisá la nueva condición con el cliente y volvé a confirmar antes de continuar.");
+    minuteUi.form.dataset.previousPrice = previous ? String(previous.finalPrice) : ""; return null;
   }
   async function saveMinute(event) {
-    event.preventDefault(); var errorBox = document.getElementById("salesMinuteError"); var button = document.getElementById("salesMinuteSubmit"); errorBox.textContent = ""; if (!state.activeCase || !state.activeCampaign) { errorBox.textContent = "No hay una ficha de plan válida asociada a esta operación."; return; }
-    var parsed = readMinuteData(); if (parsed.error) { errorBox.textContent = parsed.error; return; }
+    event.preventDefault(); var errorBox = minuteUi.error; var button = minuteUi.submit; errorBox.textContent = ""; if (!state.activeCase || !state.activeCampaign) { errorBox.textContent = "No hay una ficha de plan válida asociada a esta operación."; return; }
+    var parsed = minuteUi.read(); if (parsed.error) { errorBox.textContent = parsed.error; return; }
     setBusy(button, true, "Revalidando condiciones…");
     try {
-      await verifyCaseCanSubmit(); var campaign = await revalidateCampaign(errorBox); if (!campaign) { setBusy(button, false); return; }
+      await verifyCaseCanSubmit(); var campaign = await revalidateCampaign(); if (!campaign) { setBusy(button, false); return; }
       var data = parsed.data; var applications = state.applications[state.activeCase.id] || []; var previous = latestApplication(state.activeCase.id); var revision = Math.max(0, ...applications.map(function (item) { return Number(item.revision_number); })) + 1; var provisional = provisionalApplication(state.activeCase); var prequalificationCode = provisional && provisional.request_code || ""; var now = new Date().toISOString(); var snapshot = finalMinute.commercialSnapshot(campaign, { caseCode: state.activeCase.case_code, prequalificationCode: prequalificationCode, sellerName: state.profile && state.profile.full_name, sellerCode: state.profile && state.profile.seller_code, sellerPhone: state.profile && state.profile.phone });
       var payload = { prequalification_event_id: null, sales_case_id: state.activeCase.id, revision_number: revision, supersedes_application_id: previous && previous.id || null, seller_user_id: state.userId, request_code: state.activeCase.case_code + "-R" + revision, brand_name: campaign.brand, model_name: campaign.model, campaign_name: campaign.planDescription, first_name: data.firstName, last_name: data.lastName, document_type: data.documentType, document_number: data.documentNumber, cuil: data.cuil, birth_date: data.birthDate, address: data.address, city_province: data.cityProvince, postal_code: data.postalCode, marital_status: data.maritalStatus, spouse_name: data.spouseName || null, spouse_document: data.spouseDocument || null, primary_phone: data.primaryPhone, alternate_phone: data.alternatePhone || null, email: data.email, contact_schedule: data.contactSchedule, employment_status: data.employmentStatus, employer_name: data.employerName, employment_seniority: String(data.employmentSeniority), monthly_income: data.monthlyIncome, automatic_debit: data.automaticDebit, deferred_installment: data.deferredInstallment, installments_paid: 1, installments_to_pay: campaign.installmentCount - 1, plan_type: campaign.planDescription, agreed_price: campaign.finalPrice, first_payment_date: data.firstPaymentDate, first_payment_amount: data.firstPaymentAmount, second_payment_date: data.secondPaymentDate, second_payment_amount: data.secondPaymentAmount, status: "submitted", terms_version: "GS-MINUTA-2026-01", confirmed_at: now, submitted_at: now, commercial_snapshot: snapshot };
       button.textContent = "Guardando…"; var result = await supabaseClient.from("commercial_applications").insert(payload).select("*").single();
-      if (result.error) { var refreshed = await fetchCurrentCampaign(campaignIdForCase(state.activeCase)); if (finalMinute.campaignFingerprint(refreshed) !== state.activeCampaignFingerprint) { applyCampaign(refreshed); minuteForm.elements.applicationConsent.checked = false; errorBox.textContent = "La ficha del plan cambió justo antes de guardar. Actualizamos la minuta con el valor vigente " + money(refreshed.finalPrice) + ". Revisalo con el cliente y confirmá nuevamente."; } else errorBox.textContent = result.error.message; setBusy(button, false); return; }
-      minuteDialog.close(); finalMinute.print(document.getElementById("minutePrint"), finalMinute.fromApplication(result.data, { caseCode: state.activeCase.case_code, seller: state.profile })); await loadSales(); setBusy(button, false);
+      if (result.error) { var refreshed = await fetchCurrentCampaign(campaignIdForCase(state.activeCase)); if (finalMinute.campaignFingerprint(refreshed) !== state.activeCampaignFingerprint) { applyCampaign(refreshed); minuteUi.requireConfirmation("La ficha del plan cambió justo antes de guardar. Actualizamos la minuta con el valor vigente " + money(refreshed.finalPrice) + ". Revisalo con el cliente y confirmá nuevamente."); } else errorBox.textContent = result.error.message; setBusy(button, false); return; }
+      minuteUi.close(); finalMinute.print(document.getElementById("minutePrint"), finalMinute.fromApplication(result.data, { caseCode: state.activeCase.case_code, seller: state.profile })); await loadSales(); setBusy(button, false);
     } catch (error) { errorBox.textContent = error.message || "No se pudo guardar la Minuta Definitiva."; setBusy(button, false); }
   }
 
@@ -263,9 +236,7 @@
   document.getElementById("refreshSalesButton").addEventListener("click", function () { var button = this; setBusy(button, true, "Actualizando…"); loadSales().finally(function () { setBusy(button, false); }); });
   document.getElementById("salesTrackingList").addEventListener("click", function (event) { var card = event.target.closest("[data-sales-case-id]"); if (card && event.target.closest("[data-open-minute]")) openMinute(card.dataset.salesCaseId); });
   document.getElementById("salesTrackingList").addEventListener("change", function (event) { var checkbox = event.target.closest("[data-admin-call-ready]"); var card = event.target.closest("[data-sales-case-id]"); if (checkbox && card && checkbox.checked) requestAdminCall(card.dataset.salesCaseId, checkbox); });
-  document.getElementById("salesNotifications").addEventListener("click", function (event) { var item = event.target.closest("[data-notification-id]"); if (item && event.target.closest("[data-read-notification]")) markRead(item.dataset.notificationId); }); minuteForm.addEventListener("submit", saveMinute);
-  ["birthDate", "firstPaymentDate", "secondPaymentDate"].forEach(function (name) { minuteForm.elements[name].addEventListener("input", function () { finalMinute.maskDateInput(this); }); });
-  minuteForm.querySelector(".crm-dialog-close").addEventListener("click", function () { minuteDialog.close(); });
+  document.getElementById("salesNotifications").addEventListener("click", function (event) { var item = event.target.closest("[data-notification-id]"); if (item && event.target.closest("[data-read-notification]")) markRead(item.dataset.notificationId); }); minuteUi.form.addEventListener("submit", saveMinute);
   window.grupoSurSales = { loadQuotes: loadQuotes, loadSales: loadSales, openQuote: openQuote, refreshNotifications: loadSales };
   supabaseClient.auth.onAuthStateChange(function (event, session) { if (session && session.user && (event === "SIGNED_IN" || event === "INITIAL_SESSION")) { state.userId = session.user.id; loadSales(); } });
 }());

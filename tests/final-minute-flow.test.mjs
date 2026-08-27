@@ -4,6 +4,7 @@ import test from "node:test";
 
 const app = readFileSync(new URL("../vendedores/app.js", import.meta.url), "utf8");
 const sales = readFileSync(new URL("../vendedores/sales.js", import.meta.url), "utf8");
+const sharedForm = readFileSync(new URL("../vendedores/final-minute-form.js", import.meta.url), "utf8");
 const sellerHtml = readFileSync(new URL("../vendedores/index.html", import.meta.url), "utf8");
 const adminHtml = readFileSync(new URL("../vendedores/admventas/index.html", import.meta.url), "utf8");
 const admin = readFileSync(new URL("../vendedores/admventas/admventas.js", import.meta.url), "utf8");
@@ -24,11 +25,11 @@ test("Mis Ventas no conserva el renderer simplificado ni fallbacks comerciales",
   assert.ok(!sales.includes("|| 84"));
   assert.ok(!sales.includes("salesCase.vehicle.toLowerCase().includes"));
   assert.ok(sales.includes("fetchCurrentCampaign(campaignIdForCase(state.activeCase))"));
-  assert.ok(sales.includes("revalidateCampaign(errorBox)"));
+  assert.ok(sales.includes("revalidateCampaign()"));
 });
 
 test("los campos centrales están bloqueados y las fechas definitivas no usan input date", () => {
-  const form = sellerHtml.slice(sellerHtml.indexOf('id="salesMinuteForm"'), sellerHtml.indexOf("</form></dialog>", sellerHtml.indexOf('id="salesMinuteForm"')));
+  const form = sharedForm.slice(sharedForm.indexOf('id=\"finalMinuteForm\"'), sharedForm.indexOf("</form></dialog>"));
   for (const name of ["brandName", "modelName", "versionName", "planType", "totalInstallments", "agreedPrice", "advanceAmount", "installmentAmount", "bonus"]) {
     assert.match(form, new RegExp('name="' + name + '"[^>]*readonly'));
   }
@@ -48,11 +49,11 @@ test("vendedor y Administración imprimen con el mismo renderer compartido", () 
 
 test("la base valida campaign_id, versión de campaña y cuotas reales sin default 84", () => {
   assert.ok(migration.includes("sale_request.provisional_application_id"));
-  assert.ok(migration.includes("sale_request.quote_id is not null"));
-  assert.ok(migration.includes("sales_case.quote_id = sale_request.quote_id"));
+  assert.ok(migration.includes("request_quote_id is not null"));
+  assert.ok(migration.includes("case_quote_id = request_quote_id"));
   assert.ok(migration.includes("quote.id = sale_request.quote_id"));
   assert.ok(migration.includes("campaign_updated_at"));
-  assert.ok(migration.includes("v_total_installments - 1"));
+  assert.ok(migration.includes("v_plan.installment_count - 1"));
   assert.ok(!migration.includes("else 83"));
   assert.ok(!migration.includes("coalesce(84"));
 });

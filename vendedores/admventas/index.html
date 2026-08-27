@@ -99,7 +99,7 @@
     <fieldset><legend>Cliente</legend><div class="edit-form-grid">
       <label>Nombre<input name="first_name" required maxlength="80"></label><label>Apellido<input name="last_name" required maxlength="80"></label>
       <label>Tipo de documento<select name="document_type" required><option value="DNI">DNI</option><option value="LE">LE</option><option value="LC">LC</option><option value="Pasaporte">Pasaporte</option></select></label><label>Número de documento<input name="document_number" required inputmode="numeric" pattern="[0-9]{7,12}"></label>
-      <label>CUIL<input name="cuil" required inputmode="numeric" pattern="[0-9]{11}"></label><label>Fecha de nacimiento<input name="birth_date" type="date" required></label>
+      <label>CUIL<input name="cuil" required inputmode="numeric" pattern="[0-9]{11}"></label><label>Fecha de nacimiento<input name="birth_date" type="text" inputmode="numeric" maxlength="10" placeholder="dd/mm/yyyy" autocomplete="off" required></label>
       <label class="wide">Domicilio<input name="address" required maxlength="180"></label><label>Localidad / Provincia<input name="city_province" required maxlength="160"></label><label>Código postal<input name="postal_code" required maxlength="20"></label>
       <label>Estado civil<select name="marital_status" required><option value="Soltero/a">Soltero/a</option><option value="Casado/a">Casado/a</option><option value="Conviviente">Conviviente</option><option value="Divorciado/a">Divorciado/a</option><option value="Viudo/a">Viudo/a</option></select></label><label>Nombre del cónyuge<input name="spouse_name" maxlength="160"></label><label>Documento del cónyuge<input name="spouse_document" inputmode="numeric" pattern="[0-9]{7,12}"></label>
     </div></fieldset>
@@ -110,13 +110,13 @@
       <label>Antigüedad<input name="employment_seniority" required maxlength="80"></label><label>Ingreso mensual<input name="monthly_income" type="number" required min="0" step="0.01"></label>
     </div></fieldset>
     <fieldset><legend>Condición comercial</legend><div class="edit-form-grid">
-      <label>Marca<select name="brand_name" required><option value="Volkswagen">Volkswagen</option><option value="Peugeot">Peugeot</option><option value="Fiat">Fiat</option></select></label><label>Modelo / versión<input name="model_name" required maxlength="160"></label>
-      <label>Campaña<input name="campaign_name" required maxlength="160"></label><label>Tipo de plan<input name="plan_type" required maxlength="120"></label>
-      <label>Precio pactado<input name="agreed_price" type="number" required min="0" step="0.01"></label><label>Cuotas abonadas<input name="installments_paid" type="number" required min="0" step="1"></label>
-      <label>Cuotas restantes<input name="installments_to_pay" type="number" required min="1" step="1"></label><label class="check-field"><input name="automatic_debit" type="checkbox"> Débito automático</label>
+      <label>Marca<input name="brand_name" readonly required></label><label>Modelo<input name="model_name" readonly required></label>
+      <label>Versión<input name="version_name" readonly required></label><label>Tipo de plan<input name="plan_type" readonly required></label>
+      <label>Total de cuotas<input name="total_installments" readonly required></label><label>Valor final vigente<input name="agreed_price" readonly required></label>
+      <label>Cuotas abonadas<input name="installments_paid" readonly required></label><label>Cuotas restantes<input name="installments_to_pay" readonly required></label><label class="check-field"><input name="automatic_debit" type="checkbox"> Débito automático</label>
       <label class="check-field"><input name="deferred_installment" type="checkbox"> Cuota diferida</label><span></span>
-      <label>Fecha del primer pago<input name="first_payment_date" type="date"></label><label>Importe del primer pago<input name="first_payment_amount" type="number" min="0" step="0.01"></label>
-      <label>Fecha del segundo pago<input name="second_payment_date" type="date"></label><label>Importe del segundo pago<input name="second_payment_amount" type="number" min="0" step="0.01"></label>
+      <label>Fecha del primer pago<input name="first_payment_date" type="text" inputmode="numeric" maxlength="10" placeholder="dd/mm/yyyy" autocomplete="off"></label><label>Importe del primer pago<input name="first_payment_amount" type="number" min="0" step="0.01"></label>
+      <label>Fecha del segundo pago<input name="second_payment_date" type="text" inputmode="numeric" maxlength="10" placeholder="dd/mm/yyyy" autocomplete="off"></label><label>Importe del segundo pago<input name="second_payment_amount" type="number" min="0" step="0.01"></label>
     </div></fieldset>
     <label class="reason-field">Motivo de la corrección<textarea name="reason" rows="3" required minlength="5" maxlength="500" placeholder="Ej. Se corrigió el teléfono informado por el cliente"></textarea></label>
     <p class="message" id="minuteEditMessage"></p><div class="form-actions"><button class="button secondary" data-cancel-minute-edit type="button">Cancelar</button><button class="button primary" id="saveMinuteEditButton" type="submit">Guardar nueva versión</button></div>
@@ -160,6 +160,6 @@
   <script src="/vendedores/supabase-config.js?v=20260815-3"></script>
   <script src="/vendedores/final-minute.js?v=20260827-1"></script>
   <script src="/vendedores/admventas/completed-client.js?v=20260826-1"></script>
-  <script src="/vendedores/admventas/admventas.js?v=20260827-1"></script>
+  <script src="/vendedores/admventas/admventas.js?v=20260827-2"></script>
 </body>
 </html>

@@ -184,33 +184,43 @@
     }
     field.value = normalized;
   }
-  function openMinuteEditor(caseId) {
+  async function openMinuteEditor(caseId) {
     var salesCase = state.cases.find(function (item) { return item.id === caseId; });
     var application = salesCase && latestApplication(caseId); if (!salesCase || !application || salesCase.status === "cancelled") return;
     state.activeCase = salesCase;
     var form = document.getElementById("minuteEditForm"); form.reset();
-    ["first_name", "last_name", "document_type", "document_number", "cuil", "birth_date", "address", "city_province", "postal_code", "marital_status", "spouse_name", "spouse_document", "primary_phone", "alternate_phone", "email", "contact_schedule", "employment_status", "employer_name", "employment_seniority", "monthly_income", "brand_name", "model_name", "campaign_name", "plan_type", "agreed_price", "installments_paid", "installments_to_pay", "automatic_debit", "deferred_installment", "first_payment_date", "first_payment_amount", "second_payment_date", "second_payment_amount"].forEach(function (name) { setEditField(form, name, application[name]); });
-    document.getElementById("minuteEditMessage").textContent = "Editando versión " + application.revision_number + " de " + salesCase.case_code + ".";
+    ["first_name", "last_name", "document_type", "document_number", "cuil", "address", "city_province", "postal_code", "marital_status", "spouse_name", "spouse_document", "primary_phone", "alternate_phone", "email", "contact_schedule", "employment_status", "employer_name", "employment_seniority", "monthly_income", "automatic_debit", "deferred_installment", "first_payment_amount", "second_payment_amount"].forEach(function (name) { setEditField(form, name, application[name]); });
+    setEditField(form, "birth_date", finalMinute.displayDateInput(application.birth_date)); setEditField(form, "first_payment_date", finalMinute.displayDateInput(application.first_payment_date)); setEditField(form, "second_payment_date", finalMinute.displayDateInput(application.second_payment_date));
+    var message = document.getElementById("minuteEditMessage"); var button = document.getElementById("saveMinuteEditButton");
+    message.textContent = "Consultando la ficha vigente del plan…"; button.disabled = true;
     if (operationDialog.open) operationDialog.close();
     minuteEditDialog.showModal();
+    var planResult = await supabaseClient.rpc("get_sales_case_current_plan", { p_sales_case_id: caseId });
+    if (planResult.error || !planResult.data) { message.textContent = planResult.error && planResult.error.message || "No se pudo consultar la condición comercial vigente."; return; }
+    var plan = planResult.data;
+    setEditField(form, "brand_name", plan.brand_name); setEditField(form, "model_name", plan.model_name); setEditField(form, "version_name", plan.version_name); setEditField(form, "plan_type", plan.plan_type); setEditField(form, "total_installments", plan.total_installments); setEditField(form, "agreed_price", money(plan.agreed_price)); setEditField(form, "installments_paid", 1); setEditField(form, "installments_to_pay", Number(plan.total_installments) - 1);
+    form.dataset.campaignId = plan.campaign_id; form.dataset.campaignUpdatedAt = plan.campaign_updated_at;
+    message.textContent = "Editando versión " + application.revision_number + " de " + salesCase.case_code + ". Los datos comerciales corresponden a la ficha vigente."; button.disabled = false;
   }
   function closeMinuteEditor() { if (minuteEditDialog.open) minuteEditDialog.close(); }
   async function saveMinuteEdit(event) {
     event.preventDefault();
     var form = event.currentTarget; var message = document.getElementById("minuteEditMessage"); var button = document.getElementById("saveMinuteEditButton");
     if (!form.reportValidity() || !state.activeCase) return;
-    var firstDate = form.elements.first_payment_date.value || null; var firstAmount = form.elements.first_payment_amount.value;
-    var secondDate = form.elements.second_payment_date.value || null; var secondAmount = form.elements.second_payment_amount.value;
+    var birthDate = finalMinute.parseDisplayDate(form.elements.birth_date.value); var firstDate = form.elements.first_payment_date.value ? finalMinute.parseDisplayDate(form.elements.first_payment_date.value) : null; var firstAmount = form.elements.first_payment_amount.value; var secondDate = form.elements.second_payment_date.value ? finalMinute.parseDisplayDate(form.elements.second_payment_date.value) : null; var secondAmount = form.elements.second_payment_amount.value;
+    if (!birthDate) { message.textContent = "La fecha de nacimiento debe ser real y tener formato dd/mm/aaaa."; return; }
+    if ((form.elements.first_payment_date.value && !firstDate) || (form.elements.second_payment_date.value && !secondDate)) { message.textContent = "Las fechas de pago deben ser reales y tener formato dd/mm/aaaa."; return; }
     if (Boolean(firstDate) !== Boolean(firstAmount)) { message.textContent = "Completá juntos la fecha y el importe del primer pago."; return; }
     if (Boolean(secondDate) !== Boolean(secondAmount)) { message.textContent = "Completá juntos la fecha y el importe del segundo pago."; return; }
-    var numberFields = ["monthly_income", "agreed_price", "installments_paid", "installments_to_pay", "first_payment_amount", "second_payment_amount"];
+    var numberFields = ["monthly_income", "first_payment_amount", "second_payment_amount"];
     var changes = {};
-    ["first_name", "last_name", "document_type", "document_number", "cuil", "birth_date", "address", "city_province", "postal_code", "marital_status", "spouse_name", "spouse_document", "primary_phone", "alternate_phone", "email", "contact_schedule", "employment_status", "employer_name", "employment_seniority", "monthly_income", "brand_name", "model_name", "campaign_name", "plan_type", "agreed_price", "installments_paid", "installments_to_pay", "automatic_debit", "deferred_installment", "first_payment_date", "first_payment_amount", "second_payment_date", "second_payment_amount"].forEach(function (name) {
+    ["first_name", "last_name", "document_type", "document_number", "cuil", "address", "city_province", "postal_code", "marital_status", "spouse_name", "spouse_document", "primary_phone", "alternate_phone", "email", "contact_schedule", "employment_status", "employer_name", "employment_seniority", "monthly_income", "automatic_debit", "deferred_installment", "first_payment_amount", "second_payment_amount"].forEach(function (name) {
       var field = form.elements[name];
       if (field.type === "checkbox") changes[name] = field.checked;
       else if (numberFields.includes(name)) changes[name] = field.value === "" ? null : Number(field.value);
       else changes[name] = field.value.trim() || null;
     });
+    changes.birth_date = birthDate; changes.first_payment_date = firstDate; changes.second_payment_date = secondDate;
     message.textContent = ""; setBusy(button, true, "Guardando…"); var caseId = state.activeCase.id;
     var result = await supabaseClient.rpc("revise_sales_minute", { p_sales_case_id: caseId, p_changes: changes, p_reason: form.elements.reason.value.trim() });
     if (result.error) { message.textContent = result.error.message; setBusy(button, false); return; }
@@ -270,6 +280,7 @@
   document.getElementById("editMinuteButton").addEventListener("click", function () { if (state.activeCase) openMinuteEditor(state.activeCase.id); });
   document.getElementById("printQuoteButton").addEventListener("click", printQuote);
   document.getElementById("minuteEditForm").addEventListener("submit", saveMinuteEdit);
+  ["birth_date", "first_payment_date", "second_payment_date"].forEach(function (name) { document.getElementById("minuteEditForm").elements[name].addEventListener("input", function () { finalMinute.maskDateInput(this); }); });
   document.querySelector("[data-close-minute-edit]").addEventListener("click", closeMinuteEditor);
   document.querySelector("[data-cancel-minute-edit]").addEventListener("click", closeMinuteEditor);
   document.getElementById("documentForm").addEventListener("submit", uploadDocument);
