@@ -18,10 +18,15 @@
     { value: "desistir", label: "Desistir" }
   ];
   var CLOSED_STAGES = ["venta", "desistir", "invalido"];
-  var state = { leads: [], tasks: [], appraisals: [], saleQuotes: [], activeLead: null, view: "agenda", searchAgenda: "", searchPipeline: "", loading: false };
+  var state = { leads: [], tasks: [], appraisals: [], commercialCatalog: [], activeLead: null, view: "agenda", searchAgenda: "", searchPipeline: "", loading: false };
   var leadDialog = document.getElementById("crmLeadDialog");
   var commentDialog = document.getElementById("crmCommentDialog");
-  var saleDialog = document.getElementById("crmSaleDialog");
+  var commercialSelectionDialog = document.getElementById("crmCommercialSelectionDialog");
+  var commercialSelectionForm = document.getElementById("crmCommercialSelectionForm");
+  var commercialBrandSelect = document.getElementById("crmCommercialBrand");
+  var commercialModelSelect = document.getElementById("crmCommercialModel");
+  var commercialVersionSelect = document.getElementById("crmCommercialVersion");
+  var commercialPlanSelect = document.getElementById("crmCommercialPlan");
   var answeredDialog = document.getElementById("crmAnsweredDialog");
   var appraisalDialog = document.getElementById("crmAppraisalDialog");
   var nameDialog = document.getElementById("crmNameDialog");
@@ -208,7 +213,7 @@
     try {
       var responses = await Promise.all([
         supabaseClient.from("leads").select(
-          "id, customer_id, customer_phone, customer_name, source_channel, source_detail, qualification_status, priority, intent_summary, model_interest, assigned_at, last_message_at, created_at, attribution:lead_attributions(platform,source_type,campaign_name,adset_name,ad_name,headline,source_url), crm:lead_crm(status, priority, status_reason, next_contact_at, next_contact_note, last_contact_at, last_contact_outcome, interview_at, interview_location, deposit_amount, deposit_at, cold_base_at, sale_confirmation_status, sale_requested_at, sale_confirmed_at, vehicle_sold, sale_amount, updated_at)"
+          "id, customer_id, customer_phone, customer_name, source_channel, source_detail, qualification_status, priority, intent_summary, model_interest, assigned_at, last_message_at, created_at, customer:customers(full_name,primary_phone,email,document_number,cuil), attribution:lead_attributions(platform,source_type,campaign_name,adset_name,ad_name,headline,source_url), crm:lead_crm(status, priority, status_reason, next_contact_at, next_contact_note, last_contact_at, last_contact_outcome, interview_at, interview_location, deposit_amount, deposit_at, cold_base_at, sale_confirmation_status, sale_requested_at, sale_confirmed_at, vehicle_sold, sale_amount, updated_at)"
         ).order("last_message_at", { ascending: false }).limit(500),
         supabaseClient.from("lead_contact_tasks").select("id, sequence_id, lead_id, sequence_order, channel, call_attempt, message_step, due_start, due_end, status, outcome, note, completed_at, template:contact_message_templates(title,body)").order("due_start", { ascending: true }).limit(3500),
         supabaseClient.from("vehicle_appraisals").select("id, lead_id, brand, model, version, vehicle_year, mileage_km, condition, notes, estimated_min, estimated_max, market_median, suggested_value, market_currency, estimate_source, estimate_basis, reference_count, market_references, market_checked_at, status, confirmed_value, confirmed_currency, review_note, updated_at").order("updated_at", { ascending: false }).limit(500)
@@ -580,23 +585,6 @@
     setBusy(button, false);
   }
 
-  async function requestSale() {
-    if (!state.activeLead) return;
-    var vehicle = document.getElementById("crmSaleVehicle").value.trim();
-    var amount = document.getElementById("crmSaleAmount").value;
-    var errorBox = document.getElementById("crmSaleError");
-    var button = document.getElementById("crmSaleSubmit");
-    errorBox.textContent = "";
-    if (vehicle.length < 2) { errorBox.textContent = "Indicá el vehículo vendido."; return; }
-    setBusy(button, true, "Enviando…");
-    var result = await supabaseClient.rpc("request_lead_sale_v2", { p_lead_id: state.activeLead.id, p_vehicle: vehicle, p_amount: amount ? Number(amount) : null, p_notes: document.getElementById("crmSaleNotes").value.trim(), p_quote_id: document.getElementById("crmSaleQuote").value || null });
-    if (result.error) { errorBox.textContent = result.error.message; setBusy(button, false); return; }
-    saleDialog.close();
-    await loadLeads(true);
-    await openLead(state.activeLead.id);
-    setBusy(button, false);
-  }
-
   async function completeContactTask(taskId, outcome) {
     if (!state.activeLead) return;
     var leadId = state.activeLead.id;
@@ -758,33 +746,131 @@
     }
     appraisalDialog.close();
   });
+
+  function fillCommercialSelect(select, items, placeholder, valueFor, labelFor) {
+    select.innerHTML = '<option value="">' + escapeHtml(placeholder) + '</option>' + items.map(function (item, index) {
+      return '<option value="' + escapeHtml(valueFor(item, index)) + '">' + escapeHtml(labelFor(item)) + '</option>';
+    }).join("");
+    select.disabled = items.length === 0;
+  }
+
+  function selectedCommercialBrand() {
+    return state.commercialCatalog.find(function (brand) { return brand.name === commercialBrandSelect.value; }) || null;
+  }
+
+  function selectedCommercialModel() {
+    var brand = selectedCommercialBrand();
+    return brand && brand.models.find(function (model) { return model.id === commercialModelSelect.value; }) || null;
+  }
+
+  function selectedCommercialVersion() {
+    var model = selectedCommercialModel();
+    if (commercialVersionSelect.value === "") return null;
+    var index = Number(commercialVersionSelect.value);
+    return model && Number.isInteger(index) ? model.versions[index] || null : null;
+  }
+
+  function selectedCommercialCampaign() {
+    var version = selectedCommercialVersion();
+    return version && version.campaigns.find(function (campaign) { return campaign.id === commercialPlanSelect.value; }) || null;
+  }
+
+  function autoSelectOnly(select, next) {
+    if (select.options.length === 2) {
+      select.selectedIndex = 1;
+      next();
+    }
+  }
+
+  function renderCommercialSummary() {
+    var brand = selectedCommercialBrand();
+    var model = selectedCommercialModel();
+    var version = selectedCommercialVersion();
+    var campaign = selectedCommercialCampaign();
+    var summary = document.getElementById("crmCommercialSelectionSummary");
+    var validationError = campaign ? campaign.validationError : "";
+    document.getElementById("crmCommercialSelectionError").textContent = validationError;
+    document.getElementById("crmCommercialContinue").disabled = !campaign || Boolean(validationError);
+    summary.textContent = campaign
+      ? [brand.name, model.name, version.label, campaign.label, "$ " + new Intl.NumberFormat("es-AR", { maximumFractionDigits: 0 }).format(Number(campaign.finalPrice))].join(" · ")
+      : "Seleccioná la unidad y el plan efectivamente vendidos.";
+  }
+
+  function renderCommercialPlans() {
+    var version = selectedCommercialVersion();
+    var campaigns = version ? version.campaigns : [];
+    fillCommercialSelect(commercialPlanSelect, campaigns, "Seleccionar plan", function (campaign) { return campaign.id; }, function (campaign) { return campaign.label; });
+    renderCommercialSummary();
+    autoSelectOnly(commercialPlanSelect, renderCommercialSummary);
+  }
+
+  function renderCommercialVersions() {
+    var model = selectedCommercialModel();
+    var versions = model ? model.versions : [];
+    fillCommercialSelect(commercialVersionSelect, versions, "Seleccionar versión", function (_, index) { return String(index); }, function (version) { return version.label; });
+    fillCommercialSelect(commercialPlanSelect, [], "Seleccionar plan", function () { return ""; }, function () { return ""; });
+    renderCommercialSummary();
+    autoSelectOnly(commercialVersionSelect, renderCommercialPlans);
+  }
+
+  function renderCommercialModels() {
+    var brand = selectedCommercialBrand();
+    var models = brand ? brand.models : [];
+    fillCommercialSelect(commercialModelSelect, models, "Seleccionar modelo", function (model) { return model.id; }, function (model) { return model.name; });
+    fillCommercialSelect(commercialVersionSelect, [], "Seleccionar versión", function () { return ""; }, function () { return ""; });
+    fillCommercialSelect(commercialPlanSelect, [], "Seleccionar plan", function () { return ""; }, function () { return ""; });
+    renderCommercialSummary();
+    autoSelectOnly(commercialModelSelect, renderCommercialVersions);
+  }
+
+  function renderCommercialBrands() {
+    fillCommercialSelect(commercialBrandSelect, state.commercialCatalog, "Seleccionar marca", function (brand) { return brand.name; }, function (brand) { return brand.name; });
+    fillCommercialSelect(commercialModelSelect, [], "Seleccionar modelo", function () { return ""; }, function () { return ""; });
+    fillCommercialSelect(commercialVersionSelect, [], "Seleccionar versión", function () { return ""; }, function () { return ""; });
+    fillCommercialSelect(commercialPlanSelect, [], "Seleccionar plan", function () { return ""; }, function () { return ""; });
+    renderCommercialSummary();
+  }
+
+  async function openCommercialSelection(button) {
+    if (!state.activeLead || !window.grupoSurCommercialApplication) return;
+    setBusy(button, true, "Cargando catálogo…");
+    try {
+      state.commercialCatalog = await window.grupoSurCommercialApplication.getCatalog({ refresh: true });
+      if (!state.commercialCatalog.length) throw new Error("No hay campañas comerciales vigentes para cargar el Datero.");
+      renderCommercialBrands();
+      leadDialog.close();
+      commercialSelectionDialog.showModal();
+    } catch (error) {
+      document.getElementById("crmFormError").textContent = error.message || "No se pudo cargar el catálogo comercial vigente.";
+    } finally {
+      setBusy(button, false);
+    }
+  }
+
   document.getElementById("crmAnsweredSave").addEventListener("click", saveAnsweredFollowUp);
   document.getElementById("crmAnsweredDate").addEventListener("input", function () { maskDateInput(this); });
-  document.getElementById("crmSaleButton").addEventListener("click", async function () {
+  document.getElementById("crmSaleButton").addEventListener("click", function () {
     if (this.disabled || !state.activeLead) return;
-    document.getElementById("crmSaleVehicle").value = crmOf(state.activeLead).vehicle_sold || state.activeLead.model_interest || "";
-    document.getElementById("crmSaleAmount").value = "";
-    document.getElementById("crmSaleNotes").value = "";
-    var quotes = await supabaseClient.from("sales_quotes").select("id, quote_code, offer_type, vehicle_version, sale_price, final_advance_amount, commercial_snapshot").eq("lead_id", state.activeLead.id).eq("status", "issued").order("issued_at", { ascending: false });
-    state.saleQuotes = quotes.data || [];
-    document.getElementById("crmSaleQuote").innerHTML = '<option value="">Sin presupuesto asociado</option>' + state.saleQuotes.map(function (quote) { var snapshot = quote.commercial_snapshot || {}; return '<option value="' + quote.id + '">' + escapeHtml(quote.quote_code + " · " + (snapshot.model || "") + " " + quote.vehicle_version) + '</option>'; }).join("");
-    document.getElementById("crmSaleVehicle").readOnly = false;
-    document.getElementById("crmSaleAmount").readOnly = false;
-    document.getElementById("crmSaleError").textContent = "";
-    saleDialog.showModal();
+    openCommercialSelection(this);
   });
-  document.getElementById("crmSaleSubmit").addEventListener("click", requestSale);
-  document.getElementById("crmSaleQuote").addEventListener("change", function () {
-    var quote = state.saleQuotes.find(function (item) { return item.id === this.value; }, this);
-    var isPlan = quote && quote.offer_type === "savings_plan";
-    var snapshot = quote && quote.commercial_snapshot || {};
-    if (isPlan) {
-      document.getElementById("crmSaleVehicle").value = [snapshot.brand, snapshot.model, quote.vehicle_version].filter(Boolean).join(" ");
-      document.getElementById("crmSaleAmount").value = quote.sale_price;
-    }
-    document.getElementById("crmSaleVehicle").readOnly = Boolean(isPlan);
-    document.getElementById("crmSaleAmount").readOnly = Boolean(isPlan);
-    document.getElementById("crmSaleQuoteHelp").textContent = isPlan ? "Datos bloqueados: la venta toma el vehículo y el valor final del plan seleccionado, sin descontar bonificaciones." : "Si elegís un presupuesto de plan, el vehículo y el importe se toman de esa propuesta.";
+  commercialBrandSelect.addEventListener("change", renderCommercialModels);
+  commercialModelSelect.addEventListener("change", renderCommercialVersions);
+  commercialVersionSelect.addEventListener("change", renderCommercialPlans);
+  commercialPlanSelect.addEventListener("change", renderCommercialSummary);
+  document.getElementById("crmCommercialSelectionClose").addEventListener("click", function () {
+    commercialSelectionDialog.close();
+    if (state.activeLead) leadDialog.showModal();
+  });
+  commercialSelectionForm.addEventListener("submit", function (event) {
+    event.preventDefault();
+    var campaign = selectedCommercialCampaign();
+    var errorBox = document.getElementById("crmCommercialSelectionError");
+    var error = campaign ? window.grupoSurCommercialApplication.validateCampaign(campaign.id) : "Completá Marca, Modelo, Versión y Plan.";
+    errorBox.textContent = error;
+    if (error) return;
+    var lead = state.activeLead;
+    commercialSelectionDialog.close();
+    window.grupoSurCommercialApplication.open({ origin: "crm_lead", lead: lead, campaignId: campaign.id });
   });
   document.getElementById("crmRefreshButton").addEventListener("click", function () { var button = this; setBusy(button, true, "Actualizando…"); loadLeads(false).finally(function () { setBusy(button, false); }); });
   document.getElementById("crmAgendaSearch").addEventListener("input", function () { state.searchAgenda = this.value; renderAgenda(); });
@@ -796,5 +882,5 @@
 
   var now = new Date();
   document.getElementById("crmRankingMonth").value = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0");
-  window.grupoSurCRM = { open: openView, refresh: loadLeads, getActiveLead: function () { return state.activeLead; } };
+  window.grupoSurCRM = { open: openView, openLead: openLead, refresh: loadLeads, getActiveLead: function () { return state.activeLead; } };
 }());

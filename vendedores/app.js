@@ -205,7 +205,8 @@
     requestId: "",
     prequalificationId: "",
     applicationId: "",
-    application: null
+    application: null,
+    applicationContext: null
   };
 
   var loginPage = document.getElementById("loginPage");
@@ -354,6 +355,87 @@
     return model.active !== false &&
       (!startsAt || now >= startsAt) &&
       (!endsAt || now <= endsAt);
+  }
+
+  function resolveCommercialCampaign(campaignId) {
+    var resolved = null;
+    Object.keys(BRANDS).some(function (brandName) {
+      var brand = BRANDS[brandName];
+      return brand.models.some(function (model) {
+        var offer = model.offers.find(function (item) {
+          return item.campaignId === campaignId && isCampaignActive(item);
+        });
+        if (!offer || model.active === false) {
+          return false;
+        }
+        resolved = { brandName: brandName, brand: brand, model: model, offer: offer };
+        return true;
+      });
+    });
+    return resolved;
+  }
+
+  function commercialCampaignError(resolved) {
+    var offer;
+    if (!resolved) {
+      return "La campaña seleccionada ya no está vigente. Actualizá el catálogo y elegí otra opción.";
+    }
+    offer = resolved.offer;
+    if (!offer.campaignId || !resolved.brandName || !resolved.model.id || !resolved.model.name) {
+      return "La campaña no tiene una identidad comercial completa.";
+    }
+    if (!offer.versionName || !offer.transmission) {
+      return "La campaña no tiene versión y transmisión completas.";
+    }
+    if (!offer.campaign || !Number.isInteger(Number(offer.installmentCount)) || Number(offer.installmentCount) < 1) {
+      return "La campaña no tiene plan o cantidad de cuotas válidos.";
+    }
+    if (!Number.isFinite(Number(offer.finalPrice)) || Number(offer.finalPrice) <= 0) {
+      return "La campaña seleccionada no tiene un valor final vigente cargado.";
+    }
+    if (offer.advanceAmount === null || offer.advanceAmount === "" || !Number.isFinite(Number(offer.advanceAmount))
+      || offer.installmentAmount === null || offer.installmentAmount === "" || !Number.isFinite(Number(offer.installmentAmount)) || Number(offer.installmentAmount) <= 0) {
+      return "La campaña seleccionada no tiene anticipo o cuota vigentes cargados.";
+    }
+    if (!resolved.model.image) {
+      return "El modelo seleccionado no tiene una imagen vigente cargada.";
+    }
+    return "";
+  }
+
+  function buildCommercialCatalog() {
+    return Object.keys(BRANDS).map(function (brandName) {
+      var brand = BRANDS[brandName];
+      var models = brand.models.filter(function (model) {
+        return model.active !== false && model.offers.some(isCampaignActive);
+      }).map(function (model) {
+        var versionMap = {};
+        model.offers.filter(isCampaignActive).forEach(function (offer) {
+          var key = offer.versionName + "\u001f" + offer.transmission;
+          if (!versionMap[key]) {
+            versionMap[key] = {
+              key: key,
+              label: vehicleVersion(offer),
+              campaigns: []
+            };
+          }
+          versionMap[key].campaigns.push({
+            id: offer.campaignId,
+            label: planDescription(offer),
+            planName: offer.campaign,
+            installmentCount: offer.installmentCount,
+            finalPrice: offer.finalPrice,
+            validationError: commercialCampaignError({ brandName: brandName, brand: brand, model: model, offer: offer })
+          });
+        });
+        return {
+          id: model.id,
+          name: model.name,
+          versions: Object.keys(versionMap).map(function (key) { return versionMap[key]; })
+        };
+      });
+      return { name: brandName, models: models };
+    }).filter(function (brand) { return brand.models.length > 0; });
   }
 
   function initials(name) {
@@ -563,6 +645,7 @@
     state.prequalificationId = "";
     state.applicationId = "";
     state.application = null;
+    state.applicationContext = null;
     state.visibleOffers = [];
     portal.removeAttribute("data-brand-theme");
     if (state.countdownTimer) {
@@ -987,19 +1070,56 @@
     }
   }
 
-  function openCommercialApplication() {
+  function crmApplicationClient(lead) {
+    var customer = lead && lead.customer;
+    customer = Array.isArray(customer) ? customer[0] || {} : customer || {};
+    return {
+      fullName: customer.full_name || lead.customer_name || "",
+      phone: customer.primary_phone || lead.customer_phone || "",
+      email: customer.email || "",
+      cuil: customer.cuil || "",
+      documentNumber: customer.document_number || ""
+    };
+  }
+
+  function openCommercialApplication(context) {
     var names;
     var data;
-    if (!state.prequalificationId) {
-      return;
+    var isCrmLead = context && context.origin === "crm_lead";
+    var client;
+    var selectedCampaign;
+    if (isCrmLead) {
+      selectedCampaign = resolveCommercialCampaign(context.campaignId);
+      if (!context.lead || !context.lead.id || commercialCampaignError(selectedCampaign)) {
+        return;
+      }
+      client = crmApplicationClient(context.lead);
+      state.applicationContext = {
+        origin: "crm_lead",
+        leadId: context.lead.id,
+        campaignId: selectedCampaign.offer.campaignId
+      };
+      state.prequalificationId = "";
+      state.applicationId = "";
+      state.application = null;
+      state.requestId = "CRM-" + context.lead.id;
+      state.client = client;
+      state.brand = selectedCampaign.brandName;
+      state.model = Object.assign({}, selectedCampaign.model, selectedCampaign.offer);
+    } else {
+      if (!state.prequalificationId) {
+        return;
+      }
+      state.applicationContext = { origin: "prequalification" };
+      client = state.client;
     }
-    names = splitClientName(state.client.fullName);
+    names = splitClientName(client.fullName);
     data = state.application || {
       firstName: names.firstName,
       lastName: names.lastName,
       documentType: "DNI",
-      documentNumber: "",
-      cuil: state.client.cuil,
+      documentNumber: client.documentNumber || "",
+      cuil: client.cuil,
       birthDate: "",
       address: "",
       cityProvince: "",
@@ -1007,9 +1127,9 @@
       maritalStatus: "",
       spouseName: "",
       spouseDocument: "",
-      primaryPhone: state.client.phone,
+      primaryPhone: client.phone,
       alternatePhone: "",
-      email: state.client.email,
+      email: client.email,
       contactSchedule: "",
       employmentStatus: "",
       employerName: "",
@@ -1034,23 +1154,27 @@
       setApplicationField(name === "consent" ? "applicationConsent" : name, value);
     });
     setApplicationField("cuil", formatCuilInput(data.cuil));
+    applicationForm.elements.cuil.readOnly = !isCrmLead;
+    applicationForm.elements.planType.readOnly = isCrmLead;
+    applicationForm.elements.agreedPrice.readOnly = true;
     setApplicationField("agreedPrice", state.model.finalPrice ? formatMoney(state.model.finalPrice) : "");
     document.getElementById("applicationRequestCode").textContent = state.requestId;
     document.getElementById("applicationVehicle").textContent = state.brand + " " + vehicleTitle(state.model);
-    document.getElementById("applicationCampaign").textContent = planDescription(state.model);
+    document.getElementById("applicationCampaign").textContent = planDescription(state.model) || "Sin presupuesto asociado";
+    document.querySelector('[data-action="back-to-result"]').textContent = isCrmLead ? "← Volver al Lead" : "← Volver a la precalificación";
     applicationError.textContent = "";
     setView("application");
     applicationForm.elements.firstName.focus();
   }
 
   function saveCommercialApplication(data) {
-    return supabaseClient.from("commercial_applications").upsert({
-      prequalification_event_id: state.prequalificationId,
+    var isCrmLead = state.applicationContext && state.applicationContext.origin === "crm_lead";
+    var payload = {
       seller_user_id: state.userId,
       request_code: state.requestId,
       brand_name: state.brand,
       model_name: state.model.name,
-      campaign_name: planDescription(state.model),
+      campaign_name: isCrmLead ? state.model.campaign : planDescription(state.model),
       first_name: data.firstName,
       last_name: data.lastName,
       document_type: data.documentType,
@@ -1086,10 +1210,14 @@
       confirmed_at: new Date().toISOString(),
       commercial_snapshot: {
         plan: state.model.campaign,
+        campaignId: state.model.campaignId,
+        modelId: state.model.id,
         version: state.model.versionName,
         transmission: state.model.transmission,
         installmentCount: state.model.installmentCount,
         finalPrice: state.model.finalPrice,
+        advanceAmount: state.model.advanceAmount,
+        installmentAmount: state.model.installmentAmount,
         advance: state.model.advance,
         installment: state.model.installment,
         availability: state.model.availability,
@@ -1100,7 +1228,16 @@
         sellerCode: state.seller.code,
         sellerPhone: state.seller.phone
       }
-    }, { onConflict: "prequalification_event_id" }).select("id").single();
+    };
+    if (isCrmLead) {
+      payload.lead_id = state.applicationContext.leadId;
+      payload.campaign_id = state.applicationContext.campaignId;
+    } else {
+      payload.prequalification_event_id = state.prequalificationId;
+    }
+    return supabaseClient.from("commercial_applications").upsert(payload, {
+      onConflict: isCrmLead ? "lead_id" : "prequalification_event_id"
+    }).select("id").single();
   }
 
   function minuteValue(value) {
@@ -1325,7 +1462,18 @@
       renderOffers();
       setView("offer");
     } else if (action === "back-to-result") {
-      setView("result");
+      if (state.applicationContext && state.applicationContext.origin === "crm_lead") {
+        if (window.grupoSurCRM && typeof window.grupoSurCRM.open === "function") {
+          window.grupoSurCRM.open("agenda");
+        } else {
+          setView("crmAgenda");
+        }
+        if (window.grupoSurCRM && typeof window.grupoSurCRM.openLead === "function") {
+          window.grupoSurCRM.openLead(state.applicationContext.leadId);
+        }
+      } else {
+        setView("result");
+      }
     }
   });
 
@@ -1354,10 +1502,16 @@
     runProcessing();
   });
 
-  applicationButton.addEventListener("click", openCommercialApplication);
+  applicationButton.addEventListener("click", function () {
+    openCommercialApplication({ origin: "prequalification" });
+  });
 
   applicationForm.elements.birthDate.addEventListener("input", function () {
     maskDateInput(this);
+  });
+
+  applicationForm.elements.cuil.addEventListener("input", function () {
+    this.value = formatCuilInput(this.value);
   });
 
   applicationForm.addEventListener("submit", async function (event) {
@@ -1379,9 +1533,14 @@
       if (response.error) {
         throw response.error;
       }
-      var saleResponse = await supabaseClient.rpc("submit_prequalification_sale", {
+      var saleFunction = state.applicationContext && state.applicationContext.origin === "crm_lead"
+        ? "submit_crm_lead_sale"
+        : "submit_prequalification_sale";
+      var saleResponse = await supabaseClient.rpc(saleFunction, {
         p_application_id: response.data.id,
-        p_notes: "Operación originada en la precalificación " + state.requestId
+        p_notes: state.applicationContext && state.applicationContext.origin === "crm_lead"
+          ? "Operación originada en el Lead " + state.applicationContext.leadId
+          : "Operación originada en la precalificación " + state.requestId
       });
       if (saleResponse.error) {
         throw saleResponse.error;
@@ -1437,6 +1596,19 @@
       return;
     }
   });
+
+  window.grupoSurCommercialApplication = {
+    open: openCommercialApplication,
+    getCatalog: async function (options) {
+      if (options && options.refresh) {
+        await loadCentralCampaigns();
+      }
+      return buildCommercialCatalog();
+    },
+    validateCampaign: function (campaignId) {
+      return commercialCampaignError(resolveCommercialCampaign(campaignId));
+    }
+  };
 
   formatCurrentDate();
   renderHistory();
