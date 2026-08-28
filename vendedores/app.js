@@ -357,6 +357,87 @@
       (!endsAt || now <= endsAt);
   }
 
+  function resolveCommercialCampaign(campaignId) {
+    var resolved = null;
+    Object.keys(BRANDS).some(function (brandName) {
+      var brand = BRANDS[brandName];
+      return brand.models.some(function (model) {
+        var offer = model.offers.find(function (item) {
+          return item.campaignId === campaignId && isCampaignActive(item);
+        });
+        if (!offer || model.active === false) {
+          return false;
+        }
+        resolved = { brandName: brandName, brand: brand, model: model, offer: offer };
+        return true;
+      });
+    });
+    return resolved;
+  }
+
+  function commercialCampaignError(resolved) {
+    var offer;
+    if (!resolved) {
+      return "La campaña seleccionada ya no está vigente. Actualizá el catálogo y elegí otra opción.";
+    }
+    offer = resolved.offer;
+    if (!offer.campaignId || !resolved.brandName || !resolved.model.id || !resolved.model.name) {
+      return "La campaña no tiene una identidad comercial completa.";
+    }
+    if (!offer.versionName || !offer.transmission) {
+      return "La campaña no tiene versión y transmisión completas.";
+    }
+    if (!offer.campaign || !Number.isInteger(Number(offer.installmentCount)) || Number(offer.installmentCount) < 1) {
+      return "La campaña no tiene plan o cantidad de cuotas válidos.";
+    }
+    if (!Number.isFinite(Number(offer.finalPrice)) || Number(offer.finalPrice) <= 0) {
+      return "La campaña seleccionada no tiene un valor final vigente cargado.";
+    }
+    if (offer.advanceAmount === null || offer.advanceAmount === "" || !Number.isFinite(Number(offer.advanceAmount))
+      || offer.installmentAmount === null || offer.installmentAmount === "" || !Number.isFinite(Number(offer.installmentAmount)) || Number(offer.installmentAmount) <= 0) {
+      return "La campaña seleccionada no tiene anticipo o cuota vigentes cargados.";
+    }
+    if (!resolved.model.image) {
+      return "El modelo seleccionado no tiene una imagen vigente cargada.";
+    }
+    return "";
+  }
+
+  function buildCommercialCatalog() {
+    return Object.keys(BRANDS).map(function (brandName) {
+      var brand = BRANDS[brandName];
+      var models = brand.models.filter(function (model) {
+        return model.active !== false && model.offers.some(isCampaignActive);
+      }).map(function (model) {
+        var versionMap = {};
+        model.offers.filter(isCampaignActive).forEach(function (offer) {
+          var key = offer.versionName + "\u001f" + offer.transmission;
+          if (!versionMap[key]) {
+            versionMap[key] = {
+              key: key,
+              label: vehicleVersion(offer),
+              campaigns: []
+            };
+          }
+          versionMap[key].campaigns.push({
+            id: offer.campaignId,
+            label: planDescription(offer),
+            planName: offer.campaign,
+            installmentCount: offer.installmentCount,
+            finalPrice: offer.finalPrice,
+            validationError: commercialCampaignError({ brandName: brandName, brand: brand, model: model, offer: offer })
+          });
+        });
+        return {
+          id: model.id,
+          name: model.name,
+          versions: Object.keys(versionMap).map(function (key) { return versionMap[key]; })
+        };
+      });
+      return { name: brandName, models: models };
+    }).filter(function (brand) { return brand.models.length > 0; });
+  }
+
   function initials(name) {
     return String(name || "")
       .split(/\s+/)
@@ -918,9 +999,7 @@
       installmentsPaid: 0,
       installmentsToPay: Number(state.model.installmentCount) || 1,
       planType: String(fields.planType.value || "").trim().replace(/\s+/g, " "),
-      agreedPrice: state.applicationContext && state.applicationContext.origin === "crm_lead"
-        ? parseMoney(fields.agreedPrice.value)
-        : Number(state.model.finalPrice) || null,
+      agreedPrice: Number(state.model.finalPrice) || null,
       firstPaymentDate: "",
       firstPaymentAmount: null,
       secondPaymentDate: "",
@@ -1003,41 +1082,30 @@
     };
   }
 
-  function crmApplicationModel(lead) {
-    return {
-      name: lead.model_interest || "Vehículo a definir",
-      versionName: "",
-      transmission: "",
-      campaign: "",
-      installmentCount: 0,
-      finalPrice: null,
-      advance: "A confirmar",
-      installment: "A confirmar",
-      availability: "A confirmar",
-      bonus: "",
-      benefits: [],
-      image: "../assets/logo-header.webp"
-    };
-  }
-
   function openCommercialApplication(context) {
     var names;
     var data;
     var isCrmLead = context && context.origin === "crm_lead";
     var client;
+    var selectedCampaign;
     if (isCrmLead) {
-      if (!context.lead || !context.lead.id) {
+      selectedCampaign = resolveCommercialCampaign(context.campaignId);
+      if (!context.lead || !context.lead.id || commercialCampaignError(selectedCampaign)) {
         return;
       }
       client = crmApplicationClient(context.lead);
-      state.applicationContext = { origin: "crm_lead", leadId: context.lead.id };
+      state.applicationContext = {
+        origin: "crm_lead",
+        leadId: context.lead.id,
+        campaignId: selectedCampaign.offer.campaignId
+      };
       state.prequalificationId = "";
       state.applicationId = "";
       state.application = null;
       state.requestId = "CRM-" + context.lead.id;
       state.client = client;
-      state.brand = "A definir";
-      state.model = crmApplicationModel(context.lead);
+      state.brand = selectedCampaign.brandName;
+      state.model = Object.assign({}, selectedCampaign.model, selectedCampaign.offer);
     } else {
       if (!state.prequalificationId) {
         return;
@@ -1087,7 +1155,8 @@
     });
     setApplicationField("cuil", formatCuilInput(data.cuil));
     applicationForm.elements.cuil.readOnly = !isCrmLead;
-    applicationForm.elements.agreedPrice.readOnly = !isCrmLead;
+    applicationForm.elements.planType.readOnly = isCrmLead;
+    applicationForm.elements.agreedPrice.readOnly = true;
     setApplicationField("agreedPrice", state.model.finalPrice ? formatMoney(state.model.finalPrice) : "");
     document.getElementById("applicationRequestCode").textContent = state.requestId;
     document.getElementById("applicationVehicle").textContent = state.brand + " " + vehicleTitle(state.model);
@@ -1105,7 +1174,7 @@
       request_code: state.requestId,
       brand_name: state.brand,
       model_name: state.model.name,
-      campaign_name: isCrmLead ? data.planType : planDescription(state.model),
+      campaign_name: isCrmLead ? state.model.campaign : planDescription(state.model),
       first_name: data.firstName,
       last_name: data.lastName,
       document_type: data.documentType,
@@ -1141,10 +1210,14 @@
       confirmed_at: new Date().toISOString(),
       commercial_snapshot: {
         plan: state.model.campaign,
+        campaignId: state.model.campaignId,
+        modelId: state.model.id,
         version: state.model.versionName,
         transmission: state.model.transmission,
         installmentCount: state.model.installmentCount,
         finalPrice: state.model.finalPrice,
+        advanceAmount: state.model.advanceAmount,
+        installmentAmount: state.model.installmentAmount,
         advance: state.model.advance,
         installment: state.model.installment,
         availability: state.model.availability,
@@ -1158,6 +1231,7 @@
     };
     if (isCrmLead) {
       payload.lead_id = state.applicationContext.leadId;
+      payload.campaign_id = state.applicationContext.campaignId;
     } else {
       payload.prequalification_event_id = state.prequalificationId;
     }
@@ -1455,10 +1529,6 @@
     applicationSubmitButton.disabled = true;
     applicationSubmitButton.textContent = "Enviando a supervisión…";
     try {
-      if (state.applicationContext && state.applicationContext.origin === "crm_lead") {
-        state.model.campaign = data.planType;
-        state.model.finalPrice = data.agreedPrice;
-      }
       response = await saveCommercialApplication(data);
       if (response.error) {
         throw response.error;
@@ -1528,7 +1598,16 @@
   });
 
   window.grupoSurCommercialApplication = {
-    open: openCommercialApplication
+    open: openCommercialApplication,
+    getCatalog: async function (options) {
+      if (options && options.refresh) {
+        await loadCentralCampaigns();
+      }
+      return buildCommercialCatalog();
+    },
+    validateCampaign: function (campaignId) {
+      return commercialCampaignError(resolveCommercialCampaign(campaignId));
+    }
   };
 
   formatCurrentDate();

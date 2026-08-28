@@ -2,18 +2,26 @@
 -- assigned CRM Lead without creating a fictitious prequalification.
 
 alter table public.commercial_applications
-  add column lead_id uuid references public.leads (id) on delete restrict;
+  add column lead_id uuid references public.leads (id) on delete restrict,
+  add column campaign_id uuid references public.campaigns (id) on delete restrict;
 
 alter table public.commercial_applications
   drop constraint if exists commercial_applications_source,
   add constraint commercial_applications_source check (
     num_nonnulls(prequalification_event_id, sales_case_id, lead_id) = 1
   ),
+  add constraint commercial_applications_crm_campaign check (
+    lead_id is null or campaign_id is not null
+  ),
   add constraint commercial_applications_lead_unique unique (lead_id);
 
 create index commercial_applications_lead_time_idx
   on public.commercial_applications (lead_id, created_at desc)
   where lead_id is not null;
+
+create index commercial_applications_campaign_idx
+  on public.commercial_applications (campaign_id)
+  where campaign_id is not null;
 
 drop policy if exists commercial_applications_seller_insert on public.commercial_applications;
 create policy commercial_applications_seller_insert
@@ -67,6 +75,24 @@ declare
   v_application public.commercial_applications%rowtype;
   v_request_id uuid;
   v_vehicle text;
+  v_campaign_name text;
+  v_version_name text;
+  v_transmission text;
+  v_installment_count integer;
+  v_final_price numeric;
+  v_advance_amount numeric;
+  v_installment_amount numeric;
+  v_model_id uuid;
+  v_model_name text;
+  v_brand_name text;
+  v_model_image text;
+  v_bonus text;
+  v_benefits text[];
+  v_campaign_active boolean;
+  v_model_active boolean;
+  v_brand_active boolean;
+  v_valid_from date;
+  v_valid_to date;
 begin
   if v_user_id is null or not private.current_user_active() then
     raise exception 'Acceso no autorizado';
@@ -91,6 +117,83 @@ begin
       and lead.assigned_seller_user_id = v_user_id
   ) then
     raise exception 'El Lead no está asignado a este vendedor';
+  end if;
+
+  select
+    campaign.plan_name,
+    campaign.version_name,
+    campaign.transmission,
+    campaign.installment_count,
+    campaign.final_price,
+    campaign.advance_amount,
+    campaign.installment_amount,
+    model.id,
+    model.name,
+    brand.name,
+    model.image_path,
+    campaign.bonus,
+    campaign.benefits,
+    campaign.active,
+    model.active,
+    brand.active,
+    campaign.valid_from,
+    campaign.valid_to
+  into
+    v_campaign_name,
+    v_version_name,
+    v_transmission,
+    v_installment_count,
+    v_final_price,
+    v_advance_amount,
+    v_installment_amount,
+    v_model_id,
+    v_model_name,
+    v_brand_name,
+    v_model_image,
+    v_bonus,
+    v_benefits,
+    v_campaign_active,
+    v_model_active,
+    v_brand_active,
+    v_valid_from,
+    v_valid_to
+  from public.campaigns campaign
+  join public.models model on model.id = campaign.model_id
+  join public.brands brand on brand.id = model.brand_id
+  where campaign.id = v_application.campaign_id;
+
+  if not found then
+    raise exception 'La campaña seleccionada no existe en el catálogo central';
+  end if;
+  if not v_campaign_active or not v_model_active or not v_brand_active
+    or (v_valid_from is not null and v_valid_from > current_date)
+    or (v_valid_to is not null and v_valid_to < current_date) then
+    raise exception 'La campaña seleccionada ya no está vigente';
+  end if;
+  if coalesce(trim(v_version_name), '') = '' or coalesce(trim(v_transmission), '') = ''
+    or coalesce(trim(v_campaign_name), '') = '' or coalesce(v_installment_count, 0) < 1
+    or coalesce(v_final_price, 0) <= 0 or v_advance_amount is null
+    or coalesce(v_installment_amount, 0) <= 0 or coalesce(trim(v_model_image), '') = '' then
+    raise exception 'La campaña seleccionada tiene datos obligatorios incompletos';
+  end if;
+  if v_application.brand_name is distinct from v_brand_name
+    or v_application.model_name is distinct from v_model_name
+    or v_application.campaign_name is distinct from v_campaign_name
+    or v_application.plan_type is distinct from (v_campaign_name || ' · ' || v_installment_count || ' cuotas')
+    or v_application.installments_to_pay is distinct from v_installment_count
+    or v_application.agreed_price is distinct from v_final_price
+    or v_application.commercial_snapshot ->> 'campaignId' is distinct from v_application.campaign_id::text
+    or v_application.commercial_snapshot ->> 'modelId' is distinct from v_model_id::text
+    or v_application.commercial_snapshot ->> 'version' is distinct from v_version_name
+    or v_application.commercial_snapshot ->> 'transmission' is distinct from v_transmission
+    or (v_application.commercial_snapshot ->> 'installmentCount')::integer is distinct from v_installment_count
+    or (v_application.commercial_snapshot ->> 'finalPrice')::numeric is distinct from v_final_price
+    or (v_application.commercial_snapshot ->> 'advanceAmount')::numeric is distinct from v_advance_amount
+    or (v_application.commercial_snapshot ->> 'installmentAmount')::numeric is distinct from v_installment_amount
+    or v_application.commercial_snapshot ->> 'bonus' is distinct from v_bonus
+    or v_application.commercial_snapshot ->> 'image' is distinct from v_model_image
+    or v_application.commercial_snapshot -> 'benefits' is distinct from to_jsonb(v_benefits) then
+    raise exception 'Las condiciones de la campaña cambiaron. Volvé a seleccionarla antes de enviar el Datero';
   end if;
 
   if char_length(trim(coalesce(p_notes, ''))) > 3000 then
@@ -119,13 +222,7 @@ begin
     raise exception 'La venta ya se encuentra en el circuito administrativo';
   end if;
 
-  v_vehicle := trim(concat_ws(' ',
-    nullif(v_application.brand_name, 'A definir'),
-    nullif(v_application.model_name, 'Vehículo a definir')
-  ));
-  if char_length(v_vehicle) < 2 then
-    v_vehicle := 'Vehículo a definir';
-  end if;
+  v_vehicle := trim(concat_ws(' ', v_brand_name, v_model_name, v_version_name, v_transmission));
 
   insert into public.lead_sale_requests (
     lead_id,
@@ -173,6 +270,7 @@ begin
       'amount', v_application.agreed_price,
       'request_id', v_request_id,
       'provisional_application_id', v_application.id,
+      'campaign_id', v_application.campaign_id,
       'origin', 'crm_lead'
     )
   );
