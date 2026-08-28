@@ -7,6 +7,7 @@ const app = readFileSync(new URL("../vendedores/app.js", import.meta.url), "utf8
 const crm = readFileSync(new URL("../vendedores/crm.js", import.meta.url), "utf8");
 const html = readFileSync(new URL("../vendedores/index.html", import.meta.url), "utf8");
 const migration = readFileSync(new URL("../supabase/migrations/20260827230000_crm_lead_shared_datero.sql", import.meta.url), "utf8");
+const leadUpsertMigration = readFileSync(new URL("../supabase/migrations/20260828014736_fix_crm_datero_lead_upsert.sql", import.meta.url), "utf8");
 
 const applicationOpener = app.slice(
   app.indexOf("function openCommercialApplication(context)"),
@@ -154,6 +155,14 @@ test("un Datero originado desde CRM se guarda y se envía a Supervisión", () =>
   assert.ok(migration.includes("sale_confirmation_status = 'pending'"));
   assert.ok(migration.includes("'Datero enviado a supervisión'"));
   assert.ok(migration.includes("notify pgrst, 'reload schema'"));
+});
+
+test("el upsert CRM usa una constraint UNIQUE no parcial sobre lead_id", () => {
+  assert.ok(app.includes('onConflict: isCrmLead ? "lead_id" : "prequalification_event_id"'));
+  assert.ok(leadUpsertMigration.includes("drop index if exists public.commercial_applications_lead_unique"));
+  assert.ok(leadUpsertMigration.includes("add constraint commercial_applications_lead_unique unique (lead_id)"));
+  assert.ok(!leadUpsertMigration.includes("where lead_id is not null"));
+  assert.ok(leadUpsertMigration.includes("notify pgrst, 'reload schema'"));
 });
 
 test("el flujo original de Precalificado conserva su persistencia", () => {
