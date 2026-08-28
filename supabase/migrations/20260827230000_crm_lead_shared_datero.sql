@@ -2,24 +2,71 @@
 -- assigned CRM Lead without creating a fictitious prequalification.
 
 alter table public.commercial_applications
-  add column lead_id uuid references public.leads (id) on delete restrict,
-  add column campaign_id uuid references public.campaigns (id) on delete restrict;
+  add column if not exists lead_id uuid,
+  add column if not exists campaign_id uuid;
+
+do $migration$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conrelid = 'public.commercial_applications'::regclass
+      and conname = 'commercial_applications_lead_id_fkey'
+  ) then
+    alter table public.commercial_applications
+      add constraint commercial_applications_lead_id_fkey
+      foreign key (lead_id) references public.leads (id) on delete restrict;
+  end if;
+
+  if not exists (
+    select 1
+    from pg_constraint
+    where conrelid = 'public.commercial_applications'::regclass
+      and conname = 'commercial_applications_campaign_id_fkey'
+  ) then
+    alter table public.commercial_applications
+      add constraint commercial_applications_campaign_id_fkey
+      foreign key (campaign_id) references public.campaigns (id) on delete restrict;
+  end if;
+end
+$migration$;
 
 alter table public.commercial_applications
   drop constraint if exists commercial_applications_source,
   add constraint commercial_applications_source check (
     num_nonnulls(prequalification_event_id, sales_case_id, lead_id) = 1
-  ),
+  );
+
+alter table public.commercial_applications
+  drop constraint if exists commercial_applications_crm_campaign,
   add constraint commercial_applications_crm_campaign check (
     lead_id is null or campaign_id is not null
-  ),
-  add constraint commercial_applications_lead_unique unique (lead_id);
+  ) not valid;
 
-create index commercial_applications_lead_time_idx
+-- Existing historical CRM rows are never rewritten. The check applies to every
+-- new or updated row and is validated immediately when there is no legacy gap.
+do $migration$
+begin
+  if not exists (
+    select 1
+    from public.commercial_applications
+    where lead_id is not null and campaign_id is null
+  ) then
+    alter table public.commercial_applications
+      validate constraint commercial_applications_crm_campaign;
+  end if;
+end
+$migration$;
+
+create unique index if not exists commercial_applications_lead_unique
+  on public.commercial_applications (lead_id)
+  where lead_id is not null;
+
+create index if not exists commercial_applications_lead_time_idx
   on public.commercial_applications (lead_id, created_at desc)
   where lead_id is not null;
 
-create index commercial_applications_campaign_idx
+create index if not exists commercial_applications_campaign_idx
   on public.commercial_applications (campaign_id)
   where campaign_id is not null;
 
@@ -61,7 +108,7 @@ with check (
   )
 );
 
-create function public.submit_crm_lead_sale(
+create or replace function public.submit_crm_lead_sale(
   p_application_id uuid,
   p_notes text default ''
 )
@@ -281,3 +328,5 @@ $$;
 
 revoke all on function public.submit_crm_lead_sale(uuid, text) from public, anon;
 grant execute on function public.submit_crm_lead_sale(uuid, text) to authenticated;
+
+notify pgrst, 'reload schema';

@@ -146,11 +146,14 @@ test("faltantes obligatorios bloquean Continuar con un mensaje claro", () => {
 test("un Datero originado desde CRM se guarda y se envía a Supervisión", () => {
   assert.ok(app.includes("payload.lead_id = state.applicationContext.leadId"));
   assert.ok(app.includes('? "submit_crm_lead_sale"'));
-  assert.ok(migration.includes("create function public.submit_crm_lead_sale"));
+  assert.ok(migration.includes("add column if not exists lead_id uuid"));
+  assert.ok(migration.includes("add column if not exists campaign_id uuid"));
+  assert.ok(migration.includes("create or replace function public.submit_crm_lead_sale"));
   assert.ok(migration.includes("insert into public.lead_sale_requests"));
   assert.ok(migration.includes("provisional_application_id"));
   assert.ok(migration.includes("sale_confirmation_status = 'pending'"));
   assert.ok(migration.includes("'Datero enviado a supervisión'"));
+  assert.ok(migration.includes("notify pgrst, 'reload schema'"));
 });
 
 test("el flujo original de Precalificado conserva su persistencia", () => {
