@@ -6,7 +6,7 @@ import { runInNewContext } from "node:vm";
 const app = readFileSync(new URL("../vendedores/app.js", import.meta.url), "utf8");
 const crm = readFileSync(new URL("../vendedores/crm.js", import.meta.url), "utf8");
 const html = readFileSync(new URL("../vendedores/index.html", import.meta.url), "utf8");
-const migration = readFileSync(new URL("../supabase/migrations/20260827230000_crm_lead_shared_datero.sql", import.meta.url), "utf8");
+const migration = readFileSync(new URL("../supabase/migrations/20260828011601_crm_lead_shared_datero.sql", import.meta.url), "utf8");
 const leadUpsertMigration = readFileSync(new URL("../supabase/migrations/20260828014736_fix_crm_datero_lead_upsert.sql", import.meta.url), "utf8");
 
 const applicationOpener = app.slice(
