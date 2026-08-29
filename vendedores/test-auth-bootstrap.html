@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Alta sintética E2E</title>
+  <style>
+    body{font-family:system-ui,sans-serif;background:#f1f5f9;margin:0;min-height:100vh;display:grid;place-items:center;color:#0f172a}
+    form{width:min(420px,calc(100% - 40px));background:white;padding:32px;border-radius:20px;box-shadow:0 18px 45px #0f172a1f;display:grid;gap:14px}
+    h1{font-size:24px;margin:0}p{margin:0;color:#475569}label{display:grid;gap:6px;font-weight:700}input,button{font:inherit;padding:12px;border-radius:10px;border:1px solid #cbd5e1}button{background:#087ed1;color:white;border:0;font-weight:800;cursor:pointer}.message{min-height:24px;color:#b91c1c}.ok{color:#047857}
+  </style>
+</head>
+<body>
+  <form id="syntheticSignup">
+    <p>Proyecto aislado · datos sintéticos</p>
+    <h1 id="title">Crear identidad E2E</h1>
+    <p id="identity"></p>
+    <label>Contraseña sintética<input name="password" type="password" autocomplete="new-password" minlength="10" required></label>
+    <label>Confirmar contraseña<input name="confirmPassword" type="password" autocomplete="new-password" minlength="10" required></label>
+    <span class="message" id="message" role="alert"></span>
+    <button type="submit">Crear cuenta sintética</button>
+  </form>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.2/dist/umd/supabase.js"></script>
+  <script>
+    (function(){
+      var role = new URLSearchParams(location.search).get('role') === 'seller' ? 'seller' : 'supervisor';
+      var email = role === 'seller' ? 'e2eseller@acceso.compromisomi0km.com.ar' : 'supervisor-e2e-20260829@acceso.compromisomi0km.com.ar';
+      document.getElementById('title').textContent = role === 'seller' ? 'Crear Vendedor sintético' : 'Crear Supervisor sintético';
+      document.getElementById('identity').textContent = email;
+      var client = supabase.createClient('https://lygtmfvmdyjfiosnfwbp.supabase.co','sb_publishable_Q2IyvjWcEW_CZScfJOsazg_lpc-OOmJ',{auth:{persistSession:false}});
+      document.getElementById('syntheticSignup').addEventListener('submit',async function(event){
+        event.preventDefault();
+        var message=document.getElementById('message');
+        var password=this.elements.password.value;
+        if(password!==this.elements.confirmPassword.value){message.textContent='Las contraseñas no coinciden.';return;}
+        var result=await client.auth.signUp({email:email,password:password});
+        if(result.error){message.textContent=result.error.message;return;}
+        message.className='message ok';message.textContent='Cuenta sintética creada correctamente.';
+        this.querySelector('button').disabled=true;
+      });
+    }());
+  </script>
+</body>
+</html>
