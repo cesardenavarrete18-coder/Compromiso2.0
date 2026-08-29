@@ -11,10 +11,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/vendedores/supervisor/supervisor.css?v=20260820-3">
-  <link rel="stylesheet" href="/vendedores/supervisor/operations.css?v=20260817-1">
   <link rel="stylesheet" href="/vendedores/supervisor/navigation.css?v=20260817-1">
   <link rel="stylesheet" href="/vendedores/supervisor/lead-bases.css?v=20260821-1">
-  <link rel="stylesheet" href="/vendedores/supervisor/portfolio.css?v=20260820-1">
+  <link rel="stylesheet" href="/vendedores/supervisor/portfolio.css?v=20260828-1">
   <link rel="stylesheet" href="/vendedores/supervisor/whatsapp-inbox.css?v=20260820-1">
   <link rel="stylesheet" href="/vendedores/auth-loading.css?v=20260817-1">
 </head>
@@ -45,9 +44,8 @@
       <nav>
         <button class="nav-button active" type="button" data-supervisor-view="leads"><span>⌁</span>Leads</button>
         <button class="nav-button" type="button" data-supervisor-view="whatsapp"><span>◉</span>WhatsApp</button>
-        <button class="nav-button" type="button" data-supervisor-view="portfolio"><span>◫</span>Cartera</button>
+        <button class="nav-button" type="button" data-supervisor-view="portfolio"><span>◫</span>Cartera y seguimiento</button>
         <button class="nav-button" type="button" data-supervisor-view="bases"><span>⇩</span>Bases</button>
-        <button class="nav-button" type="button" data-supervisor-view="followup"><span>✓</span>Seguimiento</button>
         <button class="nav-button" type="button" data-supervisor-view="sales"><span>◆</span>Ventas</button>
         <button class="nav-button" type="button" data-supervisor-view="administration"><span>▦</span>Administración</button>
         <button class="nav-button" type="button" data-supervisor-view="goals"><span>◎</span>Objetivos</button>
@@ -72,11 +70,6 @@
           <article class="alert-stat"><span>Seguimientos vencidos</span><strong id="overdueTasksStat">0</strong><small>Requieren acción del equipo</small></article>
         </section>
 
-        <section class="operations-panel" data-supervisor-panel="followup" hidden>
-          <div class="section-head"><div><h2>Centro de operaciones</h2><p>Controlá exclusivamente los próximos contactos acordados en la agenda de cada vendedor.</p></div><span id="operationsCaption">0 vencidos · 0 hoy</span></div>
-          <div class="operations-layout"><div class="operations-summary" id="operationsSummary"></div><div class="operations-tasks" id="operationsTasks"></div></div>
-        </section>
-
         <section class="whatsapp-inbox-panel" data-supervisor-panel="whatsapp" hidden>
           <div class="section-head whatsapp-inbox-heading"><div><h2>Bandeja de WhatsApp</h2><p>Revisá conversaciones, pausá la IA y respondé con el mismo número comercial.</p></div><div class="whatsapp-inbox-filters"><select id="whatsappModeFilter" aria-label="Filtrar conversaciones"><option value="all">Todas</option><option value="human">Atención humana</option><option value="ai">IA activa</option></select><input id="whatsappSearch" type="search" placeholder="Nombre, teléfono o modelo"></div></div>
           <div class="whatsapp-inbox-list" id="whatsappInboxList"></div>
@@ -85,20 +78,31 @@
 
         <section class="portfolio-panel" data-supervisor-panel="portfolio" hidden>
           <div class="section-head portfolio-heading">
-            <div><h2>Cartera comercial</h2><p>Visualizá el estado actual de cada lead asignado y detectá gestiones que requieren atención.</p></div>
+            <div><h2>Cartera y seguimiento</h2><p>Unificá cartera, agenda, protocolo e historial para intervenir a tiempo.</p></div>
             <div class="portfolio-heading-actions"><button class="button secondary" id="meliConnectButton" type="button" hidden>Conectar Mercado Libre</button><span id="portfolioCount">0 leads activos</span></div>
           </div>
           <div class="portfolio-stats" id="portfolioStats"></div>
+          <p class="portfolio-kpi-note"><strong>Cómo leer los indicadores:</strong> “Sin primer contacto” y “Completadas hoy” pueden superponerse con las categorías principales; por eso los KPIs no necesariamente suman el total de Activos.</p>
+          <div class="portfolio-quick-filters" id="portfolioQuickFilters" aria-label="Accesos rápidos de seguimiento">
+            <button class="active" type="button" data-situation="">Todos</button>
+            <button type="button" data-situation="unmanaged">Sin gestión</button>
+            <button type="button" data-situation="overdue">Vencidas</button>
+            <button type="button" data-situation="today">Hoy</button>
+            <button type="button" data-situation="upcoming">Próximas</button>
+            <button type="button" data-situation="unscheduled">Sin próxima acción</button>
+          </div>
           <div class="portfolio-filters">
             <label>Vendedor<select id="portfolioSeller"><option value="">Todos</option></select></label>
             <label>Estado<select id="portfolioStatus"><option value="">Todos los estados</option><option value="nuevo">Nuevo</option><option value="no_contesta">No contesta</option><option value="en_proceso">En proceso</option><option value="entrevista">Entrevista</option><option value="cierre">Cierre</option><option value="sena">Seña</option><option value="venta">Venta</option><option value="desistir">Desistir</option><option value="invalido">Inválido / Erróneo</option></select></label>
             <label>Prioridad<select id="portfolioPriority"><option value="">Todas</option><option value="high">Alta</option><option value="normal">Normal</option><option value="low">Baja</option></select></label>
+            <label>Situación<select id="portfolioSituation"><option value="">Todas</option><option value="unmanaged">Sin gestión registrada</option><option value="without_first_contact">Sin primer contacto</option><option value="overdue">Vencidas</option><option value="today">Hoy</option><option value="upcoming">Próximas</option><option value="unscheduled">Sin próxima acción</option><option value="completed_today">Completadas hoy</option></select></label>
             <label class="portfolio-search">Buscar<input id="portfolioSearch" type="search" placeholder="Nombre, teléfono o modelo"></label>
             <label class="portfolio-history"><input id="portfolioHistorical" type="checkbox"> Mostrar finalizados</label>
           </div>
+          <div class="portfolio-seller-summary" id="portfolioSellerSummary"></div>
           <div class="portfolio-table-wrap">
             <table class="portfolio-table">
-              <thead><tr><th>Lead</th><th>Vendedor</th><th>Estado</th><th>Prioridad</th><th>Próxima acción</th><th>Tasación</th><th>Último contacto</th><th></th></tr></thead>
+              <thead><tr><th>Lead</th><th>Vendedor</th><th>Estado</th><th>Prioridad</th><th>Situación</th><th>Próxima acción</th><th>Fecha / hora</th><th>Último contacto</th><th>Tasación</th><th></th></tr></thead>
               <tbody id="portfolioRows"></tbody>
             </table>
           </div>
@@ -139,7 +143,7 @@
           <div class="goals-layout"><div class="goal-form seller-goal-form"><label>Vendedor<select id="goalSeller"></select></label><label>Objetivo de ventas finalizadas<input id="goalFinalized" type="number" min="0" step="1"></label><button class="button primary" id="goalSave" type="button">Guardar objetivo</button></div><div class="goal-progress" id="goalProgress"></div></div>
         </section>
 
-        <section class="templates-panel" data-supervisor-panel="followup" hidden>
+        <section class="templates-panel" data-supervisor-panel="portfolio" hidden>
           <div class="section-head"><div><h2>Mensajes de seguimiento</h2><p>Estas ayudas aparecen personalizadas en la agenda del vendedor. La cuarta cierra el proceso con respeto.</p></div><span>4 mensajes</span></div>
           <div class="contact-templates" id="contactTemplates"></div>
         </section>
@@ -186,9 +190,22 @@
   <dialog id="leadDialog" class="lead-dialog">
     <form method="dialog">
       <button class="dialog-close" value="cancel" aria-label="Cerrar">×</button>
-      <p class="eyebrow dark">Detalle de conversación</p>
+      <p class="eyebrow dark">Detalle completo del Lead</p>
       <h2 id="dialogLeadName"></h2>
       <p id="dialogLeadSummary"></p>
+      <section class="lead-supervision-overview" id="leadSupervisionOverview">
+        <div class="lead-supervision-grid" id="leadSupervisionGrid"></div>
+        <div class="lead-supervision-next" id="leadSupervisionNext"></div>
+      </section>
+      <section class="lead-supervision-actions">
+        <div class="lead-action-card"><h3>Agregar comentario</h3><textarea id="supervisorComment" rows="3" maxlength="5000" placeholder="Comentario para el historial"></textarea><button class="button secondary" id="supervisorCommentSave" type="button">Guardar comentario</button></div>
+        <div class="lead-action-card"><h3>Programar próxima acción</h3><div class="lead-action-fields"><label>Fecha<input id="supervisorNextDate" type="text" inputmode="numeric" maxlength="10" placeholder="dd/mm/aaaa"></label><label>Hora<input id="supervisorNextTime" type="time" step="300"></label></div><input id="supervisorNextNote" type="text" maxlength="1000" placeholder="Motivo / acción"><button class="button secondary" id="supervisorScheduleSave" type="button">Programar / reprogramar</button></div>
+        <div class="lead-action-card"><h3>Actualizar estado</h3><div class="lead-action-fields"><label>Estado<select id="supervisorStatus"><option value="no_contesta">No contesta</option><option value="en_proceso">En proceso</option><option value="invalido">Inválido / Erróneo</option><option value="entrevista">Entrevista</option><option value="cierre">Cierre</option><option value="sena">Seña</option><option value="desistir">Desistir</option></select></label><label>Prioridad<select id="supervisorPriority"><option value="low">Baja</option><option value="normal">Normal</option><option value="high">Alta</option></select></label></div><textarea id="supervisorStatusNote" rows="2" maxlength="2000" placeholder="Motivo u observación"></textarea><button class="button secondary" id="supervisorStatusSave" type="button">Actualizar estado</button></div>
+        <div class="lead-action-card"><h3>Registrar gestión</h3><select id="supervisorManagementOutcome"><option value="answered">Contacto efectivo</option><option value="no_answer">Intento sin respuesta</option><option value="sent">WhatsApp enviado</option></select><textarea id="supervisorManagementNote" rows="3" maxlength="3000" placeholder="Qué se realizó y cuál fue el resultado"></textarea><button class="button primary" id="supervisorManagementSave" type="button">Registrar gestión</button></div>
+      </section>
+      <p class="message error lead-supervision-message" id="leadSupervisionMessage" role="alert"></p>
+      <section class="lead-supervision-history"><div class="section-head"><div><h3>Historial</h3><p>Gestiones reales con atribución de actor.</p></div></div><div id="leadSupervisionHistory"></div></section>
+      <div class="section-head conversation-detail-heading"><div><h3>Conversación IA</h3><p>Contexto conversacional disponible para Supervisión.</p></div></div>
       <div class="conversation-control"><div><span class="conversation-mode ai" id="dialogConversationMode">IA activa</span><small id="dialogConversationOwner">La IA puede responder automáticamente.</small></div><button class="button primary" id="conversationTakeover" type="button">Tomar conversación</button></div>
       <div class="conversation-status"><span id="dialogConversationStatus">Consultando mensajes…</span><button id="conversationRefresh" type="button">Actualizar conversación</button></div>
       <div class="conversation" id="conversation"></div>
@@ -242,7 +259,8 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.2/dist/umd/supabase.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="/vendedores/supabase-config.js?v=20260814-1"></script>
-  <script src="/vendedores/supervisor/supervisor.js?v=20260821-2"></script>
+  <script src="/vendedores/supervisor/followup-model.js?v=20260828-1"></script>
+  <script src="/vendedores/supervisor/supervisor.js?v=20260828-1"></script>
   <script src="/vendedores/supervisor/lead-bases.js?v=20260821-1"></script>
 </body>
 </html>
