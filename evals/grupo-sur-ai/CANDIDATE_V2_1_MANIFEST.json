@@ -1,0 +1,55 @@
+{
+  "version": "2.1",
+  "base_remote_commit": "aa0cdcf9135b6ce5e9aa7990dcd21b6ee64e213f",
+  "grader": {
+    "version": "1.2",
+    "sha256": "7bc5d450413bd7d01edbd45120b209d7b01b889b88fbefcdcc3511d8f7d0f9b3"
+  },
+  "matrix_sha256": "b05bce2f43a160e22acbff0e107bfe1ee041f3a45fc1424ce3717f92098f17c9",
+  "golden_source_sha256": "934d70c25c69c7543e2faf74e0ee5667fc258a273fcf39237a4bb8c4c394cdd0",
+  "golden_compiled_sha256": "2e096d0230421ac694086e3b2cb85ab8bf87d526cbb9cb9642a3e33ccad1f806",
+  "candidate_v2_frozen_sha256": "412969d9c75c51a13127cc8b7ca73b7ffe0ac702c96c7069ea164140c7e6f92e",
+  "historical_compound_sha256": "b40aeba422d58008cf7a89873274cd683bb700a254972bfa9d5569b00c20a39d",
+  "files": [
+    {
+      "relative_path": "evals/grupo-sur-ai/src/candidate-v2.1/candidate-runtime.mjs",
+      "sha256": "f18701809cca55bf812582142a42540b682c207660fa7a84f0047cb8833cbd3d",
+      "git_blob_sha": "2cfd1f5146a6cfc36ee41d70a030b9cea84a81bc"
+    },
+    {
+      "relative_path": "evals/grupo-sur-ai/src/candidate-v2.1/demo-gsv1-001.mjs",
+      "sha256": "caad34c4d5e9495038167b085d0fa6344cb6d5815fdb60b658de01c08aec5aff",
+      "git_blob_sha": "5a2ad54e14031955d3b8651d0fd839e64768ddc6"
+    },
+    {
+      "relative_path": "evals/grupo-sur-ai/src/candidate-v2.1/extraction-schema.mjs",
+      "sha256": "d451c318e353943119cf06c24bfb7086cb85a665a107d924c6c02f11107d148d",
+      "git_blob_sha": "109921f054abfbe91ef5ae9fa9f849c32e6590fb"
+    },
+    {
+      "relative_path": "evals/grupo-sur-ai/src/candidate-v2.1/hard-rules.mjs",
+      "sha256": "c580be3268166f2b416350a3f3b404260d2b02526239748c43443dc7424eef45",
+      "git_blob_sha": "ee066443ee244a3472570474f9d0986d97e1176a"
+    },
+    {
+      "relative_path": "evals/grupo-sur-ai/src/candidate-v2.1/matrix-engine.mjs",
+      "sha256": "820bdfa5589d5a78174977b7dfe8ce079e32a1fddf5c140f1d80216825502781",
+      "git_blob_sha": "41373cb27627d8ae5b73dd33d450a15cfb21d4ec"
+    },
+    {
+      "relative_path": "evals/grupo-sur-ai/src/candidate-v2.1/profile-accumulator.mjs",
+      "sha256": "c0e5401b0a44aeb7e9a7873a80d37731e77f486aa0ce5710326998b80a4269be",
+      "git_blob_sha": "006d1a6b79e6abc07b4d264e4d71476f9f34188d"
+    }
+  ],
+  "portable_digest": {
+    "algorithm": "SHA-256",
+    "serialization": "RFC 8785-style canonical JSON: recursively sorted object keys, UTF-8, no insignificant whitespace; digest fields omitted",
+    "excluded_fields": [
+      "candidate_v2_1_manifest_sha256",
+      "portable_manifest_sha256"
+    ]
+  },
+  "candidate_v2_1_manifest_sha256": "d2057318072b6f598165711dab55fa4fbf53f93e6b568ace1401f8a68f689378",
+  "portable_manifest_sha256": "d2057318072b6f598165711dab55fa4fbf53f93e6b568ace1401f8a68f689378"
+}
