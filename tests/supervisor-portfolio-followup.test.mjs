@@ -7,6 +7,8 @@ const modelSource = readFileSync(new URL("../vendedores/supervisor/followup-mode
 const supervisor = readFileSync(new URL("../vendedores/supervisor/supervisor.js", import.meta.url), "utf8");
 const html = readFileSync(new URL("../vendedores/supervisor/index.html", import.meta.url), "utf8");
 const migration = readFileSync(new URL("../supabase/migrations/20260828211336_supervisor_portfolio_followup.sql", import.meta.url), "utf8");
+const reassignmentMigration = readFileSync(new URL("../supabase/migrations/20260901131303_supervisor_portfolio_reassignment.sql", import.meta.url), "utf8");
+const protocolMigration = readFileSync(new URL("../supabase/migrations/20260817120100_commercial_operations_foreign_key_indexes.sql", import.meta.url), "utf8");
 const sellerCrm = readFileSync(new URL("../vendedores/crm.js", import.meta.url), "utf8");
 const sellerHtml = readFileSync(new URL("../vendedores/index.html", import.meta.url), "utf8");
 const recalls = readFileSync(new URL("../vendedores/supervisor/lead-bases.js", import.meta.url), "utf8");
@@ -68,6 +70,17 @@ test("5. Acción posterior a hoy queda Próxima", () => {
 test("6. Lead trabajado sin acción queda Sin próxima acción", () => {
   const result = model.deriveFollowUpStatus(lead({ crm: { status: "en_proceso", priority: "normal" } }), summary(), now);
   assert.equal(result.key, "unscheduled");
+});
+
+test("6b. metrics incluye el KPI Completadas hoy", () => {
+  const activeLead = lead();
+  const inactiveLead = lead({ id: "lead-2", crm: { status: "venta", priority: "normal" } });
+  const rows = [
+    { lead: activeLead, derived: model.deriveFollowUpStatus(activeLead, summary({ completed_today: true }), now) },
+    { lead: inactiveLead, derived: model.deriveFollowUpStatus(inactiveLead, summary({ completed_today: true }), now) }
+  ];
+  assert.equal(model.metrics(rows).completedToday, 1);
+  assert.ok(supervisor.includes('["Completadas hoy", kpis.completedToday'));
 });
 
 test("7. filtro por vendedor", () => {
@@ -167,4 +180,50 @@ test("22. Aprobación de ventas continúa intacta", () => {
 test("23. KPIs adicionales aclaran que pueden superponerse con Activos", () => {
   assert.ok(html.includes("Sin primer contacto” y “Completadas hoy” pueden superponerse"));
   assert.ok(html.includes("los KPIs no necesariamente suman el total de Activos"));
+});
+
+test("24. Cartera permite seleccionar filas y todos los resultados visibles", () => {
+  assert.ok(html.includes('id="portfolioSelectVisible"'));
+  assert.ok(html.includes('id="portfolioBulkBar"'));
+  assert.ok(supervisor.includes("data-portfolio-select"));
+  assert.ok(supervisor.includes("state.visiblePortfolioLeadIds"));
+});
+
+test("25. La reasignación masiva exige vendedor activo y motivo", () => {
+  assert.ok(html.includes('id="portfolioBulkSeller"'));
+  assert.ok(html.includes('id="portfolioBulkReason"'));
+  assert.ok(supervisor.includes("Indicá el motivo de la reasignación masiva."));
+  assert.ok(reassignmentMigration.includes("role::text = 'seller'"));
+  assert.ok(reassignmentMigration.includes("and active = true"));
+  assert.ok(reassignmentMigration.includes("Indicá un motivo válido para la reasignación masiva"));
+});
+
+test("26. La operación masiva es una única RPC atómica", () => {
+  assert.ok(supervisor.includes('rpc("reassign_leads_to_seller"'));
+  assert.ok(reassignmentMigration.includes("for update"));
+  assert.ok(reassignmentMigration.includes("v_locked_count <> v_expected_count"));
+  assert.ok(reassignmentMigration.includes("perform private.assign_lead_to_seller_with_reason"));
+  assert.ok(!supervisor.includes('leadIds.forEach(function (leadId)'));
+});
+
+test("27. El detalle permite reasignar individualmente con la misma semántica", () => {
+  assert.ok(html.includes('id="supervisorReassignSeller"'));
+  assert.ok(html.includes('id="supervisorReassignSave"'));
+  assert.ok(supervisor.includes("p_lead_ids: [state.activeConversationLead.id]"));
+  assert.ok(reassignmentMigration.includes("create or replace function public.assign_lead_to_seller"));
+  assert.ok(reassignmentMigration.includes("private.assign_lead_to_seller_with_reason"));
+});
+
+test("28. La reasignación registra origen, destino, Supervisor y motivo", () => {
+  assert.ok(reassignmentMigration.includes("'previous_seller_user_id', v_previous_seller"));
+  assert.ok(reassignmentMigration.includes("'seller_user_id', p_seller_user_id"));
+  assert.ok(reassignmentMigration.includes("'supervisor_user_id', p_actor_user_id"));
+  assert.ok(reassignmentMigration.includes("'reason', v_reason"));
+  assert.ok(reassignmentMigration.includes("Motivo: %s"));
+});
+
+test("29. Cambiar assigned_seller_user_id conserva el reinicio canónico del protocolo", () => {
+  assert.ok(reassignmentMigration.includes("assigned_seller_user_id = p_seller_user_id"));
+  assert.ok(protocolMigration.includes("Lead reasignado a otro vendedor"));
+  assert.ok(protocolMigration.includes("perform private.create_lead_contact_sequence"));
 });

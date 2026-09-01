@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="/vendedores/supervisor/supervisor.css?v=20260820-3">
   <link rel="stylesheet" href="/vendedores/supervisor/navigation.css?v=20260817-1">
   <link rel="stylesheet" href="/vendedores/supervisor/lead-bases.css?v=20260821-1">
-  <link rel="stylesheet" href="/vendedores/supervisor/portfolio.css?v=20260828-1">
+  <link rel="stylesheet" href="/vendedores/supervisor/portfolio.css?v=20260901-1">
   <link rel="stylesheet" href="/vendedores/supervisor/whatsapp-inbox.css?v=20260820-1">
   <link rel="stylesheet" href="/vendedores/auth-loading.css?v=20260817-1">
 </head>
@@ -99,10 +99,21 @@
             <label class="portfolio-search">Buscar<input id="portfolioSearch" type="search" placeholder="Nombre, teléfono o modelo"></label>
             <label class="portfolio-history"><input id="portfolioHistorical" type="checkbox"> Mostrar finalizados</label>
           </div>
+          <div class="portfolio-selection-controls">
+            <label><input id="portfolioSelectVisible" type="checkbox"> Seleccionar visibles</label>
+          </div>
+          <div class="portfolio-bulk-bar" id="portfolioBulkBar" hidden>
+            <strong id="portfolioSelectedCount">0 seleccionados</strong>
+            <label>Reasignar a<select id="portfolioBulkSeller"><option value="">Elegí un vendedor activo</option></select></label>
+            <label class="portfolio-bulk-reason">Motivo<input id="portfolioBulkReason" type="text" maxlength="1000" placeholder="Motivo obligatorio"></label>
+            <button class="button primary" id="portfolioBulkReassign" type="button">Reasignar seleccionados</button>
+            <button class="button secondary" id="portfolioClearSelection" type="button">Limpiar selección</button>
+            <p class="message error" id="portfolioBulkMessage" role="alert"></p>
+          </div>
           <div class="portfolio-seller-summary" id="portfolioSellerSummary"></div>
           <div class="portfolio-table-wrap">
             <table class="portfolio-table">
-              <thead><tr><th>Lead</th><th>Vendedor</th><th>Estado</th><th>Prioridad</th><th>Situación</th><th>Próxima acción</th><th>Fecha / hora</th><th>Último contacto</th><th>Tasación</th><th></th></tr></thead>
+              <thead><tr><th>Sel.</th><th>Lead</th><th>Vendedor</th><th>Estado</th><th>Prioridad</th><th>Situación</th><th>Próxima acción</th><th>Fecha / hora</th><th>Último contacto</th><th>Tasación</th><th></th></tr></thead>
               <tbody id="portfolioRows"></tbody>
             </table>
           </div>
@@ -198,6 +209,7 @@
         <div class="lead-supervision-next" id="leadSupervisionNext"></div>
       </section>
       <section class="lead-supervision-actions">
+        <div class="lead-action-card"><h3>Reasignar vendedor</h3><select id="supervisorReassignSeller"><option value="">Elegí un vendedor activo</option></select><input id="supervisorReassignReason" type="text" maxlength="1000" placeholder="Motivo (opcional)"><button class="button secondary" id="supervisorReassignSave" type="button">Reasignar Lead</button></div>
         <div class="lead-action-card"><h3>Agregar comentario</h3><textarea id="supervisorComment" rows="3" maxlength="5000" placeholder="Comentario para el historial"></textarea><button class="button secondary" id="supervisorCommentSave" type="button">Guardar comentario</button></div>
         <div class="lead-action-card"><h3>Programar próxima acción</h3><div class="lead-action-fields"><label>Fecha<input id="supervisorNextDate" type="text" inputmode="numeric" maxlength="10" placeholder="dd/mm/aaaa"></label><label>Hora<input id="supervisorNextTime" type="time" step="300"></label></div><input id="supervisorNextNote" type="text" maxlength="1000" placeholder="Motivo / acción"><button class="button secondary" id="supervisorScheduleSave" type="button">Programar / reprogramar</button></div>
         <div class="lead-action-card"><h3>Actualizar estado</h3><div class="lead-action-fields"><label>Estado<select id="supervisorStatus"><option value="no_contesta">No contesta</option><option value="en_proceso">En proceso</option><option value="invalido">Inválido / Erróneo</option><option value="entrevista">Entrevista</option><option value="cierre">Cierre</option><option value="sena">Seña</option><option value="desistir">Desistir</option></select></label><label>Prioridad<select id="supervisorPriority"><option value="low">Baja</option><option value="normal">Normal</option><option value="high">Alta</option></select></label></div><textarea id="supervisorStatusNote" rows="2" maxlength="2000" placeholder="Motivo u observación"></textarea><button class="button secondary" id="supervisorStatusSave" type="button">Actualizar estado</button></div>

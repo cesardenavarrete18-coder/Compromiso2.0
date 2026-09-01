@@ -3,7 +3,7 @@
 
   var supabaseClient = window.grupoSurSupabaseClient;
   var followUpModel = window.grupoSurFollowUpModel;
-  var state = { profile: null, sellers: [], settings: {}, leads: [], portfolio: {}, goals: [], templates: [], sales: [], adminSales: [], appraisals: [], conversationControls: {}, activeConversationLead: null, activeSale: null, activeAppraisal: null, view: "leads", filter: "pending_supervisor", search: "" };
+  var state = { profile: null, sellers: [], settings: {}, leads: [], portfolio: {}, goals: [], templates: [], sales: [], adminSales: [], appraisals: [], conversationControls: {}, portfolioSelection: [], visiblePortfolioLeadIds: [], activeConversationLead: null, activeSale: null, activeAppraisal: null, view: "leads", filter: "pending_supervisor", search: "" };
   var loginView = document.getElementById("loginView");
   var appView = document.getElementById("appView");
   var loginForm = document.getElementById("loginForm");
@@ -205,6 +205,34 @@
     return { lead: lead, summary: summary, derived: followUpModel.deriveFollowUpStatus(lead, summary, now) };
   }
 
+  function activeSellerOptions(excludedSellerId) {
+    return state.sellers.filter(function (seller) {
+      return seller.active && seller.user_id !== excludedSellerId;
+    }).map(function (seller) {
+      return '<option value="' + seller.user_id + '">' + escapeHtml(seller.full_name + " · " + seller.seller_code) + '</option>';
+    }).join("");
+  }
+
+  function renderPortfolioSelection(rows) {
+    var existingLeadIds = new Set(state.leads.filter(function (lead) { return lead.assigned_seller_user_id; }).map(function (lead) { return lead.id; }));
+    state.portfolioSelection = state.portfolioSelection.filter(function (leadId) { return existingLeadIds.has(leadId); });
+    state.visiblePortfolioLeadIds = rows.map(function (entry) { return entry.lead.id; });
+    var selected = new Set(state.portfolioSelection);
+    var visibleSelected = state.visiblePortfolioLeadIds.filter(function (leadId) { return selected.has(leadId); }).length;
+    var selectVisible = document.getElementById("portfolioSelectVisible");
+    selectVisible.checked = Boolean(state.visiblePortfolioLeadIds.length && visibleSelected === state.visiblePortfolioLeadIds.length);
+    selectVisible.indeterminate = Boolean(visibleSelected && visibleSelected < state.visiblePortfolioLeadIds.length);
+
+    var bulkBar = document.getElementById("portfolioBulkBar");
+    bulkBar.hidden = state.portfolioSelection.length === 0;
+    document.getElementById("portfolioSelectedCount").textContent = state.portfolioSelection.length + (state.portfolioSelection.length === 1 ? " seleccionado" : " seleccionados");
+    var sellerSelect = document.getElementById("portfolioBulkSeller");
+    var selectedSeller = sellerSelect.value;
+    sellerSelect.innerHTML = '<option value="">Elegí un vendedor activo</option>' + activeSellerOptions();
+    if (selectedSeller && state.sellers.some(function (seller) { return seller.active && seller.user_id === selectedSeller; })) sellerSelect.value = selectedSeller;
+    if (!state.portfolioSelection.length) document.getElementById("portfolioBulkMessage").textContent = "";
+  }
+
   function relativeActionLabel(value, now) {
     if (!value) return "";
     var parts = followUpModel.elapsedParts(value, now);
@@ -243,6 +271,7 @@
       ["Hoy", kpis.today, ""],
       ["Próximas", kpis.upcoming, ""],
       ["Sin próxima acción", kpis.unscheduled, kpis.unscheduled ? "attention" : ""],
+      ["Completadas hoy", kpis.completedToday, ""],
       ["Entrevistas", kpis.interviews, ""],
       ["Cierre / Seña", kpis.closing, ""]
     ].map(function (item) { return '<article class="portfolio-stat ' + item[2] + '"><span>' + item[0] + '</span><strong>' + item[1] + '</strong></article>'; }).join("");
@@ -266,6 +295,7 @@
     });
 
     document.getElementById("portfolioCount").textContent = rows.length + " visibles · " + kpis.active + " activos";
+    var selectedIds = new Set(state.portfolioSelection);
     document.getElementById("portfolioRows").innerHTML = rows.map(function (entry) {
       var lead = entry.lead;
       var crm = crmOf(lead);
@@ -276,7 +306,8 @@
       var assignmentAge = derived.withoutManagement ? '<small class="assignment-age ' + followUpModel.assignmentAttention(lead.assigned_at, now) + '">' + escapeHtml(followUpModel.elapsedLabel(lead.assigned_at, now)) + '</small>' : '';
       var completed = derived.completedToday ? '<span class="followup-secondary">COMPLETADA HOY</span>' : '';
       var overdue = derived.key === "overdue" && action ? '<small class="overdue-age">' + escapeHtml(relativeActionLabel(action.at, now)) + '</small>' : '';
-      return '<tr class="followup-' + derived.key + '" data-portfolio-lead="' + lead.id + '">' +
+      return '<tr class="followup-' + derived.key + (selectedIds.has(lead.id) ? ' is-selected' : '') + '" data-portfolio-lead="' + lead.id + '">' +
+        '<td><input type="checkbox" data-portfolio-select aria-label="Seleccionar ' + escapeHtml(lead.customer_name || "Lead sin nombre") + '"' + (selectedIds.has(lead.id) ? ' checked' : '') + '></td>' +
         '<td><strong>' + escapeHtml(lead.customer_name || "Lead sin nombre") + '</strong><small>+' + escapeHtml(lead.customer_phone) + ' · ' + escapeHtml(lead.model_interest || "Modelo a definir") + '</small>' + assignmentAge + '</td>' +
         '<td><strong>' + escapeHtml(seller && seller.full_name || "Sin vendedor") + '</strong><small>' + escapeHtml(seller && seller.seller_code || "") + '</small></td>' +
         '<td><span class="portfolio-status ' + escapeHtml(crm.status || "nuevo") + '">' + escapeHtml(crmStatusLabel(crm.status)) + '</span></td>' +
@@ -288,6 +319,7 @@
         '<td>' + (appraisal ? '<strong>' + escapeHtml(appraisalMarketStatus(appraisal)) + '</strong><small>' + escapeHtml([appraisal.brand, appraisal.model, appraisal.vehicle_year].filter(Boolean).join(" · ")) + '</small>' + (appraisal.status === "pending" && appraisal.suggested_value != null ? '<button class="button secondary appraisal-review-button" type="button" data-review-appraisal>Confirmar</button>' : '') : '<small>Sin usado cargado</small>') + '</td>' +
         '<td><button class="button secondary" type="button" data-portfolio-details>Ver detalle</button></td></tr>';
     }).join("");
+    renderPortfolioSelection(rows);
     document.getElementById("portfolioEmpty").hidden = Boolean(rows.length);
     document.querySelector(".portfolio-table-wrap").hidden = !rows.length;
   }
@@ -649,6 +681,11 @@
     document.getElementById("supervisorScheduleSave").disabled = !derived.active;
     document.getElementById("supervisorStatusSave").disabled = !derived.active;
     document.getElementById("supervisorManagementSave").disabled = !derived.active;
+    var reassignSeller = document.getElementById("supervisorReassignSeller");
+    var selectedReassignSeller = reassignSeller.value;
+    reassignSeller.innerHTML = '<option value="">Elegí un vendedor activo</option>' + activeSellerOptions(lead.assigned_seller_user_id);
+    if (selectedReassignSeller && state.sellers.some(function (item) { return item.active && item.user_id === selectedReassignSeller && item.user_id !== lead.assigned_seller_user_id; })) reassignSeller.value = selectedReassignSeller;
+    document.getElementById("supervisorReassignSave").disabled = !derived.active || reassignSeller.options.length < 2;
     var nextParts = crm.next_contact_source === "manual" && crm.next_contact_at ? new Date(crm.next_contact_at) : null;
     if (nextParts) {
       document.getElementById("supervisorNextDate").value = new Intl.DateTimeFormat("es-AR", { timeZone: "America/Argentina/Buenos_Aires", day: "2-digit", month: "2-digit", year: "numeric" }).format(nextParts);
@@ -681,6 +718,7 @@
     document.getElementById("conversationReviewMessage").textContent = "";
     document.getElementById("leadSupervisionMessage").textContent = "";
     document.getElementById("supervisorComment").value = "";
+    document.getElementById("supervisorReassignReason").value = "";
     document.getElementById("supervisorStatusNote").value = "";
     document.getElementById("supervisorManagementNote").value = "";
     renderLeadSupervisionOverview(lead);
@@ -720,6 +758,27 @@
   }
 
   document.getElementById("supervisorNextDate").addEventListener("input", function () { maskDateInput(this); });
+  document.getElementById("supervisorReassignSave").addEventListener("click", async function () {
+    if (!state.activeConversationLead) return;
+    var sellerId = document.getElementById("supervisorReassignSeller").value;
+    var reason = document.getElementById("supervisorReassignReason").value.trim() || "Reasignación individual desde Cartera y seguimiento";
+    var message = document.getElementById("leadSupervisionMessage");
+    message.textContent = "";
+    message.classList.add("error");
+    if (!sellerId) { message.textContent = "Elegí un vendedor activo para reasignar el Lead."; return; }
+    setBusy(this, true, "Reasignando…");
+    var result = await supabaseClient.rpc("reassign_leads_to_seller", {
+      p_lead_ids: [state.activeConversationLead.id],
+      p_seller_user_id: sellerId,
+      p_reason: reason
+    });
+    if (result.error) { message.textContent = result.error.message; setBusy(this, false); return; }
+    document.getElementById("supervisorReassignReason").value = "";
+    await refreshActiveLeadDetail();
+    message.classList.remove("error");
+    message.textContent = "Lead reasignado y protocolo de contacto reiniciado para el nuevo vendedor.";
+    setBusy(this, false);
+  });
   document.getElementById("supervisorCommentSave").addEventListener("click", async function () {
     if (!state.activeConversationLead) return;
     var comment = document.getElementById("supervisorComment").value.trim();
@@ -913,6 +972,50 @@
     if (!card) return;
     document.getElementById("portfolioSeller").value = card.dataset.portfolioSeller;
     renderPortfolio();
+  });
+  document.getElementById("portfolioSelectVisible").addEventListener("change", function () {
+    var selected = new Set(state.portfolioSelection);
+    state.visiblePortfolioLeadIds.forEach(function (leadId) {
+      if (this.checked) selected.add(leadId); else selected.delete(leadId);
+    }, this);
+    state.portfolioSelection = Array.from(selected);
+    renderPortfolio();
+  });
+  document.getElementById("portfolioRows").addEventListener("change", function (event) {
+    var checkbox = event.target.closest("[data-portfolio-select]");
+    var row = event.target.closest("[data-portfolio-lead]");
+    if (!checkbox || !row) return;
+    var selected = new Set(state.portfolioSelection);
+    if (checkbox.checked) selected.add(row.dataset.portfolioLead); else selected.delete(row.dataset.portfolioLead);
+    state.portfolioSelection = Array.from(selected);
+    renderPortfolio();
+  });
+  document.getElementById("portfolioClearSelection").addEventListener("click", function () {
+    state.portfolioSelection = [];
+    document.getElementById("portfolioBulkReason").value = "";
+    renderPortfolio();
+  });
+  document.getElementById("portfolioBulkReassign").addEventListener("click", async function () {
+    var sellerId = document.getElementById("portfolioBulkSeller").value;
+    var reason = document.getElementById("portfolioBulkReason").value.trim();
+    var message = document.getElementById("portfolioBulkMessage");
+    message.textContent = "";
+    if (!state.portfolioSelection.length) { message.textContent = "Seleccioná al menos un Lead."; return; }
+    if (!sellerId) { message.textContent = "Elegí un vendedor activo."; return; }
+    if (reason.length < 3) { message.textContent = "Indicá el motivo de la reasignación masiva."; return; }
+    var leadIds = state.portfolioSelection.slice();
+    setBusy(this, true, "Reasignando…");
+    var result = await supabaseClient.rpc("reassign_leads_to_seller", {
+      p_lead_ids: leadIds,
+      p_seller_user_id: sellerId,
+      p_reason: reason
+    });
+    if (result.error) { message.textContent = result.error.message; setBusy(this, false); return; }
+    state.portfolioSelection = [];
+    document.getElementById("portfolioBulkReason").value = "";
+    await loadData(true);
+    pageMessage.textContent = leadIds.length + (leadIds.length === 1 ? " Lead reasignado." : " Leads reasignados en una única operación atómica.");
+    setBusy(this, false);
   });
   document.getElementById("meliConnectButton").addEventListener("click", async function () {
     setBusy(this, true, "Preparando…");

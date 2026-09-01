@@ -128,10 +128,11 @@
       if (derived.key === "today") result.today += 1;
       if (derived.key === "upcoming") result.upcoming += 1;
       if (derived.key === "unscheduled") result.unscheduled += 1;
+      if (derived.completedToday && derived.active) result.completedToday += 1;
       if (crmOf(row.lead).status === "entrevista" && derived.active) result.interviews += 1;
       if (["cierre", "sena"].includes(crmOf(row.lead).status) && derived.active) result.closing += 1;
       return result;
-    }, { active: 0, unmanaged: 0, withoutFirstContact: 0, overdue: 0, today: 0, upcoming: 0, unscheduled: 0, interviews: 0, closing: 0 });
+    }, { active: 0, unmanaged: 0, withoutFirstContact: 0, overdue: 0, today: 0, upcoming: 0, unscheduled: 0, completedToday: 0, interviews: 0, closing: 0 });
   }
 
   function elapsedParts(fromValue, toValue) {
