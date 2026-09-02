@@ -91,6 +91,89 @@ test("una respuesta tardía del vendedor anterior no reemplaza las ventas de la 
   assert.deepEqual(rendered, [["case-seller-new"]]);
 });
 
+test("Presupuestos consulta y conserva solamente datos del usuario autenticado", () => {
+  const loadQuotes = sales.slice(
+    sales.indexOf("async function loadQuotes()"),
+    sales.indexOf("function renderQuotes()")
+  );
+
+  assert.match(loadQuotes, /\.eq\("assigned_seller_user_id", requestedUserId\)/);
+  assert.match(loadQuotes, /\.eq\("seller_user_id", requestedUserId\)/);
+  assert.match(loadQuotes, /requestVersion !== state\.quotesLoadVersion \|\| state\.userId !== requestedUserId/);
+  assert.match(loadQuotes, /item\.assigned_seller_user_id === requestedUserId/);
+  assert.match(loadQuotes, /item\.seller_user_id === requestedUserId/);
+});
+
+test("una respuesta tardía del vendedor anterior no reemplaza los presupuestos de la sesión nueva", async () => {
+  const loadQuotesSource = sales.slice(
+    sales.indexOf("async function loadQuotes()"),
+    sales.indexOf("function renderQuotes()")
+  );
+  const state = {
+    userId: "seller-old",
+    quotesLoadVersion: 0,
+    leads: [],
+    quotes: []
+  };
+  const gates = [Promise.withResolvers(), Promise.withResolvers()];
+  const batchUsers = ["seller-old", "seller-new"];
+  let queryCount = 0;
+  const supabaseClient = {
+    from(table) {
+      const batch = Math.floor(queryCount++ / 2);
+      const query = {
+        select() { return query; },
+        eq() { return query; },
+        order() { return query; },
+        limit() { return query; },
+        then(resolve, reject) {
+          return gates[batch].promise.then(() => {
+            const userId = batchUsers[batch];
+            if (table === "leads") return { data: [{ id: "lead-" + userId, assigned_seller_user_id: userId }] };
+            return { data: [{ id: "quote-" + userId, seller_user_id: userId }] };
+          }).then(resolve, reject);
+        }
+      };
+      return query;
+    }
+  };
+  const rendered = [];
+  const loadQuotes = Function(
+    "state",
+    "supabaseClient",
+    "ensureUser",
+    "loadCatalog",
+    "renderQuotes",
+    '"use strict"; ' + loadQuotesSource + "; return loadQuotes;"
+  )(
+    state,
+    supabaseClient,
+    async () => state.userId,
+    async () => {},
+    () => rendered.push({ leads: state.leads.map((item) => item.id), quotes: state.quotes.map((item) => item.id) })
+  );
+
+  const oldLoad = loadQuotes();
+  await Promise.resolve();
+  await Promise.resolve();
+  state.quotesLoadVersion += 1;
+  state.userId = "seller-new";
+  const newLoad = loadQuotes();
+  await Promise.resolve();
+  await Promise.resolve();
+
+  gates[1].resolve();
+  await newLoad;
+  assert.deepEqual(state.leads.map((item) => item.id), ["lead-seller-new"]);
+  assert.deepEqual(state.quotes.map((item) => item.id), ["quote-seller-new"]);
+
+  gates[0].resolve();
+  await oldLoad;
+  assert.deepEqual(state.leads.map((item) => item.id), ["lead-seller-new"]);
+  assert.deepEqual(state.quotes.map((item) => item.id), ["quote-seller-new"]);
+  assert.deepEqual(rendered, [{ leads: ["lead-seller-new"], quotes: ["quote-seller-new"] }]);
+});
+
 test("cerrar sesión invalida cargas pendientes y limpia Mis Ventas", () => {
   const reset = sales.slice(
     sales.indexOf("function resetSellerState()"),
@@ -99,6 +182,7 @@ test("cerrar sesión invalida cargas pendientes y limpia Mis Ventas", () => {
   const authChange = sales.slice(sales.lastIndexOf("supabaseClient.auth.onAuthStateChange"));
 
   assert.match(reset, /state\.salesLoadVersion \+= 1/);
+  assert.match(reset, /state\.quotesLoadVersion \+= 1/);
   assert.match(reset, /state\.userId = ""/);
   assert.match(reset, /state\.cases = \[\]/);
   assert.match(authChange, /event === "SIGNED_OUT"/);

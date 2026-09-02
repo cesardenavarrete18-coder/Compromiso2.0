@@ -1,7 +1,7 @@
 (function () {
   "use strict";
   var supabaseClient = window.grupoSurSupabaseClient;
-  var state = { userId: "", salesLoadVersion: 0, cases: [], events: {}, applications: {}, notifications: [], leads: [], quotes: [], models: [], campaigns: [], credits: [], activeCase: null, activeQuote: null };
+  var state = { userId: "", salesLoadVersion: 0, quotesLoadVersion: 0, cases: [], events: {}, applications: {}, notifications: [], leads: [], quotes: [], models: [], campaigns: [], credits: [], activeCase: null, activeQuote: null };
   var quoteDialog = document.getElementById("quoteDialog");
   var quoteForm = document.getElementById("quoteForm");
   var minuteDialog = document.getElementById("salesMinuteDialog");
@@ -24,6 +24,7 @@
 
   function resetSellerState() {
     state.salesLoadVersion += 1;
+    state.quotesLoadVersion += 1;
     state.userId = "";
     state.cases = [];
     state.events = {};
@@ -59,12 +60,19 @@
   }
 
   async function loadQuotes() {
-    await ensureUser(); await loadCatalog();
+    var requestedUserId = await ensureUser();
+    if (!requestedUserId) return;
+    var requestVersion = ++state.quotesLoadVersion;
+    await loadCatalog();
+    if (requestVersion !== state.quotesLoadVersion || state.userId !== requestedUserId) return;
     var results = await Promise.all([
-      supabaseClient.from("leads").select("id, customer_name, customer_phone, model_interest, created_at").eq("assigned_seller_user_id", state.userId).order("created_at", { ascending: false }).limit(500),
-      supabaseClient.from("sales_quotes").select("id, quote_code, lead_id, model_id, offer_type, customer_name, vehicle_version, sale_price, financed_amount, installment_amount, advance_amount, breakage_base_amount, breakage_vat_amount, breakage_amount, patenting_amount, expenses_amount, final_advance_amount, status, issued_at, valid_until, commercial_snapshot").eq("seller_user_id", state.userId).order("issued_at", { ascending: false }).limit(500)
+      supabaseClient.from("leads").select("id, assigned_seller_user_id, customer_name, customer_phone, model_interest, created_at").eq("assigned_seller_user_id", requestedUserId).order("created_at", { ascending: false }).limit(500),
+      supabaseClient.from("sales_quotes").select("id, seller_user_id, quote_code, lead_id, model_id, offer_type, customer_name, vehicle_version, sale_price, financed_amount, installment_amount, advance_amount, breakage_base_amount, breakage_vat_amount, breakage_amount, patenting_amount, expenses_amount, final_advance_amount, status, issued_at, valid_until, commercial_snapshot").eq("seller_user_id", requestedUserId).order("issued_at", { ascending: false }).limit(500)
     ]);
-    state.leads = results[0].data || []; state.quotes = results[1].data || []; renderQuotes();
+    if (requestVersion !== state.quotesLoadVersion || state.userId !== requestedUserId) return;
+    state.leads = (results[0].data || []).filter(function (item) { return item.assigned_seller_user_id === requestedUserId; });
+    state.quotes = (results[1].data || []).filter(function (item) { return item.seller_user_id === requestedUserId; });
+    renderQuotes();
   }
 
   function renderQuotes() {
