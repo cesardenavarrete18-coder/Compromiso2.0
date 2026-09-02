@@ -1,0 +1,66 @@
+{
+  "version": "2.3",
+  "base_candidate": {
+    "branch": "ai-matrix-v1.4-candidate-v2.2",
+    "commit": "75ff988aec4215b78d34852cca665c8736d14e58",
+    "tree": "1aa127224635041f1cb2b7d7cc7f658f22afd4e7",
+    "compound_sha256": "8de6ea9bf5e72ecee0246c006eb0c6263946122d6baa551498f123d8ff0eca9d",
+    "portable_manifest_sha256": "6c23748afa2a5eb8b0118361fef30ec2ca065272a3e52ef464e960ff379c69e7"
+  },
+  "offline_only": true,
+  "responses_called": 0,
+  "provenance_audit": {
+    "relative_path": "evals/grupo-sur-ai/CANDIDATE_V2_3_PROVENANCE_AUDIT.md",
+    "sha256": "24de177cae6610af3dec7785797de4e11c8d344d7c41ce30bb37171277a336ce",
+    "git_blob_sha": "997ad77c46283121fc8cd72005b910d63320b85e"
+  },
+  "compound_sha256": "629143b6bd730803e849ad0a7eaecfdc9741242e081aed460e84e400977225c3",
+  "compound_serialization": "SHA-256 of concatenated per-file SHA-256 hex strings in relative_path order",
+  "files": [
+    {
+      "relative_path": "evals/grupo-sur-ai/src/candidate-v2.3/candidate-runtime.mjs",
+      "sha256": "60fdac04b0fe10d26ede9e0ec776aadbb1f24d666d2e1d9234c62e89c17e44f3",
+      "git_blob_sha": "da5f01568fdaf3c2a7c6f3a1ee68cafb7d6e0187"
+    },
+    {
+      "relative_path": "evals/grupo-sur-ai/src/candidate-v2.3/demo-gsv1-001.mjs",
+      "sha256": "caad34c4d5e9495038167b085d0fa6344cb6d5815fdb60b658de01c08aec5aff",
+      "git_blob_sha": "5a2ad54e14031955d3b8651d0fd839e64768ddc6"
+    },
+    {
+      "relative_path": "evals/grupo-sur-ai/src/candidate-v2.3/extraction-schema.mjs",
+      "sha256": "d451c318e353943119cf06c24bfb7086cb85a665a107d924c6c02f11107d148d",
+      "git_blob_sha": "109921f054abfbe91ef5ae9fa9f849c32e6590fb"
+    },
+    {
+      "relative_path": "evals/grupo-sur-ai/src/candidate-v2.3/hard-rules.mjs",
+      "sha256": "926d05f7064e026b121e04e36f218abe0fbbd427ccf561ac39879c8f7338b00b",
+      "git_blob_sha": "08ed6f09497502c23e926b3a1633e9800b051397"
+    },
+    {
+      "relative_path": "evals/grupo-sur-ai/src/candidate-v2.3/matrix-engine.mjs",
+      "sha256": "92af4c49e2f56470121eb2488daad69a18af5e8b1aabbdce92a60e9209f8dec6",
+      "git_blob_sha": "5417285034494029508b74b1fe8f2826e436e7a4"
+    },
+    {
+      "relative_path": "evals/grupo-sur-ai/src/candidate-v2.3/operative-catalog.mjs",
+      "sha256": "dbf3ca9d446a4a6dc80dda3b1bf92f7739cecb0239a1e4c9929ca88de39d595c",
+      "git_blob_sha": "45d3765675800b4981a8ad7e89512ba9fcc4c293"
+    },
+    {
+      "relative_path": "evals/grupo-sur-ai/src/candidate-v2.3/post-extraction-normalizer.mjs",
+      "sha256": "2b1c6bfd43c2ea573b7712fcb40492573fd510360628fa14a70afc98cf3db20c",
+      "git_blob_sha": "05355c9c4335356bc3cea881a6ea15ce2083e682"
+    },
+    {
+      "relative_path": "evals/grupo-sur-ai/src/candidate-v2.3/profile-accumulator.mjs",
+      "sha256": "b95f56585dea72c3ef4adffb2ce35a316fbc28794a0d5277b0794a0b49af12a4",
+      "git_blob_sha": "87e865d6f251d893874fd3546976af39a57a8266"
+    }
+  ],
+  "portable_digest": {
+    "algorithm": "SHA-256",
+    "serialization": "recursively sorted object keys, UTF-8, no insignificant whitespace; portable_manifest_sha256 omitted"
+  },
+  "portable_manifest_sha256": "ec343001c6a7730069f2459d1ad608878b964ec1d87afbc09169fb754bc9f283"
+}
