@@ -193,14 +193,18 @@ begin
   -- Lock every target in a deterministic order before the first mutation. If
   -- any validation fails, Postgres rolls back the complete RPC transaction.
   for v_lead in
-    select lead.id, lead.assigned_seller_user_id
+    select lead.id, lead.assigned_seller_user_id, crm.status as crm_status
     from public.leads lead
+    join public.lead_crm crm on crm.lead_id = lead.id
     where lead.id = any(p_lead_ids)
     order by lead.id
-    for update
+    for update of lead, crm
   loop
     if v_lead.assigned_seller_user_id is null then
       raise exception 'Todos los Leads deben estar asignados antes de reasignarlos';
+    end if;
+    if v_lead.crm_status in ('venta', 'desistir', 'invalido') then
+      raise exception 'Los Leads con estado terminal no se pueden reasignar';
     end if;
     if v_lead.assigned_seller_user_id is not distinct from p_seller_user_id then
       raise exception 'Uno de los Leads ya pertenece al vendedor seleccionado';

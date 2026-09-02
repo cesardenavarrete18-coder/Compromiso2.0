@@ -227,3 +227,30 @@ test("29. Cambiar assigned_seller_user_id conserva el reinicio canónico del pro
   assert.ok(protocolMigration.includes("Lead reasignado a otro vendedor"));
   assert.ok(protocolMigration.includes("perform private.create_lead_contact_sequence"));
 });
+
+test("30. Al cambiar filtros la selección conserva solo Leads visibles y reasignables", () => {
+  const visibleInFilterA = lead({ id: "lead-a" });
+  const visibleInFilterB = lead({ id: "lead-b" });
+  assert.deepEqual(Array.from(model.pruneSelection(["lead-a"], [visibleInFilterB])), []);
+  assert.deepEqual(Array.from(model.pruneSelection(["lead-a", "lead-b"], [visibleInFilterB])), ["lead-b"]);
+  assert.ok(supervisor.includes("followUpModel.pruneSelection(state.portfolioSelection, visibleLeads)"));
+});
+
+test("31. Leads terminales no son seleccionables y abortan la RPC antes de mutar", () => {
+  ["venta", "desistir", "invalido"].forEach((status) => {
+    assert.equal(model.isReassignable(lead({ crm: { status, priority: "normal" } })), false);
+  });
+  assert.ok(supervisor.includes("Los Leads terminales no se pueden reasignar"));
+  assert.ok(reassignmentMigration.includes("join public.lead_crm crm on crm.lead_id = lead.id"));
+  assert.ok(reassignmentMigration.includes("for update of lead, crm"));
+  const terminalValidation = reassignmentMigration.indexOf("v_lead.crm_status in ('venta', 'desistir', 'invalido')");
+  const firstMutation = reassignmentMigration.indexOf("perform private.assign_lead_to_seller_with_reason", terminalValidation);
+  assert.ok(terminalValidation > -1 && firstMutation > terminalValidation);
+});
+
+test("32. Vendedores pausados no quedan habilitados como destino de reasignación", () => {
+  assert.ok(supervisor.includes('settings.paused ? " disabled" : ""'));
+  assert.ok(supervisor.includes('settings.paused ? " · pausado" : ""'));
+  assert.ok(supervisor.includes("seller.active && !settings.paused"));
+  assert.ok(supervisor.includes("El vendedor seleccionado no está disponible para reasignaciones."));
+});

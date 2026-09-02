@@ -118,6 +118,15 @@
     return true;
   }
 
+  function isReassignable(lead) {
+    return Boolean(lead && lead.assigned_seller_user_id && !TERMINAL_STATUSES.includes(crmOf(lead).status));
+  }
+
+  function pruneSelection(selection, visibleLeads) {
+    var visibleReassignableIds = new Set((visibleLeads || []).filter(isReassignable).map(function (lead) { return lead.id; }));
+    return (selection || []).filter(function (leadId) { return visibleReassignableIds.has(leadId); });
+  }
+
   function metrics(rows) {
     return rows.reduce(function (result, row) {
       var derived = row.derived;
@@ -164,6 +173,8 @@
     dateKey: dateKey,
     deriveFollowUpStatus: deriveFollowUpStatus,
     matchesFilters: matchesFilters,
+    isReassignable: isReassignable,
+    pruneSelection: pruneSelection,
     metrics: metrics,
     elapsedParts: elapsedParts,
     elapsedLabel: elapsedLabel,
