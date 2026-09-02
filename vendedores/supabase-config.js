@@ -2,8 +2,8 @@
   "use strict";
 
   var config = Object.freeze({
-    url: "https://lygtmfvmdyjfiosnfwbp.supabase.co",
-    publishableKey: "sb_publishable_Q2IyvjWcEW_CZScfJOsazg_lpc-OOmJ"
+    url: "https://cdtvuovsqwwopktdahgj.supabase.co",
+    publishableKey: "sb_publishable_XM65HbXD3Qg5GRzjAiUpWg_uGiLkKCi"
   });
 
   window.GRUPO_SUR_SUPABASE_CONFIG = config;
