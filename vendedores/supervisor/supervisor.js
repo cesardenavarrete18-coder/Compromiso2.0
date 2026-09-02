@@ -2,7 +2,8 @@
   "use strict";
 
   var supabaseClient = window.grupoSurSupabaseClient;
-  var state = { profile: null, sellers: [], settings: {}, leads: [], tasks: [], goals: [], templates: [], sales: [], adminSales: [], appraisals: [], conversationControls: {}, activeConversationLead: null, activeSale: null, activeAppraisal: null, view: "leads", filter: "pending_supervisor", search: "" };
+  var followUpModel = window.grupoSurFollowUpModel;
+  var state = { profile: null, sellers: [], settings: {}, leads: [], portfolio: {}, goals: [], templates: [], sales: [], adminSales: [], appraisals: [], conversationControls: {}, portfolioSelection: [], visiblePortfolioLeadIds: [], activeConversationLead: null, activeSale: null, activeAppraisal: null, view: "leads", filter: "pending_supervisor", search: "" };
   var loginView = document.getElementById("loginView");
   var appView = document.getElementById("appView");
   var loginForm = document.getElementById("loginForm");
@@ -20,7 +21,7 @@
   }
 
   function formatDate(value) {
-    return new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(value));
+    return new Intl.DateTimeFormat("es-AR", { timeZone: "America/Argentina/Buenos_Aires", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(value));
   }
 
   function parseArgentineDateTime(dateValue, timeValue) {
@@ -90,15 +91,36 @@
     return result.data;
   }
 
+  async function loadPagedRows(buildQuery) {
+    var pageSize = 1000;
+    var rows = [];
+    for (var from = 0; ; from += pageSize) {
+      var result = await buildQuery().range(from, from + pageSize - 1);
+      if (result.error) return result;
+      rows = rows.concat(result.data || []);
+      if (!result.data || result.data.length < pageSize) break;
+    }
+    return { data: rows, error: null };
+  }
+
+  function loadSupervisorLeads() {
+    var select = "id, customer_phone, customer_name, source_channel, source_detail, seller_code_received, qualification_status, priority, intent_summary, model_interest, routing_status, routing_reason, assigned_seller_user_id, assigned_at, last_message_at, created_at, attribution:lead_attributions(platform,campaign_name,adset_name,ad_name,headline), tiktok_attributions:lead_tiktok_attributions(identifier_type,raw_identifier,outcome,routing_reason,created_at), crm:lead_crm(status, priority, status_reason, next_contact_at, next_contact_note, next_contact_source, last_contact_at, last_contact_outcome, interview_at, sale_confirmation_status, sale_confirmed_at)";
+    return loadPagedRows(function () { return supabaseClient.from("leads").select(select).order("last_message_at", { ascending: false }); });
+  }
+
+  function loadSupervisorPortfolioSummary() {
+    return loadPagedRows(function () { return supabaseClient.rpc("get_supervisor_portfolio_followup").order("lead_id"); });
+  }
+
   async function loadData(silent) {
     if (!silent) pageMessage.textContent = "Actualizando información…";
     var results = await Promise.all([
       supabaseClient.from("profiles").select("user_id, full_name, seller_code, active").eq("role", "seller").order("full_name"),
       supabaseClient.from("seller_routing_settings").select("seller_user_id, daily_quota, paused"),
-      supabaseClient.from("leads").select("id, customer_phone, customer_name, source_channel, source_detail, seller_code_received, qualification_status, priority, intent_summary, model_interest, routing_status, routing_reason, assigned_seller_user_id, assigned_at, last_message_at, created_at, attribution:lead_attributions(platform,campaign_name,adset_name,ad_name,headline), tiktok_attributions:lead_tiktok_attributions(identifier_type,raw_identifier,outcome,routing_reason,created_at), crm:lead_crm(status, priority, status_reason, next_contact_at, next_contact_note, last_contact_at, last_contact_outcome, interview_at, sale_confirmation_status, sale_confirmed_at)").order("last_message_at", { ascending: false }).limit(500),
+      loadSupervisorLeads(),
       supabaseClient.from("lead_sale_requests").select("id, lead_id, seller_user_id, vehicle, sale_amount, notes, status, requested_at, provisional_application_id, seller:profiles!lead_sale_requests_seller_user_id_fkey(full_name, seller_code), lead:leads(customer_name, customer_phone, intent_summary), provisional:commercial_applications!lead_sale_requests_provisional_application_id_fkey(request_code, brand_name, model_name, campaign_name, first_name, last_name, document_type, document_number, cuil, primary_phone, email, employment_status, employer_name, employment_seniority, monthly_income, automatic_debit, deferred_installment, installments_paid, installments_to_pay, plan_type, agreed_price, commercial_snapshot)").eq("status", "pending").order("requested_at"),
       supabaseClient.from("sales_cases").select("id, case_code, seller_user_id, vehicle, status, cdn_scoring_status, dealer_scoring_status, contract_status, finalized_at, cancellation_reason, updated_at, seller:profiles!sales_cases_seller_user_id_fkey(full_name, seller_code), lead:leads!sales_cases_lead_id_fkey(customer_name), events:sales_case_events(stage, outcome, comment, created_at)").order("updated_at", { ascending: false }).limit(250),
-      supabaseClient.from("lead_contact_tasks").select("id, lead_id, seller_user_id, channel, call_attempt, message_step, due_start, due_end, status, outcome, lead:leads(customer_name,customer_phone,model_interest), seller:profiles!lead_contact_tasks_seller_user_id_fkey(full_name,seller_code)").eq("status", "pending").order("due_start").limit(1000),
+      loadSupervisorPortfolioSummary(),
       supabaseClient.from("commercial_goals").select("id, period_month, seller_user_id, target_contacts, target_interviews, target_sales, target_finalized").order("period_month", { ascending: false }).limit(500),
       supabaseClient.from("contact_message_templates").select("id, step_number, title, body, active, updated_at").order("step_number"),
       supabaseClient.from("vehicle_appraisals").select("id, lead_id, brand, model, version, vehicle_year, mileage_km, condition, notes, estimated_min, estimated_max, market_median, suggested_value, market_currency, estimate_source, estimate_basis, reference_count, market_references, market_checked_at, status, confirmed_value, confirmed_currency, review_note, updated_at").order("updated_at", { ascending: false }).limit(500),
@@ -112,7 +134,8 @@
     state.leads = results[2].data || [];
     state.sales = results[3].data || [];
     state.adminSales = results[4].data || [];
-    state.tasks = results[5].data || [];
+    state.portfolio = {};
+    (results[5].data || []).forEach(function (item) { state.portfolio[item.lead_id] = item; });
     state.goals = results[6].data || [];
     state.templates = results[7].data || [];
     state.appraisals = results[8].data || [];
@@ -129,14 +152,6 @@
   function crmOf(lead) {
     if (!lead || !lead.crm) return { status: "nuevo", priority: lead && lead.priority || "normal" };
     return Array.isArray(lead.crm) ? lead.crm[0] || {} : lead.crm;
-  }
-
-  function scheduledContactLeads() {
-    var terminal = ["venta", "desistir", "invalido"];
-    return state.leads.filter(function (lead) {
-      var crm = crmOf(lead);
-      return Boolean(lead.assigned_seller_user_id && crm.next_contact_at && !terminal.includes(crm.status));
-    });
   }
 
   function crmStatusLabel(value) {
@@ -185,62 +200,133 @@
     }).join("");
   }
 
+  function portfolioEntry(lead, now) {
+    var summary = state.portfolio[lead.id] || {};
+    return { lead: lead, summary: summary, derived: followUpModel.deriveFollowUpStatus(lead, summary, now) };
+  }
+
+  function activeSellerOptions(excludedSellerId) {
+    return state.sellers.filter(function (seller) {
+      return seller.active && seller.user_id !== excludedSellerId;
+    }).map(function (seller) {
+      var settings = state.settings[seller.user_id] || { paused: false };
+      return '<option value="' + seller.user_id + '"' + (settings.paused ? " disabled" : "") + '>' + escapeHtml(seller.full_name + " · " + seller.seller_code + (settings.paused ? " · pausado" : "")) + '</option>';
+    }).join("");
+  }
+
+  function sellerCanReceiveReassignment(sellerId, excludedSellerId) {
+    return state.sellers.some(function (seller) {
+      var settings = state.settings[seller.user_id] || { paused: false };
+      return seller.active && !settings.paused && seller.user_id === sellerId && seller.user_id !== excludedSellerId;
+    });
+  }
+
+  function renderPortfolioSelection(rows) {
+    var visibleLeads = rows.map(function (entry) { return entry.lead; });
+    state.portfolioSelection = followUpModel.pruneSelection(state.portfolioSelection, visibleLeads);
+    state.visiblePortfolioLeadIds = visibleLeads.filter(followUpModel.isReassignable).map(function (lead) { return lead.id; });
+    var selected = new Set(state.portfolioSelection);
+    var visibleSelected = state.visiblePortfolioLeadIds.filter(function (leadId) { return selected.has(leadId); }).length;
+    var selectVisible = document.getElementById("portfolioSelectVisible");
+    selectVisible.checked = Boolean(state.visiblePortfolioLeadIds.length && visibleSelected === state.visiblePortfolioLeadIds.length);
+    selectVisible.indeterminate = Boolean(visibleSelected && visibleSelected < state.visiblePortfolioLeadIds.length);
+
+    var bulkBar = document.getElementById("portfolioBulkBar");
+    bulkBar.hidden = state.portfolioSelection.length === 0;
+    document.getElementById("portfolioSelectedCount").textContent = state.portfolioSelection.length + (state.portfolioSelection.length === 1 ? " seleccionado" : " seleccionados");
+    var sellerSelect = document.getElementById("portfolioBulkSeller");
+    var selectedSeller = sellerSelect.value;
+    sellerSelect.innerHTML = '<option value="">Elegí un vendedor activo</option>' + activeSellerOptions();
+    if (selectedSeller && sellerCanReceiveReassignment(selectedSeller)) sellerSelect.value = selectedSeller;
+    if (!state.portfolioSelection.length) document.getElementById("portfolioBulkMessage").textContent = "";
+  }
+
+  function relativeActionLabel(value, now) {
+    if (!value) return "";
+    var parts = followUpModel.elapsedParts(value, now);
+    var label = parts.days ? parts.days + (parts.days === 1 ? " día" : " días") : parts.hours ? parts.hours + " h" + (parts.minutes ? " " + parts.minutes + " min" : "") : parts.minutes + " min";
+    return "Vencida hace " + label;
+  }
+
+  function contactOutcomeLabel(value) {
+    return { answered: "Respondió", no_answer: "No respondió", sent: "WhatsApp enviado", invalid: "Contacto inválido", no_interest: "Sin interés", requested_no_contact: "No contactar" }[value] || value || "Sin resultado informado";
+  }
+
+  function renderSellerPortfolio(entries) {
+    document.getElementById("portfolioSellerSummary").innerHTML = state.sellers.filter(function (seller) { return seller.active; }).map(function (seller) {
+      var sellerRows = entries.filter(function (entry) { return entry.lead.assigned_seller_user_id === seller.user_id; });
+      var sellerMetrics = followUpModel.metrics(sellerRows);
+      return '<button class="portfolio-seller-card' + (sellerMetrics.overdue || sellerMetrics.unmanaged ? ' attention' : '') + '" type="button" data-portfolio-seller="' + seller.user_id + '"><span class="portfolio-seller-avatar">' + escapeHtml(initials(seller.full_name)) + '</span><strong>' + escapeHtml(seller.full_name) + '</strong><small>' + sellerMetrics.active + ' activos</small><small>' + sellerMetrics.unmanaged + ' sin gestión</small><small>' + sellerMetrics.overdue + ' vencidas</small><small>' + sellerMetrics.today + ' para hoy</small><small>' + sellerMetrics.upcoming + ' próximas</small></button>';
+    }).join("") || '<div class="sales-empty">Todavía no hay vendedores activos.</div>';
+  }
+
   function renderPortfolio() {
     var sellerFilter = document.getElementById("portfolioSeller");
     var selectedSeller = sellerFilter.value;
-    sellerFilter.innerHTML = '<option value="">Todos</option>' + state.sellers.map(function (seller) {
+    sellerFilter.innerHTML = '<option value="">Todos</option>' + state.sellers.filter(function (seller) { return seller.active; }).map(function (seller) {
       return '<option value="' + seller.user_id + '">' + escapeHtml(seller.full_name) + '</option>';
     }).join("");
     if (selectedSeller && state.sellers.some(function (seller) { return seller.user_id === selectedSeller; })) sellerFilter.value = selectedSeller;
 
-    var status = document.getElementById("portfolioStatus").value;
-    var priority = document.getElementById("portfolioPriority").value;
-    var search = document.getElementById("portfolioSearch").value.trim().toLocaleLowerCase("es-AR");
-    var showHistorical = document.getElementById("portfolioHistorical").checked;
-    var terminal = ["venta", "desistir", "invalido"];
-    var now = Date.now();
-    var assigned = state.leads.filter(function (lead) { return Boolean(lead.assigned_seller_user_id); });
-    var active = assigned.filter(function (lead) { return !terminal.includes(crmOf(lead).status); });
-    var overdue = active.filter(function (lead) { var next = crmOf(lead).next_contact_at; return next && new Date(next).getTime() < now; });
-    var uncontacted = active.filter(function (lead) { return crmOf(lead).status === "nuevo" && !crmOf(lead).last_contact_at; });
-    var closing = active.filter(function (lead) { return ["cierre", "sena"].includes(crmOf(lead).status); });
-
+    var now = new Date();
+    var entries = state.leads.filter(function (lead) { return Boolean(lead.assigned_seller_user_id); }).map(function (lead) { return portfolioEntry(lead, now); });
+    var kpis = followUpModel.metrics(entries);
     document.getElementById("portfolioStats").innerHTML = [
-      ["Activos", active.length, ""],
-      ["Sin primer contacto", uncontacted.length, uncontacted.length ? "attention" : ""],
-      ["Vencidos", overdue.length, overdue.length ? "attention" : ""],
-      ["Entrevistas", active.filter(function (lead) { return crmOf(lead).status === "entrevista"; }).length, ""],
-      ["Cierre / Seña", closing.length, ""],
+      ["Activos", kpis.active, ""],
+      ["Sin gestión registrada", kpis.unmanaged, kpis.unmanaged ? "attention" : ""],
+      ["Sin primer contacto", kpis.withoutFirstContact, kpis.withoutFirstContact ? "attention" : ""],
+      ["Vencidas", kpis.overdue, kpis.overdue ? "attention" : ""],
+      ["Hoy", kpis.today, ""],
+      ["Próximas", kpis.upcoming, ""],
+      ["Sin próxima acción", kpis.unscheduled, kpis.unscheduled ? "attention" : ""],
+      ["Completadas hoy", kpis.completedToday, ""],
+      ["Entrevistas", kpis.interviews, ""],
+      ["Cierre / Seña", kpis.closing, ""]
     ].map(function (item) { return '<article class="portfolio-stat ' + item[2] + '"><span>' + item[0] + '</span><strong>' + item[1] + '</strong></article>'; }).join("");
+    renderSellerPortfolio(entries);
 
-    var rows = assigned.filter(function (lead) {
-      var crm = crmOf(lead);
-      if (!showHistorical && terminal.includes(crm.status)) return false;
-      if (sellerFilter.value && lead.assigned_seller_user_id !== sellerFilter.value) return false;
-      if (status && crm.status !== status) return false;
-      if (priority && (crm.priority || lead.priority) !== priority) return false;
-      if (search && ![lead.customer_name, lead.customer_phone, lead.model_interest, lead.intent_summary].join(" ").toLocaleLowerCase("es-AR").includes(search)) return false;
-      return true;
-    }).sort(function (a, b) {
-      var aNext = crmOf(a).next_contact_at ? new Date(crmOf(a).next_contact_at).getTime() : Number.MAX_SAFE_INTEGER;
-      var bNext = crmOf(b).next_contact_at ? new Date(crmOf(b).next_contact_at).getTime() : Number.MAX_SAFE_INTEGER;
-      return aNext - bNext || new Date(b.last_message_at) - new Date(a.last_message_at);
+    var filters = {
+      seller: sellerFilter.value,
+      status: document.getElementById("portfolioStatus").value,
+      priority: document.getElementById("portfolioPriority").value,
+      situation: document.getElementById("portfolioSituation").value,
+      search: document.getElementById("portfolioSearch").value.trim(),
+      historical: document.getElementById("portfolioHistorical").checked
+    };
+    var order = { unmanaged: 0, overdue: 1, today: 2, upcoming: 3, unscheduled: 4, completed: 5 };
+    var rows = entries.filter(function (entry) { return followUpModel.matchesFilters(entry.lead, entry.derived, filters); }).sort(function (left, right) {
+      var statusOrder = order[left.derived.key] - order[right.derived.key];
+      if (statusOrder) return statusOrder;
+      var leftNext = left.derived.nextAction ? new Date(left.derived.nextAction.at).getTime() : Number.MAX_SAFE_INTEGER;
+      var rightNext = right.derived.nextAction ? new Date(right.derived.nextAction.at).getTime() : Number.MAX_SAFE_INTEGER;
+      return leftNext - rightNext || new Date(right.lead.assigned_at) - new Date(left.lead.assigned_at);
     });
 
-    document.getElementById("portfolioCount").textContent = active.length === 1 ? "1 lead activo" : active.length + " leads activos";
-    document.getElementById("portfolioRows").innerHTML = rows.map(function (lead) {
+    document.getElementById("portfolioCount").textContent = rows.length + " visibles · " + kpis.active + " activos";
+    renderPortfolioSelection(rows);
+    var selectedIds = new Set(state.portfolioSelection);
+    document.getElementById("portfolioRows").innerHTML = rows.map(function (entry) {
+      var lead = entry.lead;
       var crm = crmOf(lead);
+      var derived = entry.derived;
       var seller = sellerById(lead.assigned_seller_user_id);
       var appraisal = appraisalForLead(lead.id);
-      var isOverdue = crm.next_contact_at && new Date(crm.next_contact_at).getTime() < now && !terminal.includes(crm.status);
-      return '<tr class="' + (isOverdue ? "is-overdue" : "") + '" data-portfolio-lead="' + lead.id + '">' +
-        '<td><strong>' + escapeHtml(lead.customer_name || "Lead sin nombre") + '</strong><small>+' + escapeHtml(lead.customer_phone) + ' · ' + escapeHtml(lead.model_interest || "Modelo a definir") + '</small></td>' +
+      var action = derived.nextAction;
+      var assignmentAge = derived.withoutManagement ? '<small class="assignment-age ' + followUpModel.assignmentAttention(lead.assigned_at, now) + '">' + escapeHtml(followUpModel.elapsedLabel(lead.assigned_at, now)) + '</small>' : '';
+      var completed = derived.completedToday ? '<span class="followup-secondary">COMPLETADA HOY</span>' : '';
+      var overdue = derived.key === "overdue" && action ? '<small class="overdue-age">' + escapeHtml(relativeActionLabel(action.at, now)) + '</small>' : '';
+      var reassignable = followUpModel.isReassignable(lead);
+      return '<tr class="followup-' + derived.key + (selectedIds.has(lead.id) ? ' is-selected' : '') + '" data-portfolio-lead="' + lead.id + '">' +
+        '<td><input type="checkbox" data-portfolio-select aria-label="Seleccionar ' + escapeHtml(lead.customer_name || "Lead sin nombre") + '"' + (selectedIds.has(lead.id) ? ' checked' : '') + (reassignable ? '' : ' disabled title="Los Leads terminales no se pueden reasignar"') + '></td>' +
+        '<td><strong>' + escapeHtml(lead.customer_name || "Lead sin nombre") + '</strong><small>+' + escapeHtml(lead.customer_phone) + ' · ' + escapeHtml(lead.model_interest || "Modelo a definir") + '</small>' + assignmentAge + '</td>' +
         '<td><strong>' + escapeHtml(seller && seller.full_name || "Sin vendedor") + '</strong><small>' + escapeHtml(seller && seller.seller_code || "") + '</small></td>' +
         '<td><span class="portfolio-status ' + escapeHtml(crm.status || "nuevo") + '">' + escapeHtml(crmStatusLabel(crm.status)) + '</span></td>' +
         '<td><span class="portfolio-priority ' + escapeHtml(crm.priority || lead.priority || "normal") + '">' + escapeHtml(priorityLabel(crm.priority || lead.priority)) + '</span></td>' +
-        '<td><strong>' + escapeHtml(crm.next_contact_at ? formatDate(crm.next_contact_at) : "Sin programar") + '</strong><small>' + escapeHtml(crm.next_contact_note || (isOverdue ? "Seguimiento vencido" : "")) + '</small></td>' +
+        '<td><span class="followup-status ' + derived.key + '">' + escapeHtml(derived.label) + '</span>' + completed + '</td>' +
+        '<td><strong>' + escapeHtml(action ? action.label : "Sin próxima acción") + '</strong>' + (action ? '<small class="action-source ' + action.source + '">' + action.sourceLabel + '</small>' : '') + '</td>' +
+        '<td><strong>' + escapeHtml(action ? formatDate(action.at) : "Sin programar") + '</strong>' + overdue + '</td>' +
+        '<td><strong>' + escapeHtml(crm.last_contact_at ? formatDate(crm.last_contact_at) : "Sin contacto registrado") + '</strong><small>' + escapeHtml(crm.last_contact_at ? contactOutcomeLabel(crm.last_contact_outcome) : "") + '</small></td>' +
         '<td>' + (appraisal ? '<strong>' + escapeHtml(appraisalMarketStatus(appraisal)) + '</strong><small>' + escapeHtml([appraisal.brand, appraisal.model, appraisal.vehicle_year].filter(Boolean).join(" · ")) + '</small>' + (appraisal.status === "pending" && appraisal.suggested_value != null ? '<button class="button secondary appraisal-review-button" type="button" data-review-appraisal>Confirmar</button>' : '') : '<small>Sin usado cargado</small>') + '</td>' +
-        '<td>' + escapeHtml(crm.last_contact_at ? formatDate(crm.last_contact_at) : "Sin contacto registrado") + '</td>' +
         '<td><button class="button secondary" type="button" data-portfolio-details>Ver detalle</button></td></tr>';
     }).join("");
     document.getElementById("portfolioEmpty").hidden = Boolean(rows.length);
@@ -254,38 +340,9 @@
     document.getElementById("assignedStat").textContent = state.leads.filter(function (lead) { return lead.assigned_seller_user_id && lead.assigned_at && localDateKey(lead.assigned_at) === today; }).length;
     document.getElementById("unqualifiedStat").textContent = state.leads.filter(function (lead) { return lead.qualification_status === "unqualified"; }).length;
     document.getElementById("pendingSalesStat").textContent = state.sales.length;
-    document.getElementById("overdueTasksStat").textContent = scheduledContactLeads().filter(function (lead) {
-      return new Date(crmOf(lead).next_contact_at).getTime() < Date.now();
-    }).length;
-  }
-
-  function renderOperations() {
-    var now = Date.now();
-    var today = localDateKey(new Date());
-    var scheduled = scheduledContactLeads();
-    var overdue = scheduled.filter(function (lead) { return new Date(crmOf(lead).next_contact_at).getTime() < now; });
-    var todayContacts = scheduled.filter(function (lead) {
-      var next = crmOf(lead).next_contact_at;
-      return new Date(next).getTime() >= now && localDateKey(next) === today;
-    });
-    document.getElementById("operationsSummary").innerHTML = state.sellers.map(function (seller) {
-      var sellerContacts = scheduled.filter(function (lead) { return lead.assigned_seller_user_id === seller.user_id; });
-      var sellerOverdue = sellerContacts.filter(function (lead) { return new Date(crmOf(lead).next_contact_at).getTime() < now; }).length;
-      var sellerToday = sellerContacts.filter(function (lead) {
-        var next = crmOf(lead).next_contact_at;
-        return new Date(next).getTime() >= now && localDateKey(next) === today;
-      }).length;
-      return '<article class="operation-seller' + (sellerOverdue ? ' attention' : '') + '"><span>' + escapeHtml(initials(seller.full_name)) + '</span><div><strong>' + escapeHtml(seller.full_name) + '</strong><small>' + sellerToday + ' contactos hoy · ' + sellerOverdue + ' vencidos</small></div><b>' + sellerContacts.length + '</b></article>';
-    }).join("") || '<div class="sales-empty">Todavía no hay vendedores activos.</div>';
-    document.getElementById("operationsTasks").innerHTML = overdue.concat(todayContacts).sort(function (left, right) {
-      return new Date(crmOf(left).next_contact_at).getTime() - new Date(crmOf(right).next_contact_at).getTime();
-    }).slice(0, 12).map(function (lead) {
-      var crm = crmOf(lead);
-      var seller = sellerById(lead.assigned_seller_user_id);
-      var isOverdue = new Date(crm.next_contact_at).getTime() < now;
-      return '<article class="operation-task' + (isOverdue ? ' overdue' : '') + '"><div><strong>' + escapeHtml(crm.next_contact_note || "Próximo contacto acordado") + '</strong><small>' + escapeHtml(formatDate(crm.next_contact_at)) + '</small></div><div><strong>' + escapeHtml(lead.customer_name || "Cliente") + '</strong><small>' + escapeHtml(lead.model_interest || "Modelo a definir") + '</small></div><span>' + escapeHtml(seller && seller.full_name || "Sin vendedor") + '</span></article>';
-    }).join("") || '<div class="sales-empty">No hay contactos vencidos ni programados para hoy.</div>';
-    document.getElementById("operationsCaption").textContent = overdue.length + " vencidos · " + todayContacts.length + " programados para hoy";
+    document.getElementById("overdueTasksStat").textContent = state.leads.filter(function (lead) { return lead.assigned_seller_user_id; }).map(function (lead) {
+      return portfolioEntry(lead, new Date()).derived;
+    }).filter(function (derived) { return derived.key === "overdue"; }).length;
   }
 
   function monthContains(value, month) {
@@ -319,7 +376,7 @@
     state.view = view;
     document.querySelectorAll("[data-supervisor-panel]").forEach(function (panel) { panel.hidden = panel.dataset.supervisorPanel !== view; });
     document.querySelectorAll("[data-supervisor-view]").forEach(function (button) { button.classList.toggle("active", button.dataset.supervisorView === view); });
-    var titles = { leads: ["Distribución comercial", "Bandeja de leads"], whatsapp: ["Atención conversacional", "Bandeja de WhatsApp"], portfolio: ["Supervisión del equipo", "Cartera comercial"], bases: ["Administración de bases", "Nuevos y rellamados"], followup: ["Cumplimiento operativo", "Proceso de seguimiento"], sales: ["Control comercial", "Ventas para confirmar"], administration: ["Circuito posterior a la venta", "Seguimiento administrativo"], goals: ["Rendimiento del equipo", "Objetivos comerciales"] };
+    var titles = { leads: ["Distribución comercial", "Bandeja de leads"], whatsapp: ["Atención conversacional", "Bandeja de WhatsApp"], portfolio: ["Supervisión del equipo", "Cartera y seguimiento"], bases: ["Administración de bases", "Nuevos y rellamados"], sales: ["Control comercial", "Ventas para confirmar"], administration: ["Circuito posterior a la venta", "Seguimiento administrativo"], goals: ["Rendimiento del equipo", "Objetivos comerciales"] };
     document.querySelector(".topbar .eyebrow").textContent = titles[view][0];
     document.querySelector(".topbar h1").textContent = titles[view][1];
     if (view === "goals") { renderGoals(); renderRanking(); }
@@ -469,7 +526,6 @@
     renderAdministrativeSales();
     renderInstallmentMetrics();
     renderRanking();
-    renderOperations();
     renderGoals();
     renderTemplates();
     renderPortfolio();
@@ -587,6 +643,81 @@
     conversation.scrollTop = conversation.scrollHeight;
   }
 
+  function sourceLabel(lead) {
+    if (lead.source_channel === "manual") return lead.source_detail || "Carga manual";
+    if (lead.source_channel === "tiktok") return "TikTok";
+    if (lead.source_detail === "meta_ads") return "Meta Ads";
+    return lead.source_detail || "WhatsApp";
+  }
+
+  function actorLabel(activity) {
+    var actor = Array.isArray(activity.actor) ? activity.actor[0] : activity.actor;
+    if (!actor) return "Sistema";
+    var role = actor.role === "seller" ? "Vendedor" : ["supervisor", "admin"].includes(actor.role) ? "Supervisor" : "Equipo";
+    return role + " · " + (actor.full_name || "Usuario");
+  }
+
+  function activityOrigin(activity) {
+    var metadata = activity.metadata || {};
+    if (metadata.task_id) return "PROTOCOLO";
+    if (metadata.origin === "supervisor_portfolio") return "MANUAL";
+    if (metadata.origin === "ai") return "IA";
+    if (metadata.recall_item_id || metadata.origin === "recall") return "RELLAMADO";
+    return "HISTORIAL";
+  }
+
+  function renderLeadSupervisionOverview(lead) {
+    var crm = crmOf(lead);
+    var summary = state.portfolio[lead.id] || {};
+    var derived = followUpModel.deriveFollowUpStatus(lead, summary, new Date());
+    var seller = sellerById(lead.assigned_seller_user_id);
+    var action = derived.nextAction;
+    document.querySelector(".lead-supervision-actions").hidden = !derived.active;
+    document.getElementById("leadSupervisionGrid").innerHTML = [
+      ["Teléfono", '<a href="tel:+' + escapeHtml(String(lead.customer_phone || "").replace(/\D/g, "")) + '">+' + escapeHtml(lead.customer_phone || "—") + '</a>'],
+      ["Modelo / interés", escapeHtml(lead.model_interest || "Sin modelo informado")],
+      ["Origen", escapeHtml(sourceLabel(lead))],
+      ["Vendedor", escapeHtml(seller ? seller.full_name + (seller.seller_code ? " · " + seller.seller_code : "") : "Sin vendedor")],
+      ["Estado", escapeHtml(crmStatusLabel(crm.status))],
+      ["Prioridad", escapeHtml(priorityLabel(crm.priority || lead.priority))],
+      ["Asignación", escapeHtml(lead.assigned_at ? formatDate(lead.assigned_at) : "Sin fecha")],
+      ["Primera gestión", escapeHtml(summary.first_management_at ? formatDate(summary.first_management_at) : "Sin gestión registrada")],
+      ["Último contacto", escapeHtml(crm.last_contact_at ? formatDate(crm.last_contact_at) + " · " + contactOutcomeLabel(crm.last_contact_outcome) : "Sin contacto registrado")]
+    ].map(function (item) { return '<div><small>' + item[0] + '</small><strong>' + item[1] + '</strong></div>'; }).join("");
+    document.getElementById("leadSupervisionNext").innerHTML = '<div><span class="followup-status ' + derived.key + '">' + escapeHtml(derived.label) + '</span>' + (derived.completedToday ? '<span class="followup-secondary">COMPLETADA HOY</span>' : '') + '</div><strong>' + escapeHtml(action ? action.label : "Sin próxima acción programada") + '</strong><small>' + escapeHtml(action ? formatDate(action.at) : "") + '</small>' + (action ? '<span class="action-source ' + action.source + '">' + action.sourceLabel + '</span>' : '');
+    document.getElementById("supervisorPriority").value = crm.priority || lead.priority || "normal";
+    document.getElementById("supervisorStatus").value = ["no_contesta", "en_proceso", "invalido", "entrevista", "cierre", "sena", "desistir"].includes(crm.status) ? crm.status : "en_proceso";
+    document.getElementById("supervisorScheduleSave").disabled = !derived.active;
+    document.getElementById("supervisorStatusSave").disabled = !derived.active;
+    document.getElementById("supervisorManagementSave").disabled = !derived.active;
+    var reassignSeller = document.getElementById("supervisorReassignSeller");
+    var selectedReassignSeller = reassignSeller.value;
+    reassignSeller.innerHTML = '<option value="">Elegí un vendedor activo</option>' + activeSellerOptions(lead.assigned_seller_user_id);
+    if (selectedReassignSeller && sellerCanReceiveReassignment(selectedReassignSeller, lead.assigned_seller_user_id)) reassignSeller.value = selectedReassignSeller;
+    var hasReassignmentTarget = state.sellers.some(function (item) { return sellerCanReceiveReassignment(item.user_id, lead.assigned_seller_user_id); });
+    document.getElementById("supervisorReassignSave").disabled = !derived.active || !hasReassignmentTarget;
+    var nextParts = crm.next_contact_source === "manual" && crm.next_contact_at ? new Date(crm.next_contact_at) : null;
+    if (nextParts) {
+      document.getElementById("supervisorNextDate").value = new Intl.DateTimeFormat("es-AR", { timeZone: "America/Argentina/Buenos_Aires", day: "2-digit", month: "2-digit", year: "numeric" }).format(nextParts);
+      document.getElementById("supervisorNextTime").value = new Intl.DateTimeFormat("en-GB", { timeZone: "America/Argentina/Buenos_Aires", hour: "2-digit", minute: "2-digit", hour12: false }).format(nextParts);
+      document.getElementById("supervisorNextNote").value = crm.next_contact_note || "";
+    } else {
+      document.getElementById("supervisorNextDate").value = "";
+      document.getElementById("supervisorNextTime").value = "";
+      document.getElementById("supervisorNextNote").value = "";
+    }
+  }
+
+  async function loadLeadSupervisionHistory(lead) {
+    var target = document.getElementById("leadSupervisionHistory");
+    target.innerHTML = '<div class="sales-empty">Cargando historial…</div>';
+    var result = await supabaseClient.from("lead_activities").select("id, activity_type, title, detail, metadata, created_at, actor:profiles!lead_activities_actor_user_id_fkey(full_name,role)").eq("lead_id", lead.id).order("created_at", { ascending: false }).limit(150);
+    if (result.error) { target.innerHTML = '<div class="sales-empty">No se pudo cargar el historial.</div>'; return; }
+    target.innerHTML = (result.data || []).map(function (activity) {
+      return '<article class="lead-history-item"><div><span class="action-source history">' + escapeHtml(activityOrigin(activity)) + '</span><strong>' + escapeHtml(activity.title) + '</strong><small>' + escapeHtml(formatDate(activity.created_at)) + '</small></div><p>' + escapeHtml(activity.detail || "Sin observaciones") + '</p><b>' + escapeHtml(actorLabel(activity)) + '</b></article>';
+    }).join("") || '<div class="sales-empty">Todavía no hay actividades registradas.</div>';
+  }
+
   async function openLeadConversation(lead) {
     state.activeConversationLead = lead;
     document.getElementById("dialogLeadName").textContent = lead.customer_name || "+" + lead.customer_phone;
@@ -595,10 +726,113 @@
     document.getElementById("conversationHumanMessage").value = "";
     document.getElementById("conversationHumanError").textContent = "";
     document.getElementById("conversationReviewMessage").textContent = "";
+    document.getElementById("leadSupervisionMessage").textContent = "";
+    document.getElementById("supervisorComment").value = "";
+    document.getElementById("supervisorReassignReason").value = "";
+    document.getElementById("supervisorStatusNote").value = "";
+    document.getElementById("supervisorManagementNote").value = "";
+    renderLeadSupervisionOverview(lead);
     renderConversationControl(lead);
     if (!document.getElementById("leadDialog").open) document.getElementById("leadDialog").showModal();
-    await loadConversationMessages(lead);
+    await Promise.all([loadConversationMessages(lead), loadLeadSupervisionHistory(lead)]);
   }
+
+  async function refreshActiveLeadDetail() {
+    if (!state.activeConversationLead) return;
+    var leadId = state.activeConversationLead.id;
+    await loadData(true);
+    var lead = state.leads.find(function (item) { return item.id === leadId; });
+    if (!lead) return;
+    state.activeConversationLead = lead;
+    renderLeadSupervisionOverview(lead);
+    await loadLeadSupervisionHistory(lead);
+  }
+
+  async function runSupervisorManagement(action, payload, button, successMessage) {
+    if (!state.activeConversationLead) return;
+    var message = document.getElementById("leadSupervisionMessage");
+    message.textContent = "";
+    message.classList.add("error");
+    setBusy(button, true, "Guardando…");
+    var params = Object.assign({ p_lead_id: state.activeConversationLead.id, p_action: action }, payload || {});
+    var result = await supabaseClient.rpc("supervisor_manage_lead", params);
+    if (result.error) {
+      message.textContent = result.error.message;
+      setBusy(button, false);
+      return;
+    }
+    await refreshActiveLeadDetail();
+    message.classList.remove("error");
+    message.textContent = successMessage;
+    setBusy(button, false);
+  }
+
+  document.getElementById("supervisorNextDate").addEventListener("input", function () { maskDateInput(this); });
+  document.getElementById("supervisorReassignSave").addEventListener("click", async function () {
+    if (!state.activeConversationLead) return;
+    var sellerId = document.getElementById("supervisorReassignSeller").value;
+    var reason = document.getElementById("supervisorReassignReason").value.trim() || "Reasignación individual desde Cartera y seguimiento";
+    var message = document.getElementById("leadSupervisionMessage");
+    message.textContent = "";
+    message.classList.add("error");
+    if (!sellerId) { message.textContent = "Elegí un vendedor activo para reasignar el Lead."; return; }
+    setBusy(this, true, "Reasignando…");
+    var result = await supabaseClient.rpc("reassign_leads_to_seller", {
+      p_lead_ids: [state.activeConversationLead.id],
+      p_seller_user_id: sellerId,
+      p_reason: reason
+    });
+    if (result.error) { message.textContent = result.error.message; setBusy(this, false); return; }
+    document.getElementById("supervisorReassignReason").value = "";
+    await refreshActiveLeadDetail();
+    message.classList.remove("error");
+    message.textContent = "Lead reasignado y protocolo de contacto reiniciado para el nuevo vendedor.";
+    setBusy(this, false);
+  });
+  document.getElementById("supervisorCommentSave").addEventListener("click", async function () {
+    if (!state.activeConversationLead) return;
+    var comment = document.getElementById("supervisorComment").value.trim();
+    var message = document.getElementById("leadSupervisionMessage");
+    message.textContent = "";
+    message.classList.add("error");
+    if (comment.length < 2) { message.textContent = "Escribí un comentario antes de guardar."; return; }
+    setBusy(this, true, "Guardando…");
+    var result = await supabaseClient.rpc("add_lead_comment", { p_lead_id: state.activeConversationLead.id, p_comment: comment });
+    if (result.error) { message.textContent = result.error.message; setBusy(this, false); return; }
+    document.getElementById("supervisorComment").value = "";
+    await refreshActiveLeadDetail();
+    message.classList.remove("error");
+    message.textContent = "Comentario agregado al historial.";
+    setBusy(this, false);
+  });
+  document.getElementById("supervisorScheduleSave").addEventListener("click", function () {
+    var nextContact;
+    var message = document.getElementById("leadSupervisionMessage");
+    message.classList.add("error");
+    try {
+      nextContact = parseArgentineDateTime(document.getElementById("supervisorNextDate").value, document.getElementById("supervisorNextTime").value);
+    } catch (error) {
+      message.textContent = error.message.replace("primer contacto", "próxima acción");
+      return;
+    }
+    runSupervisorManagement("schedule", {
+      p_next_contact_at: nextContact,
+      p_next_contact_note: document.getElementById("supervisorNextNote").value.trim()
+    }, this, "Próxima acción guardada y atribuida a Supervisión.");
+  });
+  document.getElementById("supervisorStatusSave").addEventListener("click", function () {
+    runSupervisorManagement("status", {
+      p_status: document.getElementById("supervisorStatus").value,
+      p_priority: document.getElementById("supervisorPriority").value,
+      p_note: document.getElementById("supervisorStatusNote").value.trim()
+    }, this, "Estado comercial actualizado.");
+  });
+  document.getElementById("supervisorManagementSave").addEventListener("click", function () {
+    runSupervisorManagement("management", {
+      p_contact_outcome: document.getElementById("supervisorManagementOutcome").value,
+      p_note: document.getElementById("supervisorManagementNote").value.trim()
+    }, this, "Gestión registrada con atribución de Supervisor.");
+  });
 
   document.getElementById("conversationRefresh").addEventListener("click", async function () {
     if (!state.activeConversationLead) return;
@@ -729,8 +963,72 @@
     }
   });
 
-  document.querySelector(".portfolio-filters").addEventListener("input", renderPortfolio);
-  document.querySelector(".portfolio-filters").addEventListener("change", renderPortfolio);
+  function syncPortfolioQuickFilters() {
+    var selected = document.getElementById("portfolioSituation").value;
+    document.querySelectorAll("#portfolioQuickFilters [data-situation]").forEach(function (button) { button.classList.toggle("active", button.dataset.situation === selected); });
+  }
+
+  document.querySelector(".portfolio-filters").addEventListener("input", function () { syncPortfolioQuickFilters(); renderPortfolio(); });
+  document.querySelector(".portfolio-filters").addEventListener("change", function () { syncPortfolioQuickFilters(); renderPortfolio(); });
+  document.getElementById("portfolioQuickFilters").addEventListener("click", function (event) {
+    var button = event.target.closest("[data-situation]");
+    if (!button) return;
+    document.getElementById("portfolioSituation").value = button.dataset.situation;
+    syncPortfolioQuickFilters();
+    renderPortfolio();
+  });
+  document.getElementById("portfolioSellerSummary").addEventListener("click", function (event) {
+    var card = event.target.closest("[data-portfolio-seller]");
+    if (!card) return;
+    document.getElementById("portfolioSeller").value = card.dataset.portfolioSeller;
+    renderPortfolio();
+  });
+  document.getElementById("portfolioSelectVisible").addEventListener("change", function () {
+    var selected = new Set(state.portfolioSelection);
+    state.visiblePortfolioLeadIds.forEach(function (leadId) {
+      if (this.checked) selected.add(leadId); else selected.delete(leadId);
+    }, this);
+    state.portfolioSelection = Array.from(selected);
+    renderPortfolio();
+  });
+  document.getElementById("portfolioRows").addEventListener("change", function (event) {
+    var checkbox = event.target.closest("[data-portfolio-select]");
+    var row = event.target.closest("[data-portfolio-lead]");
+    var lead = row && state.leads.find(function (item) { return item.id === row.dataset.portfolioLead; });
+    if (!checkbox || !row || checkbox.disabled || !followUpModel.isReassignable(lead)) return;
+    var selected = new Set(state.portfolioSelection);
+    if (checkbox.checked) selected.add(row.dataset.portfolioLead); else selected.delete(row.dataset.portfolioLead);
+    state.portfolioSelection = Array.from(selected);
+    renderPortfolio();
+  });
+  document.getElementById("portfolioClearSelection").addEventListener("click", function () {
+    state.portfolioSelection = [];
+    document.getElementById("portfolioBulkReason").value = "";
+    renderPortfolio();
+  });
+  document.getElementById("portfolioBulkReassign").addEventListener("click", async function () {
+    var sellerId = document.getElementById("portfolioBulkSeller").value;
+    var reason = document.getElementById("portfolioBulkReason").value.trim();
+    var message = document.getElementById("portfolioBulkMessage");
+    message.textContent = "";
+    if (!state.portfolioSelection.length) { message.textContent = "Seleccioná al menos un Lead."; return; }
+    if (!sellerId) { message.textContent = "Elegí un vendedor activo."; return; }
+    if (!sellerCanReceiveReassignment(sellerId)) { message.textContent = "El vendedor seleccionado no está disponible para reasignaciones."; return; }
+    if (reason.length < 3) { message.textContent = "Indicá el motivo de la reasignación masiva."; return; }
+    var leadIds = state.portfolioSelection.slice();
+    setBusy(this, true, "Reasignando…");
+    var result = await supabaseClient.rpc("reassign_leads_to_seller", {
+      p_lead_ids: leadIds,
+      p_seller_user_id: sellerId,
+      p_reason: reason
+    });
+    if (result.error) { message.textContent = result.error.message; setBusy(this, false); return; }
+    state.portfolioSelection = [];
+    document.getElementById("portfolioBulkReason").value = "";
+    await loadData(true);
+    pageMessage.textContent = leadIds.length + (leadIds.length === 1 ? " Lead reasignado." : " Leads reasignados en una única operación atómica.");
+    setBusy(this, false);
+  });
   document.getElementById("meliConnectButton").addEventListener("click", async function () {
     setBusy(this, true, "Preparando…");
     var result = await supabaseClient.functions.invoke("mercadolibre-oauth-start", { body: {} });
