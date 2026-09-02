@@ -1,7 +1,7 @@
 (function () {
   "use strict";
   var supabaseClient = window.grupoSurSupabaseClient;
-  var state = { userId: "", cases: [], events: {}, applications: {}, notifications: [], leads: [], quotes: [], models: [], campaigns: [], credits: [], activeCase: null, activeQuote: null };
+  var state = { userId: "", salesLoadVersion: 0, quotesLoadVersion: 0, cases: [], events: {}, applications: {}, notifications: [], leads: [], quotes: [], models: [], campaigns: [], credits: [], activeCase: null, activeQuote: null };
   var quoteDialog = document.getElementById("quoteDialog");
   var quoteForm = document.getElementById("quoteForm");
   var minuteDialog = document.getElementById("salesMinuteDialog");
@@ -22,7 +22,33 @@
   function isCurrentlyValid(item) { var today = new Date().toISOString().slice(0, 10); return item.active !== false && (!item.valid_from || item.valid_from <= today) && (!item.valid_to || item.valid_to >= today); }
   function quoteCode() { return "GS-PRES-" + Date.now().toString(36).toUpperCase() + "-" + Math.random().toString(36).slice(2, 6).toUpperCase(); }
 
-  async function ensureUser() { if (state.userId) return state.userId; var auth = await supabaseClient.auth.getUser(); state.userId = auth.data && auth.data.user ? auth.data.user.id : ""; return state.userId; }
+  function resetSellerState() {
+    state.salesLoadVersion += 1;
+    state.quotesLoadVersion += 1;
+    state.userId = "";
+    state.cases = [];
+    state.events = {};
+    state.applications = {};
+    state.notifications = [];
+    state.leads = [];
+    state.quotes = [];
+    state.activeCase = null;
+    state.activeQuote = null;
+    renderSales();
+    renderQuotes();
+  }
+
+  async function ensureUser() {
+    var auth = await supabaseClient.auth.getUser();
+    var authenticatedUserId = auth.data && auth.data.user ? auth.data.user.id : "";
+    if (!authenticatedUserId) {
+      resetSellerState();
+      return "";
+    }
+    if (state.userId && state.userId !== authenticatedUserId) resetSellerState();
+    state.userId = authenticatedUserId;
+    return authenticatedUserId;
+  }
 
   async function loadCatalog() {
     var results = await Promise.all([
@@ -34,12 +60,19 @@
   }
 
   async function loadQuotes() {
-    await ensureUser(); await loadCatalog();
+    var requestedUserId = await ensureUser();
+    if (!requestedUserId) return;
+    var requestVersion = ++state.quotesLoadVersion;
+    await loadCatalog();
+    if (requestVersion !== state.quotesLoadVersion || state.userId !== requestedUserId) return;
     var results = await Promise.all([
-      supabaseClient.from("leads").select("id, customer_name, customer_phone, model_interest, created_at").eq("assigned_seller_user_id", state.userId).order("created_at", { ascending: false }).limit(500),
-      supabaseClient.from("sales_quotes").select("id, quote_code, lead_id, model_id, offer_type, customer_name, vehicle_version, sale_price, financed_amount, installment_amount, advance_amount, breakage_base_amount, breakage_vat_amount, breakage_amount, patenting_amount, expenses_amount, final_advance_amount, status, issued_at, valid_until, commercial_snapshot").eq("seller_user_id", state.userId).order("issued_at", { ascending: false }).limit(500)
+      supabaseClient.from("leads").select("id, assigned_seller_user_id, customer_name, customer_phone, model_interest, created_at").eq("assigned_seller_user_id", requestedUserId).order("created_at", { ascending: false }).limit(500),
+      supabaseClient.from("sales_quotes").select("id, seller_user_id, quote_code, lead_id, model_id, offer_type, customer_name, vehicle_version, sale_price, financed_amount, installment_amount, advance_amount, breakage_base_amount, breakage_vat_amount, breakage_amount, patenting_amount, expenses_amount, final_advance_amount, status, issued_at, valid_until, commercial_snapshot").eq("seller_user_id", requestedUserId).order("issued_at", { ascending: false }).limit(500)
     ]);
-    state.leads = results[0].data || []; state.quotes = results[1].data || []; renderQuotes();
+    if (requestVersion !== state.quotesLoadVersion || state.userId !== requestedUserId) return;
+    state.leads = (results[0].data || []).filter(function (item) { return item.assigned_seller_user_id === requestedUserId; });
+    state.quotes = (results[1].data || []).filter(function (item) { return item.seller_user_id === requestedUserId; });
+    renderQuotes();
   }
 
   function renderQuotes() {
@@ -132,13 +165,22 @@
   }
 
   async function loadSales() {
-    await ensureUser(); var results = await Promise.all([
-      supabaseClient.from("sales_cases").select("id, case_code, vehicle, sale_amount, status, cdn_scoring_status, dealer_scoring_status, contract_status, admin_call_requested_at, finalized_at, created_at, updated_at, quote:sales_quotes!sales_cases_quote_id_fkey(offer_type,term_months,vehicle_version,sale_price,commercial_snapshot), sale_request:lead_sale_requests!sales_cases_sale_request_id_fkey(provisional_application_id, provisional:commercial_applications!lead_sale_requests_provisional_application_id_fkey(request_code, brand_name, model_name, campaign_name, first_name, last_name, document_type, document_number, cuil, birth_date, address, city_province, postal_code, marital_status, spouse_name, spouse_document, primary_phone, alternate_phone, email, contact_schedule, employment_status, employer_name, employment_seniority, monthly_income, automatic_debit, deferred_installment, installments_paid, installments_to_pay, plan_type, agreed_price, commercial_snapshot))").eq("seller_user_id", state.userId).order("updated_at", { ascending: false }),
-      supabaseClient.from("commercial_applications").select("id, sales_case_id, revision_number, status, created_at").eq("seller_user_id", state.userId).not("sales_case_id", "is", null).order("revision_number", { ascending: false }),
+    var requestedUserId = await ensureUser();
+    if (!requestedUserId) return;
+    var requestVersion = ++state.salesLoadVersion;
+    var results = await Promise.all([
+      supabaseClient.from("sales_cases").select("id, seller_user_id, case_code, vehicle, sale_amount, status, cdn_scoring_status, dealer_scoring_status, contract_status, admin_call_requested_at, finalized_at, created_at, updated_at, quote:sales_quotes!sales_cases_quote_id_fkey(offer_type,term_months,vehicle_version,sale_price,commercial_snapshot), sale_request:lead_sale_requests!sales_cases_sale_request_id_fkey(provisional_application_id, provisional:commercial_applications!lead_sale_requests_provisional_application_id_fkey(request_code, brand_name, model_name, campaign_name, first_name, last_name, document_type, document_number, cuil, birth_date, address, city_province, postal_code, marital_status, spouse_name, spouse_document, primary_phone, alternate_phone, email, contact_schedule, employment_status, employer_name, employment_seniority, monthly_income, automatic_debit, deferred_installment, installments_paid, installments_to_pay, plan_type, agreed_price, commercial_snapshot))").eq("seller_user_id", requestedUserId).order("updated_at", { ascending: false }),
+      supabaseClient.from("commercial_applications").select("id, seller_user_id, sales_case_id, revision_number, status, created_at").eq("seller_user_id", requestedUserId).not("sales_case_id", "is", null).order("revision_number", { ascending: false }),
       supabaseClient.from("sales_case_events").select("id, sales_case_id, stage, outcome, comment, created_at").order("created_at", { ascending: false }).limit(500),
-      supabaseClient.from("sales_notifications").select("id, sales_case_id, notification_type, title, body, read_at, created_at").eq("recipient_user_id", state.userId).order("created_at", { ascending: false }).limit(100)
+      supabaseClient.from("sales_notifications").select("id, recipient_user_id, sales_case_id, notification_type, title, body, read_at, created_at").eq("recipient_user_id", requestedUserId).order("created_at", { ascending: false }).limit(100)
     ]);
-    state.cases = results[0].data || []; state.applications = {}; (results[1].data || []).forEach(function (item) { (state.applications[item.sales_case_id] || (state.applications[item.sales_case_id] = [])).push(item); }); state.events = {}; (results[2].data || []).forEach(function (item) { (state.events[item.sales_case_id] || (state.events[item.sales_case_id] = [])).push(item); }); state.notifications = results[3].data || []; renderSales();
+    if (requestVersion !== state.salesLoadVersion || state.userId !== requestedUserId) return;
+    state.cases = (results[0].data || []).filter(function (item) { return item.seller_user_id === requestedUserId; });
+    var ownedCaseIds = new Set(state.cases.map(function (item) { return item.id; }));
+    state.applications = {}; (results[1].data || []).filter(function (item) { return item.seller_user_id === requestedUserId && ownedCaseIds.has(item.sales_case_id); }).forEach(function (item) { (state.applications[item.sales_case_id] || (state.applications[item.sales_case_id] = [])).push(item); });
+    state.events = {}; (results[2].data || []).filter(function (item) { return ownedCaseIds.has(item.sales_case_id); }).forEach(function (item) { (state.events[item.sales_case_id] || (state.events[item.sales_case_id] = [])).push(item); });
+    state.notifications = (results[3].data || []).filter(function (item) { return item.recipient_user_id === requestedUserId && (!item.sales_case_id || ownedCaseIds.has(item.sales_case_id)); });
+    renderSales();
   }
   function processChip(label, value) { return '<span class="' + escapeHtml(value) + '">' + escapeHtml(label + " · " + outcome(value)) + '</span>'; }
   function provisionalApplication(salesCase) { var request = Array.isArray(salesCase.sale_request) ? salesCase.sale_request[0] : salesCase.sale_request; var provisional = request && request.provisional; return Array.isArray(provisional) ? provisional[0] : provisional; }
@@ -198,5 +240,15 @@
   document.getElementById("salesNotifications").addEventListener("click", function (event) { var item = event.target.closest("[data-notification-id]"); if (item && event.target.closest("[data-read-notification]")) markRead(item.dataset.notificationId); }); minuteForm.addEventListener("submit", saveMinute);
   minuteForm.elements.totalInstallments.addEventListener("change", syncMinuteInstallments);
   window.grupoSurSales = { loadQuotes: loadQuotes, loadSales: loadSales, openQuote: openQuote, refreshNotifications: loadSales };
-  supabaseClient.auth.onAuthStateChange(function (event, session) { if (session && session.user && (event === "SIGNED_IN" || event === "INITIAL_SESSION")) { state.userId = session.user.id; loadSales(); } });
+  supabaseClient.auth.onAuthStateChange(function (event, session) {
+    if (event === "SIGNED_OUT" || !session || !session.user) {
+      resetSellerState();
+      return;
+    }
+    if (event === "SIGNED_IN" || event === "INITIAL_SESSION") {
+      if (state.userId && state.userId !== session.user.id) resetSellerState();
+      state.userId = session.user.id;
+      loadSales();
+    }
+  });
 }());
