@@ -15,7 +15,8 @@
     "candidate:demo:gsv1-001": "node --import tsx src/candidate-v1/demo-gsv1-001.mjs",
     "test": "node --import tsx --test test/*.test.mjs",
     "run": "node --import tsx src/cli.mjs run --execute",
-    "candidate:v2.1:test": "node --import tsx --test test/candidate-v2.1*.test.mjs"
+    "candidate:v2.1:test": "node --import tsx --test test/candidate-v2.1*.test.mjs",
+    "candidate:v2.2:test": "node --import tsx --test test/candidate-v2.2*.test.mjs"
   },
   "devDependencies": {
     "tsx": "4.23.12"

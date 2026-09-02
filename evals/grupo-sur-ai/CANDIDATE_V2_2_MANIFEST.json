@@ -1,0 +1,87 @@
+{
+  "version": "2.2",
+  "base_candidate": {
+    "branch": "ai-matrix-v1.4-candidate-v2.1",
+    "commit": "d6938bd301ddb320840bd58475b08bbc2328f5fc",
+    "historical_compound_sha256": "b40aeba422d58008cf7a89873274cd683bb700a254972bfa9d5569b00c20a39d",
+    "portable_manifest_sha256": "d2057318072b6f598165711dab55fa4fbf53f93e6b568ace1401f8a68f689378"
+  },
+  "pre_fix_audited_snapshot": {
+    "commit": "3d3c62cb6aa95ebe6e3129317ef23bcf12033eef",
+    "compound_sha256": "c6f0fbe11505ae69b9c633fe159cd7815a3bb9bffea7d074c126960b05952951",
+    "portable_manifest_sha256": "6fc8a3dd30d3dd91265030910d1ef923e1614946d285273090bb6e58d86d2fa7"
+  },
+  "grader": {
+    "version": "1.3",
+    "sha256": "9daa4d58acc3ddec9f52c0e1ec0981d315029978df714f887d08959bcbbef142",
+    "availability": "declared_future_canonical_not_present_in_repository"
+  },
+  "matrix_sha256": "b05bce2f43a160e22acbff0e107bfe1ee041f3a45fc1424ce3717f92098f17c9",
+  "golden_source_sha256": "934d70c25c69c7543e2faf74e0ee5667fc258a273fcf39237a4bb8c4c394cdd0",
+  "golden_compiled_sha256": "2e096d0230421ac694086e3b2cb85ab8bf87d526cbb9cb9642a3e33ccad1f806",
+  "catalog_source": {
+    "relative_path": "evals/grupo-sur-ai/snapshot/runtime_source/index.ts",
+    "section": "advertisedVehicles",
+    "sha256": "772ec7f64702fc295e60685586eeac9dc8c2bfd798e427e6608ddfff95ba3796",
+    "git_blob_sha": "ed134fda3506e287b4f5d71c863d9a712267cfce"
+  },
+  "compound_sha256": "8de6ea9bf5e72ecee0246c006eb0c6263946122d6baa551498f123d8ff0eca9d",
+  "compound_serialization": "SHA-256 of concatenated per-file SHA-256 hex strings in relative_path order",
+  "files": [
+    {
+      "relative_path": "evals/grupo-sur-ai/src/candidate-v2.2/candidate-runtime.mjs",
+      "sha256": "9a759a81aac941d2b7ae23c612e1a34f0361b300201d01349dd4f81915d3af8e",
+      "git_blob_sha": "bb092942a4c49c302e74e920f9f1c174fd837d01"
+    },
+    {
+      "relative_path": "evals/grupo-sur-ai/src/candidate-v2.2/demo-gsv1-001.mjs",
+      "sha256": "caad34c4d5e9495038167b085d0fa6344cb6d5815fdb60b658de01c08aec5aff",
+      "git_blob_sha": "5a2ad54e14031955d3b8651d0fd839e64768ddc6"
+    },
+    {
+      "relative_path": "evals/grupo-sur-ai/src/candidate-v2.2/extraction-schema.mjs",
+      "sha256": "d451c318e353943119cf06c24bfb7086cb85a665a107d924c6c02f11107d148d",
+      "git_blob_sha": "109921f054abfbe91ef5ae9fa9f849c32e6590fb"
+    },
+    {
+      "relative_path": "evals/grupo-sur-ai/src/candidate-v2.2/hard-rules.mjs",
+      "sha256": "926d05f7064e026b121e04e36f218abe0fbbd427ccf561ac39879c8f7338b00b",
+      "git_blob_sha": "08ed6f09497502c23e926b3a1633e9800b051397"
+    },
+    {
+      "relative_path": "evals/grupo-sur-ai/src/candidate-v2.2/matrix-engine.mjs",
+      "sha256": "92af4c49e2f56470121eb2488daad69a18af5e8b1aabbdce92a60e9209f8dec6",
+      "git_blob_sha": "5417285034494029508b74b1fe8f2826e436e7a4"
+    },
+    {
+      "relative_path": "evals/grupo-sur-ai/src/candidate-v2.2/operative-catalog.mjs",
+      "sha256": "dbf3ca9d446a4a6dc80dda3b1bf92f7739cecb0239a1e4c9929ca88de39d595c",
+      "git_blob_sha": "45d3765675800b4981a8ad7e89512ba9fcc4c293"
+    },
+    {
+      "relative_path": "evals/grupo-sur-ai/src/candidate-v2.2/post-extraction-normalizer.mjs",
+      "sha256": "865f3fbd1d981d67849351906ab290874528f808f986c9d756204b245de38e85",
+      "git_blob_sha": "030bb4a974c11a5b397cd7039d2d24faa22e9b97"
+    },
+    {
+      "relative_path": "evals/grupo-sur-ai/src/candidate-v2.2/profile-accumulator.mjs",
+      "sha256": "b95f56585dea72c3ef4adffb2ce35a316fbc28794a0d5277b0794a0b49af12a4",
+      "git_blob_sha": "87e865d6f251d893874fd3546976af39a57a8266"
+    }
+  ],
+  "portable_digest": {
+    "algorithm": "SHA-256",
+    "serialization": "recursively sorted object keys, UTF-8, no insignificant whitespace; digest fields omitted",
+    "excluded_fields": [
+      "candidate_v2_2_manifest_sha256",
+      "portable_manifest_sha256"
+    ]
+  },
+  "pre_cash_006_snapshot": {
+    "commit": "7ff38caa537dca5d3555f399aeeb5c1990ebcc14",
+    "compound_sha256": "51d697365afbba04734621fbe94ea24c534ee928e9be55d3bcbd4387c1c66dde",
+    "portable_manifest_sha256": "a363bf6b35c4b1afd259d80264a09d215b8c5ea1bfc766ecd49cfc4b1e7bc374"
+  },
+  "candidate_v2_2_manifest_sha256": "6c23748afa2a5eb8b0118361fef30ec2ca065272a3e52ef464e960ff379c69e7",
+  "portable_manifest_sha256": "6c23748afa2a5eb8b0118361fef30ec2ca065272a3e52ef464e960ff379c69e7"
+}
