@@ -92,90 +92,112 @@ test("9. las llamadas de media tarde y tarde usan los helpers canónicos", () =>
 test("10. el protocolo avanza por seis franjas comerciales válidas", () => {
   assert.ok(migration.includes("for v_call_attempt in 1..6 loop"));
   assert.ok(migration.includes("v_cursor := v_call_end + interval '1 second'"));
+  assert.ok(sellerCrm.includes("6 llamadas en las próximas 6 franjas comerciales disponibles"));
+  assert.doesNotMatch(sellerCrm, /seguimiento en \d+ días comerciales/);
 });
 
 test("11. el protocolo nuevo tiene exactamente 6 llamadas y 2 WhatsApp", () => {
   assert.ok(migration.includes("for v_call_attempt in 1..6 loop"));
   assert.ok(migration.includes("if v_call_attempt in (1, 4) then"));
-  assert.ok(sellerCrm.includes("6 llamadas · 2 WhatsApp"));
+  assert.ok(sellerCrm.includes("6 franjas comerciales disponibles · 2 WhatsApp después de las llamadas 1 y 4"));
 });
 
-test("12. WhatsApp aparece solo tras la primera llamada de cada bloque diario", () => {
+test("12. WhatsApp aparece solo después de las llamadas 1 y 4", () => {
   assert.match(migration, /v_call_attempt in \(1, 4\)/);
   assert.ok(!migration.includes("v_call_attempt in (2, 3, 5, 6)"));
 });
 
-test("13. cliente responde y el protocolo restante se cancela", () => {
+test("13. restart reemplaza toda la secuencia por una única secuencia canónica", () => {
+  const restart = migration.match(/create or replace function public\.restart_lead_contact_sequence[\s\S]*?grant execute on function public\.restart_lead_contact_sequence\(uuid\) to authenticated;/)?.[0] || "";
+  assert.ok(restart.includes("for update"));
+  assert.ok(restart.includes("perform private.cancel_lead_contact_protocol(p_lead_id, 'Secuencia reiniciada')"));
+  assert.match(restart, /next_contact_at = null,[\s\S]*next_contact_note = '',[\s\S]*next_contact_source = null/);
+  assert.ok(restart.includes("return private.create_lead_contact_sequence(p_lead_id, v_seller, now())"));
+  assert.ok(migration.includes("and status in ('pending', 'scheduled')"));
+});
+
+test("14. cliente responde y el protocolo restante se cancela", () => {
   assert.ok(migration.includes("p_outcome in ('answered', 'invalid', 'no_interest', 'requested_no_contact')"));
   assert.ok(migration.includes("when 'answered' then 'El cliente respondió'"));
 });
 
-test("14. una respuesta con próxima fecha deja source manual", () => {
+test("15. una respuesta con próxima fecha deja source manual", () => {
   assert.ok(migration.includes("next_contact_source = 'manual'"));
   assert.ok(migration.includes("'manual_follow_up', true"));
 });
 
-test("15. un estado terminal queda sin próxima acción", () => {
+test("16. un estado terminal queda sin próxima acción", () => {
   assert.ok(migration.includes("crm.status in ('venta', 'desistir', 'invalido')"));
   assert.match(migration, /next_contact_at = null,[\s\S]*next_contact_source = null/);
 });
 
-test("16. los pasos futuros no pueden aparecer como vencidos", () => {
+test("17. los pasos futuros no pueden aparecer como vencidos", () => {
   assert.ok(migration.includes("where status = 'pending'"));
   assert.ok(migration.includes("status = 'scheduled'"));
   assert.ok(migration.includes("lead_contact_tasks_one_pending_per_lead_idx"));
 });
 
-test("17. una tarea legacy vieja no compite con una gestión posterior", () => {
+test("18. una tarea legacy vieja no compite con una gestión posterior", () => {
   const current = lead({ status: "en_proceso", next_contact_at: null, next_contact_note: "", next_contact_source: null });
   const derived = model.deriveFollowUpStatus(current, summary({ next_task_due_start: "2026-09-01T10:00:00-03:00", next_task_channel: "call", next_task_call_attempt: 1 }), now);
   assert.equal(derived.key, "unscheduled");
   assert.equal(derived.nextAction, null);
 });
 
-test("18. toda programación automática conserva Buenos Aires y evita el pasado", () => {
+test("19. toda programación automática conserva Buenos Aires y evita el pasado", () => {
   assert.ok(migration.includes("America/Argentina/Buenos_Aires"));
   assert.ok(migration.includes("greatest(coalesce(p_after, now()), now())"));
   assert.equal(model.TIME_ZONE, "America/Argentina/Buenos_Aires");
 });
 
-test("19. Supervisor y vendedor leen la misma próxima acción de lead_crm", () => {
+test("20. Supervisor y vendedor leen la misma próxima acción de lead_crm", () => {
   assert.ok(sellerCrm.includes("next_contact_at, next_contact_note, next_contact_source"));
   assert.ok(modelSource.includes("crm.next_contact_source !== \"protocol\""));
   assert.ok(migration.includes("task.due_start = crm.next_contact_at"));
 });
 
-test("20. la migración no altera políticas RLS", () => {
+test("21. la migración no altera políticas RLS", () => {
   assert.ok(!migration.match(/alter table .* disable row level security/i));
   assert.ok(!migration.match(/drop policy/i));
   assert.ok(migration.includes("security invoker"));
 });
 
-test("21. la reasignación Supervisor conserva el reinicio canónico", () => {
+test("22. la reasignación Supervisor conserva el reinicio canónico", () => {
   assert.ok(reassignment.includes("private.assign_lead_to_seller_with_reason"));
   assert.ok(migration.includes("create or replace function private.start_contact_sequence_after_assignment"));
   assert.ok(migration.includes("'Lead reasignado a otro vendedor'"));
 });
 
-test("22. Datero permanece intacto", () => {
+test("23. Datero permanece intacto", () => {
   assert.ok(datero.includes('id="applicationForm"') || sellerHtml.includes('id="applicationForm"'));
   assert.ok(sellerCrm.includes('window.grupoSurCommercialApplication.open({ origin: "crm_lead"'));
 });
 
-test("23. Rellamados permanece intacto", () => {
+test("24. Rellamados permanece intacto", () => {
   assert.ok(recalls.includes('rpc("record_recall_attempt"'));
   assert.ok(recalls.includes("grupoSur:recalls-open"));
 });
 
-test("24. Mis Ventas y Presupuestos mantienen su aislamiento", () => {
+test("25. Mis Ventas y Presupuestos mantienen su aislamiento", () => {
   assert.ok(sales.includes("loadSales"));
   assert.ok(sales.includes("loadQuotes"));
   assert.ok(sales.includes("state.userId"));
 });
 
-test("25. Desistir conserva el flujo de base fría", () => {
+test("26. Desistir conserva el flujo de base fría", () => {
   assert.ok(migration.includes("cold_base_at = case when p_status = 'desistir' then now()"));
   assert.ok(migration.includes("status = 'desistir'"));
+});
+
+test("27. la reconciliación legacy permanece dentro de la migración canónica", () => {
+  const start = migration.indexOf("-- Legacy reconciliation.");
+  const end = migration.indexOf("create unique index if not exists lead_contact_tasks_one_pending_per_lead_idx");
+  const reconciliation = migration.slice(start, end);
+  assert.ok(start > 0 && end > start);
+  assert.ok(reconciliation.includes("latest_management_at > earliest_pending_at"));
+  assert.ok(reconciliation.includes("sequence.status = 'cancelled'"));
+  assert.ok(reconciliation.includes("set status = 'scheduled'"));
+  assert.ok(reconciliation.includes("next_contact_source = 'protocol'"));
 });
 
 test("el formulario ya no duplica el motivo y usa Resultado/comentario", () => {

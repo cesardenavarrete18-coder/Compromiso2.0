@@ -1,6 +1,6 @@
 -- Unify manual follow-up and the automated contact protocol behind one
--- canonical next action in lead_crm. New sequences use a 2-day rolling
--- protocol (6 calls + 2 WhatsApp) with only one operational task at a time.
+-- canonical next action in lead_crm. New sequences use the next six available
+-- business call windows (6 calls + 2 WhatsApp), with one operational task at a time.
 
 alter table public.lead_crm
   drop constraint if exists lead_crm_next_contact_source_check;
@@ -355,6 +355,54 @@ end;
 $$;
 
 revoke all on function private.create_lead_contact_sequence(uuid, uuid, timestamptz) from public, anon, authenticated;
+
+-- Bring the legacy restart RPC into the canonical task model. A restart is
+-- serialized on the Lead, retires every operational task from the prior
+-- sequence, clears its canonical agenda and creates exactly one fresh sequence.
+create or replace function public.restart_lead_contact_sequence(p_lead_id uuid)
+returns uuid
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_user_id uuid := (select auth.uid());
+  v_seller uuid;
+begin
+  if v_user_id is null or not private.current_user_active() then
+    raise exception 'Acceso no autorizado';
+  end if;
+
+  select assigned_seller_user_id
+  into v_seller
+  from public.leads
+  where id = p_lead_id
+  for update;
+
+  if v_seller is null then
+    raise exception 'El lead todavía no tiene vendedor';
+  end if;
+  if v_seller <> v_user_id and not private.current_user_is_management() then
+    raise exception 'Acceso no autorizado';
+  end if;
+
+  perform private.cancel_lead_contact_protocol(p_lead_id, 'Secuencia reiniciada');
+
+  update public.lead_crm
+  set status = 'nuevo',
+      next_contact_at = null,
+      next_contact_note = '',
+      next_contact_source = null,
+      updated_by = v_user_id,
+      updated_at = now()
+  where lead_id = p_lead_id;
+
+  return private.create_lead_contact_sequence(p_lead_id, v_seller, now());
+end;
+$$;
+
+revoke all on function public.restart_lead_contact_sequence(uuid) from public, anon;
+grant execute on function public.restart_lead_contact_sequence(uuid) to authenticated;
 
 -- Legacy reconciliation. It preserves completed history and never creates or
 -- restarts a sequence. Manual actions win; later management without a new action
