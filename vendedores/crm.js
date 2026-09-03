@@ -4,7 +4,8 @@
   var APPRAISALS_ENABLED = false;
 
   var supabaseClient = window.grupoSurSupabaseClient;
-  if (!supabaseClient) return;
+  var agendaModel = window.grupoSurAgendaModel;
+  if (!supabaseClient || !agendaModel) return;
 
   var STAGES = [
     { value: "nuevo", label: "Nuevo" },
@@ -121,6 +122,33 @@
     if (!tasks.length) return null;
     var completed = tasks.filter(function (task) { return ["completed", "skipped"].includes(task.status); }).length;
     return { completed: completed, total: tasks.length, pending: nextPendingTask(leadId) };
+  }
+
+  function manualNextAction(lead) {
+    return agendaModel.manualAction(lead);
+  }
+
+  function protocolRecommendation(leadId) {
+    var progress = protocolProgress(leadId);
+    var lead = state.leads.find(function (item) { return item.id === leadId; });
+    var recommendation = agendaModel.protocolRecommendation(lead, progress && progress.pending);
+    return recommendation ? { task: recommendation.task, past: recommendation.past, progress: progress } : null;
+  }
+
+  function recommendationLabel(recommendation, nowValue) {
+    if (!recommendation) return "";
+    var task = recommendation.task;
+    var past = new Date(task.due_start).getTime() < Number(nowValue || Date.now());
+    var endTime = new Intl.DateTimeFormat("es-AR", {
+      timeZone: "America/Argentina/Buenos_Aires", hour: "2-digit", minute: "2-digit"
+    }).format(new Date(task.due_end));
+    var windowLabel = formatDate(task.due_start) + " a " + endTime;
+    return (past ? "Recomendado pendiente · " : "Seguimiento recomendado · ") + taskTitle(task) +
+      " · " + (past ? "Sugerido desde " + formatDate(task.due_start) + " · Franja original " + windowLabel : "Franja " + windowLabel);
+  }
+
+  function agendaBucket(lead, nowValue) {
+    return agendaModel.agendaBucket(lead, nowValue);
   }
 
   function personalizedMessage(task, lead) {
@@ -245,9 +273,9 @@
   function renderSummary() {
     var now = Date.now();
     var counts = {
-      overdue: state.leads.filter(function (lead) { var crm = crmOf(lead); return crm.next_contact_at && new Date(crm.next_contact_at).getTime() < now && !CLOSED_STAGES.includes(crm.status); }).length,
-      today: state.leads.filter(function (lead) { var crm = crmOf(lead); return crm.next_contact_at && new Date(crm.next_contact_at).getTime() >= now && localDateKey(crm.next_contact_at) === localDateKey(new Date()) && !CLOSED_STAGES.includes(crm.status); }).length,
-      newLead: state.leads.filter(function (lead) { var crm = crmOf(lead); return crm.status === "nuevo" && !crm.next_contact_at; }).length,
+      overdue: state.leads.filter(function (lead) { return agendaBucket(lead, now) === "overdue"; }).length,
+      today: state.leads.filter(function (lead) { return agendaBucket(lead, now) === "today"; }).length,
+      newLead: state.leads.filter(function (lead) { return agendaBucket(lead, now) === "new"; }).length,
       interview: state.leads.filter(function (lead) { var crm = crmOf(lead); return crm.status === "entrevista" && crm.interview_at && new Date(crm.interview_at).getTime() >= now; }).length,
       closing: state.leads.filter(function (lead) { return ["cierre", "sena"].includes(crmOf(lead).status); }).length
     };
@@ -264,16 +292,17 @@
 
   function leadCard(lead) {
     var crm = crmOf(lead);
-    var next = crm.next_contact_at;
-    var isOverdue = next && new Date(next).getTime() < Date.now() && !CLOSED_STAGES.includes(crm.status);
+    var manual = manualNextAction(lead);
+    var recommendation = protocolRecommendation(lead.id);
+    var isOverdue = crm.status !== "nuevo" && manual && new Date(manual.at).getTime() < Date.now() && !CLOSED_STAGES.includes(crm.status);
     var pendingSale = crm.sale_confirmation_status === "pending";
     var progress = protocolProgress(lead.id);
-    var nextLabel = next
-      ? (isOverdue ? "Vencido · " : "Próximo · ") + formatDate(next)
-      : crm.status === "nuevo"
-        ? "Pendiente de primer contacto"
-        : progress && progress.pending
-          ? "Protocolo pendiente · " + taskTitle(progress.pending)
+    var nextLabel = crm.status === "nuevo"
+      ? "Pendiente de primer contacto" + (recommendation ? " · " + recommendationLabel(recommendation) : manual ? " · Acordado " + formatDate(manual.at) : "")
+      : manual
+        ? (isOverdue ? "Vencido · " : "Próximo · ") + formatDate(manual.at)
+        : recommendation
+          ? recommendationLabel(recommendation)
           : "Sin próxima acción acordada";
     return '<article class="crm-lead-card" data-crm-lead-id="' + lead.id + '">' +
       '<div class="crm-card-top"><div><strong>' + escapeHtml(lead.customer_name || "Cliente sin nombre") + '</strong><small>+' + escapeHtml(lead.customer_phone) + '</small></div><span class="crm-stage" data-stage="' + escapeHtml(crm.status || "nuevo") + '">' + escapeHtml(stageLabel(crm.status)) + '</span></div>' +
@@ -287,25 +316,26 @@
   }
 
   function agendaGroup(title, items, emptyText) {
-    return '<section class="agenda-group' + (title === "Sin próxima acción" ? ' requires-action' : '') + '"><div class="agenda-group-head"><h3>' + escapeHtml(title) + '</h3><span>' + items.length + '</span></div>' +
+    return '<section class="agenda-group' + (title === "Sin próxima acción" ? ' requires-action' : title === "Seguimiento recomendado" ? ' recommended' : '') + '"><div class="agenda-group-head"><h3>' + escapeHtml(title) + '</h3><span>' + items.length + '</span></div>' +
       (items.length ? '<div class="agenda-cards">' + items.map(leadCard).join("") + '</div>' : '<div class="agenda-empty">' + escapeHtml(emptyText) + '</div>') + '</section>';
   }
 
   function renderAgenda() {
     var query = normalizeSearch(state.searchAgenda);
     var leads = state.leads.filter(function (lead) { return matchesSearch(lead, query); });
-    var today = localDateKey(new Date());
     var now = Date.now();
-    var overdue = leads.filter(function (lead) { var crm = crmOf(lead); return crm.next_contact_at && new Date(crm.next_contact_at).getTime() < now && !CLOSED_STAGES.includes(crm.status); }).sort(function (a, b) { return new Date(crmOf(a).next_contact_at) - new Date(crmOf(b).next_contact_at); });
-    var forToday = leads.filter(function (lead) { var crm = crmOf(lead); return crm.next_contact_at && new Date(crm.next_contact_at).getTime() >= now && localDateKey(crm.next_contact_at) === today && !CLOSED_STAGES.includes(crm.status); }).sort(function (a, b) { return new Date(crmOf(a).next_contact_at) - new Date(crmOf(b).next_contact_at); });
-    var newLeads = leads.filter(function (lead) { var crm = crmOf(lead); return crm.status === "nuevo" && !crm.next_contact_at; });
-    var unscheduled = leads.filter(function (lead) { var crm = crmOf(lead); return !crm.next_contact_at && !CLOSED_STAGES.includes(crm.status) && crm.status !== "nuevo"; });
-    var next = leads.filter(function (lead) { var crm = crmOf(lead); return crm.next_contact_at && new Date(crm.next_contact_at).getTime() >= now && localDateKey(crm.next_contact_at) !== today && !CLOSED_STAGES.includes(crm.status); }).sort(function (a, b) { return new Date(crmOf(a).next_contact_at) - new Date(crmOf(b).next_contact_at); });
+    var overdue = leads.filter(function (lead) { return agendaBucket(lead, now) === "overdue"; }).sort(function (a, b) { return new Date(manualNextAction(a).at) - new Date(manualNextAction(b).at); });
+    var forToday = leads.filter(function (lead) { return agendaBucket(lead, now) === "today"; }).sort(function (a, b) { return new Date(manualNextAction(a).at) - new Date(manualNextAction(b).at); });
+    var newLeads = leads.filter(function (lead) { return agendaBucket(lead, now) === "new"; });
+    var unscheduled = leads.filter(function (lead) { return agendaBucket(lead, now) === "unscheduled"; });
+    var recommended = unscheduled.filter(function (lead) { return agendaModel.belongsToRecommendedSection(lead, nextPendingTask(lead.id), now); }).sort(function (a, b) { return new Date(protocolRecommendation(a.id).task.due_start) - new Date(protocolRecommendation(b.id).task.due_start); });
+    var next = leads.filter(function (lead) { return agendaBucket(lead, now) === "upcoming"; }).sort(function (a, b) { return new Date(manualNextAction(a).at) - new Date(manualNextAction(b).at); });
     document.getElementById("crmAgenda").innerHTML =
       agendaGroup("Contactos vencidos", overdue, "No tenés seguimientos vencidos.") +
       agendaGroup("Sin próxima acción", unscheduled, "Todas las gestiones activas tienen un próximo paso definido.") +
       agendaGroup("Programados para hoy", forToday, "No hay contactos programados para hoy.") +
       agendaGroup("Nuevos por atender", newLeads, "No tenés leads nuevos pendientes.") +
+      agendaGroup("Seguimiento recomendado", recommended, "No hay recomendaciones de protocolo pendientes.") +
       agendaGroup("Próximos contactos", next.slice(0, 30), "Todavía no programaste próximos contactos.");
     renderSummary();
   }
@@ -356,11 +386,17 @@
 
   function renderNextCard(lead) {
     var crm = crmOf(lead);
+    var manual = manualNextAction(lead);
+    var recommendation = protocolRecommendation(lead.id);
+    var cardTitle = crm.status === "nuevo" ? "Primer contacto" : manual ? "Próxima acción" : recommendation ? "Seguimiento recomendado" : "Próxima acción";
+    var cardDate = manual ? formatDate(manual.at, true) : recommendation ? recommendationLabel(recommendation) : "Sin programar";
+    var cardNote = manual ? manual.note : recommendation ? taskTitle(recommendation.task) + " · " + recommendation.progress.completed + "/" + recommendation.progress.total : "No indicado";
+    var cardSource = manual ? "MANUAL" : recommendation ? "RECOMENDADO" : "Sin origen";
     var attribution = attributionOf(lead);
     var origin = lead.source_channel === "manual" ? "Carga manual · " + (lead.source_detail || "Sin detalle") : lead.source_channel === "tiktok" ? "TikTok" : lead.source_detail === "meta_ads" ? "Meta Ads · " + (attribution && (attribution.ad_name || attribution.headline || attribution.campaign_name) || "Anuncio de WhatsApp") : "WhatsApp orgánico";
-    document.getElementById("crmNextCard").innerHTML = '<span>Próxima acción</span><strong>' + escapeHtml(crm.next_contact_at ? formatDate(crm.next_contact_at, true) : "Sin programar") + '</strong><dl>' +
-      '<div><dt>Motivo</dt><dd>' + escapeHtml(crm.next_contact_note || "No indicado") + '</dd></div>' +
-      '<div><dt>Fuente de agenda</dt><dd>' + escapeHtml(crm.next_contact_source === "protocol" ? "PROTOCOLO" : crm.next_contact_source === "manual" ? "MANUAL" : "Sin origen") + '</dd></div>' +
+    document.getElementById("crmNextCard").innerHTML = '<span>' + escapeHtml(cardTitle) + '</span><strong>' + escapeHtml(cardDate) + '</strong><dl>' +
+      '<div><dt>Contexto</dt><dd>' + escapeHtml(cardNote) + '</dd></div>' +
+      '<div><dt>Fuente</dt><dd>' + escapeHtml(cardSource) + '</dd></div>' +
       '<div><dt>Último contacto</dt><dd>' + escapeHtml(crm.last_contact_at ? formatDate(crm.last_contact_at) : "Todavía sin contacto") + '</dd></div>' +
       '<div><dt>Origen</dt><dd>' + escapeHtml(origin) + '</dd></div>' +
       (crm.interview_at ? '<div><dt>Entrevista</dt><dd>' + escapeHtml(formatDate(crm.interview_at, true) + (crm.interview_location ? " · " + crm.interview_location : "")) + '</dd></div>' : '') +

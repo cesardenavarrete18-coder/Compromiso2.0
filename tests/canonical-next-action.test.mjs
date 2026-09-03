@@ -4,6 +4,7 @@ import test from "node:test";
 import { runInNewContext } from "node:vm";
 
 const migration = readFileSync(new URL("../supabase/migrations/20260903133015_unify_canonical_next_action.sql", import.meta.url), "utf8");
+const advisoryMigration = readFileSync(new URL("../supabase/migrations/20260903202218_protocol_advisory_layer.sql", import.meta.url), "utf8");
 const modelSource = readFileSync(new URL("../vendedores/supervisor/followup-model.js", import.meta.url), "utf8");
 const sellerCrm = readFileSync(new URL("../vendedores/crm.js", import.meta.url), "utf8");
 const sellerHtml = readFileSync(new URL("../vendedores/index.html", import.meta.url), "utf8");
@@ -108,12 +109,13 @@ test("12. WhatsApp aparece solo después de las llamadas 1 y 4", () => {
 });
 
 test("13. restart reemplaza toda la secuencia por una única secuencia canónica", () => {
-  const restart = migration.match(/create or replace function public\.restart_lead_contact_sequence[\s\S]*?grant execute on function public\.restart_lead_contact_sequence\(uuid\) to authenticated;/)?.[0] || "";
+  const restart = advisoryMigration.match(/create or replace function public\.restart_lead_contact_sequence[\s\S]*?grant execute on function public\.restart_lead_contact_sequence\(uuid\) to authenticated;/)?.[0] || "";
   assert.ok(restart.includes("for update"));
-  assert.ok(restart.includes("perform private.cancel_lead_contact_protocol(p_lead_id, 'Secuencia reiniciada')"));
-  assert.match(restart, /next_contact_at = null,[\s\S]*next_contact_note = '',[\s\S]*next_contact_source = null/);
+  assert.ok(restart.includes("perform private.cancel_lead_contact_protocol(p_lead_id, 'Secuencia recomendada reiniciada')"));
+  assert.ok(!restart.includes("update public.lead_crm"));
+  assert.ok(restart.includes("v_next_contact_at is not null"));
   assert.ok(restart.includes("return private.create_lead_contact_sequence(p_lead_id, v_seller, now())"));
-  assert.ok(migration.includes("and status in ('pending', 'scheduled')"));
+  assert.ok(advisoryMigration.includes("and task.status in ('pending', 'scheduled')"));
 });
 
 test("14. cliente responde y el protocolo restante se cancela", () => {
@@ -166,22 +168,24 @@ test("20. toda programación automática conserva Buenos Aires y evita el pasado
   assert.equal(model.TIME_ZONE, "America/Argentina/Buenos_Aires");
 });
 
-test("21. Supervisor y vendedor leen la misma próxima acción de lead_crm", () => {
+test("21. Supervisor y vendedor reservan la próxima acción para agenda manual", () => {
   assert.ok(sellerCrm.includes("next_contact_at, next_contact_note, next_contact_source"));
-  assert.ok(modelSource.includes("crm.next_contact_source !== \"protocol\""));
-  assert.ok(migration.includes("task.due_start = crm.next_contact_at"));
+  assert.ok(modelSource.includes("return manualAction(lead)"));
+  assert.ok(advisoryMigration.includes("pending protocol task independently from lead_crm"));
+  const portfolioRpc = advisoryMigration.slice(advisoryMigration.indexOf("create or replace function public.get_supervisor_portfolio_followup"));
+  assert.ok(!portfolioRpc.includes("task.due_start = crm.next_contact_at"));
 });
 
 test("22. la migración no altera políticas RLS", () => {
-  assert.ok(!migration.match(/alter table .* disable row level security/i));
-  assert.ok(!migration.match(/drop policy/i));
-  assert.ok(migration.includes("security invoker"));
+  assert.ok(!advisoryMigration.match(/alter table .* disable row level security/i));
+  assert.ok(!advisoryMigration.match(/drop policy/i));
+  assert.ok(advisoryMigration.includes("security invoker"));
 });
 
 test("23. la reasignación Supervisor conserva el reinicio canónico", () => {
   assert.ok(reassignment.includes("private.assign_lead_to_seller_with_reason"));
-  assert.ok(migration.includes("create or replace function private.start_contact_sequence_after_assignment"));
-  assert.ok(migration.includes("'Lead reasignado a otro vendedor'"));
+  assert.ok(advisoryMigration.includes("create or replace function private.start_contact_sequence_after_assignment"));
+  assert.ok(advisoryMigration.includes("'Lead reasignado a otro vendedor'"));
 });
 
 test("24. Datero permanece intacto", () => {
@@ -205,15 +209,12 @@ test("27. Desistir conserva el flujo de base fría", () => {
   assert.ok(migration.includes("status = 'desistir'"));
 });
 
-test("28. la reconciliación legacy permanece dentro de la migración canónica", () => {
-  const start = migration.indexOf("-- Legacy reconciliation.");
-  const end = migration.indexOf("create unique index if not exists lead_contact_tasks_one_pending_per_lead_idx");
-  const reconciliation = migration.slice(start, end);
-  assert.ok(start > 0 && end > start);
-  assert.ok(reconciliation.includes("latest_management_at > earliest_pending_at"));
-  assert.ok(reconciliation.includes("sequence.status = 'cancelled'"));
-  assert.ok(reconciliation.includes("set status = 'scheduled'"));
-  assert.ok(reconciliation.includes("next_contact_source = 'protocol'"));
+test("28. la reconciliación legacy preserva agenda humana y desacopla protocolo", () => {
+  assert.ok(advisoryMigration.includes("exact_protocol_match"));
+  assert.ok(advisoryMigration.includes("then 'protocol' else 'manual'"));
+  assert.ok(advisoryMigration.includes("where next_contact_source = 'protocol'"));
+  assert.ok(advisoryMigration.includes("sequence.status = 'cancelled'"));
+  assert.ok(!advisoryMigration.match(/delete\s+from\s+public\.lead_(activities|contact_tasks)/i));
 });
 
 test("el formulario ya no duplica el motivo y usa Resultado/comentario", () => {

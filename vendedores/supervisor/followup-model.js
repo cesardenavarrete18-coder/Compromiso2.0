@@ -24,19 +24,18 @@
     return Number.isFinite(parsed) ? parsed : 0;
   }
 
-  function protocolAction(lead, summary) {
-    var crm = crmOf(lead);
-    if (!crm.next_contact_at || crm.next_contact_source !== "protocol") return null;
-    var label = crm.next_contact_note || (summary && summary.next_task_channel === "call"
+  function protocolRecommendation(summary) {
+    if (!summary || !summary.next_task_id || !summary.next_task_due_start) return null;
+    var label = summary.next_task_channel === "call"
       ? "Llamada " + numberValue(summary.next_task_call_attempt)
-      : summary && summary.next_task_channel === "whatsapp"
+      : summary.next_task_channel === "whatsapp"
         ? "WhatsApp " + numberValue(summary.next_task_message_step)
-        : "Tarea de seguimiento");
+        : "Tarea de seguimiento";
     return {
-      at: crm.next_contact_at,
+      at: summary.next_task_due_start,
       label: label,
-      source: "protocol",
-      sourceLabel: "PROTOCOLO"
+      source: "protocol_recommendation",
+      sourceLabel: "RECOMENDADO"
     };
   }
 
@@ -51,8 +50,8 @@
     };
   }
 
-  function nextAction(lead, summary) {
-    return manualAction(lead) || protocolAction(lead, summary);
+  function nextAction(lead) {
+    return manualAction(lead);
   }
 
   function deriveFollowUpStatus(lead, summary, nowValue) {
@@ -66,7 +65,8 @@
     // history. It must not be inferred from the absence of an effective contact:
     // an untouched "nuevo" Lead belongs to Sin gestion, not Sin primer contacto.
     var withoutFirstContact = Boolean(active && summary.without_first_contact === true);
-    var action = active ? nextAction(lead, summary) : null;
+    var action = active ? nextAction(lead) : null;
+    var recommendation = active ? protocolRecommendation(summary) : null;
     var key = "completed";
 
     if (withoutManagement) key = "unmanaged";
@@ -90,7 +90,8 @@
       withoutFirstContact: withoutFirstContact,
       completedToday: Boolean(summary.completed_today),
       managementCount: managementCount,
-      nextAction: action
+      nextAction: action,
+      protocolRecommendation: recommendation
     };
   }
 
@@ -168,6 +169,7 @@
     TIME_ZONE: TIME_ZONE,
     TERMINAL_STATUSES: TERMINAL_STATUSES.slice(),
     dateKey: dateKey,
+    protocolRecommendation: protocolRecommendation,
     deriveFollowUpStatus: deriveFollowUpStatus,
     matchesFilters: matchesFilters,
     isReassignable: isReassignable,

@@ -9,7 +9,7 @@ const html = readFileSync(new URL("../vendedores/supervisor/index.html", import.
 const migration = readFileSync(new URL("../supabase/migrations/20260828211336_supervisor_portfolio_followup.sql", import.meta.url), "utf8");
 const noFirstContactMigration = readFileSync(new URL("../supabase/migrations/20260903183940_fix_supervisor_no_first_contact_definition.sql", import.meta.url), "utf8");
 const reassignmentMigration = readFileSync(new URL("../supabase/migrations/20260901131303_supervisor_portfolio_reassignment.sql", import.meta.url), "utf8");
-const protocolMigration = readFileSync(new URL("../supabase/migrations/20260817120100_commercial_operations_foreign_key_indexes.sql", import.meta.url), "utf8");
+const advisoryMigration = readFileSync(new URL("../supabase/migrations/20260903202218_protocol_advisory_layer.sql", import.meta.url), "utf8");
 const sellerCrm = readFileSync(new URL("../vendedores/crm.js", import.meta.url), "utf8");
 const sellerHtml = readFileSync(new URL("../vendedores/index.html", import.meta.url), "utf8");
 const recalls = readFileSync(new URL("../vendedores/supervisor/lead-bases.js", import.meta.url), "utf8");
@@ -105,14 +105,15 @@ test("4. Acción del día queda Hoy usando Buenos Aires", () => {
   assert.equal(model.TIME_ZONE, "America/Argentina/Buenos_Aires");
 });
 
-test("5. Acción posterior a hoy queda Próxima", () => {
+test("5. Recomendación posterior no convierte un Lead en Próxima", () => {
   const result = model.deriveFollowUpStatus(
-    lead({ crm: { status: "nuevo", next_contact_at: "2026-08-29T10:00:00-03:00", next_contact_note: "Llamada 2 de 6", next_contact_source: "protocol" } }),
-    summary({ next_task_due_start: "2026-08-29T10:00:00-03:00", next_task_channel: "call", next_task_call_attempt: 2 }),
+    lead({ crm: { status: "no_contesta", next_contact_at: null, next_contact_note: "", next_contact_source: null } }),
+    summary({ next_task_id: "task-2", next_task_due_start: "2026-08-29T10:00:00-03:00", next_task_channel: "call", next_task_call_attempt: 2 }),
     now
   );
-  assert.equal(result.key, "upcoming");
-  assert.equal(result.nextAction.source, "protocol");
+  assert.equal(result.key, "unscheduled");
+  assert.equal(result.nextAction, null);
+  assert.equal(result.protocolRecommendation.source, "protocol_recommendation");
 });
 
 test("6. Lead trabajado sin acción queda Sin próxima acción", () => {
@@ -204,10 +205,11 @@ test("18. Vendedor continúa viendo y gestionando sus Leads", () => {
   assert.ok(sellerHtml.includes('id="crmSaveManagement"'));
 });
 
-test("19. Protocolo de contacto sigue funcionando y alimenta la cartera", () => {
+test("19. Protocolo sigue visible como recomendación sin alimentar la agenda", () => {
   assert.ok(sellerCrm.includes('rpc("complete_contact_task_with_follow_up"'));
   assert.ok(migration.includes("from public.lead_contact_tasks task"));
-  assert.ok(modelSource.includes('sourceLabel: "PROTOCOLO"'));
+  assert.ok(modelSource.includes('sourceLabel: "RECOMENDADO"'));
+  assert.ok(modelSource.includes("return manualAction(lead)"));
 });
 
 test("20. Rellamados no se modifica", () => {
@@ -272,8 +274,9 @@ test("28. La reasignación registra origen, destino, Supervisor y motivo", () =>
 
 test("29. Cambiar assigned_seller_user_id conserva el reinicio canónico del protocolo", () => {
   assert.ok(reassignmentMigration.includes("assigned_seller_user_id = p_seller_user_id"));
-  assert.ok(protocolMigration.includes("Lead reasignado a otro vendedor"));
-  assert.ok(protocolMigration.includes("perform private.create_lead_contact_sequence"));
+  assert.ok(advisoryMigration.includes("Lead reasignado a otro vendedor"));
+  assert.ok(advisoryMigration.includes("perform private.create_lead_contact_sequence"));
+  assert.ok(advisoryMigration.includes("v_manual_action is not null"));
 });
 
 test("30. Al cambiar filtros la selección conserva solo Leads visibles y reasignables", () => {
