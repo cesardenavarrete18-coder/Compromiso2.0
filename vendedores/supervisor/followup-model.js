@@ -62,12 +62,10 @@
     var active = Boolean(lead && lead.assigned_seller_user_id && !TERMINAL_STATUSES.includes(crm.status));
     var managementCount = numberValue(summary.management_count);
     var withoutManagement = Boolean(active && crm.status === "nuevo" && managementCount === 0);
-    var hasEffectiveContact = Boolean(
-      summary.first_effective_contact_at
-      || crm.last_contact_outcome === "answered"
-      || ["entrevista", "cierre", "sena", "venta"].includes(crm.status)
-    );
-    var withoutFirstContact = Boolean(active && !hasEffectiveContact);
+    // The backend derives this dimension from the Lead's complete commercial
+    // history. It must not be inferred from the absence of an effective contact:
+    // an untouched "nuevo" Lead belongs to Sin gestion, not Sin primer contacto.
+    var withoutFirstContact = Boolean(active && summary.without_first_contact === true);
     var action = active ? nextAction(lead, summary) : null;
     var key = "completed";
 
