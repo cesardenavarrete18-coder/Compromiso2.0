@@ -634,14 +634,14 @@
       return;
     }
     if (!nextContact || new Date(nextContact).getTime() <= Date.now()) { errorBox.textContent = "Elegí una fecha y hora futura."; return; }
-    if (note.length < 3) { errorBox.textContent = "Indicá brevemente cuál es el próximo paso."; return; }
+    if (note.length < 3) { errorBox.textContent = "Indicá brevemente el resultado o comentario."; return; }
     var leadId = state.activeLead && state.activeLead.id;
     var protocolWasOpen = !!document.querySelector("#crmProtocol details[open]");
     setBusy(button, true, "Guardando…");
     var result = await supabaseClient.rpc("complete_contact_task_with_follow_up", {
       p_task_id: pendingAnsweredTaskId,
       p_outcome: "answered",
-      p_note: "El cliente respondió",
+      p_note: note,
       p_next_contact_at: nextContact,
       p_next_contact_note: note
     });
