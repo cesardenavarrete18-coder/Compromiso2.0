@@ -62,6 +62,9 @@
 .agenda-group.requires-action { border-color: #efc47c; background: #fffdf8; }
 .agenda-group.requires-action .agenda-group-head { border-bottom-color: #f2d8aa; }
 .agenda-group.requires-action .agenda-group-head span { color: #8a5200; background: #fff0d4; }
+.agenda-group.recommended { border-color: #bdd9eb; background: #f8fcff; }
+.agenda-group.recommended .agenda-group-head { border-bottom-color: #dce9f2; }
+.agenda-group.recommended .agenda-group-head span { color: #066fc4; background: #e8f4fc; }
 
 @media (max-width: 760px) {
   .crm-tabs { overflow-x: auto; }
