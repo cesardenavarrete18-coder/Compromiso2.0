@@ -7,6 +7,7 @@ const modelSource = readFileSync(new URL("../vendedores/supervisor/followup-mode
 const supervisor = readFileSync(new URL("../vendedores/supervisor/supervisor.js", import.meta.url), "utf8");
 const html = readFileSync(new URL("../vendedores/supervisor/index.html", import.meta.url), "utf8");
 const migration = readFileSync(new URL("../supabase/migrations/20260828211336_supervisor_portfolio_followup.sql", import.meta.url), "utf8");
+const noFirstContactMigration = readFileSync(new URL("../supabase/migrations/20260903183940_fix_supervisor_no_first_contact_definition.sql", import.meta.url), "utf8");
 const reassignmentMigration = readFileSync(new URL("../supabase/migrations/20260901131303_supervisor_portfolio_reassignment.sql", import.meta.url), "utf8");
 const protocolMigration = readFileSync(new URL("../supabase/migrations/20260817120100_commercial_operations_foreign_key_indexes.sql", import.meta.url), "utf8");
 const sellerCrm = readFileSync(new URL("../vendedores/crm.js", import.meta.url), "utf8");
@@ -35,19 +36,62 @@ function lead(overrides = {}) {
 }
 
 function summary(overrides = {}) {
-  return { management_count: 1, first_management_at: "2026-08-28T11:00:00-03:00", first_effective_contact_at: "2026-08-28T11:00:00-03:00", completed_today: false, ...overrides };
+  return { management_count: 1, first_management_at: "2026-08-28T11:00:00-03:00", first_effective_contact_at: "2026-08-28T11:00:00-03:00", without_first_contact: false, completed_today: false, ...overrides };
 }
 
 test("1. Lead asignado sin actividades queda Sin gestión registrada", () => {
-  const result = model.deriveFollowUpStatus(lead(), summary({ management_count: 0, first_management_at: null, first_effective_contact_at: null }), now);
+  const result = model.deriveFollowUpStatus(lead(), summary({ management_count: 0, first_management_at: null, first_effective_contact_at: null, without_first_contact: false }), now);
   assert.equal(result.key, "unmanaged");
   assert.equal(result.withoutManagement, true);
+  assert.equal(result.withoutFirstContact, false);
 });
 
 test("2. Lead con gestión pero sin contacto conserva la dimensión Sin primer contacto", () => {
-  const result = model.deriveFollowUpStatus(lead(), summary({ first_effective_contact_at: null }), now);
+  const current = lead({ crm: { status: "no_contesta", priority: "normal" } });
+  const result = model.deriveFollowUpStatus(current, summary({ first_effective_contact_at: null, without_first_contact: true }), now);
   assert.equal(result.withoutFirstContact, true);
   assert.equal(result.withoutManagement, false);
+});
+
+test("2b. El frontend no infiere Sin primer contacto solo por ausencia de contacto efectivo", () => {
+  const result = model.deriveFollowUpStatus(lead(), summary({ first_effective_contact_at: null, without_first_contact: false }), now);
+  assert.equal(result.withoutFirstContact, false);
+});
+
+test("2c. La RPC exige no_contesta, gestión real e historia exclusivamente sin respuesta", () => {
+  assert.match(noFirstContactMigration, /crm\.status = 'no_contesta'/);
+  assert.match(noFirstContactMigration, /activity\.has_real_management/);
+  assert.match(noFirstContactMigration, /activity\.has_disqualifying_history/);
+  assert.match(noFirstContactMigration, /item\.metadata ->> 'previous_status'/);
+  assert.match(noFirstContactMigration, /'nuevo', 'no_contesta'/);
+});
+
+test("2d. answered, En proceso, Entrevista, Cierre, Seña y Venta excluyen para siempre", () => {
+  assert.match(noFirstContactMigration, /'no_answer', 'sent', 'skipped'/);
+  assert.match(noFirstContactMigration, /'interview', 'sale_request', 'sale_confirmation'/);
+  assert.match(noFirstContactMigration, /crm\.interview_at is null/);
+  assert.match(noFirstContactMigration, /crm\.deposit_at is null/);
+  assert.match(noFirstContactMigration, /crm\.sale_confirmation_status = 'none'/);
+});
+
+test("2e. La respuesta legacy inequívoca por WhatsApp se excluye sin interpretar texto libre", () => {
+  const exactLegacyMarker = "respuesta recibida por whatsapp";
+  assert.ok(noFirstContactMigration.includes(`lower(trim(coalesce(item.title, ''))) = '${exactLegacyMarker}'`));
+  assert.ok(noFirstContactMigration.includes(`lower(trim(coalesce(crm.last_contact_outcome, ''))) not in (`));
+  assert.match(noFirstContactMigration, new RegExp(`'answered',\\s*'${exactLegacyMarker}'`));
+  assert.ok(!noFirstContactMigration.includes("like '%whatsapp%'"));
+});
+
+test("2f. Comentarios y reasignaciones no alteran la historia comercial", () => {
+  assert.match(noFirstContactMigration, /item\.activity_type <> 'comment'/);
+  assert.match(noFirstContactMigration, /not in \('comment', 'assignment', 'manual_creation'\)/);
+  assert.ok(!noFirstContactMigration.includes("item.created_at >= lead.assigned_at\n          and item.activity_type not in ('comment', 'assignment', 'manual_creation')\n      ) as has_real_management"));
+});
+
+test("2g. Intentos fallidos de llamada y WhatsApp mantienen Sin primer contacto", () => {
+  assert.match(noFirstContactMigration, /not in \('', 'no_answer', 'sent', 'skipped'\)/);
+  const current = lead({ crm: { status: "no_contesta", priority: "normal" } });
+  assert.equal(model.deriveFollowUpStatus(current, summary({ without_first_contact: true }), now).withoutFirstContact, true);
 });
 
 test("3. Próxima acción pasada queda Vencida", () => {
