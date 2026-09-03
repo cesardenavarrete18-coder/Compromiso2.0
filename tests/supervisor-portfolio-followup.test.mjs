@@ -62,7 +62,11 @@ test("4. Acción del día queda Hoy usando Buenos Aires", () => {
 });
 
 test("5. Acción posterior a hoy queda Próxima", () => {
-  const result = model.deriveFollowUpStatus(lead(), summary({ next_task_due_start: "2026-08-29T10:00:00-03:00", next_task_channel: "call", next_task_call_attempt: 2 }), now);
+  const result = model.deriveFollowUpStatus(
+    lead({ crm: { status: "nuevo", next_contact_at: "2026-08-29T10:00:00-03:00", next_contact_note: "Llamada 2 de 6", next_contact_source: "protocol" } }),
+    summary({ next_task_due_start: "2026-08-29T10:00:00-03:00", next_task_channel: "call", next_task_call_attempt: 2 }),
+    now
+  );
   assert.equal(result.key, "upcoming");
   assert.equal(result.nextAction.source, "protocol");
 });

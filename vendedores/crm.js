@@ -107,7 +107,13 @@
   }
 
   function taskTitle(task) {
-    return task.channel === "call" ? "Llamada " + task.call_attempt + " de 3" : "WhatsApp " + task.message_step + " de 4";
+    var sequenceTasks = tasksForLead(task.lead_id);
+    var total = task.channel === "call"
+      ? Math.max.apply(null, sequenceTasks.filter(function (item) { return item.channel === "call"; }).map(function (item) { return Number(item.call_attempt) || 0; }))
+      : Math.max.apply(null, sequenceTasks.filter(function (item) { return item.channel === "whatsapp"; }).map(function (item) { return Number(item.message_step) || 0; }));
+    return task.channel === "call"
+      ? "Llamada " + task.call_attempt + " de " + total
+      : "WhatsApp " + task.message_step + " de " + total;
   }
 
   function protocolProgress(leadId) {
@@ -213,7 +219,7 @@
     try {
       var responses = await Promise.all([
         supabaseClient.from("leads").select(
-          "id, customer_id, customer_phone, customer_name, source_channel, source_detail, qualification_status, priority, intent_summary, model_interest, assigned_at, last_message_at, created_at, customer:customers(full_name,primary_phone,email,document_number,cuil), attribution:lead_attributions(platform,source_type,campaign_name,adset_name,ad_name,headline,source_url), crm:lead_crm(status, priority, status_reason, next_contact_at, next_contact_note, last_contact_at, last_contact_outcome, interview_at, interview_location, deposit_amount, deposit_at, cold_base_at, sale_confirmation_status, sale_requested_at, sale_confirmed_at, vehicle_sold, sale_amount, updated_at)"
+          "id, customer_id, customer_phone, customer_name, source_channel, source_detail, qualification_status, priority, intent_summary, model_interest, assigned_at, last_message_at, created_at, customer:customers(full_name,primary_phone,email,document_number,cuil), attribution:lead_attributions(platform,source_type,campaign_name,adset_name,ad_name,headline,source_url), crm:lead_crm(status, priority, status_reason, next_contact_at, next_contact_note, next_contact_source, last_contact_at, last_contact_outcome, interview_at, interview_location, deposit_amount, deposit_at, cold_base_at, sale_confirmation_status, sale_requested_at, sale_confirmed_at, vehicle_sold, sale_amount, updated_at)"
         ).order("last_message_at", { ascending: false }).limit(500),
         supabaseClient.from("lead_contact_tasks").select("id, sequence_id, lead_id, sequence_order, channel, call_attempt, message_step, due_start, due_end, status, outcome, note, completed_at, template:contact_message_templates(title,body)").order("due_start", { ascending: true }).limit(3500),
         supabaseClient.from("vehicle_appraisals").select("id, lead_id, brand, model, version, vehicle_year, mileage_km, condition, notes, estimated_min, estimated_max, market_median, suggested_value, market_currency, estimate_source, estimate_basis, reference_count, market_references, market_checked_at, status, confirmed_value, confirmed_currency, review_note, updated_at").order("updated_at", { ascending: false }).limit(500)
@@ -350,12 +356,11 @@
 
   function renderNextCard(lead) {
     var crm = crmOf(lead);
-    var protocolTask = nextPendingTask(lead.id);
     var attribution = attributionOf(lead);
     var origin = lead.source_channel === "manual" ? "Carga manual · " + (lead.source_detail || "Sin detalle") : lead.source_channel === "tiktok" ? "TikTok" : lead.source_detail === "meta_ads" ? "Meta Ads · " + (attribution && (attribution.ad_name || attribution.headline || attribution.campaign_name) || "Anuncio de WhatsApp") : "WhatsApp orgánico";
     document.getElementById("crmNextCard").innerHTML = '<span>Próxima acción</span><strong>' + escapeHtml(crm.next_contact_at ? formatDate(crm.next_contact_at, true) : "Sin programar") + '</strong><dl>' +
       '<div><dt>Motivo</dt><dd>' + escapeHtml(crm.next_contact_note || "No indicado") + '</dd></div>' +
-      (protocolTask ? '<div><dt>Protocolo pendiente</dt><dd>' + escapeHtml(taskTitle(protocolTask) + " · " + formatDate(protocolTask.due_start, true)) + '</dd></div>' : '') +
+      '<div><dt>Fuente de agenda</dt><dd>' + escapeHtml(crm.next_contact_source === "protocol" ? "PROTOCOLO" : crm.next_contact_source === "manual" ? "MANUAL" : "Sin origen") + '</dd></div>' +
       '<div><dt>Último contacto</dt><dd>' + escapeHtml(crm.last_contact_at ? formatDate(crm.last_contact_at) : "Todavía sin contacto") + '</dd></div>' +
       '<div><dt>Origen</dt><dd>' + escapeHtml(origin) + '</dd></div>' +
       (crm.interview_at ? '<div><dt>Entrevista</dt><dd>' + escapeHtml(formatDate(crm.interview_at, true) + (crm.interview_location ? " · " + crm.interview_location : "")) + '</dd></div>' : '') +
@@ -386,7 +391,6 @@
     if (terminalStatus) {
       document.getElementById("crmNextContactDateInput").value = "";
       document.getElementById("crmNextContactTimeInput").value = "";
-      document.getElementById("crmNextContactNoteInput").value = "";
     }
     var automated = state.activeLead && nextPendingTask(state.activeLead.id) && ["nuevo", "no_contesta"].includes(status);
     var help = {
@@ -410,7 +414,7 @@
     var progress = protocolProgress(lead.id);
     var nextTask = nextPendingTask(lead.id);
     var nextSummary = nextTask ? taskTitle(nextTask) + " · " + formatDate(nextTask.due_start, true) : "Proceso completado";
-    container.innerHTML = '<details class="crm-protocol-disclosure"><summary><div><span class="protocol-kicker">Proceso de seguimiento</span><strong>' + progress.completed + '/' + progress.total + ' completadas</strong><small>Próxima: ' + escapeHtml(nextSummary) + '</small></div><span class="protocol-toggle-label">Ver tareas</span></summary><div class="protocol-expanded"><div class="protocol-heading"><div><span class="protocol-kicker">Organización comercial</span><strong>Proceso de seguimiento</strong><span>3 llamadas · 4 WhatsApp · distribuidos en 3 días hábiles</span></div><span class="protocol-progress"><b>' + progress.completed + '</b><small>de ' + progress.total + '</small></span></div>' +
+    container.innerHTML = '<details class="crm-protocol-disclosure"><summary><div><span class="protocol-kicker">Proceso de seguimiento</span><strong>' + progress.completed + '/' + progress.total + ' completadas</strong><small>Próxima: ' + escapeHtml(nextSummary) + '</small></div><span class="protocol-toggle-label">Ver tareas</span></summary><div class="protocol-expanded"><div class="protocol-heading"><div><span class="protocol-kicker">Organización comercial</span><strong>Proceso de seguimiento</strong><span>6 llamadas en las próximas 6 franjas comerciales disponibles · 2 WhatsApp después de las llamadas 1 y 4</span></div><span class="protocol-progress"><b>' + progress.completed + '</b><small>de ' + progress.total + '</small></span></div>' +
       '<div class="protocol-task-list">' + tasks.map(function (task) {
         var pending = task.status === "pending";
         var isNext = nextTask && nextTask.id === task.id;
@@ -424,7 +428,7 @@
           (pending ? '<div class="protocol-actions">' + (task.channel === "call" ?
             '<a href="tel:+' + String(lead.customer_phone).replace(/\D/g, "") + '">Llamar ahora</a><button type="button" data-contact-task="' + task.id + '" data-contact-outcome="no_answer">No respondió</button><button class="success" type="button" data-contact-task="' + task.id + '" data-contact-outcome="answered">Respondió</button>' :
             '<button class="whatsapp secondary" type="button" data-open-whatsapp="' + encodeURIComponent(body) + '">Abrir WhatsApp</button><button class="whatsapp" type="button" data-contact-task="' + task.id + '" data-contact-outcome="sent">Marcar enviado</button>') + '</div>' :
-            '<div class="protocol-result">' + escapeHtml(task.status === "cancelled" ? "Cancelada" : task.outcome === "answered" ? "Respondió" : task.outcome === "no_answer" ? "No respondió" : task.outcome === "sent" ? "Enviado" : "Completada") + (task.completed_at ? " · " + escapeHtml(formatDate(task.completed_at)) + (insideWindow ? " · Cumplida en horario" : " · Fuera de franja") : "") + '</div>') +
+            '<div class="protocol-result">' + escapeHtml(task.status === "scheduled" ? "Programada · se habilita al completar el paso anterior" : task.status === "cancelled" ? "Cancelada" : task.outcome === "answered" ? "Respondió" : task.outcome === "no_answer" ? "No respondió" : task.outcome === "sent" ? "Enviado" : "Completada") + (task.completed_at ? " · " + escapeHtml(formatDate(task.completed_at)) + (insideWindow ? " · Cumplida en horario" : " · Fuera de franja") : "") + '</div>') +
           '</div></article>';
       }).join("") + '</div></div></details>';
   }
@@ -465,7 +469,6 @@
     var nextContactParts = dateParts(crm.next_contact_at);
     document.getElementById("crmNextContactDateInput").value = nextContactParts.date;
     document.getElementById("crmNextContactTimeInput").value = nextContactParts.time;
-    document.getElementById("crmNextContactNoteInput").value = crm.next_contact_note || "";
     var interviewParts = dateParts(crm.interview_at);
     document.getElementById("crmInterviewDateInput").value = interviewParts.date;
     document.getElementById("crmInterviewTimeInput").value = interviewParts.time;
@@ -519,7 +522,6 @@
     if (status === "no_contesta" && !nextContact) { errorBox.textContent = "Programá el próximo intento de contacto."; return; }
     if (nextContact && new Date(nextContact).getTime() <= Date.now()) { errorBox.textContent = "El próximo contacto debe quedar programado a futuro."; return; }
     if (["no_contesta", "en_proceso", "cierre", "sena"].includes(status) && !nextContact) { errorBox.textContent = "Programá la próxima acción antes de guardar."; return; }
-    if (nextContact && document.getElementById("crmNextContactNoteInput").value.trim().length < 3) { errorBox.textContent = "Indicá el motivo del próximo contacto."; return; }
     if (status === "entrevista" && !interview) { errorBox.textContent = "Indicá la fecha y hora de la entrevista."; return; }
     if (status === "sena" && (!deposit || Number(deposit) <= 0)) { errorBox.textContent = "Indicá el importe de la seña."; return; }
     if (["invalido", "desistir"].includes(status) && note.length < 3) { errorBox.textContent = "Explicá brevemente el motivo."; return; }
@@ -529,7 +531,7 @@
       p_status: status,
       p_note: note,
       p_next_contact_at: nextContact,
-      p_next_contact_note: terminalStatus ? "" : document.getElementById("crmNextContactNoteInput").value.trim(),
+      p_next_contact_note: terminalStatus ? "" : note,
       p_contact_outcome: note,
       p_interview_at: interview,
       p_interview_location: document.getElementById("crmInterviewLocationInput").value.trim(),
@@ -632,14 +634,14 @@
       return;
     }
     if (!nextContact || new Date(nextContact).getTime() <= Date.now()) { errorBox.textContent = "Elegí una fecha y hora futura."; return; }
-    if (note.length < 3) { errorBox.textContent = "Indicá brevemente cuál es el próximo paso."; return; }
+    if (note.length < 3) { errorBox.textContent = "Indicá brevemente el resultado o comentario."; return; }
     var leadId = state.activeLead && state.activeLead.id;
     var protocolWasOpen = !!document.querySelector("#crmProtocol details[open]");
     setBusy(button, true, "Guardando…");
     var result = await supabaseClient.rpc("complete_contact_task_with_follow_up", {
       p_task_id: pendingAnsweredTaskId,
       p_outcome: "answered",
-      p_note: "El cliente respondió",
+      p_note: note,
       p_next_contact_at: nextContact,
       p_next_contact_note: note
     });

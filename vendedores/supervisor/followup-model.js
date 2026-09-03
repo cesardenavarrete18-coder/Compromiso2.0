@@ -24,15 +24,16 @@
     return Number.isFinite(parsed) ? parsed : 0;
   }
 
-  function protocolAction(summary) {
-    if (!summary || !summary.next_task_due_start) return null;
-    var label = summary.next_task_channel === "call"
-      ? "Llamada " + numberValue(summary.next_task_call_attempt) + " de 3"
-      : summary.next_task_channel === "whatsapp"
-        ? "WhatsApp " + numberValue(summary.next_task_message_step) + " de 4"
-        : "Tarea de seguimiento";
+  function protocolAction(lead, summary) {
+    var crm = crmOf(lead);
+    if (!crm.next_contact_at || crm.next_contact_source !== "protocol") return null;
+    var label = crm.next_contact_note || (summary && summary.next_task_channel === "call"
+      ? "Llamada " + numberValue(summary.next_task_call_attempt)
+      : summary && summary.next_task_channel === "whatsapp"
+        ? "WhatsApp " + numberValue(summary.next_task_message_step)
+        : "Tarea de seguimiento");
     return {
-      at: summary.next_task_due_start,
+      at: crm.next_contact_at,
       label: label,
       source: "protocol",
       sourceLabel: "PROTOCOLO"
@@ -51,9 +52,7 @@
   }
 
   function nextAction(lead, summary) {
-    var candidates = [manualAction(lead), protocolAction(summary)].filter(Boolean);
-    candidates.sort(function (left, right) { return new Date(left.at).getTime() - new Date(right.at).getTime(); });
-    return candidates[0] || null;
+    return manualAction(lead) || protocolAction(lead, summary);
   }
 
   function deriveFollowUpStatus(lead, summary, nowValue) {
