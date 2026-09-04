@@ -1,0 +1,85 @@
+{
+  "version": "filter-v1-real-schema-preflight/0.2.1",
+  "run_at": "2026-09-04T12:57:09.986Z",
+  "case_id": "FVS-001",
+  "provider_schema_sha256": "ffc847ef78095ec255235d3f9ac0c23e3469209a39acb5a22ee16809d6f8d2bb",
+  "provider_schema_offline_valid": true,
+  "schema_compatibility_errors": [],
+  "request_config": {
+    "reasoning_effort": "none",
+    "store": false,
+    "tools_present": false,
+    "text_format_type": "json_schema",
+    "strict": true
+  },
+  "online_calls_total": 2,
+  "results": {
+    "gpt-5.6-luna": {
+      "http_status": 200,
+      "request_id": "resp_0417346968a17c28016a9ac0201ac087d1830981da7159e337",
+      "provider_schema_accepted": true,
+      "structured_output_received": true,
+      "local_validator_pass": true,
+      "evidence_validation_pass": true,
+      "expected_match": true,
+      "extraction": {
+        "schema_version": "filter-v1-semantic-extractor/1.0",
+        "query_intent": "installment_offer",
+        "purchase_mode_statement": "not_present",
+        "purchase_mode_literal": null,
+        "amount_mentions": [],
+        "vehicle_mentions": [],
+        "trade_in_intent": "not_present",
+        "trade_in_vehicle": null,
+        "customer_name": null,
+        "customer_location": null,
+        "human_request": false,
+        "strong_action": false,
+        "requested_action": null,
+        "contact_preference_expression": null,
+        "do_not_contact": false,
+        "customer_corrections": [],
+        "needs_clarification": [],
+        "evidence": {
+          "query_intent": [
+            {
+              "message_id": "m1",
+              "text": "\u00bfQu\u00e9 cuota tiene?",
+              "start": 0,
+              "end": 17
+            }
+          ],
+          "purchase_mode_statement": null,
+          "trade_in_intent": null,
+          "human_request": null,
+          "strong_action": null,
+          "do_not_contact": null
+        }
+      },
+      "mismatch": [],
+      "error": null
+    },
+    "gpt-5.6-terra": {
+      "http_status": 200,
+      "request_id": "resp_0ce19fa179ba0fc9016a9ac02365ac87d1aea337b8d9c495d5",
+      "provider_schema_accepted": true,
+      "structured_output_received": true,
+      "local_validator_pass": false,
+      "evidence_validation_pass": false,
+      "expected_match": false,
+      "extraction": null,
+      "mismatch": [
+        "query_intent",
+        "purchase_mode_statement"
+      ],
+      "error": {
+        "type": "local_validation_error",
+        "code": "INVALID_OR_MISSING_EVIDENCE",
+        "param": null,
+        "message": "INVALID_OR_MISSING_EVIDENCE"
+      }
+    }
+  },
+  "ready_to_rerun_benchmark_v0_2": false,
+  "exact_blocker": "Terra returned HTTP 200 and parseable Structured Output, but local validation failed INVALID_OR_MISSING_EVIDENCE. Raw output was not retained by the v0.2.1 runner, so the offending evidence member requires one future bounded Terra-only diagnostic call."
+}

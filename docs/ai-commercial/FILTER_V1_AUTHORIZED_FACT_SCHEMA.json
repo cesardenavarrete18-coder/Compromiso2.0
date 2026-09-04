@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "filter-v1-plan-fact-resolution/1.0",
+  "title": "Filter v1 simplified plan fact resolution",
+  "type": "object",
+  "required": ["fact_type", "status", "value", "source_campaign_id", "source_field"],
+  "properties": {
+    "fact_type": {"enum": ["model_reference_value", "installment_offer", "delivery_advance", "subscription_amount", "bonus", "benefits"]},
+    "status": {"enum": ["resolved", "not_materialized", "requires_commercial_confirmation"]},
+    "value": {},
+    "source_campaign_id": {"type": ["string", "null"]},
+    "source_field": {"type": ["string", "null"]},
+    "provenance": {
+      "type": "object",
+      "required": ["source", "source_campaign_id", "field", "value"],
+      "properties": {"source": {"const": "public.campaigns"}, "source_campaign_id": {"type": "string"}, "field": {"type": "string"}, "value": {}},
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
