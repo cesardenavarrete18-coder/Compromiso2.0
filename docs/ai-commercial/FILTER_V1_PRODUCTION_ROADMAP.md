@@ -54,9 +54,9 @@ Debe cubrir como mínimo:
 - provenance por campo;
 - estado `known | missing | explicitly_unknown | conflicting` donde aplique.
 
-### Authorized Fact Envelope
+### Facts simplificados Filter v1
 
-Debe incluir como mínimo:
+PLAN_FACTS se proyecta determinísticamente desde `public.campaigns` activas y TECHNICAL_FACTS desde catálogo. El envelope avanzado siguiente queda `deferred_to_seller_v2` y no bloquea v1. Conserva como referencia futura:
 
 - immutable fact ID;
 - fact type;
@@ -84,13 +84,9 @@ Catálogo canónico/versionado de:
 
 La taxonomía crítica (p.ej. Tera SUV compacto) no depende de RAG variable.
 
-### Commercial Offer Selection
+### Resolución comercial por fact
 
-Definir:
-
-1. campaña identificada -> oferta exacta de campaña;
-2. sin campaña -> `ai_primary_offer` administrable;
-3. varias ofertas sin primaria -> no elegir; informar alternativas y derivar/validar.
+No seleccionar plan ni crear `ai_primary_offer`. Para cada consulta usar el mínimo no nulo entre campaigns del target con `active=true`: final_price para valor de referencia, installment_amount para cuota y advance_amount para retiro. Preservar source_campaign_id y bloquear combinaciones sintéticas entre campañas. Subscription amount no está materializado y requiere confirmación comercial.
 
 ### Business Hours + Handoff
 
@@ -252,7 +248,7 @@ Filter v1 está listo cuando:
 - canonical state materializado;
 - facts autorizados con payload/provenance/vigencia;
 - catálogo técnico versionado;
-- selección de oferta determinística;
+- resolución por fact determinística sobre campaigns activas;
 - business hours configurados;
 - Golden Filter v1 aprobado;
 - Grader Filter v1 aprobado;
@@ -261,3 +257,11 @@ Filter v1 está listo cuando:
 - shadow mode satisfactorio;
 - rollback y observabilidad listos;
 - Seller v2 preservado sin contaminar Filter v1.
+
+## Simplificación aprobada — Implementation Phase 1
+
+`public.campaigns` activa es la autoridad comercial v1; `valid_from/to` no son requisito. Bank credit, primary offer, selección/comparación financiera y envelope genérico quedan `deferred_to_seller_v2`. Physical stock no participa. El core offline se revisa antes de Golden, DB, webhook o tráfico.
+
+## Phase 3a — semantic extraction contract
+
+The offline `filter-v1-semantic-extractor/1.0` contract precedes Golden: injected provider, strict evidence, enum validation, deterministic safety normalization and fail-closed engine adapter. It contains no commercial facts or effect decisions. Next: isolated online extractor evaluation; only after acceptance create the human-reviewed Golden Filter v1.

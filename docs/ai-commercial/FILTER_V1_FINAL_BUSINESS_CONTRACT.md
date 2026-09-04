@@ -273,11 +273,9 @@ Filter v1 está diseñado para recolectar y encaminar, no para improvisar asesor
 
 Si el lead llega de una campaña/oferta identificable, usar la oferta exacta de esa campaña.
 
-### Oferta primaria
+### Resolución simplificada aprobada para Implementation Phase 1
 
-Si no hay campaña específica, Administración debe poder marcar una oferta vigente como `ai_primary_offer` por producto/versión.
-
-Si existen múltiples ofertas y ninguna es primaria, la IA NO elige arbitrariamente ni elige la más barata: informa que existen distintas alternativas y ofrece validación/área comercial.
+Esta decisión posterior reemplaza la oferta primaria para Filter v1: no se requiere `ai_primary_offer`. Para cada fact consultado se toma el mínimo no nulo de su propia columna entre campaigns del target con `active=true`, preservando el campaign ID. `final_price` es valor de referencia, `installment_amount` cuota “desde” y `advance_amount` anticipo de retiro “desde”. Subscription no usa advance y requiere confirmación. Mínimos provenientes de campañas distintas nunca se presentan como una operación conjunta. La selección financiera avanzada queda `deferred_to_seller_v2`.
 
 ### Facts permitidos
 

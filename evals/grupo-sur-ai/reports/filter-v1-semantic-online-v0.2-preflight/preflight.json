@@ -1,0 +1,169 @@
+{
+  "version": "filter-v1-online-preflight/0.2",
+  "run_at": "2026-09-04T12:43:54.359Z",
+  "request_config": {
+    "models": [
+      "gpt-5.6-luna",
+      "gpt-5.6-terra"
+    ],
+    "reasoning": {
+      "effort": "none"
+    },
+    "text_format_type": "json_schema",
+    "strict": true,
+    "store": false,
+    "tools_present": false,
+    "max_output_tokens": 3000,
+    "endpoint": "https://api.openai.com/v1/responses"
+  },
+  "provider_schema": {
+    "before_fix": {
+      "compatible": false,
+      "errors": [
+        "TYPE_REQUIRED_FOR_CONST_OR_ENUM:$.properties.schema_version",
+        "TYPE_REQUIRED_FOR_CONST_OR_ENUM:$.properties.query_intent",
+        "TYPE_REQUIRED_FOR_CONST_OR_ENUM:$.properties.purchase_mode_statement",
+        "TYPE_REQUIRED_FOR_CONST_OR_ENUM:$.properties.amount_mentions.items.properties.kind",
+        "TYPE_REQUIRED_FOR_CONST_OR_ENUM:$.properties.amount_mentions.items.properties.certainty",
+        "TYPE_REQUIRED_FOR_CONST_OR_ENUM:$.properties.vehicle_mentions.items.properties.role",
+        "TYPE_REQUIRED_FOR_CONST_OR_ENUM:$.properties.vehicle_mentions.items.properties.certainty",
+        "TYPE_REQUIRED_FOR_CONST_OR_ENUM:$.properties.trade_in_intent",
+        "TYPE_REQUIRED_FOR_CONST_OR_ENUM:$.properties.trade_in_vehicle.anyOf[0].properties.brand.properties.status",
+        "TYPE_REQUIRED_FOR_CONST_OR_ENUM:$.properties.trade_in_vehicle.anyOf[0].properties.model.properties.status",
+        "TYPE_REQUIRED_FOR_CONST_OR_ENUM:$.properties.trade_in_vehicle.anyOf[0].properties.version.properties.status",
+        "TYPE_REQUIRED_FOR_CONST_OR_ENUM:$.properties.trade_in_vehicle.anyOf[0].properties.year.properties.status",
+        "TYPE_REQUIRED_FOR_CONST_OR_ENUM:$.properties.trade_in_vehicle.anyOf[0].properties.mileage_km.properties.status",
+        "TYPE_REQUIRED_FOR_CONST_OR_ENUM:$.properties.customer_name.anyOf[0].properties.certainty",
+        "TYPE_REQUIRED_FOR_CONST_OR_ENUM:$.properties.customer_location.anyOf[0].properties.certainty",
+        "TYPE_REQUIRED_FOR_CONST_OR_ENUM:$.properties.requested_action.anyOf[0].properties.type",
+        "TYPE_REQUIRED_FOR_CONST_OR_ENUM:$.properties.requested_action.anyOf[0].properties.certainty",
+        "TYPE_REQUIRED_FOR_CONST_OR_ENUM:$.properties.contact_preference_expression.anyOf[0].properties.certainty",
+        "TYPE_REQUIRED_FOR_CONST_OR_ENUM:$.properties.customer_corrections.items.properties.field",
+        "TYPE_REQUIRED_FOR_CONST_OR_ENUM:$.properties.needs_clarification.items.properties.code"
+      ],
+      "sha256": "8660f9d23e34e1731cb0859cef929e02f681d1d984f7ec7262cf80e4a35e8807"
+    },
+    "changed": true,
+    "after_fix": {
+      "compatible": true,
+      "errors": [],
+      "sha256": "ffc847ef78095ec255235d3f9ac0c23e3469209a39acb5a22ee16809d6f8d2bb"
+    },
+    "real_schema_preflight_used": "before_fix"
+  },
+  "online_calls_total": 6,
+  "results": {
+    "gpt-5.6-luna": {
+      "basic": {
+        "status": "passed",
+        "http_status": 200,
+        "error": null,
+        "request_id": "req_feb94523ffef40f9bbb23a35aecac1bd",
+        "output": "OK",
+        "usage": {
+          "input_tokens": 20,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 5,
+          "output_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "total_tokens": 25
+        }
+      },
+      "minimal_schema": {
+        "status": "passed",
+        "http_status": 200,
+        "error": null,
+        "request_id": "req_1c58f7e02c4e4862963cd3eb1c610ff4",
+        "output": "{\"ok\":true,\"label\":\"test\"}",
+        "usage": {
+          "input_tokens": 58,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 20,
+          "output_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "total_tokens": 78
+        }
+      },
+      "real_schema": {
+        "status": "failed",
+        "http_status": 400,
+        "error": {
+          "status": 400,
+          "request_id": "req_d0675c3058bb459d9fde1a9c7e92917c",
+          "type": "invalid_request_error",
+          "code": "invalid_json_schema",
+          "param": "text.format.schema",
+          "message": "Invalid schema for response_format 'filter_v1_semantic_extraction': In context=('properties', 'schema_version'), schema must have a 'type' key."
+        },
+        "output": null
+      }
+    },
+    "gpt-5.6-terra": {
+      "basic": {
+        "status": "passed",
+        "http_status": 200,
+        "error": null,
+        "request_id": "req_156ad36adf3d47b5b5470c086b594668",
+        "output": "OK",
+        "usage": {
+          "input_tokens": 20,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 5,
+          "output_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "total_tokens": 25
+        }
+      },
+      "minimal_schema": {
+        "status": "passed",
+        "http_status": 200,
+        "error": null,
+        "request_id": "req_059c7e8ac6654b2cbc685b01b7b88702",
+        "output": "{\"ok\":true,\"label\":\"test\"}",
+        "usage": {
+          "input_tokens": 58,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 20,
+          "output_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "total_tokens": 78
+        }
+      },
+      "real_schema": {
+        "status": "failed",
+        "http_status": 400,
+        "error": {
+          "status": 400,
+          "request_id": "req_f82300b5a18443eda514178edb8aae69",
+          "type": "invalid_request_error",
+          "code": "invalid_json_schema",
+          "param": "text.format.schema",
+          "message": "Invalid schema for response_format 'filter_v1_semantic_extraction': In context=('properties', 'schema_version'), schema must have a 'type' key."
+        },
+        "output": null
+      }
+    }
+  },
+  "root_cause": [
+    "PROVIDER_SCHEMA_INCOMPATIBLE",
+    "STRUCTURED_OUTPUT_REQUEST_ERROR"
+  ],
+  "ready_to_rerun_benchmark_v0_2": false,
+  "blocking_reason": "Corrected provider schema has not yet passed a real-schema online preflight; six-call cap was exhausted by the frozen diagnosis."
+}

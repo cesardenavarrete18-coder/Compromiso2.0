@@ -1,0 +1,150 @@
+{
+  "prompt_version": "filter-v1-semantic-extractor/1.0",
+  "prompt_sha256": "5dcef918f9047c1f161e4cba33dd634816f041d13223628e0e2ca7ffc3386af1",
+  "schema_sha256": "e9d99a82f54ec7dfeb9d1203db1c5f5e3eefb19b92e73a150d9d139c67e0dd73",
+  "dataset_sha256": "af497d6dabf6aac6a6e6f5bb73d66aef83dc396b4de57944042a5a7fb23ff542",
+  "model": "gpt-5.6-luna",
+  "total_cases": 100,
+  "schema_valid_rate": 0,
+  "extraction_success_rate": 0,
+  "field_precision": 0,
+  "field_recall": 0,
+  "field_f1": 0,
+  "exact_case_match_rate": 0,
+  "critical_case_pass_rate": 0,
+  "critical_violations": [
+    "FVS-001",
+    "FVS-002",
+    "FVS-003",
+    "FVS-004",
+    "FVS-005",
+    "FVS-006",
+    "FVS-007",
+    "FVS-008",
+    "FVS-009",
+    "FVS-010",
+    "FVS-011",
+    "FVS-012",
+    "FVS-013",
+    "FVS-014",
+    "FVS-015",
+    "FVS-016",
+    "FVS-017",
+    "FVS-018",
+    "FVS-019",
+    "FVS-020",
+    "FVS-021",
+    "FVS-038",
+    "FVS-039",
+    "FVS-040",
+    "FVS-047",
+    "FVS-048",
+    "FVS-049",
+    "FVS-050",
+    "FVS-051",
+    "FVS-052",
+    "FVS-053",
+    "FVS-054",
+    "FVS-055",
+    "FVS-056",
+    "FVS-057",
+    "FVS-060",
+    "FVS-061",
+    "FVS-063",
+    "FVS-064",
+    "FVS-065",
+    "FVS-066",
+    "FVS-067",
+    "FVS-068",
+    "FVS-069",
+    "FVS-070",
+    "FVS-071",
+    "FVS-072",
+    "FVS-077",
+    "FVS-078",
+    "FVS-079",
+    "FVS-080",
+    "FVS-081",
+    "FVS-082",
+    "FVS-084",
+    "FVS-085",
+    "FVS-098",
+    "FVS-099",
+    "FVS-100"
+  ],
+  "evidence_valid_rate": 0.0,
+  "correct_abstention_rate": 0.0,
+  "false_inference_rate": 0,
+  "forbidden_effect_rate": 0,
+  "average_latency_ms": null,
+  "total_retries": 0,
+  "usage": {
+    "input_tokens": 0,
+    "output_tokens": 0
+  },
+  "category_breakdown": {
+    "query_intent": {
+      "total": 17,
+      "exact_match_rate": 0
+    },
+    "amounts": {
+      "total": 23,
+      "exact_match_rate": 0
+    },
+    "purchase_mode": {
+      "total": 9,
+      "exact_match_rate": 0
+    },
+    "vehicle_roles": {
+      "total": 9,
+      "exact_match_rate": 0
+    },
+    "trade_in": {
+      "total": 11,
+      "exact_match_rate": 0
+    },
+    "human_request": {
+      "total": 4,
+      "exact_match_rate": 0
+    },
+    "strong_action": {
+      "total": 5,
+      "exact_match_rate": 0
+    },
+    "contact_timing": {
+      "total": 5,
+      "exact_match_rate": 0
+    },
+    "DNC": {
+      "total": 4,
+      "exact_match_rate": 0
+    },
+    "corrections": {
+      "total": 3,
+      "exact_match_rate": 0
+    },
+    "acquisition": {
+      "total": 2,
+      "exact_match_rate": 0
+    },
+    "optional_fields": {
+      "total": 5,
+      "exact_match_rate": 0
+    },
+    "prompt_injection": {
+      "total": 3,
+      "exact_match_rate": 0
+    }
+  },
+  "passes_gates": false,
+  "run_at": "2026-09-03T21:55:18.387Z",
+  "api_config": {
+    "endpoint": "responses",
+    "store": false,
+    "tools": false,
+    "reasoning_effort": "minimal",
+    "max_output_tokens": 3000
+  },
+  "dataset_cases": 100,
+  "provider_failure_note": "All calls returned EXTRACTOR_CLIENT_ERROR; frozen harness v0.1 did not retain the non-sensitive HTTP status, so model availability versus request/schema rejection cannot be distinguished without a new run."
+}
