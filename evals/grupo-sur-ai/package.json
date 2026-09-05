@@ -25,6 +25,7 @@
     "filter:v1:semantic:test": "node --import tsx --test test/filter-v1-semantic-extraction.test.mjs",
     "filter:v1:semantic:online:test": "node --import tsx --test test/filter-v1-semantic-online-harness.test.mjs",
     "filter:v1:unsafe-metric:test": "node --import tsx --test test/filter-v1-unsafe-metric.test.mjs"
+    ,"ai:v2:shadow:test": "node --import tsx --test test/ai-v2-shadow.test.mjs"
   },
   "devDependencies": {
     "tsx": "4.23.12"
