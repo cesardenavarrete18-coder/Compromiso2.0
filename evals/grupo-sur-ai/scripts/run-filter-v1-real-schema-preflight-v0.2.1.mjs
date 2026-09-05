@@ -9,7 +9,7 @@ import { createResponsesClient, evaluateSemanticCase } from "../src/filter-v1/on
 
 const EXPECTED_SHA = "ffc847ef78095ec255235d3f9ac0c23e3469209a39acb5a22ee16809d6f8d2bb";
 const root = resolve(import.meta.dirname, "..");
-const datasetText = await readFile(resolve(root, "datasets/filter-v1-semantic-online-v0.1.jsonl"), "utf8");
+const datasetText = await readFile(resolve(root, "datasets/filter-v1-semantic-online-v0.2.jsonl"), "utf8");
 const testCase = JSON.parse(datasetText.split("\n").find(line => JSON.parse(line).case_id === "FVS-001"));
 const schemaSha256 = createHash("sha256").update(JSON.stringify(FILTER_V1_PROVIDER_SCHEMA)).digest("hex");
 const schemaValidation = validateProviderStructuredOutputSchema(FILTER_V1_PROVIDER_SCHEMA);

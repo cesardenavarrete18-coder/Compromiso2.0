@@ -1,0 +1,137 @@
+{
+  "prompt_version": "filter-v1-semantic-extractor/1.2",
+  "prompt_sha256": "b45b0a56ff502f98da5ed2003be96cb703b47a2d1c3bf11027f254ec4defa6b5",
+  "schema_sha256": "f39155ef16fc9abb63d038c7b8cfd6167a1af164907650058770ccb62560923b",
+  "dataset_sha256": "af497d6dabf6aac6a6e6f5bb73d66aef83dc396b4de57944042a5a7fb23ff542",
+  "model": "gpt-4.1-mini-2025-04-14",
+  "total_cases": 100,
+  "schema_valid_rate": 1,
+  "extraction_success_rate": 1,
+  "field_precision": 0.7549019607843137,
+  "field_recall": 0.8279569892473119,
+  "field_f1": 0.7897435897435897,
+  "exact_case_match_rate": 0.76,
+  "critical_case_pass_rate": 0.896551724137931,
+  "critical_violations": [
+    "FVS-018",
+    "FVS-020",
+    "FVS-048",
+    "FVS-057",
+    "FVS-060",
+    "FVS-061"
+  ],
+  "evidence_valid_rate": 1,
+  "correct_abstention_rate": 0.6,
+  "raw_false_inference_rate": 0.2,
+  "unsafe_false_inference_rate": 0.17,
+  "forbidden_effect_rate": 0,
+  "average_latency_ms": 2986.5424995899984,
+  "total_retries": 0,
+  "usage": {
+    "input_tokens": 238783,
+    "output_tokens": 18816
+  },
+  "category_breakdown": {
+    "query_intent": {
+      "total": 17,
+      "exact_match_rate": 0.6470588235294118
+    },
+    "amounts": {
+      "total": 23,
+      "exact_match_rate": 0.6521739130434783
+    },
+    "purchase_mode": {
+      "total": 9,
+      "exact_match_rate": 0.8888888888888888
+    },
+    "vehicle_roles": {
+      "total": 9,
+      "exact_match_rate": 0.8888888888888888
+    },
+    "trade_in": {
+      "total": 11,
+      "exact_match_rate": 0.5454545454545454
+    },
+    "human_request": {
+      "total": 4,
+      "exact_match_rate": 0.75
+    },
+    "strong_action": {
+      "total": 5,
+      "exact_match_rate": 0.8
+    },
+    "contact_timing": {
+      "total": 5,
+      "exact_match_rate": 1
+    },
+    "DNC": {
+      "total": 4,
+      "exact_match_rate": 1
+    },
+    "corrections": {
+      "total": 3,
+      "exact_match_rate": 0.6666666666666666
+    },
+    "acquisition": {
+      "total": 2,
+      "exact_match_rate": 1
+    },
+    "optional_fields": {
+      "total": 5,
+      "exact_match_rate": 1
+    },
+    "prompt_injection": {
+      "total": 3,
+      "exact_match_rate": 1
+    }
+  },
+  "field_evidence_warnings": 1,
+  "raw_false_inference_ids": [
+    "FVS-018",
+    "FVS-020",
+    "FVS-024",
+    "FVS-032",
+    "FVS-038",
+    "FVS-039",
+    "FVS-040",
+    "FVS-041",
+    "FVS-042",
+    "FVS-057",
+    "FVS-058",
+    "FVS-060",
+    "FVS-061",
+    "FVS-071",
+    "FVS-091",
+    "FVS-092",
+    "FVS-093",
+    "FVS-094",
+    "FVS-095",
+    "FVS-097"
+  ],
+  "unsafe_false_inference_ids": [
+    "FVS-018",
+    "FVS-020",
+    "FVS-024",
+    "FVS-032",
+    "FVS-041",
+    "FVS-042",
+    "FVS-048",
+    "FVS-057",
+    "FVS-058",
+    "FVS-060",
+    "FVS-061",
+    "FVS-091",
+    "FVS-092",
+    "FVS-093",
+    "FVS-094",
+    "FVS-095",
+    "FVS-097"
+  ],
+  "passes_gates": false,
+  "run_id": "filter-v1.2-final-100-20260904-57571b9",
+  "started_at": "2026-09-04T22:18:35.241Z",
+  "completed_at": "2026-09-04T22:23:33.961Z",
+  "dataset_path": "datasets/filter-v1-semantic-online-v0.1.jsonl",
+  "semantic_retries": 0,
+  "total_llm_calls": 100
+}

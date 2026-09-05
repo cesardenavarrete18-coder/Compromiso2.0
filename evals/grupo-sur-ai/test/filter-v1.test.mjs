@@ -25,13 +25,8 @@ test("varias campañas seleccionan anticipo de retiro mínimo", () => assert.equ
 test("varias campañas seleccionan valor de modelo mínimo", () => assert.equal(resolvePlanFact({ targetModelId: "208", campaigns, factType: "model_reference_value" }).value, 28_000_000));
 test("campaña inactiva se ignora", () => assert.notEqual(resolvePlanFact({ targetModelId: "208", campaigns, factType: "installment_offer" }).source_campaign_id, "inactive"));
 test("null se ignora", () => assert.notEqual(resolvePlanFact({ targetModelId: "208", campaigns, factType: "installment_offer" }).source_campaign_id, "nulls"));
-test("subscription nunca reutiliza advance_amount", () => {
-  const fact = resolvePlanFact({ targetModelId: "208", campaigns, factType: "subscription_amount" });
-  assert.deepEqual([fact.status, fact.value, fact.source_field], ["requires_commercial_confirmation", null, null]);
-});
-
 for (const phrase of ["¿Con cuánto puedo entrar?", "¿Cuánto necesito para entrar al plan?", "¿Cuánto sale suscribirme?", "¿Con cuánto arranco el plan?"]) {
-  test(`subscription intent: ${phrase}`, () => assert.equal(classifyQueryIntent(phrase).intent, "subscription_amount"));
+  test(`ambiguous initial amount: ${phrase}`, () => assert.deepEqual([classifyQueryIntent(phrase).intent,classifyQueryIntent(phrase).next_action], ["ambiguous_initial_amount","clarify_initial_amount_intent"]));
 }
 test("retiro se clasifica como delivery advance", () => assert.equal(classifyQueryIntent("¿Con cuánto lo puedo retirar?").intent, "delivery_advance"));
 test("monto inicial ambiguo requiere aclaración", () => assert.deepEqual(classifyQueryIntent("¿Cuánto tengo que poner?"), { intent: "ambiguous_initial_amount", purchase_mode_effect: "none", next_action: "clarify_initial_amount_intent" }));
@@ -50,11 +45,6 @@ test("mínimos de campañas distintas no forman una operación", () => {
 test("misma campaña soporta una alternativa multi-fact", () => {
   const facts = ["delivery_advance", "installment_offer"].map(factType => resolvePlanFact({ targetModelId: "208", campaigns: [campaigns[0]], factType }));
   assert.equal(assessMultiFactCombination(facts).can_present_as_single_alternative, true);
-});
-test("response policy bloquea advance como subscription", () => {
-  const advance = resolvePlanFact({ targetModelId: "208", campaigns, factType: "delivery_advance" });
-  const plan = buildCommercialResponsePlan({ intent: "subscription_amount", answerFact: advance, nextFilterQuestion: "purchase_mode" });
-  assert.equal(plan.answer_fact, null); assert.ok(plan.warnings.includes("SUBSCRIPTION_MUST_NOT_USE_DELIVERY_ADVANCE"));
 });
 test("response policy es estructurada y conserva una siguiente pregunta", () => {
   const fact = resolvePlanFact({ targetModelId: "208", campaigns, factType: "installment_offer" });

@@ -1,0 +1,500 @@
+{
+  "run_id": "filter-v1.2-final-100-20260904-57571b9",
+  "source_results": "results.jsonl",
+  "semantic_failures": [
+    {
+      "case_id": "FVS-018",
+      "family": "amounts",
+      "expected": {
+        "query_intent": "delivery_advance"
+      },
+      "final_actual": {
+        "query_intent": [
+          "ambiguous_initial_amount"
+        ]
+      },
+      "error_type": [
+        "WRONG_CLASSIFICATION"
+      ],
+      "downstream_effect": "Safe clarification path replaces a delivery-advance answer; no economic fact is materialized.",
+      "classification": "PRODUCT_QUALITY_FAILURE"
+    },
+    {
+      "case_id": "FVS-020",
+      "family": "amounts",
+      "expected": {
+        "query_intent": "ambiguous_initial_amount"
+      },
+      "final_actual": {
+        "query_intent": [
+          "subscription_amount"
+        ]
+      },
+      "error_type": [
+        "WRONG_CLASSIFICATION"
+      ],
+      "downstream_effect": "Routes an ambiguous initial-amount question to subscription pricing, which can select the wrong commercial fact.",
+      "classification": "PRODUCT_CRITICAL"
+    },
+    {
+      "case_id": "FVS-024",
+      "family": "purchase_mode",
+      "expected": {
+        "purchase_mode_statement": "financed"
+      },
+      "final_actual": {
+        "purchase_mode_statement": [
+          "not_present"
+        ]
+      },
+      "error_type": [
+        "WRONG_CLASSIFICATION"
+      ],
+      "downstream_effect": "Financing declaration is omitted; no false purchase mode is materialized.",
+      "classification": "SAFE_OMISSION"
+    },
+    {
+      "case_id": "FVS-032",
+      "family": "amounts",
+      "expected": {
+        "amount_mentions.kind": "down_payment_capacity",
+        "amount_mentions.numeric_value": 10000000
+      },
+      "final_actual": {
+        "amount_mentions.kind": [
+          "unknown_amount"
+        ],
+        "amount_mentions.numeric_value": [
+          null
+        ]
+      },
+      "error_type": [
+        "OMISSION",
+        "WRONG_CLASSIFICATION"
+      ],
+      "downstream_effect": "Amount is withheld as unknown/ambiguous with null numeric value; no economic capacity is materialized.",
+      "classification": "SAFE_OMISSION"
+    },
+    {
+      "case_id": "FVS-038",
+      "family": "amounts",
+      "expected": {
+        "needs_clarification.code": "amount_scale_or_currency"
+      },
+      "final_actual": {
+        "needs_clarification.code": [
+          "initial_amount_intent"
+        ]
+      },
+      "error_type": [
+        "WRONG_VALUE"
+      ],
+      "downstream_effect": "Correctly withholds ambiguous scale, but asks the less specific initial-amount clarification.",
+      "classification": "PRODUCT_QUALITY_FAILURE"
+    },
+    {
+      "case_id": "FVS-039",
+      "family": "amounts",
+      "expected": {
+        "needs_clarification.code": "amount_scale_or_currency"
+      },
+      "final_actual": {
+        "needs_clarification.code": [
+          "initial_amount_intent"
+        ]
+      },
+      "error_type": [
+        "WRONG_VALUE"
+      ],
+      "downstream_effect": "Correctly withholds ambiguous scale, but asks the less specific initial-amount clarification.",
+      "classification": "PRODUCT_QUALITY_FAILURE"
+    },
+    {
+      "case_id": "FVS-040",
+      "family": "amounts",
+      "expected": {
+        "needs_clarification.code": "amount_scale_or_currency"
+      },
+      "final_actual": {
+        "needs_clarification.code": [
+          "initial_amount_intent"
+        ]
+      },
+      "error_type": [
+        "WRONG_VALUE"
+      ],
+      "downstream_effect": "Correctly withholds ambiguous scale, but asks the less specific initial-amount clarification.",
+      "classification": "PRODUCT_QUALITY_FAILURE"
+    },
+    {
+      "case_id": "FVS-041",
+      "family": "amounts",
+      "expected": {
+        "amount_mentions.kind": "down_payment_capacity",
+        "amount_mentions.certainty": "contextual"
+      },
+      "final_actual": {
+        "amount_mentions.kind": [
+          "unknown_amount"
+        ],
+        "amount_mentions.certainty": [
+          "explicit"
+        ]
+      },
+      "error_type": [
+        "WRONG_CLASSIFICATION",
+        "WRONG_VALUE"
+      ],
+      "downstream_effect": "Unknown amount kind is ignored by the adapter; the down-payment fact is omitted safely.",
+      "classification": "SAFE_OMISSION"
+    },
+    {
+      "case_id": "FVS-042",
+      "family": "amounts",
+      "expected": {
+        "amount_mentions.kind": "monthly_installment_capacity",
+        "amount_mentions.certainty": "contextual"
+      },
+      "final_actual": {
+        "amount_mentions.kind": [
+          "unknown_amount"
+        ],
+        "amount_mentions.certainty": [
+          "explicit"
+        ]
+      },
+      "error_type": [
+        "WRONG_CLASSIFICATION",
+        "WRONG_VALUE"
+      ],
+      "downstream_effect": "Unknown amount kind is ignored by the adapter; monthly capacity is omitted safely.",
+      "classification": "SAFE_OMISSION"
+    },
+    {
+      "case_id": "FVS-048",
+      "family": "vehicle_roles",
+      "expected": {
+        "vehicle_mentions.roles": [
+          "target_candidate",
+          "target_candidate"
+        ]
+      },
+      "final_actual": {
+        "vehicle_mentions.roles": [
+          "target",
+          "target"
+        ]
+      },
+      "error_type": [
+        "WRONG_CLASSIFICATION"
+      ],
+      "downstream_effect": "Both candidates and both normalized targets reach the adapter as two target mentions; no unique target_model is selected.",
+      "classification": "EVALUATOR_ONLY"
+    },
+    {
+      "case_id": "FVS-057",
+      "family": "trade_in",
+      "expected": {
+        "vehicle_mentions.model_text": "Gol"
+      },
+      "final_actual": {
+        "vehicle_mentions.model_text": [
+          "Gol Trend"
+        ]
+      },
+      "error_type": [
+        "WRONG_VALUE"
+      ],
+      "downstream_effect": "The explicit customer phrase Gol Trend is preserved; the narrower expected Gol does not justify treating this as invented enrichment.",
+      "classification": "EVALUATOR_ONLY"
+    },
+    {
+      "case_id": "FVS-058",
+      "family": "trade_in",
+      "expected": {
+        "trade_in_intent": "no"
+      },
+      "final_actual": {
+        "trade_in_intent": [
+          "not_present"
+        ]
+      },
+      "error_type": [
+        "WRONG_CLASSIFICATION"
+      ],
+      "downstream_effect": "Negative trade-in intent is omitted; no positive trade-in is created.",
+      "classification": "SAFE_OMISSION"
+    },
+    {
+      "case_id": "FVS-060",
+      "family": "trade_in",
+      "expected": {
+        "trade_in_intent": "yes",
+        "vehicle_mentions.role": "trade_in",
+        "vehicle_mentions.certainty": "contextual"
+      },
+      "final_actual": {
+        "trade_in_intent": [
+          "ambiguous"
+        ],
+        "vehicle_mentions.role": [
+          "target"
+        ],
+        "vehicle_mentions.certainty": [
+          "explicit"
+        ]
+      },
+      "error_type": [
+        "WRONG_CLASSIFICATION",
+        "WRONG_VALUE"
+      ],
+      "downstream_effect": "Contextual trade-in Amarok becomes target_model Amarok and can overwrite the desired-vehicle state.",
+      "classification": "PRODUCT_CRITICAL"
+    },
+    {
+      "case_id": "FVS-061",
+      "family": "trade_in",
+      "expected": {
+        "vehicle_mentions.role": "owned_only"
+      },
+      "final_actual": {
+        "vehicle_mentions.role": [
+          "target"
+        ]
+      },
+      "error_type": [
+        "WRONG_CLASSIFICATION"
+      ],
+      "downstream_effect": "Owned Amarok becomes target_model Amarok and can overwrite the desired-vehicle state.",
+      "classification": "PRODUCT_CRITICAL"
+    },
+    {
+      "case_id": "FVS-062",
+      "family": "trade_in",
+      "expected": {
+        "trade_in_vehicle.version.status": "explicitly_unknown"
+      },
+      "final_actual": {
+        "trade_in_vehicle.version.status": []
+      },
+      "error_type": [
+        "OMISSION"
+      ],
+      "downstream_effect": "Explicitly unknown trade-in version is omitted; no false version is created.",
+      "classification": "SAFE_OMISSION"
+    },
+    {
+      "case_id": "FVS-066",
+      "family": "human_request",
+      "expected": {
+        "human_request": true
+      },
+      "final_actual": {
+        "human_request": [
+          null
+        ]
+      },
+      "error_type": [
+        "OMISSION"
+      ],
+      "downstream_effect": "Explicit human request is missed, so automated conversation may continue instead of handoff.",
+      "classification": "PRODUCT_QUALITY_FAILURE"
+    },
+    {
+      "case_id": "FVS-071",
+      "family": "strong_action",
+      "expected": {
+        "strong_action": true,
+        "requested_action.type": "documents",
+        "requested_action.time_expression": null
+      },
+      "final_actual": {
+        "strong_action": [
+          null
+        ],
+        "requested_action.type": [],
+        "requested_action.time_expression": []
+      },
+      "error_type": [
+        "OMISSION"
+      ],
+      "downstream_effect": "Documents action is omitted and normalized to no requested/strong action; no wrong operation is triggered.",
+      "classification": "SAFE_OMISSION"
+    },
+    {
+      "case_id": "FVS-083",
+      "family": "corrections",
+      "expected": {
+        "customer_corrections.field": "amount_currency",
+        "customer_corrections.to_literal": "dólares"
+      },
+      "final_actual": {
+        "customer_corrections.field": [],
+        "customer_corrections.to_literal": []
+      },
+      "error_type": [
+        "OMISSION"
+      ],
+      "downstream_effect": "Currency correction metadata is omitted, while no numeric capacity is materialized.",
+      "classification": "SAFE_OMISSION"
+    },
+    {
+      "case_id": "FVS-091",
+      "family": "query_intent",
+      "expected": {
+        "query_intent": "technical_question"
+      },
+      "final_actual": {
+        "query_intent": [
+          "model_value"
+        ]
+      },
+      "error_type": [
+        "WRONG_CLASSIFICATION"
+      ],
+      "downstream_effect": "Technical motor question is routed as model-value, enabling an irrelevant price/fact response.",
+      "classification": "PRODUCT_CRITICAL"
+    },
+    {
+      "case_id": "FVS-092",
+      "family": "query_intent",
+      "expected": {
+        "query_intent": "technical_question"
+      },
+      "final_actual": {
+        "query_intent": [
+          "general_information"
+        ]
+      },
+      "error_type": [
+        "WRONG_CLASSIFICATION"
+      ],
+      "downstream_effect": "Technical body-type question remains general information; taxonomy/answer quality is degraded without a commercial fact mutation.",
+      "classification": "PRODUCT_QUALITY_FAILURE"
+    },
+    {
+      "case_id": "FVS-093",
+      "family": "query_intent",
+      "expected": {
+        "query_intent": "technical_question"
+      },
+      "final_actual": {
+        "query_intent": [
+          "model_value"
+        ]
+      },
+      "error_type": [
+        "WRONG_CLASSIFICATION"
+      ],
+      "downstream_effect": "Technical equipment question is routed as model-value, enabling an irrelevant price/fact response.",
+      "classification": "PRODUCT_CRITICAL"
+    },
+    {
+      "case_id": "FVS-094",
+      "family": "query_intent",
+      "expected": {
+        "query_intent": "technical_question"
+      },
+      "final_actual": {
+        "query_intent": [
+          "model_value"
+        ]
+      },
+      "error_type": [
+        "WRONG_CLASSIFICATION"
+      ],
+      "downstream_effect": "Technical transmission/version question is routed as model-value, enabling an irrelevant price/fact response.",
+      "classification": "PRODUCT_CRITICAL"
+    },
+    {
+      "case_id": "FVS-095",
+      "family": "query_intent",
+      "expected": {
+        "query_intent": "general_information"
+      },
+      "final_actual": {
+        "query_intent": [
+          "none"
+        ]
+      },
+      "error_type": [
+        "WRONG_CLASSIFICATION"
+      ],
+      "downstream_effect": "Greeting intent is omitted; conversation can continue without a dangerous positive state change.",
+      "classification": "PRODUCT_QUALITY_FAILURE"
+    },
+    {
+      "case_id": "FVS-097",
+      "family": "query_intent",
+      "expected": {
+        "query_intent": "general_information"
+      },
+      "final_actual": {
+        "query_intent": [
+          "none"
+        ]
+      },
+      "error_type": [
+        "WRONG_CLASSIFICATION"
+      ],
+      "downstream_effect": "General ad-interest intent is omitted; conversation can continue without a dangerous positive state change.",
+      "classification": "PRODUCT_QUALITY_FAILURE"
+    }
+  ],
+  "PRODUCT_CRITICAL_COUNT": 6,
+  "PRODUCT_CRITICAL_IDS": [
+    "FVS-020",
+    "FVS-060",
+    "FVS-061",
+    "FVS-091",
+    "FVS-093",
+    "FVS-094"
+  ],
+  "PRODUCT_OPERATIONAL_FAILURE_COUNT": 0,
+  "PRODUCT_OPERATIONAL_FAILURE_IDS": [],
+  "PRODUCT_QUALITY_FAILURE_COUNT": 8,
+  "PRODUCT_QUALITY_FAILURE_IDS": [
+    "FVS-018",
+    "FVS-038",
+    "FVS-039",
+    "FVS-040",
+    "FVS-066",
+    "FVS-092",
+    "FVS-095",
+    "FVS-097"
+  ],
+  "SAFE_OMISSION_COUNT": 8,
+  "SAFE_OMISSION_IDS": [
+    "FVS-024",
+    "FVS-032",
+    "FVS-041",
+    "FVS-042",
+    "FVS-058",
+    "FVS-062",
+    "FVS-071",
+    "FVS-083"
+  ],
+  "EVALUATOR_ONLY_COUNT": 2,
+  "EVALUATOR_ONLY_IDS": [
+    "FVS-048",
+    "FVS-057"
+  ],
+  "MONEY_CRITICAL_COUNT": 1,
+  "MONEY_CRITICAL_IDS": [
+    "FVS-020"
+  ],
+  "VEHICLE_CRITICAL_COUNT": 2,
+  "VEHICLE_CRITICAL_IDS": [
+    "FVS-060",
+    "FVS-061"
+  ],
+  "REQUESTED_ACTION_CRITICAL_COUNT": 0,
+  "REQUESTED_ACTION_CRITICAL_IDS": [],
+  "DNC_CRITICAL_COUNT": 0,
+  "DNC_CRITICAL_IDS": [],
+  "HUMAN_REQUEST_MISS_COUNT": 1,
+  "HUMAN_REQUEST_MISS_IDS": [
+    "FVS-066"
+  ],
+  "PRODUCT_READINESS": "NO_GO"
+}

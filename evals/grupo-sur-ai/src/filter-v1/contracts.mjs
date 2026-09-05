@@ -1,7 +1,7 @@
 export const FIELD_STATUSES = Object.freeze(["known", "missing", "explicitly_unknown", "conflicting"]);
 export const PURCHASE_MODES = Object.freeze(["cash", "financed", "unknown"]);
 export const QUERY_INTENTS = Object.freeze([
-  "model_value", "installment_offer", "delivery_advance", "subscription_amount",
+  "model_value", "installment_offer", "delivery_advance",
   "ambiguous_initial_amount", "technical_question", "purchase_mode_statement",
   "human_request", "strong_action", "filter_answer", "unknown",
 ]);
