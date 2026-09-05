@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { candidateAdvisorName, candidateCodes, knownAdvisorName, mentionsTikTok, normalizedPersonName } from "./routing-identifiers.ts";
 import { enforceVehicleFacts, firstName, handoffReply, hasKnownCommercialOperation, polishCommercialReply, qualifyAndHandoffReply, shouldForceHandoff, tiktokIdentifierReply } from "./conversation-style.ts";
+import { runWhatsappV2Shadow } from "../_shared/ai-v2-shadow/whatsapp-adapter.mjs";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -450,7 +451,29 @@ Deno.serve(async (request) => {
           .select("mode")
           .eq("lead_id", leadId)
           .maybeSingle();
+        // V2 is a fail-closed side-car. It receives no WhatsApp sender and its
+        // repository is restricted to ai_v2_shadow_runs. V1 remains authoritative.
+        const runShadow = async (v1Decision: LeadDecision | null = null) => {
+          try {
+            await runWhatsappV2Shadow({
+              db,
+              env: {
+                AI_V2_SHADOW_MODE: Deno.env.get("AI_V2_SHADOW_MODE") ?? "false",
+                OPENAI_FILTER_MODEL: Deno.env.get("OPENAI_FILTER_MODEL") ?? "",
+                OPENAI_V2_RESPONSE_MODEL: Deno.env.get("OPENAI_V2_RESPONSE_MODEL") ?? "",
+                OPENAI_API_KEY: Deno.env.get("OPENAI_API_KEY") ?? "",
+              },
+              lead: existing || { id: leadId, metadata: {} },
+              inboundMessage: { id: inboundResult.data.id, body, created_at: inboundResult.data.created_at },
+              conversationControl: conversationControl.data,
+              v1Decision,
+            });
+          } catch (error) {
+            console.error("AI V2 shadow adapter failed", error instanceof Error ? error.message : String(error));
+          }
+        };
         if (conversationControl.data?.mode === "human") {
+          await runShadow();
           await db.from("leads").update({ last_message_at: new Date().toISOString() }).eq("id", leadId);
           continue;
         }
@@ -459,6 +482,7 @@ Deno.serve(async (request) => {
         // Los mensajes posteriores se conservan y notifican al supervisor, pero
         // la IA no reinicia el cuestionario ni compite con la atención humana.
         if (existing?.qualification_status === "qualified") {
+          await runShadow();
           await db.from("leads").update({ last_message_at: new Date().toISOString() }).eq("id", existing.id);
           if (!existing.do_not_contact) {
             await db.from("lead_crm").update({
@@ -555,6 +579,9 @@ Deno.serve(async (request) => {
           classification.reply_text,
           classification.model_interest || explicitModelInterest,
         );
+
+        // Capture the already-computed V1 decision; never execute V1 twice.
+        await runShadow(classification);
 
         // If a newer inbound arrived while OpenAI was working, that newer execution
         // owns the answer. This prevents two replies and stale questions.
