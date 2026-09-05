@@ -12,7 +12,7 @@ const MODEL = "gpt-5.6-luna";
 const EXPECTED = Object.freeze({ dataset: "af497d6dabf6aac6a6e6f5bb73d66aef83dc396b4de57944042a5a7fb23ff542", prompt: "5dcef918f9047c1f161e4cba33dd634816f041d13223628e0e2ca7ffc3386af1", schema: "ffc847ef78095ec255235d3f9ac0c23e3469209a39acb5a22ee16809d6f8d2bb" });
 const hash = value => createHash("sha256").update(value).digest("hex");
 const root = resolve(import.meta.dirname, "..");
-const datasetPath = resolve(root, "datasets/filter-v1-semantic-online-v0.1.jsonl");
+const datasetPath = resolve(root, "datasets/filter-v1-semantic-online-v0.2.jsonl");
 const datasetText = await readFile(datasetPath, "utf8");
 const hashes = { dataset: hash(datasetText), prompt: hash(SEMANTIC_EXTRACTOR_SYSTEM_PROMPT), schema: hash(JSON.stringify(FILTER_V1_PROVIDER_SCHEMA)) };
 for (const key of Object.keys(EXPECTED)) if (hashes[key] !== EXPECTED[key]) throw new Error(`${key.toUpperCase()}_SHA_MISMATCH:${hashes[key]}`);

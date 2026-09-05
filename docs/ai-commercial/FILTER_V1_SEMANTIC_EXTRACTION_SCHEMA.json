@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "filter-v1-semantic-extractor/1.2",
+  "$id": "filter-v1-semantic-extractor/1.3",
   "title": "Filter v1 semantic extraction proposal",
   "type": "object",
   "required": [
@@ -19,14 +19,13 @@
   ],
   "properties": {
     "schema_version": {
-      "const": "filter-v1-semantic-extractor/1.2"
+      "const": "filter-v1-semantic-extractor/1.3"
     },
     "query_intent": {
       "enum": [
         "model_value",
         "installment_offer",
         "delivery_advance",
-        "subscription_amount",
         "ambiguous_initial_amount",
         "technical_question",
         "general_information",

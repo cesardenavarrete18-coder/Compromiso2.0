@@ -15,11 +15,14 @@ export function semanticExtractionToEngine(extraction) {
   if (extraction.trade_in_vehicle) extractedFields.trade_in_vehicle = Object.fromEntries(Object.entries(extraction.trade_in_vehicle).map(([key, value]) => [key === "mileage_km" ? "km" : key, value?.status === "explicitly_unknown" ? { semantic_status: "explicitly_unknown", evidence: value.evidence } : value?.value ?? value]));
   const targetMentions = extraction.vehicle_mentions.filter(vehicle => ["target", "target_candidate"].includes(vehicle.role));
   const targetModel = targetMentions.length === 1 && targetMentions[0].role === "target" ? targetMentions[0].model_text ?? targetMentions[0].literal : undefined;
+  const subjectMentions = extraction.vehicle_mentions.filter(vehicle => ["target", "target_candidate", "comparison"].includes(vehicle.role));
+  const subjectModel = subjectMentions.length === 1 ? subjectMentions[0].model_text ?? subjectMentions[0].literal : undefined;
   const correction = extraction.customer_corrections.find(item => item.field === "target_model");
   return {
     query_intent: extraction.query_intent,
     extracted_fields: extractedFields,
     target_model: targetModel,
+    turn_subject_model: subjectModel,
     vehicle_mentions: targetMentions.map(vehicle => ({ role: vehicle.role === "target_candidate" ? "target" : vehicle.role, model: vehicle.model_text ?? vehicle.literal })),
     human_request: extraction.human_request !== null,
     strong_action: extraction.strong_action !== null,

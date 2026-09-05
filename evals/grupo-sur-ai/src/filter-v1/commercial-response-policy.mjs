@@ -4,11 +4,11 @@ export function buildCommercialResponsePlan({ intent, answerFact = null, facts =
   const combination = assessMultiFactCombination(facts.length ? facts : answerFact ? [answerFact] : []);
   const warnings = [];
   if (combination.cross_campaign_combination) warnings.push(combination.warning);
-  if (intent === "subscription_amount" && answerFact?.fact_type === "delivery_advance") warnings.push("SUBSCRIPTION_MUST_NOT_USE_DELIVERY_ADVANCE");
   const stopped = Boolean(handoff);
   return Object.freeze({
     answer_kind: intent ?? "unknown",
-    answer_fact: warnings.includes("SUBSCRIPTION_MUST_NOT_USE_DELIVERY_ADVANCE") ? null : answerFact,
+    answer_fact: answerFact,
+    knowledge_request: answerFact?.status === "requires_knowledge_lookup" ? { subject_model: answerFact.subject_model, source: "authorized_knowledge" } : null,
     commercial_framing_allowed: !stopped,
     promotional_hook: promotionalContext ? { kind: "general", source_campaign_id: promotionalContext.source_campaign_id } : null,
     next_filter_question: stopped ? null : nextFilterQuestion,

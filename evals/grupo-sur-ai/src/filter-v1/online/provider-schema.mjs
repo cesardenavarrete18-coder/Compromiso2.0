@@ -10,8 +10,8 @@ export const FILTER_V1_PROVIDER_SCHEMA = Object.freeze({
   type: "object", additionalProperties: false,
   required: ["schema_version", "query_intent", "purchase_mode_statement", "purchase_mode_literal", "amount_mentions", "vehicle_mentions", "trade_in_intent", "trade_in_vehicle", "customer_name", "customer_location", "human_request", "strong_action", "requested_action", "contact_preference_expression", "do_not_contact", "customer_corrections", "needs_clarification", "evidence"],
   properties: {
-    schema_version: { type: "string", const: "filter-v1-semantic-extractor/1.2" },
-    query_intent: { type: "string", enum: ["model_value", "installment_offer", "delivery_advance", "subscription_amount", "ambiguous_initial_amount", "technical_question", "general_information", "none"] },
+    schema_version: { type: "string", const: "filter-v1-semantic-extractor/1.3" },
+    query_intent: { type: "string", enum: ["model_value", "installment_offer", "delivery_advance", "ambiguous_initial_amount", "technical_question", "general_information", "none"] },
     purchase_mode_statement: { type: "string", enum: ["cash", "financed", "not_present", "conflicting"] },
     purchase_mode_literal: { type: ["string", "null"] },
     amount_mentions: { type: "array", items: { type: "object", additionalProperties: false, required: ["kind", "numeric_value", "currency", "literal", "certainty", "confirmation_recommended", "evidence"], properties: { kind: { type: "string", enum: ["down_payment_capacity", "monthly_installment_capacity", "trade_in_customer_estimate", "unknown_amount"] }, numeric_value: { type: ["number", "null"] }, currency: { type: ["string", "null"] }, literal: { type: "string" }, certainty, confirmation_recommended: { type: "boolean" }, evidence: evidenceList } } },

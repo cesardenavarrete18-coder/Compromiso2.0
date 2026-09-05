@@ -3,7 +3,6 @@ import { resolvePlanFact } from "../plan-fact-resolver.mjs";
 import { buildCommercialResponsePlan } from "../commercial-response-policy.mjs";
 import { contactPriority } from "../contact-priority.mjs";
 import { decideHandoff } from "../handoff-policy.mjs";
-import { findTechnicalModel } from "../technical-catalog.mjs";
 import { adaptCampaignRows } from "./campaign-adapter.mjs";
 import { adaptCatalogRows, resolveModel, resolveModelCandidates } from "./catalog-adapter.mjs";
 import { adaptAcquisitionContext } from "./acquisition-context-adapter.mjs";
@@ -11,7 +10,7 @@ import { adaptLeadContext } from "./lead-context-adapter.mjs";
 import { adaptOperationalControl } from "./operational-control-adapter.mjs";
 import { advanceStateVersion, deserializeFilterState } from "./filter-state-persistence.mjs";
 
-const PLAN_INTENTS = Object.freeze({ model_value: "model_reference_value", installment_offer: "installment_offer", delivery_advance: "delivery_advance", subscription_amount: "subscription_amount" });
+const PLAN_INTENTS = Object.freeze({ model_value: "model_reference_value", installment_offer: "installment_offer", delivery_advance: "delivery_advance" });
 const provenance = (source, evidence = null) => ({ source, evidence });
 
 function previousState(input, leadContext) {
@@ -61,22 +60,22 @@ export function runFilterV1Integration(input) {
   }
 
   const extraction = input.current_extraction ?? {};
-  const correctionMentions = extraction.customer_corrections?.target_model ? [extraction.customer_corrections.target_model] : [];
-  const directMentions = extraction.target_model ? [extraction.target_model] : extraction.vehicle_mentions?.filter(item => item.role === "target").map(item => item.model) ?? [];
-  const customerResolution = resolveModelCandidates(catalog, [...correctionMentions, ...directMentions]);
-  let target = customerResolution.status === "single" ? customerResolution.target : null;
+  const correctionResolution = resolveModelCandidates(catalog, extraction.customer_corrections?.target_model ? [extraction.customer_corrections.target_model] : []);
+  const directMentions = extraction.target_model ? [extraction.target_model] : [];
+  const customerResolution = resolveModelCandidates(catalog, directMentions);
+  let target = correctionResolution.status === "single" ? correctionResolution.target : null;
   let targetSource = target ? "customer_message" : null;
   if (!target && state.target_model?.status === "known") { target = resolveModel(catalog, state.target_model.value.model ?? state.target_model.value); targetSource = target ? "canonical_state" : null; }
-  if (!target && lead.crm_model_interest) { target = resolveModel(catalog, lead.crm_model_interest); targetSource = target ? "crm_structured" : null; }
   if (!target && acquisition.referral_target) { target = acquisition.referral_target; targetSource = "meta_referral"; }
+  if (!target && customerResolution.status === "single") { target = customerResolution.target; targetSource = "customer_message"; }
+  if (!target && lead.crm_model_interest) { target = resolveModel(catalog, lead.crm_model_interest); targetSource = target ? "crm_structured" : null; }
   if (target) {
     state.target_model = field({ brand_id: target.brand_id, brand: target.brand, model_id: target.model_id, model: target.model }, "known", provenance(targetSource));
     decisionTrace.push({ decision: "target_model", result: target.model, model_id: target.model_id, source: targetSource });
-  } else if (customerResolution.clarification_required) {
-    state.target_model = field(null, "conflicting", provenance("customer_message"));
-    state.target_candidates = customerResolution.candidates.map(item => ({ brand_id: item.brand_id, brand: item.brand, model_id: item.model_id, model: item.model }));
-    warnings.push(customerResolution.status === "cross_brand_multiple" ? "CLARIFY_CROSS_BRAND_TARGET" : "CLARIFY_MODEL_TARGET");
   }
+  delete state.target_candidates;
+  const transientAlternatives = extraction.vehicle_mentions?.filter(item => item.role === "target").map(item => item.model) ?? [];
+  if (!target && transientAlternatives.length > 1) warnings.push("CLARIFY_MODEL_TARGET");
 
   state = applyExtractedFields(state, extraction.extracted_fields);
   if (extraction.requested_action) state.requested_action = structuredClone(extraction.requested_action);
@@ -97,15 +96,15 @@ export function runFilterV1Integration(input) {
   decisionTrace.push({ decision: "handoff", result: handoff.handoff_status, source: extraction.human_request ? "human_request" : extraction.strong_action ? "strong_action" : "profile" });
 
   const intent = extraction.query_intent ?? "unknown";
+  const factSubject = resolveModel(catalog, extraction.turn_subject_model) ?? target;
   const resolvedFacts = [];
   let answerFact = null;
-  if (PLAN_INTENTS[intent] && target) {
-    answerFact = resolvePlanFact({ targetModelId: target.model_id, campaigns: adaptCampaignRows(input.campaigns), factType: PLAN_INTENTS[intent] });
+  if (PLAN_INTENTS[intent] && factSubject) {
+    answerFact = resolvePlanFact({ targetModelId: factSubject.model_id, campaigns: adaptCampaignRows(input.campaigns), factType: PLAN_INTENTS[intent] });
     resolvedFacts.push(answerFact);
     decisionTrace.push({ decision: `${intent}_fact`, result: answerFact.value, status: answerFact.status, source_campaign_id: answerFact.source_campaign_id });
   } else if (intent === "technical_question") {
-    const technical = target && findTechnicalModel(target.brand, target.model);
-    answerFact = technical ? { fact_type: "body_type", status: "resolved", value: technical.body_type, source_id: "filter-v1-technical-catalog" } : { fact_type: "technical_spec", status: "requires_commercial_confirmation", value: null, source_id: null };
+    answerFact = { fact_type: "technical_knowledge", status: "requires_knowledge_lookup", value: null, subject_model: factSubject?.model ?? null, subject_model_id: factSubject?.model_id ?? null, source_id: "ai_knowledge_documents" };
     resolvedFacts.push(answerFact);
   }
 
@@ -114,5 +113,5 @@ export function runFilterV1Integration(input) {
     ? buildCommercialResponsePlan({ intent, handoff: handoff.handoff_status })
     : buildCommercialResponsePlan({ intent, answerFact, facts: resolvedFacts, nextFilterQuestion: nextQuestion });
   warnings.push(...responsePlan.warnings);
-  return Object.freeze({ status: "ok", next_state: state, response_plan: responsePlan, handoff_decision: handoff, resolved_facts: resolvedFacts, warnings: [...new Set(warnings)], decision_trace: decisionTrace, state_version: version });
+  return Object.freeze({ status: "ok", next_state: state, turn_subject_model: factSubject?.model ?? null, response_plan: responsePlan, handoff_decision: handoff, resolved_facts: resolvedFacts, warnings: [...new Set(warnings)], decision_trace: decisionTrace, state_version: version });
 }

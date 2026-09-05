@@ -1,6 +1,6 @@
-export const SEMANTIC_EXTRACTION_SCHEMA_VERSION = "filter-v1-semantic-extractor/1.2";
+export const SEMANTIC_EXTRACTION_SCHEMA_VERSION = "filter-v1-semantic-extractor/1.3";
 export const SEMANTIC_CERTAINTIES = Object.freeze(["explicit", "contextual", "ambiguous"]);
-export const SEMANTIC_QUERY_INTENTS = Object.freeze(["model_value", "installment_offer", "delivery_advance", "subscription_amount", "ambiguous_initial_amount", "technical_question", "general_information", "none"]);
+export const SEMANTIC_QUERY_INTENTS = Object.freeze(["model_value", "installment_offer", "delivery_advance", "ambiguous_initial_amount", "technical_question", "general_information", "none"]);
 export const PURCHASE_MODE_STATEMENTS = Object.freeze(["cash", "financed", "not_present", "conflicting"]);
 export const AMOUNT_KINDS = Object.freeze(["down_payment_capacity", "monthly_installment_capacity", "trade_in_customer_estimate", "unknown_amount"]);
 export const VEHICLE_ROLES = Object.freeze(["target", "target_candidate", "comparison", "owned_only", "trade_in", "unknown"]);

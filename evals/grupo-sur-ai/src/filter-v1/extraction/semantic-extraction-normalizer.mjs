@@ -35,13 +35,79 @@ function normalizeVehicle(vehicle) {
   const target = /\b(quiero|busco|compr(?:ar|o)|me interesa|estoy viendo|voy por)\b/.test(text);
   if (tradeIn && !target) vehicle.role = "trade_in";
   else if (owned && !target) vehicle.role = "owned_only";
-  else if (target && !tradeIn && !owned) vehicle.role = "target";
+  else if (target && !tradeIn && !owned && !["target_candidate", "comparison"].includes(vehicle.role)) vehicle.role = "target";
 
   const source = evidenceText(vehicle);
   if (vehicle.model_text && !source.includes(fold(vehicle.model_text)) && source.includes(fold(vehicle.literal ?? ""))) {
     vehicle.model_text = vehicle.literal;
     vehicle.version_text = null;
   }
+}
+
+const evidenceFor = message => ({ source_message_id: message.id, literal: message.text });
+
+function normalizeContextualSemantics(extraction, input) {
+  const current = input?.current_message;
+  const previous = input?.recent_conversation?.[0];
+  if (!current) return;
+  const text = fold(current.text);
+  const previousText = previous?.role === "assistant" ? fold(previous.text) : "";
+  const explicitTarget = /\b(quiero|busco|comprar|es la que quiero|me decidi por)\b/.test(text);
+  const explicitTradeNo = /\b(no|me la quedo|no la entrego)\b/.test(text);
+  const tradeQuestion = /\b(usado|auto|vehiculo|camioneta)\b[^?]*(entregar|parte de pago)|\b(entregar|parte de pago)\b/.test(previousText);
+  const ownershipQuestion = /\b(tenes|posees|contas con)\b[^?]*\b(auto|vehiculo|camioneta|usado)\b/.test(previousText) && !tradeQuestion;
+  const targetQuestion = /\b(que|cual)\b[^?]*\b(modelo|auto|vehiculo)\b[^?]*(buscas|queres|interesa)/.test(previousText);
+  const shortAnswer = text.split(/\s+/).length <= 8;
+  if (tradeQuestion && (shortAnswer || explicitTarget)) {
+    extraction.trade_in_intent = explicitTradeNo ? "no" : "yes";
+    extraction.evidence.trade_in_intent = [evidenceFor(current), evidenceFor(previous)];
+    for (const vehicle of extraction.vehicle_mentions) {
+      vehicle.role = explicitTarget ? "target" : "trade_in";
+      vehicle.certainty = explicitTarget ? "explicit" : "contextual";
+      vehicle.evidence = [evidenceFor(current), evidenceFor(previous)];
+    }
+    if (!explicitTarget) extraction.customer_corrections = extraction.customer_corrections.filter(item => item.field !== "target_model");
+  } else if (ownershipQuestion && shortAnswer) {
+    extraction.trade_in_intent = "not_present";
+    extraction.evidence.trade_in_intent = null;
+    for (const vehicle of extraction.vehicle_mentions) { vehicle.role = "owned_only"; vehicle.certainty = "contextual"; vehicle.evidence = [evidenceFor(current), evidenceFor(previous)]; }
+    extraction.customer_corrections = extraction.customer_corrections.filter(item => item.field !== "target_model");
+  } else if (targetQuestion && shortAnswer) {
+    for (const vehicle of extraction.vehicle_mentions) { vehicle.role = "target"; vehicle.certainty = "contextual"; vehicle.evidence = [evidenceFor(current), evidenceFor(previous)]; }
+  }
+}
+
+function normalizeQueryIntent(extraction, input) {
+  const current = input?.current_message;
+  if (!current) return;
+  const text = fold(current.text);
+  const price = /\b(precio|cuanto (?:sale|cuesta|vale)|que valor|cual es el valor|valor de)\b/.test(text);
+  const technical = /\b(motor|motorizacion|potencia|cilindrada|caja|transmision|automatic[ao]|manual|version|equipamiento|seguridad|airbags?|adas|consumo|carroceria|pick[ -]?up|suv|dimensiones|baul|capacidad de carga|traccion|llantas|multimedia)\b/.test(text);
+  const technicalQuestion = technical && (/\?/.test(text) || /^(?:¿)?(que|cual|es|tiene|trae)\b/.test(text));
+  const ambiguousInitial = /\b(suscrib\w*|entr(?:o|ar) al plan|arranc(?:o|ar) el plan|con cuanto (?:puedo )?entrar|necesito de entrada)\b/.test(text);
+  if (ambiguousInitial) {
+    extraction.query_intent = "ambiguous_initial_amount";
+    extraction.evidence.query_intent = [evidenceFor(current)];
+    if (!extraction.needs_clarification.some(item => item.code === "initial_amount_intent")) extraction.needs_clarification.push({ code: "initial_amount_intent", evidence: [evidenceFor(current)] });
+  } else if (technicalQuestion && !price) {
+    extraction.query_intent = "technical_question";
+    extraction.evidence.query_intent = [evidenceFor(current)];
+  } else if (price) {
+    extraction.query_intent = "model_value";
+    extraction.evidence.query_intent = [evidenceFor(current)];
+  } else if (extraction.query_intent === "model_value") {
+    extraction.query_intent = technicalQuestion ? "technical_question" : "general_information";
+    extraction.evidence.query_intent = [evidenceFor(current)];
+  }
+}
+
+function normalizeAlternatives(extraction, input) {
+  const text = fold(input?.current_message?.text ?? "");
+  if (extraction.vehicle_mentions.length < 2 || !/\b(o|entre)\b/.test(text)) return;
+  const alternatives = extraction.vehicle_mentions.filter(item => ["target", "target_candidate"].includes(item.role));
+  if (alternatives.length < 2) return;
+  alternatives.forEach(item => { item.role = "target_candidate"; });
+  if (!extraction.needs_clarification.some(item => ["multiple_target_models", "cross_brand_target"].includes(item.code))) extraction.needs_clarification.push({ code: "multiple_target_models", evidence: [evidenceFor(input.current_message)] });
 }
 
 function normalizeRequestedAction(extraction) {
@@ -51,7 +117,7 @@ function normalizeRequestedAction(extraction) {
   const matches = [
     ["deposit", /\b(sen(?:a|ar|arlo|arla)|reserv(?:ar|arlo|arla)|deposit(?:ar|o))\b/],
     ["transfer", /\b(transfer(?:ir|encia|irlo|irla)|transfiero)\b/],
-    ["documents", /\b(documentacion|documentos?|papeles?)\b.*\b(enviar|mandar|presentar|llevar)\b|\b(enviar|mandar|presentar)\b.*\b(documentacion|documentos?|papeles?)\b/],
+    ["documents", /\b(documentacion|documentos?|papeles?)\b.*\b(enviar|mand(?:ar|o)|presentar|llevar)\b|\b(enviar|mand(?:ar|o)|presentar)\b.*\b(documentacion|documentos?|papeles?)\b/],
     ["visit", /\b(ir|voy|puedo ir|visitar)\b[^.?!]*(verlo|verla|concesionari[oa]|local)|\bvisita\b/],
     ["advance_purchase", /\b(avanzar|seguir adelante)\b[^.?!]*\b(compra|operacion)\b/],
   ].filter(([, pattern]) => pattern.test(text));
@@ -75,15 +141,18 @@ function normalizeArgentineAmount(amount) {
   }
 }
 
-export function normalizeSemanticExtraction(candidate) {
+export function normalizeSemanticExtraction(candidate, input = null) {
   const normalized = emptySemanticExtraction();
   for (const key of allowed) if (Object.prototype.hasOwnProperty.call(candidate, key)) normalized[key] = structuredClone(candidate[key]);
   const ignored = Object.keys(candidate).filter(key => !allowed.has(key));
   const forbidden = ignored.filter(key => FORBIDDEN_EFFECT_FIELDS.includes(key));
 
   // Queries are not purchase declarations, regardless of a provider proposal.
-  if (["installment_offer", "model_value", "delivery_advance", "subscription_amount", "ambiguous_initial_amount", "technical_question"].includes(normalized.query_intent) && normalized.purchase_mode_literal == null) normalized.purchase_mode_statement = "not_present";
+  normalizeQueryIntent(normalized, input);
+  if (["installment_offer", "model_value", "delivery_advance", "ambiguous_initial_amount", "technical_question"].includes(normalized.query_intent) && normalized.purchase_mode_literal == null) normalized.purchase_mode_statement = "not_present";
   normalized.vehicle_mentions.forEach(normalizeVehicle);
+  normalizeContextualSemantics(normalized, input);
+  normalizeAlternatives(normalized, input);
   for (const amount of normalized.amount_mentions) {
     const conflictingKind = normalizeAmountKind(amount);
     normalizeArgentineAmount(amount);

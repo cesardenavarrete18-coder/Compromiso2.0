@@ -11,9 +11,6 @@ function numericValue(value) {
 }
 
 export function resolvePlanFact({ targetModelId, campaigns = [], factType }) {
-  if (factType === "subscription_amount") {
-    return Object.freeze({ fact_type: factType, status: "requires_commercial_confirmation", value: null, source_campaign_id: null, source_field: null });
-  }
   const sourceField = PLAN_FACT_FIELDS[factType];
   if (!sourceField) throw new TypeError(`UNSUPPORTED_PLAN_FACT_TYPE:${factType}`);
   const candidates = campaigns.flatMap(campaign => {

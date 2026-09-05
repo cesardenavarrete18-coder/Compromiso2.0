@@ -23,7 +23,7 @@ export async function extractSemanticMessage({ client, ...input }) {
     const rawValidation = validateSemanticExtraction(candidate, providerInput, { validateEvidenceFields: false });
     if (!rawValidation.valid) return Object.freeze({ status: "extraction_failed", extraction: null, errors: rawValidation.errors, forbidden_effect_fields: rawValidation.forbidden_effect_fields });
     const sanitized = sanitizeSemanticEvidence(candidate, providerInput);
-    const normalized = normalizeSemanticExtraction(sanitized.extraction);
+    const normalized = normalizeSemanticExtraction(sanitized.extraction, providerInput);
     const validation = validateSemanticExtraction(normalized.extraction, providerInput);
     if (!validation.valid) return Object.freeze({ status: "extraction_failed", extraction: null, errors: validation.errors, forbidden_effect_fields: validation.forbidden_effect_fields });
     return Object.freeze({ status: "ok", extraction: normalized.extraction, ignored_fields: normalized.ignored_fields, warnings: sanitized.warnings });

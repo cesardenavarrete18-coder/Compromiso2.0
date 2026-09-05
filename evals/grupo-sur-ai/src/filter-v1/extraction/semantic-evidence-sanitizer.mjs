@@ -4,7 +4,7 @@ import { validateEvidence } from "./semantic-extraction-validator.mjs";
 const present = value => value !== null && value !== undefined && value !== false && (!Array.isArray(value) || value.length > 0);
 const fold = value => value.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
 const signalGuards = {
-  human_request: text => /\b(hablar|habla|pasame|pasar?me|necesito hablar|consultar|verificar(?:lo|la)?)\b[^.?!]*(asesor|vendedor|persona|alguien)(\b|$)/.test(text) || /\b(llam(?:e|en|arme)|contact(?:e|en|arme))\b[^.?!]*(asesor|vendedor|persona|alguien)\b|\b(asesor|vendedor|persona|alguien)\b[^.?!]*\b(llam(?:e|en|arme)|contact(?:e|en|arme))\b/.test(text),
+  human_request: text => /\b(hablar|habla|pasame|pasar?me|necesito hablar|comunicarme)\b[^.?!]*(asesor|vendedor|persona|alguien)(\b|$)/.test(text) || /\b(llam(?:e|en|arme)|contact(?:e|en|arme))\b[^.?!]*(asesor|vendedor|persona|alguien)\b|\b(asesor|vendedor|persona|alguien)\b[^.?!]*\b(llam(?:e|en|arme)|contact(?:e|en|arme))\b/.test(text),
   strong_action: text => /\b(ir a verl[oa]|voy a ir|transferir|transfiero|senarl[oa]|senar|depositar|enviar? los papeles|papeles listos|quiero avanzar)\b/.test(text),
   do_not_contact: text => /\b(no me (escriban|contacten|llamen)(?: mas)?|no quiero (?:que me (?:llamen|escriban|contacten)|recibir mensajes)|dej(?:en|a) de (?:llamarme|escribirme|contactarme)|borrenme|borrame)\b/.test(text),
 };
