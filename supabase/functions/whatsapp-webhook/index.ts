@@ -80,7 +80,7 @@ const advertisedVehicles = [
   ["volkswagen tera", "Volkswagen Tera"],
   ["volkswagen nivus", "Volkswagen Nivus"],
   ["volkswagen virtus", "Volkswagen Virtus"],
-  ["volkswagen polo", "Volkswagen Polo Robust"],
+  ["volkswagen polo", "Volkswagen Polo"],
   ["fiat cronos", "Fiat Cronos"],
   ["fiat mobi", "Fiat Mobi"],
   ["fiat strada", "Fiat Strada"],
