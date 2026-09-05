@@ -1,0 +1,109 @@
+{
+  "prompt_version": "filter-v1-semantic-extractor/1.1",
+  "prompt_sha256": "482fe8afc1e74d88dcb9a05b4dd024bdf502be67843a1f78803aa35801b0b7f2",
+  "schema_sha256": "8a2f6b8e420c63e8d4270df5a532f5892b80b270d0dbd0356bbf73edefedcac6",
+  "dataset_sha256": "af497d6dabf6aac6a6e6f5bb73d66aef83dc396b4de57944042a5a7fb23ff542",
+  "model": "gpt-4.1-mini-2025-04-14",
+  "total_cases": 20,
+  "schema_valid_rate": 1,
+  "extraction_success_rate": 1,
+  "field_precision": 0.5,
+  "field_recall": 0.7333333333333333,
+  "field_f1": 0.5945945945945945,
+  "exact_case_match_rate": 0.25,
+  "critical_case_pass_rate": 0.25,
+  "critical_violations": [
+    "FVS-001",
+    "FVS-006",
+    "FVS-011",
+    "FVS-015",
+    "FVS-038",
+    "FVS-051",
+    "FVS-067",
+    "FVS-069",
+    "FVS-072",
+    "FVS-077",
+    "FVS-081",
+    "FVS-098"
+  ],
+  "evidence_valid_rate": 1,
+  "correct_abstention_rate": 0.3333333333333333,
+  "false_inference_rate": 0.75,
+  "forbidden_effect_rate": 0,
+  "average_latency_ms": 4442.647545849999,
+  "total_retries": 0,
+  "usage": {
+    "input_tokens": 37807,
+    "output_tokens": 4750
+  },
+  "category_breakdown": {
+    "query_intent": {
+      "total": 2,
+      "exact_match_rate": 0
+    },
+    "amounts": {
+      "total": 6,
+      "exact_match_rate": 0.16666666666666666
+    },
+    "vehicle_roles": {
+      "total": 3,
+      "exact_match_rate": 0.3333333333333333
+    },
+    "trade_in": {
+      "total": 2,
+      "exact_match_rate": 1
+    },
+    "human_request": {
+      "total": 1,
+      "exact_match_rate": 1
+    },
+    "strong_action": {
+      "total": 2,
+      "exact_match_rate": 0
+    },
+    "contact_timing": {
+      "total": 1,
+      "exact_match_rate": 0
+    },
+    "DNC": {
+      "total": 1,
+      "exact_match_rate": 0
+    },
+    "corrections": {
+      "total": 1,
+      "exact_match_rate": 0
+    },
+    "prompt_injection": {
+      "total": 1,
+      "exact_match_rate": 0
+    }
+  },
+  "field_evidence_warnings": 5,
+  "false_inference_ids": [
+    "FVS-001",
+    "FVS-006",
+    "FVS-011",
+    "FVS-015",
+    "FVS-034",
+    "FVS-035",
+    "FVS-038",
+    "FVS-043",
+    "FVS-051",
+    "FVS-067",
+    "FVS-069",
+    "FVS-072",
+    "FVS-077",
+    "FVS-081",
+    "FVS-098"
+  ],
+  "passes_gates": false,
+  "run_at": "2026-09-04T14:13:35.658Z",
+  "api_config": {
+    "endpoint": "responses",
+    "store": false,
+    "tools": false,
+    "reasoning_parameter": false,
+    "max_output_tokens": 3000
+  },
+  "dataset_cases": 20
+}

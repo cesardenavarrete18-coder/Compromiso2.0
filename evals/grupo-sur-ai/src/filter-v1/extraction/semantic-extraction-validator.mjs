@@ -16,14 +16,12 @@ export function validateEvidence(evidence, messages) {
   const entries = Array.isArray(evidence) ? evidence : evidence ? [evidence] : [];
   if (!entries.length) return false;
   return entries.every(item => {
-    const message = messages.find(candidate => candidate.id === item?.message_id);
-    if (!message || typeof item.text !== "string" || !message.text.includes(item.text)) return false;
-    if (item.start == null && item.end == null) return true;
-    return Number.isInteger(item.start) && Number.isInteger(item.end) && item.start >= 0 && item.end >= item.start && message.text.slice(item.start, item.end) === item.text;
+    const message = messages.find(candidate => candidate.id === item?.source_message_id);
+    return Boolean(message && typeof item.literal === "string" && item.literal.length > 0 && message.text.includes(item.literal));
   });
 }
 
-export function validateSemanticExtraction(candidate, extractorInput) {
+export function validateSemanticExtraction(candidate, extractorInput, { validateEvidenceFields = true } = {}) {
   const errors = [];
   if (!candidate || typeof candidate !== "object" || Array.isArray(candidate)) return { valid: false, errors: ["OUTPUT_MUST_BE_OBJECT"], forbidden_effect_fields: [] };
   const forbidden = collectForbidden(candidate);
@@ -32,6 +30,8 @@ export function validateSemanticExtraction(candidate, extractorInput) {
   if (!SEMANTIC_QUERY_INTENTS.includes(candidate.query_intent)) errors.push("INVALID_QUERY_INTENT");
   if (!PURCHASE_MODE_STATEMENTS.includes(candidate.purchase_mode_statement)) errors.push("INVALID_PURCHASE_MODE_STATEMENT");
   if (!TRADE_IN_INTENTS.includes(candidate.trade_in_intent)) errors.push("INVALID_TRADE_IN_INTENT");
+  for (const [key, type] of [["human_request", "human_request"], ["strong_action", "strong_action"], ["do_not_contact", "do_not_contact"]])
+    if (candidate[key] !== null && (typeof candidate[key] !== "object" || candidate[key]?.type !== type)) errors.push("INVALID_EXCEPTIONAL_SIGNAL");
   if (!Array.isArray(candidate.amount_mentions) || !Array.isArray(candidate.vehicle_mentions) || !Array.isArray(candidate.customer_corrections) || !Array.isArray(candidate.needs_clarification)) errors.push("INVALID_COLLECTIONS");
   for (const amount of candidate.amount_mentions ?? []) {
     if (!AMOUNT_KINDS.includes(amount.kind) || !SEMANTIC_CERTAINTIES.includes(amount.certainty)) errors.push("INVALID_AMOUNT_MENTION");
@@ -40,6 +40,7 @@ export function validateSemanticExtraction(candidate, extractorInput) {
   for (const vehicle of candidate.vehicle_mentions ?? []) if (!VEHICLE_ROLES.includes(vehicle.role) || !SEMANTIC_CERTAINTIES.includes(vehicle.certainty)) errors.push("INVALID_VEHICLE_MENTION");
   if (candidate.requested_action && (!ACTION_TYPES.includes(candidate.requested_action.type) || !SEMANTIC_CERTAINTIES.includes(candidate.requested_action.certainty))) errors.push("INVALID_REQUESTED_ACTION");
   for (const clarification of candidate.needs_clarification ?? []) if (!CLARIFICATION_CODES.includes(clarification.code)) errors.push("INVALID_CLARIFICATION_CODE");
+  if (!validateEvidenceFields) return Object.freeze({ valid: errors.length === 0, errors: [...new Set(errors)], forbidden_effect_fields: forbidden });
   const messages = [extractorInput.current_message, ...(extractorInput.recent_conversation ?? [])].filter(Boolean);
   for (const item of [...(candidate.amount_mentions ?? []), ...(candidate.vehicle_mentions ?? []), ...(candidate.customer_corrections ?? []), ...(candidate.needs_clarification ?? []), candidate.requested_action, candidate.contact_preference_expression, candidate.customer_name, candidate.customer_location].filter(material)) {
     if (!validateEvidence(item.evidence, messages)) errors.push("INVALID_OR_MISSING_EVIDENCE");
@@ -50,10 +51,9 @@ export function validateSemanticExtraction(candidate, extractorInput) {
     candidate.query_intent !== "none" && "query_intent",
     candidate.purchase_mode_statement !== "not_present" && "purchase_mode_statement",
     candidate.trade_in_intent !== "not_present" && "trade_in_intent",
-    candidate.human_request && "human_request",
-    candidate.strong_action && "strong_action",
-    candidate.do_not_contact && "do_not_contact",
   ].filter(Boolean);
   for (const key of materialSignals) if (!validateEvidence(signalEvidence[key], messages)) errors.push("INVALID_OR_MISSING_EVIDENCE");
+  for (const key of ["human_request", "strong_action", "do_not_contact"])
+    if (candidate[key] !== null && !validateEvidence(candidate[key]?.evidence, messages)) errors.push("INVALID_OR_MISSING_EVIDENCE");
   return Object.freeze({ valid: errors.length === 0, errors: [...new Set(errors)], forbidden_effect_fields: forbidden });
 }

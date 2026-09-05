@@ -1,0 +1,86 @@
+{
+  "prompt_version": "filter-v1-semantic-extractor/1.2",
+  "prompt_sha256": "5cb6b4d554c835810eff45eae37423d9e15099da72ae25b797d7c923518481c8",
+  "schema_sha256": "f39155ef16fc9abb63d038c7b8cfd6167a1af164907650058770ccb62560923b",
+  "dataset_sha256": "af497d6dabf6aac6a6e6f5bb73d66aef83dc396b4de57944042a5a7fb23ff542",
+  "model": "gpt-4.1-mini-2025-04-14",
+  "total_cases": 20,
+  "schema_valid_rate": 1,
+  "extraction_success_rate": 1,
+  "field_precision": 0.8913043478260869,
+  "field_recall": 0.9111111111111111,
+  "field_f1": 0.9010989010989011,
+  "exact_case_match_rate": 0.75,
+  "critical_case_pass_rate": 0.8125,
+  "critical_violations": [
+    "FVS-038",
+    "FVS-069",
+    "FVS-072"
+  ],
+  "evidence_valid_rate": 1,
+  "correct_abstention_rate": 1,
+  "false_inference_rate": 0.05,
+  "forbidden_effect_rate": 0,
+  "average_latency_ms": 3908.9008595000005,
+  "total_retries": 0,
+  "usage": {
+    "input_tokens": 44387,
+    "output_tokens": 4048
+  },
+  "category_breakdown": {
+    "query_intent": {
+      "total": 2,
+      "exact_match_rate": 1
+    },
+    "amounts": {
+      "total": 6,
+      "exact_match_rate": 0.5
+    },
+    "vehicle_roles": {
+      "total": 3,
+      "exact_match_rate": 1
+    },
+    "trade_in": {
+      "total": 2,
+      "exact_match_rate": 1
+    },
+    "human_request": {
+      "total": 1,
+      "exact_match_rate": 1
+    },
+    "strong_action": {
+      "total": 2,
+      "exact_match_rate": 0.5
+    },
+    "contact_timing": {
+      "total": 1,
+      "exact_match_rate": 0
+    },
+    "DNC": {
+      "total": 1,
+      "exact_match_rate": 1
+    },
+    "corrections": {
+      "total": 1,
+      "exact_match_rate": 1
+    },
+    "prompt_injection": {
+      "total": 1,
+      "exact_match_rate": 1
+    }
+  },
+  "field_evidence_warnings": 0,
+  "false_inference_ids": [
+    "FVS-038"
+  ],
+  "passes_gates": false,
+  "run_at": "2026-09-04T15:11:06.210Z",
+  "api_config": {
+    "endpoint": "responses",
+    "store": false,
+    "tools": false,
+    "reasoning_parameter": false,
+    "max_output_tokens": 3000
+  },
+  "dataset_cases": 20
+}
