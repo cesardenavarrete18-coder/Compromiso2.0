@@ -1,0 +1,253 @@
+{
+  "run_id": "filter-v1.3-final-100-20260905-397fc48",
+  "semantic_failures": [
+    {
+      "case_id": "FVS-016",
+      "input": "con cuanto lo saco",
+      "expected": {
+        "query_intent": "delivery_advance"
+      },
+      "actual": {
+        "query_intent": [
+          "ambiguous_initial_amount"
+        ]
+      },
+      "cause": "Extractor abstained on colloquial delivery wording.",
+      "downstream_effect": "Safe initial-amount clarification; no commercial fact materialized.",
+      "classification": "PRODUCT_QUALITY_FAILURE"
+    },
+    {
+      "case_id": "FVS-018",
+      "input": "cuanto pongo para sacar el auto",
+      "expected": {
+        "query_intent": "delivery_advance"
+      },
+      "actual": {
+        "query_intent": [
+          "ambiguous_initial_amount"
+        ]
+      },
+      "cause": "Extractor abstained on colloquial delivery wording.",
+      "downstream_effect": "Safe initial-amount clarification; no commercial fact materialized.",
+      "classification": "PRODUCT_QUALITY_FAILURE"
+    },
+    {
+      "case_id": "FVS-024",
+      "input": "Quiero entrar en un plan.",
+      "expected": {
+        "purchase_mode_statement": "financed"
+      },
+      "actual": {
+        "purchase_mode_statement": [
+          "not_present"
+        ]
+      },
+      "cause": "Financing declaration was not emitted.",
+      "downstream_effect": "No false purchase mode; qualification may require another question.",
+      "classification": "SAFE_OMISSION"
+    },
+    {
+      "case_id": "FVS-032",
+      "input": "tengo diez palos para poner",
+      "expected": {
+        "amount_mentions.kind": "down_payment_capacity",
+        "amount_mentions.numeric_value": 10000000
+      },
+      "actual": {
+        "amount_mentions.kind": [
+          "unknown_amount"
+        ],
+        "amount_mentions.numeric_value": [
+          null
+        ]
+      },
+      "cause": "Amount type and scale were withheld.",
+      "downstream_effect": "Unknown/null amount is discarded by the adapter.",
+      "classification": "SAFE_OMISSION"
+    },
+    {
+      "case_id": "FVS-038",
+      "input": "Tengo 5.000 para entrar.",
+      "expected": {
+        "needs_clarification.code": "amount_scale_or_currency"
+      },
+      "actual": {
+        "needs_clarification.code": [
+          "initial_amount_intent"
+        ]
+      },
+      "cause": "Clarification asks amount purpose instead of scale/currency.",
+      "downstream_effect": "Safe clarification wording issue; numeric value remains null.",
+      "classification": "PRODUCT_QUALITY_FAILURE"
+    },
+    {
+      "case_id": "FVS-039",
+      "input": "cuento con 7.500",
+      "expected": {
+        "needs_clarification.code": "amount_scale_or_currency"
+      },
+      "actual": {
+        "needs_clarification.code": [
+          "initial_amount_intent"
+        ]
+      },
+      "cause": "Clarification asks amount purpose instead of scale/currency.",
+      "downstream_effect": "Safe clarification wording issue; numeric value remains null.",
+      "classification": "PRODUCT_QUALITY_FAILURE"
+    },
+    {
+      "case_id": "FVS-041",
+      "input": "$10 millones",
+      "expected": {
+        "amount_mentions.kind": "down_payment_capacity",
+        "amount_mentions.certainty": "contextual"
+      },
+      "actual": {
+        "amount_mentions.kind": [
+          "unknown_amount"
+        ],
+        "amount_mentions.certainty": [
+          "explicit"
+        ]
+      },
+      "cause": "Context from the prior down-payment question was not carried into the amount mention.",
+      "downstream_effect": "Unknown amount kind is not persisted as economic capacity.",
+      "classification": "SAFE_OMISSION"
+    },
+    {
+      "case_id": "FVS-042",
+      "input": "500 lucas",
+      "expected": {
+        "amount_mentions.kind": "monthly_installment_capacity",
+        "amount_mentions.certainty": "contextual"
+      },
+      "actual": {
+        "amount_mentions.kind": [
+          "unknown_amount"
+        ],
+        "amount_mentions.certainty": [
+          "explicit"
+        ]
+      },
+      "cause": "Context from the prior monthly-payment question was not carried into the amount mention.",
+      "downstream_effect": "Unknown amount kind is not persisted as economic capacity.",
+      "classification": "SAFE_OMISSION"
+    },
+    {
+      "case_id": "FVS-062",
+      "input": "No sé qué versión es.",
+      "expected": {
+        "trade_in_vehicle.version.status": "explicitly_unknown"
+      },
+      "actual": {
+        "trade_in_vehicle.version.status": []
+      },
+      "cause": "The requested explicitly-unknown trade-in version was omitted; contextual normalization also interpreted “No sé” as trade_in_intent=no.",
+      "downstream_effect": "May persist has_trade_in=no and loses explicitly-unknown version; it does not corrupt target, money, action, DNC, or technical routing.",
+      "classification": "PRODUCT_OPERATIONAL_FAILURE"
+    },
+    {
+      "case_id": "FVS-069",
+      "input": "¿Dónde transfiero?",
+      "expected": {
+        "strong_action": true,
+        "requested_action.type": "transfer",
+        "requested_action.time_expression": null
+      },
+      "actual": {
+        "strong_action": [
+          null
+        ],
+        "requested_action.type": [],
+        "requested_action.time_expression": []
+      },
+      "cause": "Explicit transfer request was omitted.",
+      "downstream_effect": "No requested or strong action is created; transfer flow is delayed.",
+      "classification": "SAFE_OMISSION"
+    },
+    {
+      "case_id": "FVS-083",
+      "input": "No, son dólares.",
+      "expected": {
+        "customer_corrections.field": "amount_currency",
+        "customer_corrections.to_literal": "dólares"
+      },
+      "actual": {
+        "customer_corrections.field": [],
+        "customer_corrections.to_literal": []
+      },
+      "cause": "Currency correction metadata was omitted.",
+      "downstream_effect": "No numeric economic capacity is materialized; correction history is lost.",
+      "classification": "SAFE_OMISSION"
+    },
+    {
+      "case_id": "FVS-095",
+      "input": "Hola.",
+      "expected": {
+        "query_intent": "general_information"
+      },
+      "actual": {
+        "query_intent": [
+          "none"
+        ]
+      },
+      "cause": "Greeting was left with query_intent=none.",
+      "downstream_effect": "Conversation-quality loss only; no positive commercial state.",
+      "classification": "PRODUCT_QUALITY_FAILURE"
+    },
+    {
+      "case_id": "FVS-097",
+      "input": "Buenas, vi un anuncio.",
+      "expected": {
+        "query_intent": "general_information"
+      },
+      "actual": {
+        "query_intent": [
+          "none"
+        ]
+      },
+      "cause": "Initial ad-interest message was left with query_intent=none.",
+      "downstream_effect": "Conversation-quality loss only; no positive commercial state.",
+      "classification": "PRODUCT_QUALITY_FAILURE"
+    }
+  ],
+  "PRODUCT_CRITICAL_COUNT": 0,
+  "PRODUCT_CRITICAL_IDS": [],
+  "PRODUCT_OPERATIONAL_FAILURE_COUNT": 1,
+  "PRODUCT_OPERATIONAL_FAILURE_IDS": [
+    "FVS-062"
+  ],
+  "PRODUCT_QUALITY_FAILURE_COUNT": 6,
+  "PRODUCT_QUALITY_FAILURE_IDS": [
+    "FVS-016",
+    "FVS-018",
+    "FVS-038",
+    "FVS-039",
+    "FVS-095",
+    "FVS-097"
+  ],
+  "SAFE_OMISSION_COUNT": 6,
+  "SAFE_OMISSION_IDS": [
+    "FVS-024",
+    "FVS-032",
+    "FVS-041",
+    "FVS-042",
+    "FVS-069",
+    "FVS-083"
+  ],
+  "EVALUATOR_ONLY_COUNT": 0,
+  "EVALUATOR_ONLY_IDS": [],
+  "MONEY_CORRUPTION_COUNT": 0,
+  "MONEY_CORRUPTION_IDS": [],
+  "CANONICAL_TARGET_CORRUPTION_COUNT": 0,
+  "CANONICAL_TARGET_CORRUPTION_IDS": [],
+  "REQUESTED_ACTION_CORRUPTION_COUNT": 0,
+  "REQUESTED_ACTION_CORRUPTION_IDS": [],
+  "DNC_FAILURE_COUNT": 0,
+  "DNC_FAILURE_IDS": [],
+  "TECHNICAL_TO_PRICE_CORRUPTION_COUNT": 0,
+  "TECHNICAL_TO_PRICE_CORRUPTION_IDS": [],
+  "SUBSCRIPTION_AMOUNT_OUTPUT_COUNT": 0,
+  "MULTI_MODEL_PERSISTENCE_COUNT": 0,
+  "PRODUCT_READINESS": "LIMITED_GO"
+}

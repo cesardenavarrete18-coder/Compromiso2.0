@@ -1,0 +1,119 @@
+{
+  "prompt_version": "filter-v1-semantic-extractor/1.3",
+  "prompt_sha256": "c7f28b37114c879d90defd720cc4de9d81edccd0bfeefef8d4063ebde281fbb9",
+  "schema_sha256": "f9b17a55983a54130c16b0fb8197f5c500f3bb7cc8b15b78108199347711b7b7",
+  "dataset_sha256": "4dce8e2ecbed1db742b2ec0bfd92ece9e97b9731c5b0427a753375fe43ec0c3b",
+  "model": "gpt-4.1-mini-2025-04-14",
+  "total_cases": 100,
+  "schema_valid_rate": 1,
+  "extraction_success_rate": 1,
+  "field_precision": 0.8629441624365483,
+  "field_recall": 0.8994708994708994,
+  "field_f1": 0.8808290155440415,
+  "exact_case_match_rate": 0.87,
+  "critical_case_pass_rate": 0.9655172413793104,
+  "critical_violations": [
+    "FVS-016",
+    "FVS-018"
+  ],
+  "evidence_valid_rate": 1,
+  "correct_abstention_rate": 0.8,
+  "raw_false_inference_rate": 0.14,
+  "unsafe_false_inference_rate": 0.08,
+  "forbidden_effect_rate": 0,
+  "average_latency_ms": 2747.970484200001,
+  "total_retries": 0,
+  "usage": {
+    "input_tokens": 246983,
+    "output_tokens": 19378
+  },
+  "category_breakdown": {
+    "query_intent": {
+      "total": 17,
+      "exact_match_rate": 0.8823529411764706
+    },
+    "amounts": {
+      "total": 23,
+      "exact_match_rate": 0.6956521739130435
+    },
+    "purchase_mode": {
+      "total": 9,
+      "exact_match_rate": 0.8888888888888888
+    },
+    "vehicle_roles": {
+      "total": 9,
+      "exact_match_rate": 1
+    },
+    "trade_in": {
+      "total": 11,
+      "exact_match_rate": 0.9090909090909091
+    },
+    "human_request": {
+      "total": 4,
+      "exact_match_rate": 1
+    },
+    "strong_action": {
+      "total": 5,
+      "exact_match_rate": 0.8
+    },
+    "contact_timing": {
+      "total": 5,
+      "exact_match_rate": 1
+    },
+    "DNC": {
+      "total": 4,
+      "exact_match_rate": 1
+    },
+    "corrections": {
+      "total": 3,
+      "exact_match_rate": 0.6666666666666666
+    },
+    "acquisition": {
+      "total": 2,
+      "exact_match_rate": 1
+    },
+    "optional_fields": {
+      "total": 5,
+      "exact_match_rate": 1
+    },
+    "prompt_injection": {
+      "total": 3,
+      "exact_match_rate": 1
+    }
+  },
+  "field_evidence_warnings": 1,
+  "raw_false_inference_ids": [
+    "FVS-016",
+    "FVS-018",
+    "FVS-024",
+    "FVS-032",
+    "FVS-038",
+    "FVS-039",
+    "FVS-040",
+    "FVS-041",
+    "FVS-042",
+    "FVS-060",
+    "FVS-061",
+    "FVS-071",
+    "FVS-095",
+    "FVS-097"
+  ],
+  "unsafe_false_inference_ids": [
+    "FVS-016",
+    "FVS-018",
+    "FVS-024",
+    "FVS-032",
+    "FVS-041",
+    "FVS-042",
+    "FVS-095",
+    "FVS-097"
+  ],
+  "passes_gates": false,
+  "run_id": "filter-v1.3-final-100-20260905-397fc48",
+  "schema_version": "filter-v1-semantic-extractor/1.3",
+  "dataset_version": "filter-v1-semantic-online-v0.2",
+  "started_at": "2026-09-05T03:04:17.586Z",
+  "completed_at": "2026-09-05T03:08:52.481Z",
+  "total_llm_calls": 100,
+  "semantic_retries": 0
+}
