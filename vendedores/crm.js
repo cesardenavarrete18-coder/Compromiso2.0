@@ -5,7 +5,8 @@
 
   var supabaseClient = window.grupoSurSupabaseClient;
   var agendaModel = window.grupoSurAgendaModel;
-  if (!supabaseClient || !agendaModel) return;
+  var transitionModel = window.grupoSurCRMTransitions;
+  if (!supabaseClient || !agendaModel || !transitionModel) return;
 
   var STAGES = [
     { value: "nuevo", label: "Nuevo" },
@@ -48,6 +49,19 @@
   function crmOf(lead) {
     if (!lead || !lead.crm) return { status: "nuevo", priority: lead && lead.priority || "normal", sale_confirmation_status: "none" };
     return Array.isArray(lead.crm) ? lead.crm[0] || {} : lead.crm;
+  }
+
+  function originLabel(lead) {
+    var attribution = attributionOf(lead);
+    if (lead.source_channel === "manual") return "Carga manual" + (lead.source_detail ? " · " + lead.source_detail : "");
+    if (lead.source_channel === "tiktok") return "TikTok";
+    if (lead.source_detail === "meta_ads") return "Meta Ads" + (attribution && (attribution.campaign_name || attribution.ad_name) ? " · " + (attribution.campaign_name || attribution.ad_name) : "");
+    return lead.source_detail || lead.source_channel || "Sin origen";
+  }
+
+  function daysSince(since) {
+    if (!since) return "Sin registro";
+    return Math.max(0, Math.floor((Date.now() - new Date(since).getTime()) / 86400000)) + " días";
   }
 
   function attributionOf(lead) {
@@ -421,6 +435,15 @@
       var actor = Array.isArray(item.actor) ? item.actor[0] : item.actor;
       return '<article class="timeline-item"><strong>' + escapeHtml(item.title) + '</strong>' + (item.detail ? '<span>' + escapeHtml(item.detail) + '</span>' : '') + '<small>' + escapeHtml(formatDate(item.created_at, true) + ' · ' + (actor && actor.full_name || "Sistema")) + '</small></article>';
     }).join("");
+    if (!result.error && state.activeLead && state.activeLead.id === leadId) {
+      var currentStatus = crmOf(state.activeLead).status || "nuevo";
+      var entry = (result.data || []).find(function (item) {
+        return item.metadata && Object.prototype.hasOwnProperty.call(item.metadata, "previous_status") && item.metadata.status === currentStatus && item.metadata.previous_status !== currentStatus;
+      });
+      var since = entry && entry.created_at || (currentStatus === "nuevo" ? state.activeLead.assigned_at || state.activeLead.created_at : null);
+      var stageAge = document.querySelector('[data-workspace-context="stage-age"] strong');
+      if (stageAge) stageAge.textContent = daysSince(since);
+    }
   }
 
   async function loadChat(leadId) {
@@ -490,17 +513,93 @@
     }).join("") || '<div class="agenda-empty">No hay consultas anteriores.</div>';
   }
 
+  function renderWorkspaceContext(lead, crm) {
+    var manual = manualNextAction(lead);
+    document.getElementById("crmWorkspaceContext").innerHTML = [
+      ["Modelo / versión", lead.model_interest || "A definir"],
+      ["Origen", originLabel(lead)],
+      ["Días en etapa", "Calculando…", "stage-age"],
+      ["Última interacción", crm.last_contact_at ? formatDate(crm.last_contact_at) : lead.last_message_at ? formatDate(lead.last_message_at) : "Sin registro"],
+      ["Próxima acción", manual ? formatDate(manual.at) + " · " + manual.note : crm.status === "nuevo" ? "Realizar primer contacto" : "Requiere definición"]
+    ].map(function (item) {
+      return '<div' + (item[2] ? ' data-workspace-context="' + item[2] + '"' : '') + '><span>' + escapeHtml(item[0]) + '</span><strong>' + escapeHtml(item[1]) + '</strong></div>';
+    }).join("");
+  }
+
+  function transitionButtons(statuses) {
+    return statuses.map(function (status) {
+      return '<button type="button" data-crm-transition="' + escapeHtml(status) + '">' + escapeHtml(transitionModel.labels[status]) + '</button>';
+    }).join("");
+  }
+
+  function renderTransitionPicker(fromStatus) {
+    var picker = document.getElementById("crmTransitionPicker");
+    picker.hidden = fromStatus === "nuevo" || fromStatus === "venta";
+    document.getElementById("crmTransitionOptions").innerHTML = transitionButtons(transitionModel.allowedFrom(fromStatus));
+  }
+
+  function selectWorkspaceTransition(status) {
+    if (!state.activeLead) return;
+    var current = crmOf(state.activeLead).status || "nuevo";
+    var errorBox = current === "nuevo" ? document.getElementById("crmNewError") : document.getElementById("crmFormError");
+    errorBox.textContent = "";
+    try { transitionModel.assertTransition(current, status); }
+    catch (error) { errorBox.textContent = error.message; return; }
+    document.getElementById("crmStatusInput").value = status;
+    document.querySelectorAll("[data-crm-transition]").forEach(function (button) {
+      button.classList.toggle("is-selected", button.dataset.crmTransition === status);
+    });
+    document.getElementById("crmLeadDialog").classList.add("is-editing-outcome");
+    updateConditionalFields();
+    var note = document.getElementById("crmNoteInput");
+    if (note) note.focus({ preventScroll: true });
+  }
+
+  function renderNewExperience() {
+    var panel = document.getElementById("crmNewExperience");
+    panel.hidden = false;
+    document.getElementById("crmNewOutcomes").hidden = true;
+    document.getElementById("crmNewOutcomes").innerHTML = "";
+    document.getElementById("crmNewError").textContent = "";
+  }
+
+  async function registerNewNoAnswer() {
+    var errorBox = document.getElementById("crmNewError");
+    var pending = nextPendingTask(state.activeLead.id);
+    errorBox.textContent = "";
+    if (!pending) {
+      var restarted = await supabaseClient.rpc("restart_lead_contact_sequence", { p_lead_id: state.activeLead.id });
+      if (restarted.error) { errorBox.textContent = restarted.error.message; return; }
+      await loadLeads(true);
+      pending = nextPendingTask(state.activeLead.id);
+    }
+    if (!pending) { errorBox.textContent = "No se pudo iniciar el protocolo de contacto."; return; }
+    await completeContactTask(pending.id, "no_answer");
+  }
+
   async function openLead(leadId) {
     var lead = state.leads.find(function (item) { return item.id === leadId; });
     if (!lead) return;
     state.activeLead = lead;
     var crm = crmOf(lead);
+    var isNew = crm.status === "nuevo";
+    var isManagement = crm.status === "en_proceso";
+    leadDialog.classList.toggle("crm-v2-workspace", isNew || isManagement);
+    leadDialog.classList.toggle("is-new", isNew);
+    leadDialog.classList.toggle("is-management", isManagement);
+    leadDialog.classList.remove("is-editing-outcome");
+    document.getElementById("crmNewExperience").hidden = !isNew;
+    renderTransitionPicker(crm.status);
+    if (isNew) renderNewExperience();
+    if (window.grupoSurEnGestionExperience) window.grupoSurEnGestionExperience.openLead(lead);
     document.getElementById("crmLeadName").textContent = lead.customer_name || "Cliente sin nombre";
     var phoneDigits = String(lead.customer_phone || "").replace(/\D/g, "");
     document.getElementById("crmLeadMeta").innerHTML = '<a class="crm-lead-phone" href="tel:+' + phoneDigits + '">+' + escapeHtml(lead.customer_phone) + '</a><span>Ingresó ' + escapeHtml(formatDate(lead.created_at)) + '</span>';
     document.getElementById("crmLeadStage").textContent = stageLabel(crm.status);
+    renderWorkspaceContext(lead, crm);
     document.getElementById("crmClientSummary").innerHTML = '<strong>' + escapeHtml(lead.intent_summary || "Sin resumen comercial") + '</strong><p>' + escapeHtml(crm.status_reason || "") + '</p><div class="tags"><span>' + escapeHtml(lead.model_interest || "Modelo a definir") + '</span><span>' + escapeHtml(lead.qualification_status === "qualified" ? "Calificado por IA" : "Seguimiento") + '</span><span>' + escapeHtml(crm.priority === "high" ? "Prioridad alta" : crm.priority === "low" ? "Prioridad baja" : "Prioridad normal") + '</span></div>';
     document.getElementById("crmCallLink").href = "tel:+" + String(lead.customer_phone).replace(/\D/g, "");
+    document.getElementById("crmWhatsappLink").href = "https://wa.me/" + phoneDigits;
     var managementStages = crm.status === "venta"
       ? STAGES.filter(function (stage) { return stage.value === "venta"; })
       : STAGES.filter(function (stage) { return !["nuevo", "venta"].includes(stage.value); });
@@ -549,6 +648,8 @@
     var terminalStatus = ["desistir", "invalido"].includes(status);
     errorBox.textContent = "";
     if (!status) { errorBox.textContent = "Seleccioná el resultado de la gestión."; return; }
+    try { transitionModel.assertTransition(crmOf(state.activeLead).status || "nuevo", status); }
+    catch (error) { errorBox.textContent = error.message; return; }
     var nextContact = null;
     var interview = null;
     try {
@@ -568,7 +669,7 @@
     }
     if (status === "no_contesta" && !nextContact) { errorBox.textContent = "Programá el próximo intento de contacto."; return; }
     if (nextContact && new Date(nextContact).getTime() <= Date.now()) { errorBox.textContent = "El próximo contacto debe quedar programado a futuro."; return; }
-    if (["no_contesta", "en_proceso", "cierre", "sena"].includes(status) && !nextContact) { errorBox.textContent = "Programá la próxima acción antes de guardar."; return; }
+    if (["contacto_futuro", "en_proceso", "cierre", "sena"].includes(status) && !nextContact) { errorBox.textContent = "Programá la próxima acción antes de guardar."; return; }
     if (status === "entrevista" && !interview) { errorBox.textContent = "Indicá la fecha y hora de la entrevista."; return; }
     if (status === "sena" && (!deposit || Number(deposit) <= 0)) { errorBox.textContent = "Indicá el importe de la seña."; return; }
     if (["invalido", "desistir"].includes(status) && note.length < 3) { errorBox.textContent = "Explicá brevemente el motivo."; return; }
@@ -703,6 +804,22 @@
   }
 
   document.addEventListener("click", function (event) {
+    var contactDecision = event.target.closest("[data-contact-decision]");
+    if (contactDecision) {
+      var answered = contactDecision.dataset.contactDecision === "answered";
+      var outcomes = document.getElementById("crmNewOutcomes");
+      outcomes.innerHTML = '<span>' + (answered ? "¿Cuál fue el resultado?" : "Registrá el resultado observado") + '</span><div>' + transitionButtons(answered ? ["contacto_futuro", "en_proceso", "entrevista", "cierre", "sena", "venta", "desistir"] : ["no_contesta", "invalido"]) + '</div>';
+      outcomes.hidden = false;
+      document.querySelectorAll("[data-contact-decision]").forEach(function (button) { button.classList.toggle("is-selected", button === contactDecision); });
+      return;
+    }
+    var transition = event.target.closest("[data-crm-transition]");
+    if (transition) {
+      if (transition.dataset.crmTransition === "venta") document.getElementById("crmSaleButton").click();
+      else if (crmOf(state.activeLead).status === "nuevo" && transition.dataset.crmTransition === "no_contesta") registerNewNoAnswer();
+      else selectWorkspaceTransition(transition.dataset.crmTransition);
+      return;
+    }
     var nextContactOffset = event.target.closest("[data-next-contact-offset]");
     if (nextContactOffset) {
       setNextContactFromNow(nextContactOffset.dataset.nextContactOffset);
@@ -732,6 +849,7 @@
   });
 
   document.getElementById("crmStatusInput").addEventListener("change", updateConditionalFields);
+  document.getElementById("crmWorkspaceBack").addEventListener("click", function () { leadDialog.close(); openView("agenda"); });
   document.getElementById("crmSaveManagement").addEventListener("click", saveManagement);
   document.getElementById("crmCommentButton").addEventListener("click", function () { document.getElementById("crmCommentError").textContent = ""; commentDialog.showModal(); });
   document.getElementById("crmCommentSave").addEventListener("click", saveComment);

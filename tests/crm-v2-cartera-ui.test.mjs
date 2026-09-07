@@ -27,6 +27,7 @@ test("Mi Cartera reemplaza Mi agenda en todas las superficies de navegación", (
   assert.doesNotMatch(html, />\s*Mi agenda\s*<\/button>/i);
   assert.ok(crm.includes('viewName === "agenda" ? "Mi Cartera"'));
   assert.ok(mobileNavigation.includes('agenda: "Mi Cartera"'));
+  assert.doesNotMatch(html, /Cartera comercial/);
 });
 
 test("Mi Cartera expone filtros de estado y vistas operativas accesibles", () => {

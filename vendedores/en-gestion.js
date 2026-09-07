@@ -187,6 +187,24 @@
     }
   }
 
+  function openLead(lead) {
+    state.leadId = lead && lead.id || null;
+    state.lead = lead || null;
+    state.crm = crmOf(lead);
+    state.items = Object.create(null);
+    var active = Boolean(state.leadId && state.crm.status === "en_proceso");
+    setExperienceActive(active);
+    if (!active) return;
+    renderExperience();
+    loadPlaybookItems(state.leadId).then(function (items) {
+      if (!state.lead || state.lead.id !== lead.id) return;
+      state.items = items;
+      renderExperience();
+    }).catch(function (error) {
+      if (state.lead && state.lead.id === lead.id) renderFatalError(error);
+    });
+  }
+
   function completedCount() {
     return playbookModel.allItemKeys().filter(function (key) {
       return state.items[key] && state.items[key].completed;
@@ -348,6 +366,10 @@
   }
 
   function focusNextContact() {
+    var dialog = document.getElementById("crmLeadDialog");
+    if (dialog) dialog.classList.add("is-editing-outcome");
+    var statusInput = document.getElementById("crmStatusInput");
+    if (statusInput) statusInput.value = "en_proceso";
     var dateInput = document.getElementById("crmNextContactDateInput");
     var managementHeading = document.querySelector(".crm-management-heading");
     if (managementHeading) managementHeading.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -360,6 +382,8 @@
 
   function focusResult() {
     var statusInput = document.getElementById("crmStatusInput");
+    var dialog = document.getElementById("crmLeadDialog");
+    if (dialog) dialog.classList.add("is-editing-outcome");
     var managementHeading = document.querySelector(".crm-management-heading");
     if (managementHeading) managementHeading.scrollIntoView({ behavior: "smooth", block: "start" });
     if (statusInput) {
@@ -471,6 +495,7 @@
 
   relabelLegacyStageNames();
   root.grupoSurEnGestionExperience = {
+    openLead: openLead,
     syncLead: syncLead,
     relabelLegacyStageNames: relabelLegacyStageNames
   };
