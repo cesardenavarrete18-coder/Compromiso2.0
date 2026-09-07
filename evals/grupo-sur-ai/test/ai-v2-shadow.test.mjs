@@ -35,7 +35,13 @@ test("19 technical question creates knowledge response path",()=>{const r=genera
 test("20 absent technical evidence cannot hallucinate",()=>assert.match(generateCandidateReply({currentMessage:"motor?",knowledgeRequest:{},allowedFacts:{technical_facts:[]}}).text,/No tengo/));
 test("21 clear rejection has zero questions",()=>assert.equal(generateCandidateReply({currentMessage:"No gracias"}).question_count,0));
 test("22 DNC semantics are distinct",()=>assert.equal(generateCandidateReply({currentMessage:"No me escriban más"}).dnc,true));
-test("23 candidate has at most one conceptual question",()=>assert.ok(countConceptualQuestions(generateCandidateReply({currentMessage:"hola",responsePlan:{prompt:"¿Uno? ¿Dos?"}}).text)<=1));
+test("23 candidate has at most one conceptual question",()=>{
+  // responsePlan.prompt is not part of the real engine contract (Family J) —
+  // exercise every real next_filter_question value the engine can actually
+  // produce and confirm each renders at most one "?".
+  const questions=["model","purchase_mode","down_payment_amount","monthly_installment_capacity","has_trade_in","trade_in_brand","trade_in_model","trade_in_variant","trade_in_year","trade_in_km","contact_preference","clarify_initial_amount_intent"];
+  for(const q of questions) assert.ok(countConceptualQuestions(generateCandidateReply({currentMessage:"hola",responsePlan:{next_filter_question:q}}).text)<=1,q);
+});
 test("24 Peugeot Partner brand is not rewritten",()=>{const target={brand:"Peugeot",model:"Partner"};assert.equal(buildAllowedFacts({targetModel:target}).target_model.brand,"Peugeot")});
 test("25 requested handoff still answers direct question outside human mode",()=>{const facts=resolveStructuredCommercialFacts({targetModelId:"1",campaigns:[{id:"x",model_id:"1",installment:431250}]});const r=generateCandidateReply({currentMessage:"¿Y las cuotas?",wouldHandoff:true,allowedFacts:{commercial_facts:facts}});assert.ok(r.text)});
 test("26 human mode suppresses candidate",()=>assert.equal(generateCandidateReply({currentMessage:"precio",humanMode:true}).status,"suppressed_human"));

@@ -99,18 +99,45 @@ No se tocó `handoff-policy.mjs`: su contrato es consistente y correcto; el bug 
 
 **HANDOFF_SHADOW_SEMANTICS**: `would_handoff=true` si y sólo si `next_action==="handoff"` (handoff inmediato por pedido humano/acción fuerte, o handoff por perfil completo con horario de contacto ya conocido). `human_owned`, `closed_or_routed`, `complete_filter` y `ask_next_missing_component` nunca cuentan como un nuevo handoff comercial.
 
-**Nota fuera de alcance** (no se tocó, documentada para una futura family): `response-generator.mjs` lee `input.responsePlan?.prompt`, pero el `response_plan` real del engine nunca tiene esa key (usa `next_filter_question`) — incluso con `wouldHandoff` corregido, el camino "no es handoff ni precio ni knowledge lookup" sigue cayendo siempre en el fallback hardcodeado en vez de usar la pregunta real del filtro. Es un mismatch de contrato preexistente, independiente de Family I, y no formaba parte de lo pedido en esta iteración.
+### Family J — Response Generator no consumía el contrato real de `responsePlan` (bug real, crítico para fidelidad de telemetría) — **FIJADO**
+Lo que en la entrega anterior quedó anotado como "nota fuera de alcance" se reclasificó como Family J y se cerró antes del merge, porque afecta directamente la fidelidad del `v2_candidate_reply` que la telemetría de Shadow necesita para decidir promoción. Dos problemas concretos en `response-generator.mjs`:
+
+1. Leía `responsePlan.prompt`, key que **no existe** en el contrato real de `buildCommercialResponsePlan()` (`answer_kind`, `answer_fact`, `knowledge_request`, `next_filter_question`, `handoff`, `warnings` — nunca `prompt`). Siempre caía en el fallback hardcodeado `"¿En qué modelo estás interesado?"`, sin importar qué pregunta correspondía realmente según el estado del filtro.
+2. Para respuestas comerciales, volvía a inferir la intención con regex sobre `currentMessage` (`/precio|cuanto (?:sale|cuesta|vale)|cuotas?/`) en vez de usar `responsePlan.answer_fact` (ya resuelto por el engine con el `fact_type` correcto), y priorizaba `final_price` sobre `installment` sin mirar qué se preguntó — podía contestar precio total ante una pregunta de cuota. `delivery_advance` no tenía ninguna rama en absoluto y caía en la pregunta genérica aunque el engine ya hubiera resuelto el anticipo.
+
+Esto rompía la separación arquitectónica Extractor → Filter/Engine → Response Plan → Composer: el Composer volvía a decidir semántica comercial por su cuenta en vez de componer el `responsePlan` ya decidido.
+
+**Metodología red→green**: se escribieron 13 tests en `evals/grupo-sur-ai/test/filter-v1-production-blockers-family-j.test.mjs`, todos manejando el **engine real** (`runFilterV1Integration`, invocado por `pipeline.mjs` como su propio `runFilter`, con sólo la extracción semántica LLM stubbeada — sin red) para producir un `responsePlan` genuino, nunca un objeto `{ prompt: "..." }` fabricado a mano. Se confirmó el rojo real: se hizo `git stash` de `response-generator.mjs` (volviendo a leer `.prompt` y a la regex de precio/cuota) y se corrió la suite → **9 de 13 casos fallaron** (cuota devolvía precio total; anticipo de retiro cae en pregunta genérica; los 5 casos de `next_filter_question` — purchase_mode, down_payment, monthly_capacity, has_trade_in, trade_in_variant — todos caían en el fallback genérico; `ambiguous_initial_amount` no distinguía nada; el handoff "ready" con fact resuelto perdía el precio). Se restauró el fix (`git stash pop`) → 13/13 verde.
+
+**REAL_RESPONSE_PLAN_CONTRACT** (el único que `response-generator.mjs` consume ahora): `answer_kind`, `answer_fact` (`{fact_type, status, value, source_campaign_id, provenance}` o `{fact_type:"technical_knowledge", status:"requires_knowledge_lookup", ...}`), `next_filter_question`, `handoff`. `commercial_framing_allowed`, `promotional_hook`, `cross_campaign_combination`, `can_present_as_single_alternative` y `warnings` no se consumen en el composer (no hacía falta para los 12 casos pedidos).
+
+**ANSWER_FACT_COMPOSITION**: `renderAnswerFact(plan.answer_fact)` es ahora la fuente primaria — mapeo determinístico 1:1 por `fact_type`:
+- `model_reference_value` → "El precio informado es {monto}."
+- `installment_offer` → "La cuota informada es {monto}."
+- `delivery_advance` → "El anticipo para retirarlo es {monto}." (nuevo — antes no existía ninguna rama para este fact_type).
+- `status:"not_materialized"` → "No tengo un valor estructurado vigente para confirmarte."
+Nunca se vuelve a elegir campaña ni a combinar cuota de una campaña con precio/anticipo de otra — `answer_fact` ya viene resuelto por `resolvePlanFact()` desde una única campaña (`plan-fact-resolver.mjs`, sin tocar). El guard anti-Frankenstein (`assessMultiFactCombination`) sigue intacto en `commercial-response-policy.mjs`, no modificado.
+
+**NEXT_FILTER_QUESTION_COMPOSITION**: mapeo determinístico 1:1 `FILTER_QUESTION_COPY[plan.next_filter_question]` para los 11 valores reales que puede emitir `chooseNextQuestion()` (`model`, `purchase_mode`, `down_payment_amount`, `monthly_installment_capacity`, `has_trade_in`, `trade_in_brand`, `trade_in_model`, `trade_in_variant`, `trade_in_year`, `trade_in_km`, `contact_preference`), cada uno con una única pregunta concreta y verificable. `clarify_initial_amount_intent` tiene su propio texto fijo, una sola pregunta que distingue "monto para arrancar el plan" de "anticipo para retirar el vehículo" (sin introducir ningún campo nuevo como `subscription_amount` — sólo texto, no hay cambio de contrato de datos).
+
+**Handoff (`wouldHandoff===true`, Family I)**: nunca se agrega una pregunta de filtrado nueva. Si el engine ya resolvió un `answer_fact` para ese turno (posible en un handoff "ready", donde `stop_questions` es `false` y el engine sigue construyendo una respuesta normal — a diferencia de un handoff "immediate", donde el engine nunca calcula `answer_fact`), se antepone al copy de derivación en vez de descartarse. Verificado en el caso 10b: perfil completo + horario conocido + intención de precio ya resuelta → el candidato menciona el precio **y** deriva, sin preguntar por el horario de contacto que el engine seguía sugiriendo en `next_filter_question`.
+
+**Ruta legada preservada, no eliminada**: cuando no hay `plan.answer_fact` en absoluto (tests unitarios preexistentes que ejercitan sólo `allowedFacts.commercial_facts` sin pasar por el engine completo — tests #17/#25 de `ai-v2-shadow.test.mjs`), se mantiene el camino anterior basado en `allowedFacts.commercial_facts` + regex de precio/cuota, pero **sólo como fallback secundario**, nunca por encima de un `plan.answer_fact` real. Ningún test de los 30 de `ai-v2-shadow.test.mjs` se rompió por esto.
+
+**Test histórico engañoso corregido**: el test `#23` de `ai-v2-shadow.test.mjs` ("candidate has at most one conceptual question") validaba manualmente `responsePlan: { prompt: "¿Uno? ¿Dos?" }` — una estructura que no existe en el engine real, y que además seguía "pasando" con el fix nuevo por una razón distinta (esa key ya no se lee en absoluto, así que caía al fallback genérico de una sola pregunta, ocultando que el test ya no probaba nada real). Se reemplazó por una iteración sobre los 12 valores reales de `next_filter_question` que el engine puede emitir, confirmando `≤1 "?"` en cada uno — cobertura real, no una casualidad.
+
+No se tocó: extractor, semantic prompt, provider schema, normalizer, sanitizer, evaluator, datasets FVS, Golden, `handoff-policy.mjs`, ni nada de Family F. Paridad byte-a-byte de `filter-v1` sigue verde (no se modificó ningún archivo de esa carpeta; el fix es enteramente en `supabase/functions/_shared/ai-v2-shadow/response-generator.mjs`, que está fuera del árbol con parity-check).
 
 ## Resultados de tests
 
 ```
 npm test   (evals/grupo-sur-ai)
-# tests 245
-# pass 245
+# tests 258
+# pass 258
 # fail 0
 ```
 
-Incluye: 169 (filter:v1 core) + 14 (unsafe-metric) + 10 (semantic-online-harness, con transporte fake, sin red real) + 30 (ai-v2-shadow, incluyendo parity y no-sender) + 4 (production-blockers A–D) + 8 (Family G) + 3 (Family H) + 7 (Family I).
+Incluye: 169 (filter:v1 core) + 14 (unsafe-metric) + 10 (semantic-online-harness, con transporte fake, sin red real) + 30 (ai-v2-shadow, incluyendo parity y no-sender, con el test #23 reescrito contra el contrato real) + 4 (production-blockers A–D) + 8 (Family G) + 3 (Family H) + 7 (Family I) + 13 (Family J).
 
 ## Auditoría de side effects
 
@@ -135,10 +162,11 @@ Incluye: 169 (filter:v1 core) + 14 (unsafe-metric) + 10 (semantic-online-harness
 3. **No se pudo correr `deno check`/`deno test`** en este entorno (binario no disponible) — la integración en `index.ts` se validó por comparación estructural, no por type-check real de Deno.
 4. **Variables de entorno requeridas** (`OPENAI_API_KEY`, `OPENAI_FILTER_MODEL`, `OPENAI_V2_RESPONSE_MODEL`, `AI_V2_SHADOW_MODE`) no están documentadas en ningún `.env.example` de este repo — quedaría pendiente antes de un rollout real, aunque no bloquea el estado "shadow-only, apagado por default".
 5. **`EdgeRuntime.waitUntil` no se verificó contra el runtime real de Supabase** (no hay forma de desplegar/ejecutar la función edge en este entorno). `scheduleShadow()` está escrito defensivamente (si `edgeRuntime`/`waitUntil` no existieran, igual no hace `await` ni lanza — simplemente no se registra background task explícito), pero la confirmación de que Supabase efectivamente mantiene vivo el request hasta que la tarea termine debe hacerse en un ambiente real antes de confiar en la telemetría de `ai_v2_shadow_runs` para tráfico de alto volumen.
-6. **`response-generator.mjs` lee `responsePlan.prompt`, que el engine real nunca produce** (usa `next_filter_question`). Detectado como efecto colateral de auditar Family I; no es parte de Family I ni de Family H, no se tocó, y no afecta ninguna garantía de aislamiento V1/latencia — sólo la calidad del texto candidato en escenarios que no son handoff/precio/knowledge-lookup. Candidato a una family futura si se decide perseguir fidelidad completa del candidate reply antes de habilitar shadow en un ambiente real.
+
+~~6. `response-generator.mjs` leía `responsePlan.prompt`~~ — reclasificado como **Family J** y **cerrado** en esta entrega (ver arriba).
 
 ## Veredicto
 
 **READY_FOR_SHADOW_MERGE_REVIEW**
 
-Con la misma aclaración que en la entrega anterior: "ready" es para *revisión de merge* del estado shadow reconstruido (código + tests + migración en el repo, apagado por default, cero efecto en latencia o en resultado de V1, cero efecto en producción, y ahora también telemetría de fidelidad corregida en los escenarios de takeover y handoff) — no para habilitar `AI_V2_SHADOW_MODE=true` en ningún ambiente real todavía, dado el Family F abierto, la falta de corridas reales (puntos 1–2), `EdgeRuntime.waitUntil` sin confirmar contra el runtime real (punto 5), y el mismatch `responsePlan.prompt` recién documentado (punto 6).
+Con la misma aclaración que en la entrega anterior: "ready" es para *revisión de merge* del estado shadow reconstruido (código + tests + migración en el repo, apagado por default, cero efecto en latencia o en resultado de V1, cero efecto en producción, y ahora también telemetría de fidelidad corregida en los escenarios de takeover, handoff, y composición de la respuesta candidata contra el contrato real del engine) — no para habilitar `AI_V2_SHADOW_MODE=true` en ningún ambiente real todavía, dado el Family F abierto, la falta de corridas reales (puntos 1–2), y `EdgeRuntime.waitUntil` sin confirmar contra el runtime real (punto 5). Families G, H, I y J quedan cerradas.
