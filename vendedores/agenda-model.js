@@ -49,6 +49,43 @@
     return crmOf(lead).status === "no_contesta" && Boolean(protocolRecommendation(lead, pendingTask, nowValue));
   }
 
+  function appendStyleOnce(id, href) {
+    if (typeof document === "undefined" || document.getElementById(id)) return;
+    var link = document.createElement("link");
+    link.id = id;
+    link.rel = "stylesheet";
+    link.href = href;
+    document.head.appendChild(link);
+  }
+
+  function appendScriptOnce(id, src, onload) {
+    if (typeof document === "undefined") return;
+    var existing = document.getElementById(id);
+    if (existing) {
+      if (onload) onload();
+      return;
+    }
+    var script = document.createElement("script");
+    script.id = id;
+    script.src = src;
+    script.async = false;
+    if (onload) script.addEventListener("load", onload, { once: true });
+    document.head.appendChild(script);
+  }
+
+  function loadEnGestionExperience() {
+    if (typeof document === "undefined") return;
+    appendStyleOnce("crm-en-gestion-style", "/vendedores/en-gestion.css?v=20260907-2");
+
+    function loadUi() {
+      if (root.grupoSurEnGestionExperience) return;
+      appendScriptOnce("crm-en-gestion-ui", "/vendedores/en-gestion.js?v=20260907-1");
+    }
+
+    if (root.grupoSurManagementPlaybook) loadUi();
+    else appendScriptOnce("crm-management-playbook-model", "/vendedores/management-playbook-model.js?v=20260907-1", loadUi);
+  }
+
   root.grupoSurAgendaModel = {
     TIME_ZONE: TIME_ZONE,
     manualAction: manualAction,
@@ -56,4 +93,6 @@
     agendaBucket: agendaBucket,
     belongsToRecommendedSection: belongsToRecommendedSection
   };
+
+  loadEnGestionExperience();
 }(typeof window === "undefined" ? globalThis : window));
