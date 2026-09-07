@@ -128,16 +128,59 @@ Nunca se vuelve a elegir campaña ni a combinar cuota de una campaña con precio
 
 No se tocó: extractor, semantic prompt, provider schema, normalizer, sanitizer, evaluator, datasets FVS, Golden, `handoff-policy.mjs`, ni nada de Family F. Paridad byte-a-byte de `filter-v1` sigue verde (no se modificó ningún archivo de esa carpeta; el fix es enteramente en `supabase/functions/_shared/ai-v2-shadow/response-generator.mjs`, que está fuera del árbol con parity-check).
 
+### Nota de proceso — Families K, L y M sí tocan `filter-v1/`
+A diferencia de A–J (que sólo tocaron `ai-v2-shadow/`), K/L/M corrigen bugs determinísticos dentro del propio runtime `filter-v1/` compartido (`contracts.mjs`, `contact-priority.mjs`, `integration/filter-v1-engine.mjs`, y un módulo nuevo `contact-timing-resolver.mjs`). Cada cambio se aplicó primero en `evals/grupo-sur-ai/src/filter-v1/` (fuente canónica) y luego se repitió byte-a-byte en `supabase/functions/_shared/filter-v1/` (`diff` verificado archivo por archivo antes de cada commit) — el mecanismo de promoción documentado en el propio README de `ai-v2-shadow/` se mantiene vigente. El test de parity (`#30` de `ai-v2-shadow.test.mjs`) sigue verde.
+
+### Family K — Response Generator no componía "answer + next question" (bug real) — **FIJADO**
+El contrato aprobado de Filter v1 es "ANSWER primero + máximo una pregunta lógica del filtro, o handoff". `response-generator.mjs` (ya corregido en Family J para usar `plan.answer_fact`) devolvía el fact resuelto **o** la siguiente pregunta, nunca ambos — así, un engine que correctamente decidía `answer_fact=cuota` + `next_filter_question=purchase_mode` producía una respuesta que sólo contestaba la cuota y dejaba de avanzar el filtro.
+
+**Metodología red→green**: 8 tests contra el engine real (`runFilterV1Integration` vía `pipeline.mjs`). Se revirtió temporalmente el fix de Family K (`git show HEAD:...` sobre el archivo) y se corrió: 6/8 fallaron exactamente en los casos de "fact + pregunta pendiente" (cuota+modalidad, precio+modalidad, anticipo+modalidad, financiado+anticipo pendiente, financiado+capacidad mensual pendiente, técnica+modalidad). Restaurado el fix → 8/8 verde.
+
+**Fix**: `response-generator.mjs` ahora compone `answer + questionCopy(next_filter_question)` (una sola función `questionCopyFor()` reutilizada en las tres ramas: técnica, fact resuelto, y fallback puro) siempre que exista una pregunta pendiente real y no sea un turno de handoff/suprimido — nunca más de una pregunta (`finalize()` sigue truncando como red de seguridad, aunque con las copies fijas nunca hace falta).
+
+### Family L — `contact_preference` nunca se resolvía ni se persistía (2 bugs reales adicionales descubiertos en el propio red de esta family) — **FIJADO**
+`semantic-engine-adapter.mjs` hardcodeaba `contact_preference.timing: "unknown"` sin importar el literal real del cliente. Además, el engine nunca leía/escribía `state.contact_preference.asked_once`, y el `stop_questions:true` de `decideHandoff` para un perfil completo con timing desconocido silenciaba `next_filter_question` para siempre — así que "preguntar la preferencia de contacto" no podía ocurrir ni una sola vez.
+
+**Metodología red→green**: 7 tests (A–G). Se revirtieron con `git stash` los 4 archivos tocados (`contact-priority.mjs`, `semantic-engine-adapter.mjs`, `filter-v1-engine.mjs`, más el módulo nuevo movido fuera temporalmente) y se corrió contra el código original: **7/7 fallaron**. Al reconstruir el fix se encontraron además, en el propio proceso de hacerlo pasar honestamente (no ajustando el test para que "diera verde"), dos bugs reales adicionales, no listados originalmente pero dentro del mismo alcance determinístico:
+- `chooseNextQuestion()` trataba un componente condicional ausente (`down_payment_amount`/`monthly_installment_capacity` cuando `purchase_mode` no es `"financed"`, o `trade_in_*` cuando `has_trade_in` no es `"yes"`) como `undefined`, y `undefined` no está en `["known","explicitly_unknown"]` — así que preguntaba por campos que ni siquiera aplicaban al perfil del cliente. Fix: `key in profile.components && ...` antes de evaluar el estado.
+- El motor calculaba `timing` a partir de `extraction.contact_preference` para la prioridad de contacto de ese turno, pero **nunca lo persistía** en `next_state` — el literal del cliente se perdía en el siguiente turno. Fix: persistir `state.contact_preference` cuando `extraction.contact_preference` está presente.
+
+Ambos se verificaron contra los 169 tests de `filter-v1` (ninguno dependía del comportamiento roto) antes de aceptarlos como parte de Family L.
+
+**Fix — `contact-timing-resolver.mjs`** (nuevo, determinístico, sin LLM): mapea el literal a `now`/`same_day`/`next_business_day`/`future`/`unknown` usando regex + `nextBusinessDate()`/`dateKey()` (reutilizados de `contact-priority.mjs`, ahora exportados). Nunca fabrica un `callback_at` exacto que el literal no dio — un límite inferior de hora ("después de las 17") se guarda en `callback_window`, no en `callback_at`.
+
+**Fix — `filter-v1-engine.mjs`**: `askContactPreferenceNow = handoff.next_action === "complete_filter" && !state.contact_preference?.asked_once` — si es true, se bypassea el `stop_questions` para esa única pregunta y se marca `asked_once:true` en `next_state`. Turnos posteriores sin respuesta ya no la repiten (verificado: caso F). Si el cliente informa el timing, se persiste el literal y no se vuelve a preguntar (verificado: caso G, vía `wouldHandoff` de Family I ya que timing conocido = handoff "ready").
+
+**Fix — `response-generator.mjs`**: nuevo copy `CONTACT_PENDING_HOLDING_COPY` para el caso "ready pero sin handoff comercial" (perfil completo, timing pendiente, ya preguntado una vez) — ni repite la pregunta ni fabrica una derivación que no ocurrió.
+
+### Family M — DNC decidido por regex del composer en vez del engine (bug real, invariante de safety) — **FIJADO**
+El composer tenía su propio regex de DNC, independiente de la decisión real del engine (`handoff_status="closed_or_routed"` / `next_action="close_or_route_noncommercial"`, ya presente en `decideHandoff` desde antes de esta iteración). Podían discrepar: frases que el extractor/sanitizer ya reconocían como DNC pero que el regex local del composer no cubría (ej. "Bórrenme.", "No quiero recibir mensajes.") seguían el flujo comercial normal — incluida una nueva pregunta de filtro.
+
+**Metodología red→green**: 10 tests, usando `extraction.noncommercial=true` para simular que el extractor/sanitizer ya reconocieron la frase (esa clasificación en sí es LLM/sanitizer, fuera de alcance — lo que se testea es que engine+composer actúen correcto y consistentemente sobre esa señal). Se revirtieron con `git stash` los 5 archivos tocados y se corrió: **5/10 fallaron** — exactamente "Bórrenme."/"No quiero recibir mensajes." (frases que el regex viejo del composer no reconocía) y los 3 tests de telemetría multiturno (`dnc_acknowledged`, `dnc_first_ack`, `would_suppress_for_dnc`, que no existían). Los otros 5 pasaban por coincidencia (el regex viejo sí matcheaba "no me escriban/contacten", y `decideHandoff`/`would_handoff` ya eran correctos desde antes de esta family). Restaurado el fix → 10/10 verde.
+
+**Fix — `filter-v1-engine.mjs`**: nueva rama temprana (segunda en precedencia, justo después de `human_owned`, antes de toda resolución de target/extracción) que corta el turno si `lead.do_not_contact || extraction.noncommercial===true`. `state.dnc_acknowledged` (nuevo campo en `createFilterState()`) se lee **antes** de sobrescribirlo, así que el primer turno DNC se distingue de los siguientes. `response_plan.handoff="closed_or_routed"` y `response_plan.dnc_first_ack` son la única fuente de verdad para el composer.
+
+**Fix — `response-generator.mjs`**: `plan.handoff==="closed_or_routed"` se chequea **antes** que el regex local (que se conserva sólo como red de seguridad adicional, nunca puede contradecir al engine porque el chequeo del engine retorna primero e incondicionalmente). Primer turno → `DNC_ACK_COPY` breve. Turnos siguientes → `{text:null, status:"suppressed_dnc"}`, sin repetir el ack, sin pregunta, sin nuevo handoff comercial (ya garantizado por Family I: `close_or_route_noncommercial` nunca es `would_handoff`).
+
+**Fix — `pipeline.mjs` + migración**: nuevo campo de telemetría `would_suppress_for_dnc` (true en cualquier turno DNC que no sea el de primer-ack), agregado también a `ai_v2_shadow_runs` (`would_suppress_for_dnc boolean not null default false`) — la migración todavía no fue aplicada en ningún ambiente, así que se editó el archivo existente en vez de crear una nueva.
+
+**Persistencia sin depender de re-detectar el texto**: `lead.do_not_contact` (columna CRM, ya leída por el shadow en cada corrida vía `whatsapp-adapter.mjs`) alcanza por sí sola para mantener el DNC en cualquier turno posterior, aunque el mensaje nuevo no repita la frase — verificado explícitamente con un test dedicado.
+
+**Precedencia verificada**: `human_owned` (ya existente) → DNC (Family M, nuevo) → pedido humano explícito/acción fuerte → perfil completo/ready → filtrado normal. DNC nunca se convierte en handoff comercial ni siquiera cuando coincide en el mismo turno con un pedido explícito de humano o un perfil ya completo (2 tests dedicados).
+
+### Replay determinístico multi-turno (validación final, K+L+M juntas)
+`evals/grupo-sur-ai/test/filter-v1-multiturn-replay.test.mjs` encadena `next_state` entre turnos (igual que `whatsapp-adapter.mjs` en producción) sobre un mismo lead: (1) consulta de cuota → responde + pregunta modalidad; (2) el cliente completa el perfil → pregunta preferencia de contacto una sola vez; (3) no responde el horario → no se repite, sigue `qualified`/`ready`; (4) DNC → acknowledgment breve; (5) mensaje siguiente bajo DNC → `suppressed_dnc`, sin repetir ack, sin pregunta, sin handoff. Verde en el primer intento tras completar K/L/M por separado — confirma que las tres families componen correctamente entre sí, no sólo de forma aislada.
+
 ## Resultados de tests
 
 ```
 npm test   (evals/grupo-sur-ai)
-# tests 258
-# pass 258
+# tests 284
+# pass 284
 # fail 0
 ```
 
-Incluye: 169 (filter:v1 core) + 14 (unsafe-metric) + 10 (semantic-online-harness, con transporte fake, sin red real) + 30 (ai-v2-shadow, incluyendo parity y no-sender, con el test #23 reescrito contra el contrato real) + 4 (production-blockers A–D) + 8 (Family G) + 3 (Family H) + 7 (Family I) + 13 (Family J).
+Incluye: 169 (filter:v1 core) + 14 (unsafe-metric) + 10 (semantic-online-harness, con transporte fake, sin red real) + 30 (ai-v2-shadow, incluyendo parity y no-sender, con el test #23 reescrito contra el contrato real) + 4 (production-blockers A–D) + 8 (Family G) + 3 (Family H) + 7 (Family I) + 13 (Family J) + 8 (Family K) + 7 (Family L) + 10 (Family M) + 1 (replay determinístico multi-turno).
 
 ## Auditoría de side effects
 
@@ -153,6 +196,7 @@ Incluye: 169 (filter:v1 core) + 14 (unsafe-metric) + 10 (semantic-online-harness
 - **Aditiva pura**: `CREATE TABLE`, 3 `CREATE INDEX`, `ALTER TABLE ... ENABLE ROW LEVEL SECURITY`, `CREATE POLICY`, `REVOKE`, `GRANT`. Ningún `ALTER`/`DROP` sobre tablas existentes.
 - **Dependencia externa**: la policy usa `private.current_user_is_admin()`, función que **no está definida en ninguna migración versionada** pero sí es usada exitosamente por dos migraciones ya mergeadas a `main` (`20260814190000_ai_knowledge_center.sql`, `20260815180000_sales_administration_and_quotes.sql`) — es decir, ya existe en la base real fuera del control de este repo (mismo patrón pre-existente que `public.campaigns`/`public.models`/`public.brands`, creadas antes del historial de migraciones). No es una dependencia nueva introducida por este trabajo.
 - **Orden corregido** (Family B): ahora `20260907120000_...`, posterior a todo lo demás en `main`.
+- **Columna agregada** (Family M): `would_suppress_for_dnc boolean not null default false` — con default, no requiere cambios en `repository.claim()`. Se editó el archivo existente (no se creó una migración nueva) porque, como el resto, **todavía no fue aplicada en ningún ambiente**.
 - **No aplicada**: no se ejecutó `supabase db push`, `migration up`, ni ninguna herramienta de Supabase contra ningún proyecto. Sólo existe como archivo en el working tree de esta rama.
 
 ## Blockers restantes (no cerrados en este rc1)
@@ -163,10 +207,13 @@ Incluye: 169 (filter:v1 core) + 14 (unsafe-metric) + 10 (semantic-online-harness
 4. **Variables de entorno requeridas** (`OPENAI_API_KEY`, `OPENAI_FILTER_MODEL`, `OPENAI_V2_RESPONSE_MODEL`, `AI_V2_SHADOW_MODE`) no están documentadas en ningún `.env.example` de este repo — quedaría pendiente antes de un rollout real, aunque no bloquea el estado "shadow-only, apagado por default".
 5. **`EdgeRuntime.waitUntil` no se verificó contra el runtime real de Supabase** (no hay forma de desplegar/ejecutar la función edge en este entorno). `scheduleShadow()` está escrito defensivamente (si `edgeRuntime`/`waitUntil` no existieran, igual no hace `await` ni lanza — simplemente no se registra background task explícito), pero la confirmación de que Supabase efectivamente mantiene vivo el request hasta que la tarea termine debe hacerse en un ambiente real antes de confiar en la telemetría de `ai_v2_shadow_runs` para tráfico de alto volumen.
 
-~~6. `response-generator.mjs` leía `responsePlan.prompt`~~ — reclasificado como **Family J** y **cerrado** en esta entrega (ver arriba).
+~~6. `response-generator.mjs` leía `responsePlan.prompt`~~ — reclasificado como **Family J** y **cerrado**.
+~~7. Composer no componía answer+question, contact_preference nunca se resolvía, DNC dependía de regex local~~ — reclasificados como **Families K, L y M** y **cerrados** en esta entrega, junto con dos bugs adicionales encontrados en el propio proceso de hacer pasar Family L honestamente (`chooseNextQuestion` tratando un componente condicional ausente como no resuelto; `contact_preference` nunca persistido en `next_state`).
+
+Ninguna de las families A–M abiertas listadas arriba (1–5) se cerró en esta pasada; siguen siendo exactamente los mismos 5 puntos.
 
 ## Veredicto
 
 **READY_FOR_SHADOW_MERGE_REVIEW**
 
-Con la misma aclaración que en la entrega anterior: "ready" es para *revisión de merge* del estado shadow reconstruido (código + tests + migración en el repo, apagado por default, cero efecto en latencia o en resultado de V1, cero efecto en producción, y ahora también telemetría de fidelidad corregida en los escenarios de takeover, handoff, y composición de la respuesta candidata contra el contrato real del engine) — no para habilitar `AI_V2_SHADOW_MODE=true` en ningún ambiente real todavía, dado el Family F abierto, la falta de corridas reales (puntos 1–2), y `EdgeRuntime.waitUntil` sin confirmar contra el runtime real (punto 5). Families G, H, I y J quedan cerradas.
+Con la misma aclaración que en las entregas anteriores: "ready" es para *revisión de merge* del estado shadow reconstruido (código + tests + migración en el repo, apagado por default, cero efecto en latencia o en resultado de V1, cero efecto en producción, y ahora también fidelidad completa de la respuesta candidata: answer+pregunta compuestos correctamente, preferencia de contacto resuelta y preguntada una sola vez, y DNC gobernado enteramente por la decisión real del engine con semántica multi-turno de acknowledgment/supresión) — no para habilitar `AI_V2_SHADOW_MODE=true` en ningún ambiente real todavía, dado el Family F abierto, la falta de corridas reales (puntos 1–2), y `EdgeRuntime.waitUntil` sin confirmar contra el runtime real (punto 5). Families G, H, I, J, K, L y M quedan cerradas. Ésta es la última pasada funcional acordada antes de la revisión de merge de Shadow — no se abrieron líneas de investigación nuevas más allá de lo pedido.

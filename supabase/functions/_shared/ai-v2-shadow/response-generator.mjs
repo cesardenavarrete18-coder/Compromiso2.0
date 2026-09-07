@@ -45,6 +45,15 @@ const FILTER_QUESTION_COPY = Object.freeze({
 const CLARIFY_INITIAL_AMOUNT_QUESTION = "¿Ese monto es para arrancar el plan hoy, o es el anticipo con el que retirarías el vehículo?";
 
 const HANDOFF_DERIVATION_COPY = "Ya tengo la información necesaria y voy a derivar tu consulta al equipo comercial.";
+const DNC_ACK_COPY = "Entendido. No vamos a volver a contactarte.";
+
+// A "ready" handoff with next_action=complete_filter (profile complete, contact
+// timing still unknown, already asked once — Family L) reaches the composer
+// with no answer_fact and no next_filter_question: the engine deliberately
+// stopped asking, but this is not a commercial handoff either (Family I:
+// complete_filter never counts as would_handoff). Say something that neither
+// re-asks nor fabricates a derivation that hasn't happened.
+const CONTACT_PENDING_HOLDING_COPY = "Quedamos atentos para coordinar el contacto en cuanto nos confirmes el horario.";
 
 function finalize(text, extra = {}) {
   let finalText = text;
@@ -52,20 +61,43 @@ function finalize(text, extra = {}) {
   return { text: finalText, status: "ready", question_count: countConceptualQuestions(finalText), ...extra };
 }
 
+function questionCopyFor(nextFilterQuestion) {
+  if (!nextFilterQuestion) return null;
+  if (nextFilterQuestion === "clarify_initial_amount_intent") return CLARIFY_INITIAL_AMOUNT_QUESTION;
+  return FILTER_QUESTION_COPY[nextFilterQuestion] ?? null;
+}
+
 export function generateCandidateReply(input) {
   if (input.humanMode) return { text: null, status: "suppressed_human", question_count: 0 };
   const message = input.currentMessage ?? "";
-  if (dnc(message)) return { text: "Entendido. No volveremos a contactarte.", status: "ready", question_count: 0, dnc: true };
+  const plan = input.responsePlan ?? {};
+
+  // Family M: DNC is decided by the engine (lead.do_not_contact / the
+  // extractor+sanitizer's own do_not_contact signal — both already reach
+  // decideHandoff as handoff_status="closed_or_routed"), not re-derived here
+  // from a local regex. The Composer's own dnc() pattern below stays only as
+  // an additional safety net for a case the engine has not already
+  // classified — it can never contradict a real engine decision, because
+  // this check runs first and returns unconditionally when the engine says so.
+  if (plan.handoff === "closed_or_routed") {
+    return plan.dnc_first_ack
+      ? { text: DNC_ACK_COPY, status: "ready", question_count: 0, dnc: true, dnc_first_ack: true }
+      : { text: null, status: "suppressed_dnc", question_count: 0, dnc: true };
+  }
+  if (dnc(message)) return { text: DNC_ACK_COPY, status: "ready", question_count: 0, dnc: true };
   if (closing(message)) return { text: "Entendido, gracias por avisarnos. Quedamos a disposición.", status: "ready", question_count: 0, closure: true };
 
+  const questionCopy = questionCopyFor(plan.next_filter_question);
+
   // Technical/knowledge-lookup facts are resolved upstream from the engine's own
-  // resolved_facts (pipeline.mjs), not re-derived here — keep as-is.
+  // resolved_facts (pipeline.mjs), not re-derived here. Family K: the engine can
+  // still have a next_filter_question pending alongside a technical answer —
+  // compose both rather than dropping the question.
   if (input.knowledgeRequest) {
     const technical = input.allowedFacts?.technical_facts ?? [];
-    return finalize(technical.length ? String(technical[0].value) : "No tengo ese dato técnico verificado en este momento.");
+    const answer = technical.length ? String(technical[0].value) : "No tengo ese dato técnico verificado en este momento.";
+    return finalize(questionCopy ? `${answer} ${questionCopy}` : answer);
   }
-
-  const plan = input.responsePlan ?? {};
 
   // Handoff: never add a new filter question. If the engine already resolved a
   // commercial fact for this turn (possible on a "ready" handoff, where the
@@ -77,9 +109,15 @@ export function generateCandidateReply(input) {
     return finalize(resolvedFact ? `${resolvedFact} ${HANDOFF_DERIVATION_COPY}` : HANDOFF_DERIVATION_COPY);
   }
 
-  // Primary source: the real engine's own resolved fact for this turn.
+  // A "ready" handoff that stopped asking without becoming a commercial handoff
+  // (Family L, contact timing pending after one ask) — see comment above.
+  if (plan.handoff === "ready") return finalize(CONTACT_PENDING_HOLDING_COPY);
+
+  // Primary source: the real engine's own resolved fact for this turn. Family K:
+  // compose it together with the next filter question when both are present —
+  // answering must not silently stop the filter from advancing.
   const resolvedFact = renderAnswerFact(plan.answer_fact);
-  if (resolvedFact) return finalize(resolvedFact);
+  if (resolvedFact) return finalize(questionCopy ? `${resolvedFact} ${questionCopy}` : resolvedFact);
 
   // Legacy fallback: only when the engine did not resolve any plan.answer_fact
   // for this turn (e.g. a standalone unit test exercising the shadow's own
@@ -96,8 +134,6 @@ export function generateCandidateReply(input) {
     return finalize("No tengo un valor estructurado vigente para confirmarte.");
   }
 
-  if (plan.next_filter_question === "clarify_initial_amount_intent") return finalize(CLARIFY_INITIAL_AMOUNT_QUESTION);
-  const questionCopy = FILTER_QUESTION_COPY[plan.next_filter_question];
   if (questionCopy) return finalize(questionCopy);
 
   return finalize("¿En qué modelo estás interesado?");

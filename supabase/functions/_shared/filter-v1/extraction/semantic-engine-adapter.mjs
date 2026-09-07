@@ -1,4 +1,6 @@
-export function semanticExtractionToEngine(extraction) {
+import { resolveContactTiming } from "../contact-timing-resolver.mjs";
+
+export function semanticExtractionToEngine(extraction, filterInput = {}) {
   const extractedFields = {};
   if (["cash", "financed"].includes(extraction.purchase_mode_statement)) extractedFields.purchase_mode = extraction.purchase_mode_statement;
   for (const amount of extraction.amount_mentions) {
@@ -27,7 +29,10 @@ export function semanticExtractionToEngine(extraction) {
     human_request: extraction.human_request !== null,
     strong_action: extraction.strong_action !== null,
     requested_action: extraction.requested_action ? { type: extraction.requested_action.type, requested_action_at: null, time_expression: extraction.requested_action.time_expression ?? null } : null,
-    contact_preference: extraction.contact_preference_expression ? { timing: "unknown", literal: extraction.contact_preference_expression.literal, callback_at: null } : null,
+    contact_preference: extraction.contact_preference_expression ? (() => {
+      const resolved = resolveContactTiming({ literal: extraction.contact_preference_expression.literal, eventAt: filterInput.event_at, calendar: filterInput.business_calendar ?? { timeZone: filterInput.timezone } });
+      return { timing: resolved.timing, literal: extraction.contact_preference_expression.literal, callback_at: resolved.callback_at, callback_window: resolved.callback_window };
+    })() : null,
     noncommercial: extraction.do_not_contact !== null,
     customer_corrections: correction ? { target_model: correction.to_literal } : {},
     needs_clarification: extraction.needs_clarification,

@@ -26,6 +26,7 @@ create table public.ai_v2_shadow_runs (
   would_handoff boolean not null default false,
   would_continue_answering boolean not null default false,
   would_suppress_for_human boolean not null default false,
+  would_suppress_for_dnc boolean not null default false,
   error_code text null,
   error_detail text null,
   created_at timestamptz not null default now()

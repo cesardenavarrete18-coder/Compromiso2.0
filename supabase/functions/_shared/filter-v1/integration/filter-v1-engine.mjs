@@ -22,7 +22,14 @@ function previousState(input, leadContext) {
 
 function chooseNextQuestion(profile) {
   const order = ["model", "purchase_mode", "down_payment_amount", "monthly_installment_capacity", "has_trade_in", "trade_in_brand", "trade_in_model", "trade_in_variant", "trade_in_year", "trade_in_km"];
-  return order.find(key => !["known", "explicitly_unknown"].includes(profile.components[key])) ?? "contact_preference";
+  // Family L: down_payment_amount/monthly_installment_capacity (gated on
+  // purchase_mode="financed") and trade_in_* (gated on has_trade_in="yes") are
+  // only present in profile.components when their gate is satisfied — a cash
+  // buyer or a "no trade-in" answer must not be asked about them. `key in
+  // profile.components` distinguishes "not applicable" from "applicable but
+  // unresolved" (missing components would otherwise read as `undefined`,
+  // which also fails the known/explicitly_unknown check).
+  return order.find(key => key in profile.components && !["known", "explicitly_unknown"].includes(profile.components[key])) ?? "contact_preference";
 }
 
 function applyExtractedFields(state, extracted = {}) {
@@ -60,6 +67,29 @@ export function runFilterV1Integration(input) {
   }
 
   const extraction = input.current_extraction ?? {};
+
+  // Family M: DNC is a safety invariant, second only to an active human
+  // takeover — it must never be re-derived from message regex downstream
+  // (that is the Composer's job to stop doing), and it must never be
+  // overridden by an explicit human request, strong action, or a complete
+  // profile. `lead.do_not_contact` makes it persist across turns even when a
+  // later message does not repeat the DNC phrase — no dependency on V1
+  // re-detecting the text every time.
+  const doNotContact = Boolean(lead.do_not_contact) || extraction.noncommercial === true;
+  if (doNotContact) {
+    const alreadyAcknowledged = Boolean(state.dnc_acknowledged);
+    const handoff = decideHandoff({ doNotContact: true });
+    state.dnc_acknowledged = true;
+    state.qualification_status = handoff.qualification_status;
+    state.handoff_status = handoff.handoff_status;
+    state.next_action = handoff.next_action;
+    state.contact_priority = handoff.contact_priority;
+    state.state_version = version.next_state_version;
+    decisionTrace.push({ decision: "dnc", result: alreadyAcknowledged ? "repeat" : "first_ack" });
+    const responsePlan = { ...buildCommercialResponsePlan({ intent: extraction.query_intent ?? "unknown", handoff: handoff.handoff_status }), dnc_first_ack: !alreadyAcknowledged };
+    return Object.freeze({ status: "closed", next_state: state, response_plan: responsePlan, handoff_decision: handoff, resolved_facts: [], warnings, decision_trace: decisionTrace });
+  }
+
   const correctionResolution = resolveModelCandidates(catalog, extraction.customer_corrections?.target_model ? [extraction.customer_corrections.target_model] : []);
   const directMentions = extraction.target_model ? [extraction.target_model] : [];
   const customerResolution = resolveModelCandidates(catalog, directMentions);
@@ -86,6 +116,14 @@ export function runFilterV1Integration(input) {
   const timing = extraction.contact_preference?.timing ?? state.contact_preference?.timing ?? "unknown";
   const priority = contactPriority({ timing, eventAt: input.event_at, callbackAt: extraction.contact_preference?.callback_at ?? state.contact_preference?.callback_at, calendar: input.business_calendar ?? { timeZone: input.timezone } });
   state.contact_priority = priority;
+  // Family L: `timing` above already resolves this turn's contact_preference
+  // against the prior one, but the customer's literal/callback_at/callback_window
+  // were never persisted into next_state — only used transiently for this
+  // turn's priority. Persist them so a later turn (and the composer) can see
+  // what the customer actually said, once informed.
+  if (extraction.contact_preference) {
+    state.contact_preference = { ...state.contact_preference, ...extraction.contact_preference, timing };
+  }
 
   const handoff = decideHandoff({ humanOwned: false, doNotContact: lead.do_not_contact, noncommercial: extraction.noncommercial === true, explicitHumanRequest: extraction.human_request === true, strongAction: extraction.strong_action === true, profileComplete: profile.complete, contactTiming: timing });
   state.qualification_status = handoff.qualification_status;
@@ -94,6 +132,15 @@ export function runFilterV1Integration(input) {
   if (handoff.contact_priority) state.contact_priority = handoff.contact_priority;
   decisionTrace.push({ decision: "commercial_profile", result: profile.complete, component_score: profile.component_score });
   decisionTrace.push({ decision: "handoff", result: handoff.handoff_status, source: extraction.human_request ? "human_request" : extraction.strong_action ? "strong_action" : "profile" });
+
+  // Family L: a complete profile with unknown contact timing is exactly the case
+  // decideHandoff marks stop_questions=true (next_action="complete_filter") —
+  // which otherwise silences next_filter_question forever, so "ask contact
+  // preference" could never actually be asked. Ask it once; never repeat once
+  // state.contact_preference.asked_once is set, regardless of how many more
+  // turns pass without an answer.
+  const askContactPreferenceNow = handoff.next_action === "complete_filter" && !state.contact_preference?.asked_once;
+  if (askContactPreferenceNow) state.contact_preference = { ...state.contact_preference, asked_once: true };
 
   const intent = extraction.query_intent ?? "unknown";
   const factSubject = resolveModel(catalog, extraction.turn_subject_model) ?? target;
@@ -109,7 +156,7 @@ export function runFilterV1Integration(input) {
   }
 
   const nextQuestion = intent === "ambiguous_initial_amount" ? "clarify_initial_amount_intent" : chooseNextQuestion(profile);
-  const responsePlan = handoff.stop_questions
+  const responsePlan = (handoff.stop_questions && !askContactPreferenceNow)
     ? buildCommercialResponsePlan({ intent, handoff: handoff.handoff_status })
     : buildCommercialResponsePlan({ intent, answerFact, facts: resolvedFacts, nextFilterQuestion: nextQuestion });
   warnings.push(...responsePlan.warnings);
