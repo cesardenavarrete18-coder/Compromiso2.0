@@ -6,6 +6,10 @@ alter table public.lead_crm add constraint lead_crm_status check (status in (
   'entrevista', 'cierre', 'sena', 'venta', 'desistir'
 ));
 
+alter table public.lead_contact_tasks
+  add column if not exists performed_at timestamptz,
+  add column if not exists recorded_at timestamptz;
+
 create or replace function private.crm_transition_allowed(p_from text, p_to text)
 returns boolean
 language sql
@@ -195,6 +199,91 @@ $$;
 revoke all on function public.reactivate_lead_cycle(uuid, uuid, text) from public, anon;
 grant execute on function public.reactivate_lead_cycle(uuid, uuid, text) to authenticated;
 
+create or replace function public.record_contact_task_result(
+  p_task_id uuid,
+  p_outcome text,
+  p_note text default '',
+  p_performed_at timestamptz default now()
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_result jsonb;
+begin
+  if p_performed_at is null or p_performed_at > now() + interval '5 minutes' then
+    raise exception 'La hora efectiva del contacto no es válida';
+  end if;
+
+  v_result := public.complete_contact_task(p_task_id, p_outcome, p_note);
+
+  update public.lead_contact_tasks set
+    performed_at = p_performed_at,
+    recorded_at = now()
+  where id = p_task_id;
+
+  if coalesce((v_result ->> 'sequence_finished')::boolean, false) then
+    update public.lead_crm set
+      status = 'desistir',
+      status_reason = 'No contactado post protocolo',
+      next_contact_at = null,
+      next_contact_note = '',
+      next_contact_source = null,
+      cold_base_at = now(),
+      updated_at = now()
+    where lead_id = (v_result ->> 'lead_id')::uuid;
+
+    insert into public.lead_activities (lead_id, actor_user_id, activity_type, title, detail, metadata)
+    values ((v_result ->> 'lead_id')::uuid, auth.uid(), 'status_change', 'Lead clasificado como Base fría',
+      'No contactado post protocolo', jsonb_build_object('status', 'desistir', 'segment', 'base_fria', 'reason', 'No contactado post protocolo'));
+  end if;
+
+  return v_result;
+end;
+$$;
+
+revoke all on function public.record_contact_task_result(uuid, text, text, timestamptz) from public, anon;
+grant execute on function public.record_contact_task_result(uuid, text, text, timestamptz) to authenticated;
+
+create or replace function public.start_no_contact_protocol_from_future(p_lead_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_user_id uuid := (select auth.uid());
+begin
+  if v_user_id is null or not private.current_user_active() then raise exception 'Acceso no autorizado'; end if;
+  if not private.current_user_is_management() and not exists (
+    select 1 from public.leads where id = p_lead_id and assigned_seller_user_id = v_user_id
+  ) then raise exception 'El Lead no está asignado a este vendedor'; end if;
+  if not exists (select 1 from public.lead_crm where lead_id = p_lead_id and status = 'contacto_futuro' for update) then
+    raise exception 'El Lead ya no está en Pide contacto futuro';
+  end if;
+
+  update public.lead_crm set
+    status = 'no_contesta',
+    next_contact_at = null,
+    next_contact_note = '',
+    next_contact_source = null,
+    last_contact_at = now(),
+    last_contact_outcome = 'no_answer',
+    updated_by = v_user_id,
+    updated_at = now()
+  where lead_id = p_lead_id;
+
+  insert into public.lead_activities (lead_id, actor_user_id, activity_type, title, detail, metadata)
+  values (p_lead_id, v_user_id, 'contact', 'Contacto futuro intentado sin respuesta', '',
+    jsonb_build_object('previous_status', 'contacto_futuro', 'status', 'no_contesta', 'performed_at', now(), 'recorded_at', now(), 'outcome', 'no_answer'));
+end;
+$$;
+
+revoke all on function public.start_no_contact_protocol_from_future(uuid) from public, anon;
+grant execute on function public.start_no_contact_protocol_from_future(uuid) to authenticated;
+
 create or replace function public.record_lead_follow_up(
   p_lead_id uuid,
   p_status text,
@@ -322,3 +411,57 @@ comment on function public.record_lead_follow_up(uuid, text, text, timestamptz, 
 
 revoke all on function public.record_lead_follow_up(uuid, text, text, timestamptz, text, text, timestamptz, text, numeric, text) from public, anon;
 grant execute on function public.record_lead_follow_up(uuid, text, text, timestamptz, text, text, timestamptz, text, numeric, text) to authenticated;
+
+create or replace function public.record_contact_answer_with_transition(
+  p_task_id uuid,
+  p_status text,
+  p_note text default '',
+  p_next_contact_at timestamptz default null,
+  p_next_contact_note text default '',
+  p_contact_outcome text default '',
+  p_interview_at timestamptz default null,
+  p_interview_location text default '',
+  p_deposit_amount numeric default null,
+  p_priority text default 'normal',
+  p_performed_at timestamptz default now()
+)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_lead_id uuid;
+begin
+  select lead_id into v_lead_id from public.lead_contact_tasks where id = p_task_id for update;
+  if v_lead_id is null then raise exception 'No se encontró el intento de contacto'; end if;
+  if p_status not in ('contacto_futuro', 'en_proceso', 'entrevista', 'cierre', 'sena', 'desistir') then
+    raise exception 'Resultado comercial no permitido después de una respuesta';
+  end if;
+
+  perform public.record_contact_task_result(p_task_id, 'answered', p_note, p_performed_at);
+
+  if p_status = 'contacto_futuro' then
+    if p_next_contact_at is null or p_next_contact_at <= now() then raise exception 'Programá el contacto solicitado'; end if;
+    update public.lead_crm set
+      status = 'contacto_futuro',
+      next_contact_at = p_next_contact_at,
+      next_contact_note = left(coalesce(nullif(trim(p_next_contact_note), ''), trim(p_note)), 1000),
+      next_contact_source = 'manual',
+      last_contact_at = p_performed_at,
+      last_contact_outcome = 'answered',
+      updated_by = auth.uid(),
+      updated_at = now()
+    where lead_id = v_lead_id;
+    insert into public.lead_activities (lead_id, actor_user_id, activity_type, title, detail, metadata)
+    values (v_lead_id, auth.uid(), 'follow_up', 'El cliente pidió contacto futuro', trim(p_note),
+      jsonb_build_object('previous_status', 'no_contesta', 'status', 'contacto_futuro', 'next_contact_at', p_next_contact_at, 'performed_at', p_performed_at, 'recorded_at', now()));
+  else
+    perform public.record_lead_follow_up(v_lead_id, p_status, p_note, p_next_contact_at, p_next_contact_note,
+      coalesce(nullif(p_contact_outcome, ''), 'answered'), p_interview_at, p_interview_location, p_deposit_amount, p_priority);
+  end if;
+end;
+$$;
+
+revoke all on function public.record_contact_answer_with_transition(uuid, text, text, timestamptz, text, text, timestamptz, text, numeric, text, timestamptz) from public, anon;
+grant execute on function public.record_contact_answer_with_transition(uuid, text, text, timestamptz, text, text, timestamptz, text, numeric, text, timestamptz) to authenticated;

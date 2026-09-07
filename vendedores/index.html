@@ -505,6 +505,17 @@
               <div class="crm-new-outcomes" id="crmNewOutcomes" hidden></div>
               <p class="crm-form-error" id="crmNewError"></p>
             </section>
+            <section class="crm-no-contact-experience" id="crmNoContactExperience" hidden>
+              <div class="crm-state-intro"><div><p class="eyebrow dark">Sin contacto</p><h3>Protocolo de contacto</h3><p>Cada intento conserva su horario, franja, canal y resultado.</p></div><button type="button" data-protocol-answered>El cliente contestó</button></div>
+              <div id="crmNoContactProtocol"></div>
+              <p class="crm-form-error" id="crmNoContactError"></p>
+            </section>
+            <section class="crm-future-contact-experience" id="crmFutureContactExperience" hidden>
+              <div class="crm-future-commitment" id="crmFutureCommitment"></div>
+              <div class="crm-future-actions"><button type="button" data-future-result="answered">Contestó</button><button type="button" data-future-result="rescheduled">Reprogramar</button><button type="button" data-future-result="no_answer">No contestó</button></div>
+              <div class="crm-future-outcomes" id="crmFutureOutcomes" hidden></div>
+              <p class="crm-form-error" id="crmFutureError"></p>
+            </section>
             <section class="crm-transition-picker" id="crmTransitionPicker" hidden><span>Resultado de la gestión</span><div id="crmTransitionOptions"></div></section>
             <div id="crmProtocol"></div>
             <div class="crm-budget-entry"><div><span>Propuesta para el cliente</span><strong>Plan o crédito disponible</strong><small>Usá la precalificación para preparar un presupuesto y guardarlo en este Lead.</small></div><button class="crm-action-link" id="crmBudgetFromManagement" type="button">Generar presupuesto</button></div>

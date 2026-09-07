@@ -21,7 +21,7 @@
     { value: "desistir", label: "Desistir" }
   ];
   var CLOSED_STAGES = ["venta", "desistir", "invalido"];
-  var state = { leads: [], tasks: [], appraisals: [], commercialCatalog: [], activeLead: null, view: "agenda", searchAgenda: "", searchPipeline: "", portfolioStatus: "all", portfolioView: "all", loading: false };
+  var state = { leads: [], tasks: [], appraisals: [], commercialCatalog: [], activeLead: null, view: "agenda", searchAgenda: "", searchPipeline: "", portfolioStatus: "all", portfolioView: "all", pendingProtocolAnsweredTaskId: null, loading: false };
   var leadDialog = document.getElementById("crmLeadDialog");
   var commentDialog = document.getElementById("crmCommentDialog");
   var commercialSelectionDialog = document.getElementById("crmCommercialSelectionDialog");
@@ -264,7 +264,7 @@
         supabaseClient.from("leads").select(
           "id, customer_id, customer_phone, customer_name, source_channel, source_detail, qualification_status, priority, intent_summary, model_interest, assigned_at, last_message_at, created_at, customer:customers(full_name,primary_phone,email,document_number,cuil), attribution:lead_attributions(platform,source_type,campaign_name,adset_name,ad_name,headline,source_url), crm:lead_crm(status, priority, status_reason, next_contact_at, next_contact_note, next_contact_source, last_contact_at, last_contact_outcome, interview_at, interview_location, deposit_amount, deposit_at, cold_base_at, sale_confirmation_status, sale_requested_at, sale_confirmed_at, vehicle_sold, sale_amount, updated_at)"
         ).order("last_message_at", { ascending: false }).limit(500),
-        supabaseClient.from("lead_contact_tasks").select("id, sequence_id, lead_id, sequence_order, channel, call_attempt, message_step, due_start, due_end, status, outcome, note, completed_at, template:contact_message_templates(title,body)").order("due_start", { ascending: true }).limit(3500),
+        supabaseClient.from("lead_contact_tasks").select("id, sequence_id, lead_id, sequence_order, channel, call_attempt, message_step, due_start, due_end, status, outcome, note, performed_at, recorded_at, completed_at, updated_at, template:contact_message_templates(title,body)").order("due_start", { ascending: true }).limit(3500),
         supabaseClient.from("vehicle_appraisals").select("id, lead_id, brand, model, version, vehicle_year, mileage_km, condition, notes, estimated_min, estimated_max, market_median, suggested_value, market_currency, estimate_source, estimate_basis, reference_count, market_references, market_checked_at, status, confirmed_value, confirmed_currency, review_note, updated_at").order("updated_at", { ascending: false }).limit(500)
       ]);
       if (responses[0].error) throw responses[0].error;
@@ -503,6 +503,54 @@
       }).join("") + '</div></div></details>';
   }
 
+  function formatTime(value) {
+    if (!value) return "—";
+    return new Intl.DateTimeFormat("es-AR", { timeZone: "America/Argentina/Buenos_Aires", hour: "2-digit", minute: "2-digit" }).format(new Date(value));
+  }
+
+  function localDateTimeValue(value) {
+    var parts = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "America/Argentina/Buenos_Aires", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23"
+    }).formatToParts(new Date(value || Date.now()));
+    var map = {};
+    parts.forEach(function (part) { if (part.type !== "literal") map[part.type] = part.value; });
+    return map.year + "-" + map.month + "-" + map.day + "T" + map.hour + ":" + map.minute;
+  }
+
+  function protocolOutcomeLabel(value) {
+    return { no_answer: "No contestó", answered: "Contestó", sent: "WhatsApp enviado", invalid: "Dato inválido", no_interest: "Sin interés", requested_no_contact: "Pidió no ser contactado", skipped: "Omitido" }[value] || "Sin resultado";
+  }
+
+  function protocolBand(task) {
+    return formatTime(task.due_start) + "–" + formatTime(task.due_end);
+  }
+
+  function renderNoContactProtocol(lead) {
+    var tasks = tasksForLead(lead.id);
+    var target = document.getElementById("crmNoContactProtocol");
+    if (!tasks.length) {
+      target.innerHTML = '<div class="crm-protocol-empty"><strong>Protocolo pendiente de iniciar</strong><p>El sistema iniciará la secuencia canónica al registrar el primer intento.</p></div>';
+      return;
+    }
+    var days = tasks.reduce(function (groups, task) {
+      var key = localDateKey(task.due_start);
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(task);
+      return groups;
+    }, {});
+    target.innerHTML = Object.keys(days).map(function (key, dayIndex) {
+      return '<section class="crm-protocol-day"><header><div><span>Día ' + (dayIndex + 1) + '</span><strong>' + escapeHtml(new Intl.DateTimeFormat("es-AR", { timeZone: "America/Argentina/Buenos_Aires", weekday: "long", day: "2-digit", month: "2-digit" }).format(new Date(days[key][0].due_start))) + '</strong></div><small>Franjas 10–12 · 14–16 · 17–19</small></header><div class="crm-protocol-attempts">' + days[key].map(function (task) {
+        var done = ["completed", "skipped", "cancelled"].includes(task.status);
+        var actionable = task.status === "pending";
+        var performed = task.performed_at || task.completed_at;
+        var recorded = task.recorded_at || task.completed_at || (done ? task.updated_at : null);
+        var message = task.channel === "whatsapp" ? personalizedMessage(task, lead) : "";
+        return '<article class="crm-protocol-attempt ' + escapeHtml(task.status) + '"><div class="crm-attempt-state" aria-label="' + (done ? "Realizado" : "Pendiente") + '">' + (done ? "✓" : "○") + '</div><div class="crm-attempt-main"><div class="crm-attempt-heading"><div><span>' + escapeHtml(task.channel === "call" ? "Llamada" : "WhatsApp") + '</span><strong>' + escapeHtml(taskTitle(task)) + '</strong></div><b>' + escapeHtml(protocolBand(task)) + '</b></div>' +
+          (done ? '<dl><div><dt>Resultado</dt><dd>' + escapeHtml(task.status === "cancelled" ? "Cancelado" : protocolOutcomeLabel(task.outcome)) + '</dd></div><div><dt>Hora efectiva</dt><dd>' + escapeHtml(formatTime(performed)) + '</dd></div><div><dt>Registrado</dt><dd>' + escapeHtml(recorded ? formatDate(recorded) : "Sin registro") + '</dd></div></dl>' : actionable ? '<label>Hora efectiva / declarada<input type="datetime-local" data-contact-performed-at="' + task.id + '" value="' + localDateTimeValue() + '"></label><div class="crm-attempt-actions">' + (task.channel === "call" ? '<a href="tel:+' + String(lead.customer_phone || "").replace(/\D/g, "") + '">Llamar</a><button type="button" data-contact-task="' + task.id + '" data-contact-outcome="no_answer">No contestó</button><button class="success" type="button" data-protocol-answered data-task-id="' + task.id + '">Contestó</button><button type="button" data-contact-task="' + task.id + '" data-contact-outcome="invalid">Inválido</button>' : '<button type="button" data-open-whatsapp="' + encodeURIComponent(message) + '">Abrir WhatsApp</button><button type="button" data-contact-task="' + task.id + '" data-contact-outcome="sent">Marcar enviado</button>') + '</div>' : '<p class="crm-attempt-waiting">Se habilita al completar el intento anterior.</p>') + '</div></article>';
+      }).join("") + '</div></section>';
+    }).join("");
+  }
+
   async function loadCustomerHistory(lead) {
     var container = document.getElementById("crmCustomerHistory");
     if (!lead.customer_id) { container.innerHTML = '<div class="agenda-empty">Todavía no hay una ficha unificada del cliente.</div>'; return; }
@@ -534,7 +582,7 @@
 
   function renderTransitionPicker(fromStatus) {
     var picker = document.getElementById("crmTransitionPicker");
-    picker.hidden = fromStatus === "nuevo" || fromStatus === "venta";
+    picker.hidden = ["nuevo", "no_contesta", "contacto_futuro", "venta"].includes(fromStatus);
     document.getElementById("crmTransitionOptions").innerHTML = transitionButtons(transitionModel.allowedFrom(fromStatus));
   }
 
@@ -577,6 +625,26 @@
     await completeContactTask(pending.id, "no_answer");
   }
 
+  function renderFutureContact(lead, crm) {
+    var target = document.getElementById("crmFutureCommitment");
+    var overdue = crm.next_contact_at && new Date(crm.next_contact_at).getTime() < Date.now();
+    target.classList.toggle("is-overdue", Boolean(overdue));
+    target.innerHTML = '<span>' + (overdue ? "Contacto solicitado vencido" : "Contacto solicitado") + '</span><strong>' + escapeHtml(crm.next_contact_at ? formatDate(crm.next_contact_at, true) : "Falta fecha y hora") + '</strong><p>' + escapeHtml(crm.next_contact_note || "Sin contexto adicional") + '</p><small>' + (overdue ? "El intento todavía no fue registrado: no se infiere que el cliente no contestó." : "Registrá el resultado cuando realices el contacto.") + '</small>';
+    document.getElementById("crmFutureOutcomes").hidden = true;
+    document.getElementById("crmFutureError").textContent = "";
+  }
+
+  async function futureContactNoAnswer() {
+    if (!state.activeLead) return;
+    var errorBox = document.getElementById("crmFutureError");
+    errorBox.textContent = "";
+    var result = await supabaseClient.rpc("start_no_contact_protocol_from_future", { p_lead_id: state.activeLead.id });
+    if (result.error) { errorBox.textContent = result.error.message; return; }
+    var leadId = state.activeLead.id;
+    await loadLeads(true);
+    await openLead(leadId);
+  }
+
   async function openLead(leadId) {
     var lead = state.leads.find(function (item) { return item.id === leadId; });
     if (!lead) return;
@@ -584,13 +652,21 @@
     var crm = crmOf(lead);
     var isNew = crm.status === "nuevo";
     var isManagement = crm.status === "en_proceso";
-    leadDialog.classList.toggle("crm-v2-workspace", isNew || isManagement);
+    var isNoContact = crm.status === "no_contesta";
+    var isFutureContact = crm.status === "contacto_futuro";
+    leadDialog.classList.toggle("crm-v2-workspace", isNew || isManagement || isNoContact || isFutureContact);
     leadDialog.classList.toggle("is-new", isNew);
     leadDialog.classList.toggle("is-management", isManagement);
+    leadDialog.classList.toggle("is-no-contact", isNoContact);
+    leadDialog.classList.toggle("is-future-contact", isFutureContact);
     leadDialog.classList.remove("is-editing-outcome");
     document.getElementById("crmNewExperience").hidden = !isNew;
+    document.getElementById("crmNoContactExperience").hidden = !isNoContact;
+    document.getElementById("crmFutureContactExperience").hidden = !isFutureContact;
     renderTransitionPicker(crm.status);
     if (isNew) renderNewExperience();
+    if (isNoContact) renderNoContactProtocol(lead);
+    if (isFutureContact) renderFutureContact(lead, crm);
     if (window.grupoSurEnGestionExperience) window.grupoSurEnGestionExperience.openLead(lead);
     document.getElementById("crmLeadName").textContent = lead.customer_name || "Cliente sin nombre";
     var phoneDigits = String(lead.customer_phone || "").replace(/\D/g, "");
@@ -674,7 +750,7 @@
     if (status === "sena" && (!deposit || Number(deposit) <= 0)) { errorBox.textContent = "Indicá el importe de la seña."; return; }
     if (["invalido", "desistir"].includes(status) && note.length < 3) { errorBox.textContent = "Explicá brevemente el motivo."; return; }
     setBusy(button, true, "Guardando…");
-    var result = await supabaseClient.rpc("record_lead_follow_up", {
+    var payload = {
       p_lead_id: state.activeLead.id,
       p_status: status,
       p_note: note,
@@ -685,8 +761,18 @@
       p_interview_location: document.getElementById("crmInterviewLocationInput").value.trim(),
       p_deposit_amount: deposit ? Number(deposit) : null,
       p_priority: document.getElementById("crmPriorityInput").value
-    });
+    };
+    if (state.pendingProtocolAnsweredTaskId) {
+      payload.p_task_id = state.pendingProtocolAnsweredTaskId;
+      delete payload.p_lead_id;
+      var performedInput = document.querySelector('[data-contact-performed-at="' + state.pendingProtocolAnsweredTaskId + '"]');
+      payload.p_performed_at = performedInput && performedInput.value ? new Date(performedInput.value + ":00-03:00").toISOString() : new Date().toISOString();
+    }
+    var result = state.pendingProtocolAnsweredTaskId
+      ? await supabaseClient.rpc("record_contact_answer_with_transition", payload)
+      : await supabaseClient.rpc("record_lead_follow_up", payload);
     if (result.error) { errorBox.textContent = result.error.message; setBusy(button, false); return; }
+    state.pendingProtocolAnsweredTaskId = null;
     await loadLeads(true);
     leadDialog.close();
     setBusy(button, false);
@@ -739,7 +825,9 @@
     if (!state.activeLead) return;
     var leadId = state.activeLead.id;
     var protocolWasOpen = !!document.querySelector("#crmProtocol details[open]");
-    var result = await supabaseClient.rpc("complete_contact_task_with_follow_up", { p_task_id: taskId, p_outcome: outcome, p_note: "", p_next_contact_at: null, p_next_contact_note: "" });
+    var performedInput = document.querySelector('[data-contact-performed-at="' + taskId + '"]');
+    var performedAt = performedInput && performedInput.value ? new Date(performedInput.value + ":00-03:00").toISOString() : new Date().toISOString();
+    var result = await supabaseClient.rpc("record_contact_task_result", { p_task_id: taskId, p_outcome: outcome, p_note: "", p_performed_at: performedAt });
     if (result.error) {
       document.getElementById("crmFormError").textContent = result.error.message;
       return;
@@ -804,6 +892,27 @@
   }
 
   document.addEventListener("click", function (event) {
+    var protocolAnswered = event.target.closest("[data-protocol-answered]");
+    if (protocolAnswered && state.activeLead) {
+      var nextTask = nextPendingTask(state.activeLead.id);
+      state.pendingProtocolAnsweredTaskId = protocolAnswered.dataset.taskId || nextTask && nextTask.id || null;
+      var picker = document.getElementById("crmTransitionPicker");
+      picker.hidden = false;
+      document.getElementById("crmTransitionOptions").innerHTML = transitionButtons(["contacto_futuro", "en_proceso", "entrevista", "cierre", "sena", "venta", "desistir"]);
+      picker.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+    var futureResult = event.target.closest("[data-future-result]");
+    if (futureResult) {
+      if (futureResult.dataset.futureResult === "no_answer") futureContactNoAnswer();
+      else if (futureResult.dataset.futureResult === "rescheduled") selectWorkspaceTransition("contacto_futuro");
+      else {
+        var futureOutcomes = document.getElementById("crmFutureOutcomes");
+        futureOutcomes.innerHTML = '<span>¿Cuál fue el resultado comercial?</span><div>' + transitionButtons(["contacto_futuro", "en_proceso", "entrevista", "cierre", "sena", "venta", "desistir"]) + '</div>';
+        futureOutcomes.hidden = false;
+      }
+      return;
+    }
     var contactDecision = event.target.closest("[data-contact-decision]");
     if (contactDecision) {
       var answered = contactDecision.dataset.contactDecision === "answered";

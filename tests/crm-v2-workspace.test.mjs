@@ -6,6 +6,7 @@ import { runInNewContext } from "node:vm";
 const html = readFileSync(new URL("../vendedores/index.html", import.meta.url), "utf8");
 const crm = readFileSync(new URL("../vendedores/crm.js", import.meta.url), "utf8");
 const management = readFileSync(new URL("../vendedores/en-gestion.js", import.meta.url), "utf8");
+const sales = readFileSync(new URL("../vendedores/sales.js", import.meta.url), "utf8");
 const transitionSource = readFileSync(new URL("../vendedores/crm-transition-model.js", import.meta.url), "utf8");
 const migration = readFileSync(new URL("../supabase/migrations/20260907150000_crm_v2_transition_matrix.sql", import.meta.url), "utf8");
 const context = {};
@@ -94,4 +95,57 @@ test("el Workspace reutiliza herramientas e historial existentes", () => {
   assert.ok(html.includes("Historial"));
   assert.ok(html.includes("Consultas previas"));
   assert.ok(html.includes("Conversación IA"));
+});
+
+test("Sin contacto renderiza cada intento por día, franja, canal y resultado", () => {
+  assert.ok(html.includes('id="crmNoContactExperience"'));
+  assert.ok(crm.includes("function renderNoContactProtocol(lead)"));
+  assert.ok(crm.includes('class="crm-protocol-day"'));
+  assert.ok(crm.includes('class="crm-protocol-attempt '));
+  for (const field of ["Hora efectiva", "Registrado", "Resultado"]) assert.ok(crm.includes(field));
+  assert.ok(crm.includes("performed_at, recorded_at, completed_at"));
+});
+
+test("cada intento registra hora efectiva separada de la hora de registro", () => {
+  const flow = migration.match(/create or replace function public\.record_contact_task_result[\s\S]*?grant execute on function public\.record_contact_task_result[\s\S]*?authenticated;/)?.[0] || "";
+  assert.ok(migration.includes("add column if not exists performed_at timestamptz"));
+  assert.ok(migration.includes("add column if not exists recorded_at timestamptz"));
+  assert.ok(flow.includes("performed_at = p_performed_at"));
+  assert.ok(flow.includes("recorded_at = now()"));
+});
+
+test("el fin de protocolo desiste con motivo canónico y clasifica Base fría", () => {
+  const flow = migration.match(/create or replace function public\.record_contact_task_result[\s\S]*?grant execute on function public\.record_contact_task_result[\s\S]*?authenticated;/)?.[0] || "";
+  assert.ok(flow.includes("status = 'desistir'"));
+  assert.ok(flow.includes("status_reason = 'No contactado post protocolo'"));
+  assert.ok(flow.includes("cold_base_at = now()"));
+  assert.ok(flow.includes("'segment', 'base_fria'"));
+  assert.doesNotMatch(transitionSource, /base_fria\s*:/);
+});
+
+test("Pide contacto futuro distingue vencimiento de No contestó", () => {
+  assert.ok(html.includes('id="crmFutureContactExperience"'));
+  assert.ok(crm.includes("Contacto solicitado vencido"));
+  assert.ok(crm.includes("no se infiere que el cliente no contestó"));
+  assert.ok(html.includes('data-future-result="rescheduled"'));
+  assert.ok(crm.includes('rpc("start_no_contact_protocol_from_future"'));
+  assert.ok(migration.includes("where lead_id = p_lead_id and status = 'contacto_futuro' for update"));
+});
+
+test("una respuesta desde Sin contacto ofrece sólo resultados comerciales válidos", () => {
+  const valid = '["contacto_futuro", "en_proceso", "entrevista", "cierre", "sena", "venta", "desistir"]';
+  assert.ok(crm.includes(valid));
+  assert.ok(crm.includes("state.pendingProtocolAnsweredTaskId"));
+  assert.ok(crm.includes('rpc("record_contact_answer_with_transition"'));
+  assert.match(migration, /p_status not in \('contacto_futuro', 'en_proceso', 'entrevista', 'cierre', 'sena', 'desistir'\)/);
+});
+
+test("smoke: las herramientas comunes siguen siendo instancias únicas", () => {
+  for (const id of ["crmWhatsappLink", "crmCommentButton", "crmBudgetButton", "crmSaleButton", "crmTimeline", "crmCustomerHistory", "crmChat"]) {
+    assert.equal((html.match(new RegExp(`id="${id}"`, "g")) || []).length, 1, id);
+  }
+  assert.ok(sales.includes('document.getElementById("crmBudgetButton")'));
+  assert.ok(crm.includes('document.getElementById("crmSaleButton")'));
+  assert.ok(crm.includes('document.getElementById("crmCommentButton")'));
+  assert.ok(crm.includes('document.getElementById("crmWhatsappLink").href'));
 });
