@@ -7,7 +7,7 @@ const html = readFileSync(new URL("../vendedores/index.html", import.meta.url), 
 const crm = readFileSync(new URL("../vendedores/crm.js", import.meta.url), "utf8");
 const management = readFileSync(new URL("../vendedores/en-gestion.js", import.meta.url), "utf8");
 const transitionSource = readFileSync(new URL("../vendedores/crm-transition-model.js", import.meta.url), "utf8");
-const migration = readFileSync(new URL("../supabase/migrations/20260908120000_crm_v2_transition_matrix.sql", import.meta.url), "utf8");
+const migration = readFileSync(new URL("../supabase/migrations/20260907150000_crm_v2_transition_matrix.sql", import.meta.url), "utf8");
 const context = {};
 context.globalThis = context;
 runInNewContext(transitionSource, context);
@@ -52,6 +52,39 @@ test("frontend y RPC validan la misma transición antes de persistir", () => {
   assert.ok(migration.includes("private.crm_transition_allowed(v_previous_status, p_status)"));
   assert.match(migration, /when 'en_proceso' then p_to in \('en_proceso','entrevista','cierre','sena','venta','desistir'\)/);
   assert.match(migration, /when 'sena' then p_to in \('sena','venta','desistir'\)/);
+});
+
+test("el vendedor no puede convertir manualmente un cierre terminal en Nuevo", () => {
+  assert.equal(transitions.canTransition("desistir", "nuevo"), false);
+  assert.equal(transitions.canTransition("invalido", "nuevo"), false);
+  assert.match(migration, /if p_status = 'nuevo' then\s+raise exception 'Nuevo es un estado de ingreso/);
+  assert.doesNotMatch(transitionSource, /desistir:\s*\[[^\]]*nuevo/);
+  assert.doesNotMatch(transitionSource, /invalido:\s*\[[^\]]*nuevo/);
+});
+
+test("una reactivación autorizada inicia un ciclo explícito en Nuevo", () => {
+  const reactivation = migration.match(/create or replace function public\.reactivate_lead_cycle[\s\S]*?grant execute on function public\.reactivate_lead_cycle[\s\S]*?authenticated;/)?.[0] || "";
+  assert.ok(reactivation.includes("private.current_user_is_management()"));
+  assert.ok(reactivation.includes("routing_reason = 'authorized_reactivation'"));
+  assert.ok(reactivation.includes("private.start_lead_crm_cycle"));
+  assert.ok(migration.includes("status = 'nuevo'"));
+});
+
+test("una transferencia autorizada inicia el nuevo ciclo sin usar la matriz comercial", () => {
+  const assignmentTrigger = migration.match(/create or replace function private\.start_contact_sequence_after_assignment[\s\S]*?revoke all on function private\.start_contact_sequence_after_assignment/)?.[0] || "";
+  assert.ok(assignmentTrigger.includes("old.assigned_seller_user_id is distinct from new.assigned_seller_user_id"));
+  assert.ok(assignmentTrigger.includes("private.start_lead_crm_cycle"));
+  assert.ok(assignmentTrigger.includes("'transfer'"));
+  assert.doesNotMatch(assignmentTrigger, /crm_transition_allowed/);
+});
+
+test("el nuevo ciclo conserva una instantánea y nunca elimina el historial previo", () => {
+  const cycle = migration.match(/create or replace function private\.start_lead_crm_cycle[\s\S]*?revoke all on function private\.start_lead_crm_cycle/)?.[0] || "";
+  assert.ok(cycle.includes("insert into public.lead_activities"));
+  assert.ok(cycle.includes("'previous_status', v_previous.status"));
+  assert.ok(cycle.includes("'previous_next_contact_at', v_previous.next_contact_at"));
+  assert.ok(cycle.includes("'previous_deposit_amount', v_previous.deposit_amount"));
+  assert.doesNotMatch(cycle, /delete\s+from\s+public\.(lead_activities|lead_assignments|lead_contact_tasks)/i);
 });
 
 test("el Workspace reutiliza herramientas e historial existentes", () => {

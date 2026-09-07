@@ -27,6 +27,174 @@ $$;
 
 revoke all on function private.crm_transition_allowed(text, text) from public, anon, authenticated;
 
+-- Transfers and authorized reactivations are explicit new-cycle operations.
+-- They deliberately bypass the commercial transition matrix while preserving
+-- the previous cycle as an immutable activity snapshot.
+create or replace function private.start_lead_crm_cycle(
+  p_lead_id uuid,
+  p_actor_user_id uuid,
+  p_origin text,
+  p_reason text
+)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_previous public.lead_crm%rowtype;
+  v_seller uuid;
+begin
+  select * into v_previous
+  from public.lead_crm
+  where lead_id = p_lead_id
+  for update;
+  if not found then raise exception 'No se encontró la ficha CRM del Lead'; end if;
+
+  select assigned_seller_user_id into v_seller
+  from public.leads
+  where id = p_lead_id;
+  if v_seller is null then raise exception 'El Lead todavía no tiene vendedor'; end if;
+
+  perform private.cancel_lead_contact_protocol(p_lead_id, 'Inicio de nuevo ciclo: ' || p_origin);
+
+  insert into public.lead_activities (lead_id, actor_user_id, activity_type, title, detail, metadata)
+  values (
+    p_lead_id,
+    p_actor_user_id,
+    'assignment',
+    'Nuevo ciclo comercial iniciado',
+    left(trim(coalesce(p_reason, 'Nuevo ciclo autorizado')), 5000),
+    jsonb_build_object(
+      'origin', p_origin,
+      'previous_status', v_previous.status,
+      'previous_priority', v_previous.priority,
+      'previous_status_reason', v_previous.status_reason,
+      'previous_next_contact_at', v_previous.next_contact_at,
+      'previous_next_contact_note', v_previous.next_contact_note,
+      'previous_last_contact_at', v_previous.last_contact_at,
+      'previous_last_contact_outcome', v_previous.last_contact_outcome,
+      'previous_interview_at', v_previous.interview_at,
+      'previous_deposit_amount', v_previous.deposit_amount,
+      'previous_deposit_at', v_previous.deposit_at
+    )
+  );
+
+  update public.lead_crm set
+    status = 'nuevo',
+    priority = 'normal',
+    status_reason = '',
+    next_contact_at = null,
+    next_contact_note = '',
+    next_contact_source = null,
+    last_contact_at = null,
+    last_contact_outcome = '',
+    interview_at = null,
+    interview_location = '',
+    deposit_amount = null,
+    deposit_at = null,
+    cold_base_at = null,
+    updated_by = p_actor_user_id,
+    updated_at = now()
+  where lead_id = p_lead_id;
+
+  -- A status change into Nuevo starts the protocol through the canonical CRM
+  -- trigger. If the Lead was already Nuevo, start it explicitly instead.
+  if v_previous.status = 'nuevo' then
+    perform private.create_lead_contact_sequence(p_lead_id, v_seller, now());
+  end if;
+end;
+$$;
+
+revoke all on function private.start_lead_crm_cycle(uuid, uuid, text, text) from public, anon, authenticated;
+
+create or replace function private.start_contact_sequence_after_assignment()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if new.assigned_seller_user_id is not null
+    and tg_op = 'INSERT'
+    and not new.do_not_contact
+    and not exists (select 1 from public.sales_cases where lead_id = new.id) then
+    perform private.create_lead_contact_sequence(new.id, new.assigned_seller_user_id, greatest(coalesce(new.assigned_at, now()), now()));
+  elsif new.assigned_seller_user_id is not null
+    and old.assigned_seller_user_id is distinct from new.assigned_seller_user_id
+    and not new.do_not_contact
+    and not exists (select 1 from public.sales_cases where lead_id = new.id) then
+    perform private.start_lead_crm_cycle(
+      new.id,
+      coalesce(new.assigned_by_user_id, new.assigned_seller_user_id),
+      case when new.routing_reason = 'authorized_reactivation' then 'reactivation' when old.assigned_seller_user_id is null then 'assignment' else 'transfer' end,
+      case when new.routing_reason = 'authorized_reactivation' then 'Lead reactivado con autorización' when old.assigned_seller_user_id is null then 'Lead asignado' else 'Lead transferido a otro vendedor' end
+    );
+  end if;
+  return new;
+end;
+$$;
+
+revoke all on function private.start_contact_sequence_after_assignment() from public, anon, authenticated;
+
+create or replace function public.reactivate_lead_cycle(
+  p_lead_id uuid,
+  p_seller_user_id uuid,
+  p_reason text
+)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_user_id uuid := (select auth.uid());
+  v_previous_seller uuid;
+  v_reason text := trim(coalesce(p_reason, ''));
+begin
+  if v_user_id is null or not private.current_user_is_management() then
+    raise exception 'Se requiere permiso de supervisión';
+  end if;
+  if char_length(v_reason) < 3 or char_length(v_reason) > 1000 then
+    raise exception 'Indicá un motivo válido para la reactivación';
+  end if;
+  if not exists (
+    select 1 from public.profiles
+    where user_id = p_seller_user_id and role::text = 'seller' and active = true
+  ) then raise exception 'El vendedor seleccionado no está activo'; end if;
+  if exists (select 1 from public.sales_cases where lead_id = p_lead_id) then
+    raise exception 'Una Venta no puede reactivarse como oportunidad nueva';
+  end if;
+
+  select assigned_seller_user_id into v_previous_seller
+  from public.leads where id = p_lead_id for update;
+  if not found then raise exception 'No se encontró el Lead'; end if;
+
+  update public.leads set
+    assigned_seller_user_id = p_seller_user_id,
+    assigned_by_user_id = v_user_id,
+    assigned_at = now(),
+    routing_status = 'assigned_manual',
+    routing_reason = 'authorized_reactivation',
+    closed_at = null
+  where id = p_lead_id;
+
+  insert into public.lead_assignments (lead_id, seller_user_id, assigned_by_user_id, assignment_type, reason)
+  values (p_lead_id, p_seller_user_id, v_user_id, 'reassigned', v_reason);
+
+  insert into public.lead_activities (lead_id, actor_user_id, activity_type, title, detail, metadata)
+  values (p_lead_id, v_user_id, 'assignment', 'Reactivación autorizada', v_reason,
+    jsonb_build_object('origin', 'reactivation', 'previous_seller_user_id', v_previous_seller, 'seller_user_id', p_seller_user_id));
+
+  if v_previous_seller is not distinct from p_seller_user_id then
+    perform private.start_lead_crm_cycle(p_lead_id, v_user_id, 'reactivation', v_reason);
+  end if;
+end;
+$$;
+
+revoke all on function public.reactivate_lead_cycle(uuid, uuid, text) from public, anon;
+grant execute on function public.reactivate_lead_cycle(uuid, uuid, text) to authenticated;
+
 create or replace function public.record_lead_follow_up(
   p_lead_id uuid,
   p_status text,
@@ -154,4 +322,3 @@ comment on function public.record_lead_follow_up(uuid, text, text, timestamptz, 
 
 revoke all on function public.record_lead_follow_up(uuid, text, text, timestamptz, text, text, timestamptz, text, numeric, text) from public, anon;
 grant execute on function public.record_lead_follow_up(uuid, text, text, timestamptz, text, text, timestamptz, text, numeric, text) to authenticated;
-
