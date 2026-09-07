@@ -114,12 +114,12 @@
     var statusSelect = document.getElementById("crmStatusInput");
     if (statusSelect) {
       Array.from(statusSelect.options).forEach(function (option) {
-        if (option.value === "en_proceso") option.textContent = "En gestión";
+        if (option.value === "en_proceso" && option.textContent !== "En gestión") option.textContent = "En gestión";
       });
     }
 
     document.querySelectorAll('.crm-stage[data-stage="en_proceso"]').forEach(function (node) {
-      node.textContent = "En gestión";
+      if (node.textContent !== "En gestión") node.textContent = "En gestión";
     });
 
     document.querySelectorAll("#crmPipeline .pipeline-head strong").forEach(function (node) {
@@ -127,7 +127,7 @@
     });
 
     document.querySelectorAll("#crmAgenda .agenda-group.requires-action").forEach(function (group) {
-      group.classList.add("integrity-remediation");
+      if (!group.classList.contains("integrity-remediation")) group.classList.add("integrity-remediation");
       var title = group.querySelector(".agenda-group-head h3");
       if (title && title.textContent.trim() === "Sin próxima acción") title.textContent = "Requieren corrección";
       var empty = group.querySelector(".agenda-empty");
