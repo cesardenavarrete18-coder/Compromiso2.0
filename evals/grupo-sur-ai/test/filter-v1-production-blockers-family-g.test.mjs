@@ -59,13 +59,13 @@ test("Family G - A2: without waitUntil available (no Edge Runtime), scheduling s
 
 test("Family G - D: a stale inbound (superseded by a newer customer message) must not schedule a misleading V1 comparison", () => {
   const v1Decision = { qualification_status: "qualified", reply_text: "..." };
-  const decision = decideShadowScheduling({ isStaleInbound: true, isHumanTakeoverDuringAnalysis: false, v1Decision });
-  assert.deepEqual(decision, { schedule: false, v1Decision: null, reason: "stale_inbound" });
+  const decision = decideShadowScheduling({ isStaleInbound: true, isHumanTakeoverDuringAnalysis: false, v1Decision, initialConversationControl: { mode: "ai" } });
+  assert.deepEqual(decision, { schedule: false, v1Decision: null, conversationControl: null, reason: "stale_inbound" });
 });
 
 test("Family G - E: a takeover discovered mid-analysis must not record the discarded V1 decision as applied", () => {
   const v1Decision = { qualification_status: "qualified", reply_text: "..." };
-  const decision = decideShadowScheduling({ isStaleInbound: false, isHumanTakeoverDuringAnalysis: true, v1Decision });
+  const decision = decideShadowScheduling({ isStaleInbound: false, isHumanTakeoverDuringAnalysis: true, v1Decision, initialConversationControl: { mode: "ai" }, conversationControlAfterAnalysis: { mode: "human" } });
   assert.equal(decision.schedule, true, "the takeover moment itself is still a valid observation point");
   assert.equal(decision.v1Decision, null, "the classification that was never applied must not be recorded as v1's answer");
   assert.equal(decision.reason, "human_takeover");
@@ -73,8 +73,9 @@ test("Family G - E: a takeover discovered mid-analysis must not record the disca
 
 test("Family G - E2: the normal path schedules the real V1 decision unmodified", () => {
   const v1Decision = { qualification_status: "qualified", reply_text: "..." };
-  const decision = decideShadowScheduling({ isStaleInbound: false, isHumanTakeoverDuringAnalysis: false, v1Decision });
-  assert.deepEqual(decision, { schedule: true, v1Decision, reason: "v1_applied" });
+  const initialConversationControl = { mode: "ai" };
+  const decision = decideShadowScheduling({ isStaleInbound: false, isHumanTakeoverDuringAnalysis: false, v1Decision, initialConversationControl });
+  assert.deepEqual(decision, { schedule: true, v1Decision, conversationControl: initialConversationControl, reason: "v1_applied" });
 });
 
 test("Family F (re-check): AI_V2_SHADOW_MODE unset still performs zero database calls after the scheduling refactor", async () => {

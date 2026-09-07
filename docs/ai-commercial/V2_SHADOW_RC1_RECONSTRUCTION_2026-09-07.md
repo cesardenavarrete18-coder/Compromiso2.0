@@ -77,16 +77,40 @@ Reportado por el usuario tras la entrega de rc1: los tres call sites del webhook
 4. Recién si ninguno de los dos casos anteriores aplica, se programa el shadow con la `classification` real — la que efectivamente se va a enviar.
 5. En ningún caso se espera (`await`) la resolución del shadow: V1 continúa de inmediato con la persistencia de su decisión y el envío del WhatsApp.
 
+### Family H — `conversationControl` stale en takeover mid-análisis (bug real, de fidelidad) — **FIJADO**
+Reportado en release review. El closure `runShadow()` siempre pasaba `conversationControl: conversationControl.data` — la lectura **inicial** de `whatsapp_conversation_controls`. En el escenario `initial mode=ai → análisis → humano toma el chat → controlAfterAnalysis.mode=human`, V1 se suprime correctamente (usa `controlAfterAnalysis` para decidirlo), pero Shadow seguía recibiendo `mode=ai` — podía generar una candidate reply y dejar `would_suppress_for_human=false` cuando la realidad era exactamente la opuesta. No afecta a V1 ni a producción (Shadow apagado por default), pero falsea la telemetría de `ai_v2_shadow_runs` que se usaría para decidir promoción.
+
+**Metodología red→green**: se extendió `decideShadowScheduling` para que también devuelva `conversationControl` (antes sólo devolvía `schedule`/`v1Decision`/`reason`). Se comprobó el rojo real de dos formas: (1) se hizo `git stash` de `scheduler.mjs` para volver a la versión sin el campo `conversationControl` y se corrió `filter-v1-production-blockers-family-h.test.mjs` → los 3 tests fallaron (`candidate_reply_status` daba `'ready'` en vez de `'suppressed_human'`, `conversationControl` era `undefined`); (2) dentro del mismo test, se reprodujo el bug explícitamente alimentando el pipeline real (`runV2Shadow`) con el control stale (`mode:"ai"`) para un takeover, mostrando que produce `would_suppress_for_human:false` y una candidate reply no nula — la forma exacta, incorrecta, que el bug generaba en producción. Se restauró el fix (`git stash pop`) y los 3 tests dieron verde.
+
+**Fix**:
+- `decideShadowScheduling({..., initialConversationControl, conversationControlAfterAnalysis})` ahora también devuelve `conversationControl`: la snapshot inicial en el camino normal, la snapshot **posterior al análisis** en el camino de takeover mid-análisis, y `null` en el camino stale (no se programa nada de todos modos).
+- `runShadow(v1Decision, conversationControlOverride = conversationControl.data)` en `index.ts` acepta ahora un segundo parámetro opcional; los dos call sites de entrada (humano ya presente, lead ya calificado) no cambian — siguen usando el default (su propia snapshot inicial, que ya es la correcta para esos casos). El call site de takeover mid-análisis y el call site normal pasan explícitamente `shadowScheduling.conversationControl` (o `resolvedControl` en la rama de takeover).
+
+**TAKEOVER_SHADOW_SEMANTICS** (documentada explícitamente en el código): en el camino normal, Shadow recibe la snapshot inicial de `conversationControl` (por construcción, si hubiera sido `human` ya se habría cortado antes; y `controlAfterAnalysis` tampoco es `human` en ese camino, así que ambas coinciden). En el camino de takeover mid-análisis, Shadow recibe **siempre** `controlAfterAnalysis.data` (la snapshot fresca), nunca la inicial, y `v1Decision=null` (la clasificación descartada nunca se persiste como si hubiera sido aplicada). Los caminos de "humano ya presente al entrar" y "lead ya calificado" no se tocaron — conservan exactamente su semántica previa.
+
+### Family I — contrato `wouldHandoff` incorrecto (bug real, crítico para telemetría) — **FIJADO**
+`pipeline.mjs` calculaba `wouldHandoff = engine.handoff_decision?.handoff_status === "requested" || engine.handoff_decision?.handoff === true`. `decideHandoff()` (`handoff-policy.mjs`, único productor real de `handoff_decision` en todo el código) **nunca** devuelve `handoff_status:"requested"` ni una propiedad `handoff` — su contrato real es `handoff_status ∈ {human_owned, closed_or_routed, immediate, ready, not_ready}`, y la intención real de derivar está en `next_action === "handoff"`. Consecuencia: la condición vieja era **siempre falsa, para cualquier input** — `would_handoff` nunca reflejaba un handoff real, incluso cuando Filter lo ordenaba de forma inmediata (pedido explícito de humano, acción fuerte). Como además el `response_plan` real del engine no tiene una key `.prompt` (sólo `next_filter_question`), un `would_handoff` falso incorrecto hacía que `response-generator.mjs` cayera en el fallback genérico `"¿En qué modelo estás interesado?"` en vez del copy de derivación.
+
+**Metodología red→green**: se escribió `evals/grupo-sur-ai/test/filter-v1-production-blockers-family-i.test.mjs` con 7 casos, usando el `decideHandoff` **real** (no un mock) para construir cada `handoff_decision` y corriendo el pipeline real. Se corrió contra el código sin arreglar: los 3 casos donde Filter sí ordena handoff (`explicitHumanRequest`, `strongAction`, perfil completo + horario conocido) fallaron con `would_handoff=false` — rojo genuino, exactamente la falla descripta. Los 4 casos negativos (perfil completo + horario desconocido, `closed_or_routed`, `human_owned`, `not_ready`) ya daban verde, pero sólo por la casualidad de que la condición vieja era siempre falsa — no por evaluar correctamente el contrato negativo.
+
+**Fix**: `wouldHandoff = engine.handoff_decision?.next_action === "handoff"` — una sola condición, derivada de la intención real del engine (`next_action`), no de una lista frágil de strings. Cubre los 3 casos positivos y preserva los 4 negativos por la razón correcta esta vez (evaluados explícitamente contra el contrato real de `decideHandoff`, no por casualidad).
+
+No se tocó `handoff-policy.mjs`: su contrato es consistente y correcto; el bug estaba enteramente en cómo `pipeline.mjs` lo leía.
+
+**HANDOFF_SHADOW_SEMANTICS**: `would_handoff=true` si y sólo si `next_action==="handoff"` (handoff inmediato por pedido humano/acción fuerte, o handoff por perfil completo con horario de contacto ya conocido). `human_owned`, `closed_or_routed`, `complete_filter` y `ask_next_missing_component` nunca cuentan como un nuevo handoff comercial.
+
+**Nota fuera de alcance** (no se tocó, documentada para una futura family): `response-generator.mjs` lee `input.responsePlan?.prompt`, pero el `response_plan` real del engine nunca tiene esa key (usa `next_filter_question`) — incluso con `wouldHandoff` corregido, el camino "no es handoff ni precio ni knowledge lookup" sigue cayendo siempre en el fallback hardcodeado en vez de usar la pregunta real del filtro. Es un mismatch de contrato preexistente, independiente de Family I, y no formaba parte de lo pedido en esta iteración.
+
 ## Resultados de tests
 
 ```
 npm test   (evals/grupo-sur-ai)
-# tests 235
-# pass 235
+# tests 245
+# pass 245
 # fail 0
 ```
 
-Incluye: 169 (filter:v1 core) + 14 (unsafe-metric) + 10 (semantic-online-harness, con transporte fake, sin red real) + 30 (ai-v2-shadow, incluyendo parity y no-sender) + 4 (production-blockers A–D) + 8 (Family G: scheduling no bloqueante y política de decisión).
+Incluye: 169 (filter:v1 core) + 14 (unsafe-metric) + 10 (semantic-online-harness, con transporte fake, sin red real) + 30 (ai-v2-shadow, incluyendo parity y no-sender) + 4 (production-blockers A–D) + 8 (Family G) + 3 (Family H) + 7 (Family I).
 
 ## Auditoría de side effects
 
@@ -111,9 +135,10 @@ Incluye: 169 (filter:v1 core) + 14 (unsafe-metric) + 10 (semantic-online-harness
 3. **No se pudo correr `deno check`/`deno test`** en este entorno (binario no disponible) — la integración en `index.ts` se validó por comparación estructural, no por type-check real de Deno.
 4. **Variables de entorno requeridas** (`OPENAI_API_KEY`, `OPENAI_FILTER_MODEL`, `OPENAI_V2_RESPONSE_MODEL`, `AI_V2_SHADOW_MODE`) no están documentadas en ningún `.env.example` de este repo — quedaría pendiente antes de un rollout real, aunque no bloquea el estado "shadow-only, apagado por default".
 5. **`EdgeRuntime.waitUntil` no se verificó contra el runtime real de Supabase** (no hay forma de desplegar/ejecutar la función edge en este entorno). `scheduleShadow()` está escrito defensivamente (si `edgeRuntime`/`waitUntil` no existieran, igual no hace `await` ni lanza — simplemente no se registra background task explícito), pero la confirmación de que Supabase efectivamente mantiene vivo el request hasta que la tarea termine debe hacerse en un ambiente real antes de confiar en la telemetría de `ai_v2_shadow_runs` para tráfico de alto volumen.
+6. **`response-generator.mjs` lee `responsePlan.prompt`, que el engine real nunca produce** (usa `next_filter_question`). Detectado como efecto colateral de auditar Family I; no es parte de Family I ni de Family H, no se tocó, y no afecta ninguna garantía de aislamiento V1/latencia — sólo la calidad del texto candidato en escenarios que no son handoff/precio/knowledge-lookup. Candidato a una family futura si se decide perseguir fidelidad completa del candidate reply antes de habilitar shadow en un ambiente real.
 
 ## Veredicto
 
-**READY_FOR_SHADOW_REVIEW**
+**READY_FOR_SHADOW_MERGE_REVIEW**
 
-Con la aclaración explícita de que "ready" es sólo para *revisión* del estado shadow reconstruido (código + tests + migración en el repo, apagado por default, cero efecto en latencia o en resultado de V1, cero efecto en producción) — no para habilitar `AI_V2_SHADOW_MODE=true` en ningún ambiente real todavía, dado el Family F abierto y la falta de corridas reales (puntos 1–2 de "blockers restantes"), y pendiente de confirmar `EdgeRuntime.waitUntil` contra el runtime real (punto 5).
+Con la misma aclaración que en la entrega anterior: "ready" es para *revisión de merge* del estado shadow reconstruido (código + tests + migración en el repo, apagado por default, cero efecto en latencia o en resultado de V1, cero efecto en producción, y ahora también telemetría de fidelidad corregida en los escenarios de takeover y handoff) — no para habilitar `AI_V2_SHADOW_MODE=true` en ningún ambiente real todavía, dado el Family F abierto, la falta de corridas reales (puntos 1–2), `EdgeRuntime.waitUntil` sin confirmar contra el runtime real (punto 5), y el mismatch `responsePlan.prompt` recién documentado (punto 6).

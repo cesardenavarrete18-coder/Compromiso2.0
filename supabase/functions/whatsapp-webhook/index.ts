@@ -454,7 +454,11 @@ Deno.serve(async (request) => {
           .maybeSingle();
         // V2 is a fail-closed side-car. It receives no WhatsApp sender and its
         // repository is restricted to ai_v2_shadow_runs. V1 remains authoritative.
-        const runShadow = async (v1Decision: LeadDecision | null = null) => {
+        // conversationControlOverride defaults to the initial read; the mid-analysis
+        // takeover branch passes the fresh post-analysis snapshot instead (Family H) —
+        // otherwise shadow would compute against a stale mode="ai" control even though
+        // a human has since taken the conversation, corrupting would_suppress_for_human.
+        const runShadow = async (v1Decision: LeadDecision | null = null, conversationControlOverride: JsonRecord | null = conversationControl.data) => {
           try {
             await runWhatsappV2Shadow({
               db,
@@ -466,7 +470,7 @@ Deno.serve(async (request) => {
               },
               lead: existing || { id: leadId, metadata: {} },
               inboundMessage: { id: inboundResult.data.id, body, created_at: inboundResult.data.created_at },
-              conversationControl: conversationControl.data,
+              conversationControl: conversationControlOverride,
               v1Decision,
             });
           } catch (error) {
@@ -612,9 +616,17 @@ Deno.serve(async (request) => {
         if (isHumanTakeoverDuringAnalysis) {
           // A human took over mid-analysis: the classification was never applied.
           // Still observe the takeover moment itself, but never as if V1 had
-          // answered — decideShadowScheduling nulls out v1Decision for this case.
-          const { schedule, v1Decision } = decideShadowScheduling({ isStaleInbound, isHumanTakeoverDuringAnalysis, v1Decision: classification });
-          if (schedule) scheduleShadow(runShadow(v1Decision));
+          // answered — decideShadowScheduling nulls out v1Decision for this case,
+          // and (Family H) hands shadow the FRESH post-analysis control snapshot,
+          // never the stale pre-analysis one, so shadow itself sees mode="human".
+          const { schedule, v1Decision, conversationControl: resolvedControl } = decideShadowScheduling({
+            isStaleInbound,
+            isHumanTakeoverDuringAnalysis,
+            v1Decision: classification,
+            initialConversationControl: conversationControl.data,
+            conversationControlAfterAnalysis: controlAfterAnalysis.data,
+          });
+          if (schedule) scheduleShadow(runShadow(v1Decision, resolvedControl));
           await db.from("leads").update({ last_message_at: new Date().toISOString() }).eq("id", leadId);
           continue;
         }
@@ -622,8 +634,14 @@ Deno.serve(async (request) => {
         // Only now — with a V1 decision confirmed to be the one that will
         // actually be sent — schedule the shadow comparison. Never await it:
         // V2 must not add latency to the V1 response (Family G).
-        const shadowScheduling = decideShadowScheduling({ isStaleInbound, isHumanTakeoverDuringAnalysis, v1Decision: classification });
-        if (shadowScheduling.schedule) scheduleShadow(runShadow(shadowScheduling.v1Decision));
+        const shadowScheduling = decideShadowScheduling({
+          isStaleInbound,
+          isHumanTakeoverDuringAnalysis,
+          v1Decision: classification,
+          initialConversationControl: conversationControl.data,
+          conversationControlAfterAnalysis: controlAfterAnalysis.data,
+        });
+        if (shadowScheduling.schedule) scheduleShadow(runShadow(shadowScheduling.v1Decision, shadowScheduling.conversationControl));
 
         let seller: JsonRecord | null = null;
         let advisorNameAmbiguous = false;

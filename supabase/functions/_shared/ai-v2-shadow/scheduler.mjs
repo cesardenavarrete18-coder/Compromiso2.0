@@ -32,11 +32,17 @@ export function scheduleShadow(task, { edgeRuntime = globalThis.EdgeRuntime, log
 //   elsewhere in the webhook — still worth observing that a message arrived
 //   under human control, but the computed classification must not be recorded
 //   as if V1 had answered, so v1Decision is nulled out rather than passed
-//   through.
+//   through. Critically (Family H), the conversationControl handed to shadow
+//   must be the FRESH post-analysis snapshot, not the stale pre-analysis one —
+//   otherwise shadow computes as if a human had not taken over, producing a
+//   candidate reply and would_suppress_for_human=false when the opposite is
+//   true, corrupting the exact telemetry a promotion decision would rely on.
 // - Otherwise: the classification is the one that will actually be sent;
-//   schedule it with the real v1Decision.
-export function decideShadowScheduling({ isStaleInbound = false, isHumanTakeoverDuringAnalysis = false, v1Decision = null } = {}) {
-  if (isStaleInbound) return Object.freeze({ schedule: false, v1Decision: null, reason: "stale_inbound" });
-  if (isHumanTakeoverDuringAnalysis) return Object.freeze({ schedule: true, v1Decision: null, reason: "human_takeover" });
-  return Object.freeze({ schedule: true, v1Decision, reason: "v1_applied" });
+//   schedule it with the real v1Decision and the initial conversationControl
+//   (by construction, unchanged between the initial read and this point,
+//   since either check above would have already returned).
+export function decideShadowScheduling({ isStaleInbound = false, isHumanTakeoverDuringAnalysis = false, v1Decision = null, initialConversationControl = null, conversationControlAfterAnalysis = null } = {}) {
+  if (isStaleInbound) return Object.freeze({ schedule: false, v1Decision: null, conversationControl: null, reason: "stale_inbound" });
+  if (isHumanTakeoverDuringAnalysis) return Object.freeze({ schedule: true, v1Decision: null, conversationControl: conversationControlAfterAnalysis, reason: "human_takeover" });
+  return Object.freeze({ schedule: true, v1Decision, conversationControl: initialConversationControl, reason: "v1_applied" });
 }
