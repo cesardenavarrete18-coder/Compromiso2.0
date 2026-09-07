@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/vendedores/styles.css?v=20260813-6">
-  <link rel="stylesheet" href="/vendedores/crm.css?v=20260824-1">
+  <link rel="stylesheet" href="/vendedores/crm.css?v=20260907-1">
   <link rel="stylesheet" href="/vendedores/seller-enhancements.css?v=20260826-1">
   <link rel="stylesheet" href="/vendedores/contact-protocol.css?v=20260903-1">
   <link rel="stylesheet" href="/vendedores/workflow-polish.css?v=20260818-1">
@@ -72,7 +72,7 @@
       <nav class="sidebar-nav" aria-label="Navegación del portal">
         <button class="nav-item" type="button" data-crm-view="agenda">
           <span class="nav-icon" aria-hidden="true">▣</span>
-          Mi agenda
+          Mi Cartera
         </button>
         <button class="nav-item" type="button" data-crm-view="pipeline">
           <span class="nav-icon" aria-hidden="true">⌘</span>
@@ -112,7 +112,7 @@
       <details class="mobile-crm-menu" id="mobileCrmMenu">
         <summary aria-label="Abrir funciones del CRM"><span>Menú</span><strong id="mobileCrmMenuLabel">Nueva gestión</strong><i aria-hidden="true">⌄</i></summary>
         <nav aria-label="Funciones del CRM en versión móvil">
-          <button type="button" data-crm-view="agenda">Mi agenda</button>
+          <button type="button" data-crm-view="agenda">Mi Cartera</button>
           <button type="button" data-crm-view="pipeline">Embudo comercial</button>
           <button type="button" data-crm-view="ranking">Ranking</button>
           <button type="button" data-crm-view="quotes">Presupuestos</button>
@@ -409,10 +409,27 @@
 
         <section class="view crm-view" id="crmAgendaView" aria-labelledby="crmAgendaTitle">
           <div class="crm-hero">
-            <div><p class="eyebrow dark">Agenda comercial</p><h2 id="crmAgendaTitle">Lo importante para hoy</h2><p>Contactos vencidos, tareas del día y próximas oportunidades en una sola pantalla.</p></div>
+            <div><p class="eyebrow dark">Cartera comercial</p><h2 id="crmAgendaTitle">Mi Cartera</h2><p>Tus oportunidades comerciales, ordenadas por prioridad y próxima acción.</p></div>
             <div class="crm-hero-actions"><label class="crm-search"><span>⌕</span><input id="crmAgendaSearch" type="search" placeholder="Buscar cliente, teléfono o modelo"></label><button class="primary-button compact-button" id="crmRefreshButton" type="button">Actualizar</button></div>
           </div>
           <p class="crm-message" id="crmAgendaMessage" role="status"></p>
+          <div class="portfolio-toolbar" aria-label="Filtros de Mi Cartera">
+            <div class="portfolio-filter-group"><span>Filtrar por estado</span><div id="crmPortfolioStatusFilters" class="portfolio-filter-buttons">
+              <button class="is-active" type="button" data-portfolio-status="all" aria-pressed="true">Todos</button>
+              <button type="button" data-portfolio-status="nuevo" aria-pressed="false">Nuevo</button>
+              <button type="button" data-portfolio-status="no_contesta" aria-pressed="false">Sin contacto</button>
+              <button type="button" data-portfolio-status="contacto_futuro" aria-pressed="false">Pide contacto futuro</button>
+              <button type="button" data-portfolio-status="en_proceso" aria-pressed="false">En gestión</button>
+              <button type="button" data-portfolio-status="entrevista" aria-pressed="false">Entrevista</button>
+              <button type="button" data-portfolio-status="cierre" aria-pressed="false">Cierre</button>
+              <button type="button" data-portfolio-status="sena" aria-pressed="false">Seña</button>
+            </div></div>
+            <div class="portfolio-filter-group date"><span>Vista operativa</span><div id="crmPortfolioViewFilters" class="portfolio-filter-buttons">
+              <button type="button" data-portfolio-view="today" aria-pressed="false">Hoy</button>
+              <button type="button" data-portfolio-view="overdue" aria-pressed="false">Vencidos</button>
+              <button type="button" data-portfolio-view="upcoming" aria-pressed="false">Próximos</button>
+            </div></div>
+          </div>
           <div class="crm-summary" id="crmSummary"></div>
           <div class="agenda-sections" id="crmAgenda"></div>
         </section>

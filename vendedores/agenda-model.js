@@ -49,6 +49,36 @@
     return crmOf(lead).status === "no_contesta" && Boolean(protocolRecommendation(lead, pendingTask, nowValue));
   }
 
+  function matchesPortfolioStatus(lead, status) {
+    if (!status || status === "all") return true;
+    return crmOf(lead).status === status;
+  }
+
+  function portfolioSections(leads, options) {
+    var settings = options || {};
+    var now = new Date(settings.now || Date.now());
+    var sections = { overdue: [], today: [], newLead: [], upcoming: [], integrity: [] };
+    (leads || []).filter(function (lead) {
+      return matchesPortfolioStatus(lead, settings.status);
+    }).forEach(function (lead) {
+      var bucket = agendaBucket(lead, now);
+      if (bucket === "overdue") sections.overdue.push(lead);
+      else if (bucket === "today") sections.today.push(lead);
+      else if (bucket === "new") sections.newLead.push(lead);
+      else if (bucket === "upcoming") sections.upcoming.push(lead);
+      else if (bucket === "unscheduled") sections.integrity.push(lead);
+    });
+    function actionTime(lead) {
+      var action = manualAction(lead);
+      return action ? new Date(action.at).getTime() : 0;
+    }
+    sections.overdue.sort(function (a, b) { return actionTime(a) - actionTime(b); });
+    sections.today.sort(function (a, b) { return actionTime(a) - actionTime(b); });
+    sections.upcoming.sort(function (a, b) { return actionTime(a) - actionTime(b); });
+    sections.newLead.sort(function (a, b) { return new Date(a.created_at || a.assigned_at || 0) - new Date(b.created_at || b.assigned_at || 0); });
+    return sections;
+  }
+
   function appendStyleOnce(id, href) {
     if (typeof document === "undefined" || document.getElementById(id)) return;
     var link = document.createElement("link");
@@ -91,7 +121,9 @@
     manualAction: manualAction,
     protocolRecommendation: protocolRecommendation,
     agendaBucket: agendaBucket,
-    belongsToRecommendedSection: belongsToRecommendedSection
+    belongsToRecommendedSection: belongsToRecommendedSection,
+    matchesPortfolioStatus: matchesPortfolioStatus,
+    portfolioSections: portfolioSections
   };
 
   loadEnGestionExperience();

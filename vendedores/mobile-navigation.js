@@ -8,7 +8,7 @@
   if (!menu || !label) return;
 
   var labels = {
-    agenda: "Mi agenda",
+    agenda: "Mi Cartera",
     pipeline: "Embudo comercial",
     ranking: "Ranking",
     quotes: "Presupuestos",

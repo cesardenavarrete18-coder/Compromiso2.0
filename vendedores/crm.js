@@ -9,8 +9,9 @@
 
   var STAGES = [
     { value: "nuevo", label: "Nuevo" },
-    { value: "no_contesta", label: "No contesta" },
-    { value: "en_proceso", label: "En proceso" },
+    { value: "no_contesta", label: "Sin contacto" },
+    { value: "contacto_futuro", label: "Pide contacto futuro" },
+    { value: "en_proceso", label: "En gestión" },
     { value: "invalido", label: "Inválido / Erróneo" },
     { value: "entrevista", label: "Entrevista" },
     { value: "cierre", label: "Cierre" },
@@ -19,7 +20,7 @@
     { value: "desistir", label: "Desistir" }
   ];
   var CLOSED_STAGES = ["venta", "desistir", "invalido"];
-  var state = { leads: [], tasks: [], appraisals: [], commercialCatalog: [], activeLead: null, view: "agenda", searchAgenda: "", searchPipeline: "", loading: false };
+  var state = { leads: [], tasks: [], appraisals: [], commercialCatalog: [], activeLead: null, view: "agenda", searchAgenda: "", searchPipeline: "", portfolioStatus: "all", portfolioView: "all", loading: false };
   var leadDialog = document.getElementById("crmLeadDialog");
   var commentDialog = document.getElementById("crmCommentDialog");
   var commercialSelectionDialog = document.getElementById("crmCommercialSelectionDialog");
@@ -243,7 +244,7 @@
     if (state.loading) return;
     state.loading = true;
     var message = document.getElementById("crmAgendaMessage");
-    if (!silent) message.textContent = "Actualizando agenda…";
+    if (!silent) message.textContent = "Actualizando cartera…";
     try {
       var responses = await Promise.all([
         supabaseClient.from("leads").select(
@@ -263,31 +264,46 @@
       message.textContent = "";
       message.classList.remove("error");
     } catch (error) {
-      message.textContent = error.message || "No se pudo cargar la agenda.";
+      message.textContent = error.message || "No se pudo cargar Mi Cartera.";
       message.classList.add("error");
     } finally {
       state.loading = false;
     }
   }
 
-  function renderSummary() {
+  function renderSummary(visibleLeads) {
     var now = Date.now();
+    var leads = visibleLeads || state.leads;
     var counts = {
-      overdue: state.leads.filter(function (lead) { return agendaBucket(lead, now) === "overdue"; }).length,
-      today: state.leads.filter(function (lead) { return agendaBucket(lead, now) === "today"; }).length,
-      newLead: state.leads.filter(function (lead) { return agendaBucket(lead, now) === "new"; }).length,
-      interview: state.leads.filter(function (lead) { var crm = crmOf(lead); return crm.status === "entrevista" && crm.interview_at && new Date(crm.interview_at).getTime() >= now; }).length,
-      closing: state.leads.filter(function (lead) { return ["cierre", "sena"].includes(crmOf(lead).status); }).length
+      total: leads.filter(function (lead) { return !CLOSED_STAGES.includes(crmOf(lead).status); }).length,
+      management: leads.filter(function (lead) { return crmOf(lead).status === "en_proceso"; }).length,
+      overdue: leads.filter(function (lead) { return agendaBucket(lead, now) === "overdue"; }).length,
+      deposit: leads.filter(function (lead) { return crmOf(lead).status === "sena"; }).length
     };
     document.getElementById("crmSummary").innerHTML = [
-      ["urgent", "Vencidos", counts.overdue, "Requieren acción"],
-      ["today", "Para hoy", counts.today, "Contactos programados"],
-      ["", "Nuevos", counts.newLead, "Todavía sin gestionar"],
-      ["interview", "Entrevistas", counts.interview, "Próximas visitas"],
-      ["closing", "Cierre / Seña", counts.closing, "Máxima prioridad"]
+      ["", "Leads en cartera", counts.total, "Oportunidades activas"],
+      ["today", "En gestión", counts.management, "Conversaciones activas"],
+      ["urgent", "Vencidos", counts.overdue, "Compromisos reales"],
+      ["closing", "Con seña", counts.deposit, "Operaciones en curso"]
     ].map(function (item) {
       return '<article class="crm-stat ' + item[0] + '"><span>' + item[1] + '</span><strong>' + item[2] + '</strong><small>' + item[3] + '</small></article>';
     }).join("");
+  }
+
+  function relativeFrom(value) {
+    if (!value) return "Sin registro";
+    var minutes = Math.max(0, Math.floor((Date.now() - new Date(value).getTime()) / 60000));
+    if (minutes < 60) return "Hace " + Math.max(1, minutes) + " min";
+    var hours = Math.floor(minutes / 60);
+    if (hours < 24) return "Hace " + hours + " h";
+    return "Hace " + Math.floor(hours / 24) + " días";
+  }
+
+  function cardActionLabel(status) {
+    if (status === "entrevista") return "Ver entrevista";
+    if (status === "sena") return "Continuar operación";
+    if (status === "cierre") return "Gestionar cierre";
+    return "Gestionar";
   }
 
   function leadCard(lead) {
@@ -297,47 +313,42 @@
     var isOverdue = crm.status !== "nuevo" && manual && new Date(manual.at).getTime() < Date.now() && !CLOSED_STAGES.includes(crm.status);
     var pendingSale = crm.sale_confirmation_status === "pending";
     var progress = protocolProgress(lead.id);
-    var nextLabel = crm.status === "nuevo"
-      ? "Pendiente de primer contacto" + (recommendation ? " · " + recommendationLabel(recommendation) : manual ? " · Acordado " + formatDate(manual.at) : "")
-      : manual
-        ? (isOverdue ? "Vencido · " : "Próximo · ") + formatDate(manual.at)
-        : recommendation
-          ? recommendationLabel(recommendation)
-          : "Sin próxima acción acordada";
-    return '<article class="crm-lead-card" data-crm-lead-id="' + lead.id + '">' +
-      '<div class="crm-card-top"><div><strong>' + escapeHtml(lead.customer_name || "Cliente sin nombre") + '</strong><small>+' + escapeHtml(lead.customer_phone) + '</small></div><span class="crm-stage" data-stage="' + escapeHtml(crm.status || "nuevo") + '">' + escapeHtml(stageLabel(crm.status)) + '</span></div>' +
-      '<p class="crm-card-summary">' + escapeHtml(lead.intent_summary || lead.model_interest || "Sin resumen comercial") + '</p>' +
-      '<div class="crm-card-tags"><span>' + escapeHtml(lead.model_interest || "Modelo a definir") + '</span>' +
-        '<span class="' + (crm.priority === "high" ? "high" : "") + '">' + escapeHtml(crm.priority === "high" ? "Prioridad alta" : crm.priority === "low" ? "Prioridad baja" : "Prioridad normal") + '</span>' +
-        (pendingSale ? '<span class="high">Venta por confirmar</span>' : '') +
-        (progress ? '<span class="protocol">Seguimiento ' + progress.completed + '/' + progress.total + '</span>' : '') + '</div>' +
-      '<div class="crm-card-footer"><time class="' + (isOverdue ? "overdue" : "") + '">' + escapeHtml(nextLabel) + '</time><button class="crm-open" type="button">Gestionar</button></div>' +
+    var actionTitle = crm.status === "nuevo" ? "Primer contacto" : crm.status === "entrevista" ? "Entrevista acordada" : crm.status === "sena" ? "Continuar operación" : "Próximo objetivo";
+    var actionDetail = crm.status === "nuevo" ? "Contactar al cliente" : manual && manual.note || recommendation && taskTitle(recommendation.task) || "Definir la próxima acción";
+    var timing = crm.status === "nuevo" ? relativeFrom(lead.assigned_at || lead.created_at) : manual ? (isOverdue ? "Vencido · " : "Programado · ") + formatDate(manual.at) : recommendation ? recommendationLabel(recommendation) : "Requiere corrección de agenda";
+    var protocol = crm.status === "no_contesta" && progress ? '<small class="portfolio-protocol">Protocolo ' + progress.completed + '/' + progress.total + (progress.pending ? ' · ' + taskTitle(progress.pending) : '') + '</small>' : '';
+    return '<article class="crm-lead-card portfolio-card" data-crm-lead-id="' + lead.id + '" data-card-stage="' + escapeHtml(crm.status || "nuevo") + '">' +
+      '<div class="portfolio-client"><strong>' + escapeHtml(lead.customer_name || "Cliente sin nombre") + '</strong><small>' + escapeHtml(lead.customer_phone ? "+" + lead.customer_phone : "Sin teléfono") + '</small></div>' +
+      '<div class="portfolio-vehicle"><strong>' + escapeHtml(lead.model_interest || "Modelo a definir") + '</strong><small>' + escapeHtml(lead.intent_summary || "Sin detalle comercial") + '</small></div>' +
+      '<div class="portfolio-stage"><span class="crm-stage" data-stage="' + escapeHtml(crm.status || "nuevo") + '">' + escapeHtml(stageLabel(crm.status)) + '</span>' + protocol + '</div>' +
+      '<div class="portfolio-action"><span>' + escapeHtml(actionTitle) + '</span><strong>' + escapeHtml(actionDetail) + '</strong><small class="' + (isOverdue ? "overdue" : "") + '">' + escapeHtml(timing) + '</small></div>' +
+      '<button class="crm-open" type="button">' + escapeHtml(cardActionLabel(crm.status)) + '</button>' +
+      (pendingSale ? '<span class="portfolio-sale-pending">Venta por confirmar</span>' : '') +
     '</article>';
   }
 
-  function agendaGroup(title, items, emptyText) {
-    return '<section class="agenda-group' + (title === "Sin próxima acción" ? ' requires-action' : title === "Seguimiento recomendado" ? ' recommended' : '') + '"><div class="agenda-group-head"><h3>' + escapeHtml(title) + '</h3><span>' + items.length + '</span></div>' +
+  function agendaGroup(key, title, subtitle, items, emptyText) {
+    return '<section class="agenda-group portfolio-group ' + key + '"><div class="agenda-group-head"><div><h3>' + escapeHtml(title) + ' <span>' + items.length + '</span></h3><small>' + escapeHtml(subtitle) + '</small></div></div>' +
       (items.length ? '<div class="agenda-cards">' + items.map(leadCard).join("") + '</div>' : '<div class="agenda-empty">' + escapeHtml(emptyText) + '</div>') + '</section>';
   }
 
   function renderAgenda() {
     var query = normalizeSearch(state.searchAgenda);
     var leads = state.leads.filter(function (lead) { return matchesSearch(lead, query); });
-    var now = Date.now();
-    var overdue = leads.filter(function (lead) { return agendaBucket(lead, now) === "overdue"; }).sort(function (a, b) { return new Date(manualNextAction(a).at) - new Date(manualNextAction(b).at); });
-    var forToday = leads.filter(function (lead) { return agendaBucket(lead, now) === "today"; }).sort(function (a, b) { return new Date(manualNextAction(a).at) - new Date(manualNextAction(b).at); });
-    var newLeads = leads.filter(function (lead) { return agendaBucket(lead, now) === "new"; });
-    var unscheduled = leads.filter(function (lead) { return agendaBucket(lead, now) === "unscheduled"; });
-    var recommended = unscheduled.filter(function (lead) { return agendaModel.belongsToRecommendedSection(lead, nextPendingTask(lead.id), now); }).sort(function (a, b) { return new Date(protocolRecommendation(a.id).task.due_start) - new Date(protocolRecommendation(b.id).task.due_start); });
-    var next = leads.filter(function (lead) { return agendaBucket(lead, now) === "upcoming"; }).sort(function (a, b) { return new Date(manualNextAction(a).at) - new Date(manualNextAction(b).at); });
-    document.getElementById("crmAgenda").innerHTML =
-      agendaGroup("Contactos vencidos", overdue, "No tenés seguimientos vencidos.") +
-      agendaGroup("Sin próxima acción", unscheduled, "Todas las gestiones activas tienen un próximo paso definido.") +
-      agendaGroup("Programados para hoy", forToday, "No hay contactos programados para hoy.") +
-      agendaGroup("Nuevos por atender", newLeads, "No tenés leads nuevos pendientes.") +
-      agendaGroup("Seguimiento recomendado", recommended, "No hay recomendaciones de protocolo pendientes.") +
-      agendaGroup("Próximos contactos", next.slice(0, 30), "Todavía no programaste próximos contactos.");
-    renderSummary();
+    var sections = agendaModel.portfolioSections(leads, { status: state.portfolioStatus });
+    var html = [];
+    if (state.portfolioView === "all" || state.portfolioView === "overdue") {
+      html.push(agendaGroup("attention", "Requieren atención", "Compromisos vencidos y datos heredados que deben corregirse", sections.overdue.concat(sections.integrity), "No hay compromisos vencidos ni inconsistencias."));
+    }
+    if (state.portfolioView === "all" || state.portfolioView === "today") {
+      html.push(agendaGroup("today", "Hoy", "Acciones programadas para hoy, ordenadas por horario", sections.today, "No hay acciones programadas para hoy."));
+      html.push(agendaGroup("new", "Nuevos", "Pendientes de primera gestión, por orden de ingreso", sections.newLead, "No hay Leads nuevos pendientes."));
+    }
+    if (state.portfolioView === "all" || state.portfolioView === "upcoming") {
+      html.push(agendaGroup("upcoming", "Próximos", "Contactos futuros en orden cronológico", sections.upcoming.slice(0, 50), "No hay próximos contactos programados."));
+    }
+    document.getElementById("crmAgenda").innerHTML = html.join("");
+    renderSummary(leads.filter(function (lead) { return agendaModel.matchesPortfolioStatus(lead, state.portfolioStatus); }));
   }
 
   function renderPipeline() {
@@ -373,7 +384,7 @@
     var target = document.getElementById("crm" + viewName.charAt(0).toUpperCase() + viewName.slice(1) + "View");
     if (target) target.classList.add("is-active");
     document.getElementById("stepper").hidden = true;
-    document.getElementById("pageTitle").textContent = viewName === "agenda" ? "Mi agenda comercial" : viewName === "pipeline" ? "Embudo de oportunidades" : viewName === "quotes" ? "Presupuestos comerciales" : viewName === "sales" ? "Mis ventas" : viewName === "recalls" ? "Panel de rellamados" : "Ranking del equipo";
+    document.getElementById("pageTitle").textContent = viewName === "agenda" ? "Mi Cartera" : viewName === "pipeline" ? "Embudo de oportunidades" : viewName === "quotes" ? "Presupuestos comerciales" : viewName === "sales" ? "Mis ventas" : viewName === "recalls" ? "Panel de rellamados" : "Ranking del equipo";
     document.getElementById("headerKicker").textContent = viewName === "recalls" ? "Base histórica asignada" : "CRM Grupo Sur Automotores";
     document.querySelectorAll(".nav-item").forEach(function (item) { item.classList.toggle("is-active", item.dataset.crmView === viewName); });
     if (viewName === "ranking") loadRanking();
@@ -912,6 +923,28 @@
   });
   document.getElementById("crmRefreshButton").addEventListener("click", function () { var button = this; setBusy(button, true, "Actualizando…"); loadLeads(false).finally(function () { setBusy(button, false); }); });
   document.getElementById("crmAgendaSearch").addEventListener("input", function () { state.searchAgenda = this.value; renderAgenda(); });
+  document.getElementById("crmPortfolioStatusFilters").addEventListener("click", function (event) {
+    var button = event.target.closest("[data-portfolio-status]");
+    if (!button) return;
+    state.portfolioStatus = button.dataset.portfolioStatus;
+    this.querySelectorAll("button").forEach(function (item) {
+      var active = item === button;
+      item.classList.toggle("is-active", active);
+      item.setAttribute("aria-pressed", String(active));
+    });
+    renderAgenda();
+  });
+  document.getElementById("crmPortfolioViewFilters").addEventListener("click", function (event) {
+    var button = event.target.closest("[data-portfolio-view]");
+    if (!button) return;
+    state.portfolioView = state.portfolioView === button.dataset.portfolioView ? "all" : button.dataset.portfolioView;
+    this.querySelectorAll("button").forEach(function (item) {
+      var active = item.dataset.portfolioView === state.portfolioView;
+      item.classList.toggle("is-active", active);
+      item.setAttribute("aria-pressed", String(active));
+    });
+    renderAgenda();
+  });
   document.getElementById("crmPipelineSearch").addEventListener("input", function () { state.searchPipeline = this.value; renderPipeline(); });
   document.getElementById("crmRankingMonth").addEventListener("change", loadRanking);
   ["crmNextContactDateInput", "crmInterviewDateInput"].forEach(function (id) {
