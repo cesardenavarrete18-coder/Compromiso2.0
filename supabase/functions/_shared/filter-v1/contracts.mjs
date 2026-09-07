@@ -26,6 +26,7 @@ export function createFilterState({ targetModel = null, targetProvenance = null 
     contact_preference: { timing: "unknown", literal: null, callback_at: null, callback_window: null, asked_once: false },
     requested_action: null,
     dnc_acknowledged: false,
+    do_not_contact: false,
   };
 }
 

@@ -5,7 +5,7 @@ import { runFilterV1Integration } from "../../../supabase/functions/_shared/filt
 import { createFilterState, field } from "../../../supabase/functions/_shared/filter-v1/contracts.mjs";
 
 // Deterministic multi-turn replay requested for the final validation pass,
-// covering Families K, L and M together across one continuous conversation
+// covering Families K, L, M and N together across one continuous conversation
 // (same lead, state threaded turn to turn via next_state, exactly as
 // whatsapp-adapter.mjs threads previous_filter_state in production):
 //
@@ -13,7 +13,9 @@ import { createFilterState, field } from "../../../supabase/functions/_shared/fi
 //   2. profile completes -> contact preference asked once (Family L)
 //   3. no timing answer -> not repeated (Family L)
 //   4. DNC -> brief acknowledgment (Family M)
-//   5. next message -> suppressed, no repeat ack (Family M)
+//   5. next message with NO fresh DNC signal at all -> still suppressed,
+//      because state.do_not_contact was persisted (Family N), not because
+//      the message repeats the phrase or the CRM flag caught up
 
 const catalog = { brands: [{ id: "b1", name: "Peugeot" }], models: [{ id: "208", name: "208", brand_id: "b1" }], model_versions: [] };
 const campaigns = [{ id: "c1", model_id: "208", active: true, installment_amount: 431250 }];
@@ -83,8 +85,11 @@ test("multi-turn replay: cuota -> profile completes -> contact pending -> DNC ac
   assert.equal(t4.would_suppress_for_dnc, false);
   state = t4.next_state;
 
-  // 5. next message under the same DNC -> suppressed, no repeat ack, no question
-  const t5 = await turn({ state, extraction: { noncommercial: true }, message: "En serio, no me escriban." });
+  // 5. next message with NO fresh DNC signal at all (Family N: DNC must stay
+  // suppressed via previous_filter_state, not because the message repeats it
+  // or the CRM flag caught up) -> suppressed, no repeat ack, no question
+  const t5 = await turn({ state, extraction: {}, message: "Hola, sigo interesado." });
+  assert.equal(t5.next_state.do_not_contact, true, "DNC must persist in the conversation's own state");
   assert.equal(t5.response_plan.dnc_first_ack, false);
   assert.equal(t5.candidate_reply_status, "suppressed_dnc");
   assert.equal(t5.v2_candidate_reply, null);

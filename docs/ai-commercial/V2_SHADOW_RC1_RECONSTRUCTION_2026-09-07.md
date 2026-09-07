@@ -164,23 +164,34 @@ El composer tenía su propio regex de DNC, independiente de la decisión real de
 
 **Fix — `pipeline.mjs` + migración**: nuevo campo de telemetría `would_suppress_for_dnc` (true en cualquier turno DNC que no sea el de primer-ack), agregado también a `ai_v2_shadow_runs` (`would_suppress_for_dnc boolean not null default false`) — la migración todavía no fue aplicada en ningún ambiente, así que se editó el archivo existente en vez de crear una nueva.
 
-**Persistencia sin depender de re-detectar el texto**: `lead.do_not_contact` (columna CRM, ya leída por el shadow en cada corrida vía `whatsapp-adapter.mjs`) alcanza por sí sola para mantener el DNC en cualquier turno posterior, aunque el mensaje nuevo no repita la frase — verificado explícitamente con un test dedicado.
+**Persistencia vía CRM**: `lead.do_not_contact` (columna CRM, ya leída por el shadow en cada corrida vía `whatsapp-adapter.mjs`) alcanza por sí sola para mantener el DNC en cualquier turno posterior **una vez que esa columna está en `true`**, aunque el mensaje nuevo no repita la frase. Esto no cubre el caso en que la señal DNC de este turno vino sólo de `extraction.noncommercial` (el CRM todavía no se actualizó) — ver Family N.
 
 **Precedencia verificada**: `human_owned` (ya existente) → DNC (Family M, nuevo) → pedido humano explícito/acción fuerte → perfil completo/ready → filtrado normal. DNC nunca se convierte en handoff comercial ni siquiera cuando coincide en el mismo turno con un pedido explícito de humano o un perfil ya completo (2 tests dedicados).
 
-### Replay determinístico multi-turno (validación final, K+L+M juntas)
-`evals/grupo-sur-ai/test/filter-v1-multiturn-replay.test.mjs` encadena `next_state` entre turnos (igual que `whatsapp-adapter.mjs` en producción) sobre un mismo lead: (1) consulta de cuota → responde + pregunta modalidad; (2) el cliente completa el perfil → pregunta preferencia de contacto una sola vez; (3) no responde el horario → no se repite, sigue `qualified`/`ready`; (4) DNC → acknowledgment breve; (5) mensaje siguiente bajo DNC → `suppressed_dnc`, sin repetir ack, sin pregunta, sin handoff. Verde en el primer intento tras completar K/L/M por separado — confirma que las tres families componen correctamente entre sí, no sólo de forma aislada.
+### Family N — DNC no se persistía en el estado propio de Shadow (bug real, invariante de safety) — **FIJADO**
+Reportado en revisión final. La rama de DNC de Family M seteaba `state.dnc_acknowledged=true` pero **nunca** un flag equivalente a "esta conversación está en DNC" en el propio `state`. La compuerta seguía siendo `Boolean(lead.do_not_contact) || extraction.noncommercial===true` — ninguna de las dos depende del `state` que se hereda turno a turno. Consecuencia: turno 1 "No me contacten" (`extraction.noncommercial=true`) cerraba correctamente con ack; turno 2 "hola" (sin señal fresca, `lead.do_not_contact` todavía `false` porque el CRM es un camino de escritura distinto y más lento) **reanudaba el flujo comercial normal** — viola el contrato multi-turno de que DNC, una vez expresado, se mantiene hasta una reversión explícita y separada.
+
+Los tests de Family M y el replay original no detectaban esto porque su "turno 2" **volvía a pasar `extraction.noncommercial=true`**, re-detectando DNC desde el mensaje en vez de probar que `previous_filter_state` lo conservaba.
+
+**Metodología red→green**: 8 tests en `filter-v1-production-blockers-family-n.test.mjs`, escritos **antes** de tocar el código. Corridos contra el `HEAD` committeado (sin revertir nada, el bug estaba en el propio código actual): **5/8 fallaron** — el turno 2/3 sin señal fresca reanudaba el flujo comercial, `next_state.do_not_contact` no existía ni en el camino `extraction.noncommercial` ni en el camino `lead.do_not_contact`, y el escenario "DNC persistido + turno posterior con pedido humano explícito" perdía el DNC. Los 3 casos de precedencia en el mismo turno (DNC+human_request, DNC+strong_action, DNC+perfil completo) ya pasaban, porque ese chequeo era correcto desde Family M.
+
+**Fix**: `createFilterState()` agrega `do_not_contact: false`. La compuerta pasa a ser `Boolean(lead.do_not_contact) || state.do_not_contact === true || extraction.noncommercial === true`, y la rama de DNC ahora setea `state.do_not_contact = true` (además de `dnc_acknowledged`) — nunca se limpia por ausencia de señal en un turno posterior. No se implementó ningún mecanismo de opt-in/reversión: eso requiere una regla de negocio separada y explícita, fuera de alcance aquí.
+
+**Replay actualizado**: el turno 5 del replay determinístico dejó de pasar `extraction.noncommercial=true` — ahora es un mensaje neutro ("Hola, sigo interesado.") sin ninguna señal DNC fresca, y se agregó la aserción `next_state.do_not_contact === true`. Esa es exactamente la prueba que antes faltaba.
+
+### Replay determinístico multi-turno (validación final, K+L+M+N juntas)
+`evals/grupo-sur-ai/test/filter-v1-multiturn-replay.test.mjs` encadena `next_state` entre turnos (igual que `whatsapp-adapter.mjs` en producción) sobre un mismo lead: (1) consulta de cuota → responde + pregunta modalidad; (2) el cliente completa el perfil → pregunta preferencia de contacto una sola vez; (3) no responde el horario → no se repite, sigue `qualified`/`ready`; (4) DNC → acknowledgment breve; (5) mensaje siguiente **sin ninguna señal DNC fresca** → `suppressed_dnc` por estado persistido (`next_state.do_not_contact===true`, Family N), sin repetir ack, sin pregunta, sin handoff. Verde tras aplicar Family N — confirma que las cuatro families componen correctamente entre sí, no sólo de forma aislada.
 
 ## Resultados de tests
 
 ```
 npm test   (evals/grupo-sur-ai)
-# tests 284
-# pass 284
+# tests 292
+# pass 292
 # fail 0
 ```
 
-Incluye: 169 (filter:v1 core) + 14 (unsafe-metric) + 10 (semantic-online-harness, con transporte fake, sin red real) + 30 (ai-v2-shadow, incluyendo parity y no-sender, con el test #23 reescrito contra el contrato real) + 4 (production-blockers A–D) + 8 (Family G) + 3 (Family H) + 7 (Family I) + 13 (Family J) + 8 (Family K) + 7 (Family L) + 10 (Family M) + 1 (replay determinístico multi-turno).
+Incluye: 169 (filter:v1 core) + 14 (unsafe-metric) + 10 (semantic-online-harness, con transporte fake, sin red real) + 30 (ai-v2-shadow, incluyendo parity y no-sender, con el test #23 reescrito contra el contrato real) + 4 (production-blockers A–D) + 8 (Family G) + 3 (Family H) + 7 (Family I) + 13 (Family J) + 8 (Family K) + 7 (Family L) + 10 (Family M) + 8 (Family N) + 1 (replay determinístico multi-turno, K+L+M+N).
 
 ## Auditoría de side effects
 
@@ -208,12 +219,13 @@ Incluye: 169 (filter:v1 core) + 14 (unsafe-metric) + 10 (semantic-online-harness
 5. **`EdgeRuntime.waitUntil` no se verificó contra el runtime real de Supabase** (no hay forma de desplegar/ejecutar la función edge en este entorno). `scheduleShadow()` está escrito defensivamente (si `edgeRuntime`/`waitUntil` no existieran, igual no hace `await` ni lanza — simplemente no se registra background task explícito), pero la confirmación de que Supabase efectivamente mantiene vivo el request hasta que la tarea termine debe hacerse en un ambiente real antes de confiar en la telemetría de `ai_v2_shadow_runs` para tráfico de alto volumen.
 
 ~~6. `response-generator.mjs` leía `responsePlan.prompt`~~ — reclasificado como **Family J** y **cerrado**.
-~~7. Composer no componía answer+question, contact_preference nunca se resolvía, DNC dependía de regex local~~ — reclasificados como **Families K, L y M** y **cerrados** en esta entrega, junto con dos bugs adicionales encontrados en el propio proceso de hacer pasar Family L honestamente (`chooseNextQuestion` tratando un componente condicional ausente como no resuelto; `contact_preference` nunca persistido en `next_state`).
+~~7. Composer no componía answer+question, contact_preference nunca se resolvía, DNC dependía de regex local~~ — reclasificados como **Families K, L y M** y **cerrados**, junto con dos bugs adicionales encontrados en el propio proceso de hacer pasar Family L honestamente (`chooseNextQuestion` tratando un componente condicional ausente como no resuelto; `contact_preference` nunca persistido en `next_state`).
+~~8. DNC no se persistía en el estado propio de Shadow (sólo `dnc_acknowledged`, nunca un flag de "esta conversación está en DNC")~~ — reclasificado como **Family N** y **cerrado** en esta entrega.
 
-Ninguna de las families A–M abiertas listadas arriba (1–5) se cerró en esta pasada; siguen siendo exactamente los mismos 5 puntos.
+Ninguna de las families A–N abiertas listadas arriba (1–5) se cerró en esta pasada; siguen siendo exactamente los mismos 5 puntos.
 
 ## Veredicto
 
-**READY_FOR_SHADOW_MERGE_REVIEW**
+**READY_FOR_SHADOW_MERGE**
 
-Con la misma aclaración que en las entregas anteriores: "ready" es para *revisión de merge* del estado shadow reconstruido (código + tests + migración en el repo, apagado por default, cero efecto en latencia o en resultado de V1, cero efecto en producción, y ahora también fidelidad completa de la respuesta candidata: answer+pregunta compuestos correctamente, preferencia de contacto resuelta y preguntada una sola vez, y DNC gobernado enteramente por la decisión real del engine con semántica multi-turno de acknowledgment/supresión) — no para habilitar `AI_V2_SHADOW_MODE=true` en ningún ambiente real todavía, dado el Family F abierto, la falta de corridas reales (puntos 1–2), y `EdgeRuntime.waitUntil` sin confirmar contra el runtime real (punto 5). Families G, H, I, J, K, L y M quedan cerradas. Ésta es la última pasada funcional acordada antes de la revisión de merge de Shadow — no se abrieron líneas de investigación nuevas más allá de lo pedido.
+Con la misma aclaración que en las entregas anteriores: "ready" es para *revisión de merge* del estado shadow reconstruido (código + tests + migración en el repo, apagado por default, cero efecto en latencia o en resultado de V1, cero efecto en producción, y ahora también fidelidad completa de la respuesta candidata y de la persistencia de estado: answer+pregunta compuestos correctamente, preferencia de contacto resuelta y preguntada una sola vez, y DNC gobernado enteramente por la decisión real del engine y persistido en el estado propio de la conversación, con semántica multi-turno de acknowledgment/supresión que no depende de que el CRM o el mensaje repitan la señal) — no para habilitar `AI_V2_SHADOW_MODE=true` en ningún ambiente real todavía, dado el Family F abierto, la falta de corridas reales (puntos 1–2), y `EdgeRuntime.waitUntil` sin confirmar contra el runtime real (punto 5). Families G, H, I, J, K, L, M y N quedan cerradas. Ésta es la última pasada funcional acordada antes de la revisión de merge de Shadow — no se abrieron líneas de investigación nuevas más allá de lo pedido.

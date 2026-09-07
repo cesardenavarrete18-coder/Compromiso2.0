@@ -72,14 +72,21 @@ export function runFilterV1Integration(input) {
   // takeover — it must never be re-derived from message regex downstream
   // (that is the Composer's job to stop doing), and it must never be
   // overridden by an explicit human request, strong action, or a complete
-  // profile. `lead.do_not_contact` makes it persist across turns even when a
-  // later message does not repeat the DNC phrase — no dependency on V1
-  // re-detecting the text every time.
-  const doNotContact = Boolean(lead.do_not_contact) || extraction.noncommercial === true;
+  // profile. `lead.do_not_contact` makes it persist via the CRM even when a
+  // later message does not repeat the DNC phrase.
+  // Family N: the conversation's OWN state must independently remember it
+  // too — `state.do_not_contact`, once set, is never cleared by the absence
+  // of a fresh signal on a later turn (only dnc_acknowledged was persisted
+  // before, which just distinguishes the first ack from a repeat; it was
+  // never itself a gate, so a turn with no fresh noncommercial signal and no
+  // CRM flag yet resumed normal commercial flow). Reverting DNC is a
+  // separate, explicit business decision — out of scope here.
+  const doNotContact = Boolean(lead.do_not_contact) || state.do_not_contact === true || extraction.noncommercial === true;
   if (doNotContact) {
     const alreadyAcknowledged = Boolean(state.dnc_acknowledged);
     const handoff = decideHandoff({ doNotContact: true });
     state.dnc_acknowledged = true;
+    state.do_not_contact = true;
     state.qualification_status = handoff.qualification_status;
     state.handoff_status = handoff.handoff_status;
     state.next_action = handoff.next_action;
