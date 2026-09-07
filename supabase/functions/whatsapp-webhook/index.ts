@@ -1,6 +1,8 @@
 import { createClient } from "@supabase/supabase-js";
 import { candidateAdvisorName, candidateCodes, knownAdvisorName, mentionsTikTok, normalizedPersonName } from "./routing-identifiers.ts";
 import { enforceVehicleFacts, firstName, handoffReply, hasKnownCommercialOperation, polishCommercialReply, qualifyAndHandoffReply, shouldForceHandoff, tiktokIdentifierReply } from "./conversation-style.ts";
+import { runWhatsappV2Shadow } from "../_shared/ai-v2-shadow/whatsapp-adapter.mjs";
+import { decideShadowScheduling, scheduleShadow } from "../_shared/ai-v2-shadow/scheduler.mjs";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -450,7 +452,34 @@ Deno.serve(async (request) => {
           .select("mode")
           .eq("lead_id", leadId)
           .maybeSingle();
+        // V2 is a fail-closed side-car. It receives no WhatsApp sender and its
+        // repository is restricted to ai_v2_shadow_runs. V1 remains authoritative.
+        // conversationControlOverride defaults to the initial read; the mid-analysis
+        // takeover branch passes the fresh post-analysis snapshot instead (Family H) —
+        // otherwise shadow would compute against a stale mode="ai" control even though
+        // a human has since taken the conversation, corrupting would_suppress_for_human.
+        const runShadow = async (v1Decision: LeadDecision | null = null, conversationControlOverride: JsonRecord | null = conversationControl.data) => {
+          try {
+            await runWhatsappV2Shadow({
+              db,
+              env: {
+                AI_V2_SHADOW_MODE: Deno.env.get("AI_V2_SHADOW_MODE") ?? "false",
+                OPENAI_FILTER_MODEL: Deno.env.get("OPENAI_FILTER_MODEL") ?? "",
+                OPENAI_V2_RESPONSE_MODEL: Deno.env.get("OPENAI_V2_RESPONSE_MODEL") ?? "",
+                OPENAI_API_KEY: Deno.env.get("OPENAI_API_KEY") ?? "",
+              },
+              lead: existing || { id: leadId, metadata: {} },
+              inboundMessage: { id: inboundResult.data.id, body, created_at: inboundResult.data.created_at },
+              conversationControl: conversationControlOverride,
+              v1Decision,
+            });
+          } catch (error) {
+            console.error("AI V2 shadow adapter failed", error instanceof Error ? error.message : String(error));
+          }
+        };
         if (conversationControl.data?.mode === "human") {
+          // V2 must never add latency to V1: schedule as a background task, never await it.
+          scheduleShadow(runShadow());
           await db.from("leads").update({ last_message_at: new Date().toISOString() }).eq("id", leadId);
           continue;
         }
@@ -459,6 +488,8 @@ Deno.serve(async (request) => {
         // Los mensajes posteriores se conservan y notifican al supervisor, pero
         // la IA no reinicia el cuestionario ni compite con la atención humana.
         if (existing?.qualification_status === "qualified") {
+          // V2 must never add latency to V1: schedule as a background task, never await it.
+          scheduleShadow(runShadow());
           await db.from("leads").update({ last_message_at: new Date().toISOString() }).eq("id", existing.id);
           if (!existing.do_not_contact) {
             await db.from("lead_crm").update({
@@ -565,7 +596,14 @@ Deno.serve(async (request) => {
           .order("created_at", { ascending: false })
           .limit(1)
           .maybeSingle();
-        if (whatsappMessageId && latestInboundResult.data?.whatsapp_message_id !== whatsappMessageId) continue;
+        const isStaleInbound = Boolean(whatsappMessageId && latestInboundResult.data?.whatsapp_message_id !== whatsappMessageId);
+        if (isStaleInbound) {
+          // The computed classification was never applied to the customer; a
+          // newer webhook invocation, for the newer inbound message, already
+          // produces its own shadow comparison. Do not schedule one here — see
+          // decideShadowScheduling's documented semantics.
+          continue;
+        }
 
         // The conversation may have been taken while OpenAI was processing.
         // Rechecking here closes that race before any classification or reply is applied.
@@ -574,10 +612,36 @@ Deno.serve(async (request) => {
           .select("mode")
           .eq("lead_id", leadId)
           .maybeSingle();
-        if (controlAfterAnalysis.data?.mode === "human") {
+        const isHumanTakeoverDuringAnalysis = controlAfterAnalysis.data?.mode === "human";
+        if (isHumanTakeoverDuringAnalysis) {
+          // A human took over mid-analysis: the classification was never applied.
+          // Still observe the takeover moment itself, but never as if V1 had
+          // answered — decideShadowScheduling nulls out v1Decision for this case,
+          // and (Family H) hands shadow the FRESH post-analysis control snapshot,
+          // never the stale pre-analysis one, so shadow itself sees mode="human".
+          const { schedule, v1Decision, conversationControl: resolvedControl } = decideShadowScheduling({
+            isStaleInbound,
+            isHumanTakeoverDuringAnalysis,
+            v1Decision: classification,
+            initialConversationControl: conversationControl.data,
+            conversationControlAfterAnalysis: controlAfterAnalysis.data,
+          });
+          if (schedule) scheduleShadow(runShadow(v1Decision, resolvedControl));
           await db.from("leads").update({ last_message_at: new Date().toISOString() }).eq("id", leadId);
           continue;
         }
+
+        // Only now — with a V1 decision confirmed to be the one that will
+        // actually be sent — schedule the shadow comparison. Never await it:
+        // V2 must not add latency to the V1 response (Family G).
+        const shadowScheduling = decideShadowScheduling({
+          isStaleInbound,
+          isHumanTakeoverDuringAnalysis,
+          v1Decision: classification,
+          initialConversationControl: conversationControl.data,
+          conversationControlAfterAnalysis: controlAfterAnalysis.data,
+        });
+        if (shadowScheduling.schedule) scheduleShadow(runShadow(shadowScheduling.v1Decision, shadowScheduling.conversationControl));
 
         let seller: JsonRecord | null = null;
         let advisorNameAmbiguous = false;
