@@ -2,6 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { candidateAdvisorName, candidateCodes, knownAdvisorName, mentionsTikTok, normalizedPersonName } from "./routing-identifiers.ts";
 import { enforceVehicleFacts, firstName, handoffReply, hasKnownCommercialOperation, polishCommercialReply, qualifyAndHandoffReply, shouldForceHandoff, tiktokIdentifierReply } from "./conversation-style.ts";
 import { runWhatsappV2Shadow } from "../_shared/ai-v2-shadow/whatsapp-adapter.mjs";
+import { decideShadowScheduling, scheduleShadow } from "../_shared/ai-v2-shadow/scheduler.mjs";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -473,7 +474,8 @@ Deno.serve(async (request) => {
           }
         };
         if (conversationControl.data?.mode === "human") {
-          await runShadow();
+          // V2 must never add latency to V1: schedule as a background task, never await it.
+          scheduleShadow(runShadow());
           await db.from("leads").update({ last_message_at: new Date().toISOString() }).eq("id", leadId);
           continue;
         }
@@ -482,7 +484,8 @@ Deno.serve(async (request) => {
         // Los mensajes posteriores se conservan y notifican al supervisor, pero
         // la IA no reinicia el cuestionario ni compite con la atención humana.
         if (existing?.qualification_status === "qualified") {
-          await runShadow();
+          // V2 must never add latency to V1: schedule as a background task, never await it.
+          scheduleShadow(runShadow());
           await db.from("leads").update({ last_message_at: new Date().toISOString() }).eq("id", existing.id);
           if (!existing.do_not_contact) {
             await db.from("lead_crm").update({
@@ -580,9 +583,6 @@ Deno.serve(async (request) => {
           classification.model_interest || explicitModelInterest,
         );
 
-        // Capture the already-computed V1 decision; never execute V1 twice.
-        await runShadow(classification);
-
         // If a newer inbound arrived while OpenAI was working, that newer execution
         // owns the answer. This prevents two replies and stale questions.
         const latestInboundResult = await db.from("lead_messages")
@@ -592,7 +592,14 @@ Deno.serve(async (request) => {
           .order("created_at", { ascending: false })
           .limit(1)
           .maybeSingle();
-        if (whatsappMessageId && latestInboundResult.data?.whatsapp_message_id !== whatsappMessageId) continue;
+        const isStaleInbound = Boolean(whatsappMessageId && latestInboundResult.data?.whatsapp_message_id !== whatsappMessageId);
+        if (isStaleInbound) {
+          // The computed classification was never applied to the customer; a
+          // newer webhook invocation, for the newer inbound message, already
+          // produces its own shadow comparison. Do not schedule one here — see
+          // decideShadowScheduling's documented semantics.
+          continue;
+        }
 
         // The conversation may have been taken while OpenAI was processing.
         // Rechecking here closes that race before any classification or reply is applied.
@@ -601,10 +608,22 @@ Deno.serve(async (request) => {
           .select("mode")
           .eq("lead_id", leadId)
           .maybeSingle();
-        if (controlAfterAnalysis.data?.mode === "human") {
+        const isHumanTakeoverDuringAnalysis = controlAfterAnalysis.data?.mode === "human";
+        if (isHumanTakeoverDuringAnalysis) {
+          // A human took over mid-analysis: the classification was never applied.
+          // Still observe the takeover moment itself, but never as if V1 had
+          // answered — decideShadowScheduling nulls out v1Decision for this case.
+          const { schedule, v1Decision } = decideShadowScheduling({ isStaleInbound, isHumanTakeoverDuringAnalysis, v1Decision: classification });
+          if (schedule) scheduleShadow(runShadow(v1Decision));
           await db.from("leads").update({ last_message_at: new Date().toISOString() }).eq("id", leadId);
           continue;
         }
+
+        // Only now — with a V1 decision confirmed to be the one that will
+        // actually be sent — schedule the shadow comparison. Never await it:
+        // V2 must not add latency to the V1 response (Family G).
+        const shadowScheduling = decideShadowScheduling({ isStaleInbound, isHumanTakeoverDuringAnalysis, v1Decision: classification });
+        if (shadowScheduling.schedule) scheduleShadow(runShadow(shadowScheduling.v1Decision));
 
         let seller: JsonRecord | null = null;
         let advisorNameAmbiguous = false;
