@@ -3,6 +3,8 @@
 
   var TIME_ZONE = "America/Argentina/Buenos_Aires";
   var TERMINAL_STATUSES = ["venta", "desistir", "invalido"];
+  var TASK_FIELDS = "id, sequence_id, lead_id, sequence_order, channel, call_attempt, message_step, due_start, due_end, status, outcome, note, performed_at, recorded_at, completed_at, updated_at, template:contact_message_templates(title,body)";
+  var LEGACY_TASK_FIELDS = "id, sequence_id, lead_id, sequence_order, channel, call_attempt, message_step, due_start, due_end, status, outcome, note, completed_at, updated_at, template:contact_message_templates(title,body)";
 
   function crmOf(lead) {
     if (!lead || !lead.crm) return { status: "nuevo" };
@@ -79,6 +81,34 @@
     return sections;
   }
 
+  function missingTaskAuditColumns(error) {
+    var message = String(error && error.message || "");
+    return Boolean(error && /performed_at|recorded_at/i.test(message) && (["42703", "PGRST204"].includes(error.code) || /does not exist|schema cache|could not find/i.test(message)));
+  }
+
+  function normalizeTasks(tasks, schema) {
+    return (tasks || []).map(function (task) {
+      if (schema === "v2") return task;
+      return Object.assign({}, task, {
+        performed_at: task.completed_at || null,
+        recorded_at: task.completed_at || task.updated_at || null
+      });
+    });
+  }
+
+  async function loadContactTasks(client) {
+    try {
+      var v2 = await client.from("lead_contact_tasks").select(TASK_FIELDS).order("due_start", { ascending: true }).limit(3500);
+      if (!v2.error) return { tasks: normalizeTasks(v2.data, "v2"), schema: "v2", error: null };
+      if (!missingTaskAuditColumns(v2.error)) return { tasks: [], schema: "unavailable", error: v2.error };
+      var legacy = await client.from("lead_contact_tasks").select(LEGACY_TASK_FIELDS).order("due_start", { ascending: true }).limit(3500);
+      if (legacy.error) return { tasks: [], schema: "unavailable", error: legacy.error };
+      return { tasks: normalizeTasks(legacy.data, "legacy"), schema: "legacy", error: null };
+    } catch (error) {
+      return { tasks: [], schema: "unavailable", error: error };
+    }
+  }
+
   function appendStyleOnce(id, href) {
     if (typeof document === "undefined" || document.getElementById(id)) return;
     var link = document.createElement("link");
@@ -123,7 +153,10 @@
     agendaBucket: agendaBucket,
     belongsToRecommendedSection: belongsToRecommendedSection,
     matchesPortfolioStatus: matchesPortfolioStatus,
-    portfolioSections: portfolioSections
+    portfolioSections: portfolioSections,
+    missingTaskAuditColumns: missingTaskAuditColumns,
+    normalizeTasks: normalizeTasks,
+    loadContactTasks: loadContactTasks
   };
 
   loadEnGestionExperience();

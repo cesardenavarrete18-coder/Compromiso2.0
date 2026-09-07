@@ -23,9 +23,9 @@ function lead(id, status, nextContactAt, createdAt = "2026-09-07T12:00:00-03:00"
 
 test("Mi Cartera reemplaza Mi agenda en todas las superficies de navegación", () => {
   assert.match(html, />\s*Mi Cartera\s*<\/button>/);
-  assert.match(html, /id="crmAgendaTitle">Mi Cartera<\/h2>/);
+  assert.match(html, /<h1 id="crmAgendaTitle">Mi Cartera<\/h1>/);
   assert.doesNotMatch(html, />\s*Mi agenda\s*<\/button>/i);
-  assert.ok(crm.includes('viewName === "agenda" ? "Mi Cartera"'));
+  assert.ok(crm.includes('pageTitle.hidden = viewName === "agenda"'));
   assert.ok(mobileNavigation.includes('agenda: "Mi Cartera"'));
   assert.doesNotMatch(html, /Cartera comercial/);
 });
@@ -72,4 +72,48 @@ test("la UI usa tarjetas operativas responsive y no crea Sin próximo contacto",
   assert.ok(styles.includes("@media(max-width:760px)"));
   assert.doesNotMatch(crm, /agendaGroup\("Sin próxima acción"/);
   assert.doesNotMatch(html, />Sin próximo contacto</i);
+});
+
+test("schema legacy sin performed_at/recorded_at mantiene disponibles las tareas para Mi Cartera", async () => {
+  const selects = [];
+  const legacyTask = { id: "task-legacy", completed_at: "2026-09-07T15:00:00Z", updated_at: "2026-09-07T15:01:00Z" };
+  const client = {
+    from(table) {
+      assert.equal(table, "lead_contact_tasks");
+      return {
+        select(fields) {
+          selects.push(fields);
+          return {
+            order() {
+              return {
+                limit() {
+                  return Promise.resolve(fields.includes("performed_at")
+                    ? { data: null, error: { code: "42703", message: "column lead_contact_tasks.performed_at does not exist" } }
+                    : { data: [legacyTask], error: null });
+                }
+              };
+            }
+          };
+        }
+      };
+    }
+  };
+  const result = await model.loadContactTasks(client);
+  assert.equal(result.schema, "legacy");
+  assert.equal(result.error, null);
+  assert.equal(result.tasks.length, 1);
+  assert.equal(result.tasks[0].performed_at, legacyTask.completed_at);
+  assert.equal(result.tasks[0].recorded_at, legacyTask.completed_at);
+  assert.equal(selects.length, 2);
+});
+
+test("una falla secundaria del protocolo degrada tareas sin derribar Leads", async () => {
+  const error = { code: "42501", message: "protocol unavailable" };
+  const client = { from: () => ({ select: () => ({ order: () => ({ limit: () => Promise.resolve({ data: null, error }) }) }) }) };
+  const result = await model.loadContactTasks(client);
+  assert.equal(result.schema, "unavailable");
+  assert.equal(result.tasks.length, 0);
+  assert.equal(result.error, error);
+  assert.ok(crm.includes("state.taskLoadError = responses[1].error || null"));
+  assert.doesNotMatch(crm, /if \(responses\[1\]\.error\) throw/);
 });

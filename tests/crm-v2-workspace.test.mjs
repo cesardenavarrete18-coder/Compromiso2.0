@@ -6,6 +6,7 @@ import { runInNewContext } from "node:vm";
 const html = readFileSync(new URL("../vendedores/index.html", import.meta.url), "utf8");
 const crm = readFileSync(new URL("../vendedores/crm.js", import.meta.url), "utf8");
 const management = readFileSync(new URL("../vendedores/en-gestion.js", import.meta.url), "utf8");
+const agendaModel = readFileSync(new URL("../vendedores/agenda-model.js", import.meta.url), "utf8");
 const sales = readFileSync(new URL("../vendedores/sales.js", import.meta.url), "utf8");
 const transitionSource = readFileSync(new URL("../vendedores/crm-transition-model.js", import.meta.url), "utf8");
 const migration = readFileSync(new URL("../supabase/migrations/20260907150000_crm_v2_transition_matrix.sql", import.meta.url), "utf8");
@@ -103,7 +104,7 @@ test("Sin contacto renderiza cada intento por día, franja, canal y resultado", 
   assert.ok(crm.includes('class="crm-protocol-day"'));
   assert.ok(crm.includes('class="crm-protocol-attempt '));
   for (const field of ["Hora efectiva", "Registrado", "Resultado"]) assert.ok(crm.includes(field));
-  assert.ok(crm.includes("performed_at, recorded_at, completed_at"));
+  assert.ok(agendaModel.includes("performed_at, recorded_at, completed_at"));
 });
 
 test("cada intento registra hora efectiva separada de la hora de registro", () => {

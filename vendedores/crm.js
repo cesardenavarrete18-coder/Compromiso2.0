@@ -21,7 +21,7 @@
     { value: "desistir", label: "Desistir" }
   ];
   var CLOSED_STAGES = ["venta", "desistir", "invalido"];
-  var state = { leads: [], tasks: [], appraisals: [], commercialCatalog: [], activeLead: null, view: "agenda", searchAgenda: "", searchPipeline: "", portfolioStatus: "all", portfolioView: "all", pendingProtocolAnsweredTaskId: null, loading: false };
+  var state = { leads: [], tasks: [], taskSchema: "unknown", taskLoadError: null, appraisals: [], commercialCatalog: [], activeLead: null, view: "agenda", searchAgenda: "", searchPipeline: "", portfolioStatus: "all", portfolioView: "all", pendingProtocolAnsweredTaskId: null, loading: false };
   var leadDialog = document.getElementById("crmLeadDialog");
   var commentDialog = document.getElementById("crmCommentDialog");
   var commercialSelectionDialog = document.getElementById("crmCommercialSelectionDialog");
@@ -264,14 +264,15 @@
         supabaseClient.from("leads").select(
           "id, customer_id, customer_phone, customer_name, source_channel, source_detail, qualification_status, priority, intent_summary, model_interest, assigned_at, last_message_at, created_at, customer:customers(full_name,primary_phone,email,document_number,cuil), attribution:lead_attributions(platform,source_type,campaign_name,adset_name,ad_name,headline,source_url), crm:lead_crm(status, priority, status_reason, next_contact_at, next_contact_note, next_contact_source, last_contact_at, last_contact_outcome, interview_at, interview_location, deposit_amount, deposit_at, cold_base_at, sale_confirmation_status, sale_requested_at, sale_confirmed_at, vehicle_sold, sale_amount, updated_at)"
         ).order("last_message_at", { ascending: false }).limit(500),
-        supabaseClient.from("lead_contact_tasks").select("id, sequence_id, lead_id, sequence_order, channel, call_attempt, message_step, due_start, due_end, status, outcome, note, performed_at, recorded_at, completed_at, updated_at, template:contact_message_templates(title,body)").order("due_start", { ascending: true }).limit(3500),
+        agendaModel.loadContactTasks(supabaseClient),
         supabaseClient.from("vehicle_appraisals").select("id, lead_id, brand, model, version, vehicle_year, mileage_km, condition, notes, estimated_min, estimated_max, market_median, suggested_value, market_currency, estimate_source, estimate_basis, reference_count, market_references, market_checked_at, status, confirmed_value, confirmed_currency, review_note, updated_at").order("updated_at", { ascending: false }).limit(500)
       ]);
       if (responses[0].error) throw responses[0].error;
-      if (responses[1].error) throw responses[1].error;
       if (responses[2].error) throw responses[2].error;
       state.leads = responses[0].data || [];
-      state.tasks = responses[1].data || [];
+      state.tasks = responses[1].tasks || [];
+      state.taskSchema = responses[1].schema;
+      state.taskLoadError = responses[1].error || null;
       state.appraisals = responses[2].data || [];
       renderAgenda();
       renderPipeline();
@@ -398,7 +399,9 @@
     var target = document.getElementById("crm" + viewName.charAt(0).toUpperCase() + viewName.slice(1) + "View");
     if (target) target.classList.add("is-active");
     document.getElementById("stepper").hidden = true;
-    document.getElementById("pageTitle").textContent = viewName === "agenda" ? "Mi Cartera" : viewName === "pipeline" ? "Embudo de oportunidades" : viewName === "quotes" ? "Presupuestos comerciales" : viewName === "sales" ? "Mis ventas" : viewName === "recalls" ? "Panel de rellamados" : "Ranking del equipo";
+    var pageTitle = document.getElementById("pageTitle");
+    pageTitle.hidden = viewName === "agenda";
+    pageTitle.textContent = viewName === "agenda" ? "" : viewName === "pipeline" ? "Embudo de oportunidades" : viewName === "quotes" ? "Presupuestos comerciales" : viewName === "sales" ? "Mis ventas" : viewName === "recalls" ? "Panel de rellamados" : "Ranking del equipo";
     document.getElementById("headerKicker").textContent = viewName === "recalls" ? "Base histórica asignada" : "CRM Grupo Sur Automotores";
     document.querySelectorAll(".nav-item").forEach(function (item) { item.classList.toggle("is-active", item.dataset.crmView === viewName); });
     if (viewName === "ranking") loadRanking();
@@ -528,6 +531,10 @@
   function renderNoContactProtocol(lead) {
     var tasks = tasksForLead(lead.id);
     var target = document.getElementById("crmNoContactProtocol");
+    if (state.taskLoadError) {
+      target.innerHTML = '<div class="crm-protocol-empty warning"><strong>Protocolo temporalmente no disponible</strong><p>Mi Cartera y las herramientas generales siguen disponibles. Reintentá la carga para recuperar el detalle del protocolo.</p></div>';
+      return;
+    }
     if (!tasks.length) {
       target.innerHTML = '<div class="crm-protocol-empty"><strong>Protocolo pendiente de iniciar</strong><p>El sistema iniciará la secuencia canónica al registrar el primer intento.</p></div>';
       return;
@@ -538,7 +545,7 @@
       groups[key].push(task);
       return groups;
     }, {});
-    target.innerHTML = Object.keys(days).map(function (key, dayIndex) {
+    target.innerHTML = (state.taskSchema === "legacy" ? '<div class="crm-protocol-compatibility"><strong>Modo compatible</strong><span>Se muestran horarios históricos disponibles. El registro separado de hora efectiva requiere aplicar la migración CRM V2 en este entorno.</span></div>' : '') + Object.keys(days).map(function (key, dayIndex) {
       return '<section class="crm-protocol-day"><header><div><span>Día ' + (dayIndex + 1) + '</span><strong>' + escapeHtml(new Intl.DateTimeFormat("es-AR", { timeZone: "America/Argentina/Buenos_Aires", weekday: "long", day: "2-digit", month: "2-digit" }).format(new Date(days[key][0].due_start))) + '</strong></div><small>Franjas 10–12 · 14–16 · 17–19</small></header><div class="crm-protocol-attempts">' + days[key].map(function (task) {
         var done = ["completed", "skipped", "cancelled"].includes(task.status);
         var actionable = task.status === "pending";
@@ -763,6 +770,11 @@
       p_priority: document.getElementById("crmPriorityInput").value
     };
     if (state.pendingProtocolAnsweredTaskId) {
+      if (state.taskSchema !== "v2") {
+        errorBox.textContent = "Registrar una respuesta con transición desde el protocolo requiere la migración CRM V2 en este entorno.";
+        setBusy(button, false);
+        return;
+      }
       payload.p_task_id = state.pendingProtocolAnsweredTaskId;
       delete payload.p_lead_id;
       var performedInput = document.querySelector('[data-contact-performed-at="' + state.pendingProtocolAnsweredTaskId + '"]');
@@ -827,7 +839,9 @@
     var protocolWasOpen = !!document.querySelector("#crmProtocol details[open]");
     var performedInput = document.querySelector('[data-contact-performed-at="' + taskId + '"]');
     var performedAt = performedInput && performedInput.value ? new Date(performedInput.value + ":00-03:00").toISOString() : new Date().toISOString();
-    var result = await supabaseClient.rpc("record_contact_task_result", { p_task_id: taskId, p_outcome: outcome, p_note: "", p_performed_at: performedAt });
+    var result = state.taskSchema === "v2"
+      ? await supabaseClient.rpc("record_contact_task_result", { p_task_id: taskId, p_outcome: outcome, p_note: "", p_performed_at: performedAt })
+      : await supabaseClient.rpc("complete_contact_task_with_follow_up", { p_task_id: taskId, p_outcome: outcome, p_note: "", p_next_contact_at: null, p_next_contact_note: "" });
     if (result.error) {
       document.getElementById("crmFormError").textContent = result.error.message;
       return;
