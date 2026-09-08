@@ -628,35 +628,111 @@ security definer
 set search_path = ''
 as $$
 declare
-  v_lead_id uuid;
+  v_user_id uuid := (select auth.uid());
+  v_task public.lead_contact_tasks%rowtype;
+  v_previous_status text;
+  v_next_note text := left(coalesce(nullif(trim(p_next_contact_note), ''), trim(p_note)), 1000);
+  v_activity_type text := 'status_change';
+  v_title text;
 begin
-  select lead_id into v_lead_id from public.lead_contact_tasks where id = p_task_id for update;
-  if v_lead_id is null then raise exception 'No se encontró el intento de contacto'; end if;
+  if v_user_id is null or not private.current_user_active() then raise exception 'Acceso no autorizado'; end if;
+  if p_performed_at is null or p_performed_at > now() + interval '5 minutes' then raise exception 'La hora efectiva del contacto no es válida'; end if;
+  if char_length(trim(coalesce(p_note, ''))) > 3000 then raise exception 'El detalle es demasiado extenso'; end if;
+  if p_priority not in ('low', 'normal', 'high') then raise exception 'Prioridad inválida'; end if;
   if p_status not in ('contacto_futuro', 'en_proceso', 'entrevista', 'cierre', 'sena', 'desistir') then
     raise exception 'Resultado comercial no permitido después de una respuesta';
   end if;
 
-  perform public.record_contact_task_result(p_task_id, 'answered', p_note, p_performed_at);
+  select * into v_task
+  from public.lead_contact_tasks
+  where id = p_task_id
+  for update;
+  if v_task.id is null or v_task.status <> 'pending' then raise exception 'La tarea ya fue procesada o no existe'; end if;
+  if v_task.seller_user_id <> v_user_id and not private.current_user_is_management() then raise exception 'La tarea no corresponde a este vendedor'; end if;
 
-  if p_status = 'contacto_futuro' then
-    if p_next_contact_at is null or p_next_contact_at <= now() then raise exception 'Programá el contacto solicitado'; end if;
-    update public.lead_crm set
-      status = 'contacto_futuro',
-      next_contact_at = p_next_contact_at,
-      next_contact_note = left(coalesce(nullif(trim(p_next_contact_note), ''), trim(p_note)), 1000),
-      next_contact_source = 'manual',
-      last_contact_at = p_performed_at,
-      last_contact_outcome = 'answered',
-      updated_by = auth.uid(),
-      updated_at = now()
-    where lead_id = v_lead_id;
-    insert into public.lead_activities (lead_id, actor_user_id, activity_type, title, detail, metadata)
-    values (v_lead_id, auth.uid(), 'follow_up', 'El cliente pidió contacto futuro', trim(p_note),
-      jsonb_build_object('previous_status', 'no_contesta', 'status', 'contacto_futuro', 'next_contact_at', p_next_contact_at, 'performed_at', p_performed_at, 'recorded_at', now()));
-  else
-    perform public.record_lead_follow_up(v_lead_id, p_status, p_note, p_next_contact_at, p_next_contact_note,
-      coalesce(nullif(p_contact_outcome, ''), 'answered'), p_interview_at, p_interview_location, p_deposit_amount, p_priority);
+  select status into v_previous_status
+  from public.lead_crm
+  where lead_id = v_task.lead_id
+  for update;
+  if v_previous_status is null then raise exception 'No se encontró la ficha CRM del lead'; end if;
+  if v_previous_status <> 'no_contesta' then raise exception 'El Lead ya no está en Sin contacto'; end if;
+  if not private.crm_transition_allowed(v_previous_status, p_status) then
+    raise exception 'Transición comercial no permitida: % → %', v_previous_status, p_status;
   end if;
+
+  if p_status in ('contacto_futuro', 'en_proceso') and (p_next_contact_at is null or p_next_contact_at <= now()) then
+    if p_status = 'en_proceso' then
+      raise exception 'En gestión requiere un próximo contacto con fecha y hora';
+    else
+      raise exception 'Programá el contacto solicitado';
+    end if;
+  end if;
+  if p_status = 'entrevista' and (p_interview_at is null or p_interview_at <= now()) then raise exception 'Indicá la fecha y hora futura de la entrevista'; end if;
+  if p_status = 'sena' and (p_deposit_amount is null or p_deposit_amount <= 0) then raise exception 'Indicá el importe de la seña'; end if;
+  if p_status = 'desistir' and char_length(trim(coalesce(p_note, ''))) < 3 then raise exception 'Indicá el motivo para este estado'; end if;
+
+  -- Deliberately bypass the legacy task-completion RPC: it changes the CRM
+  -- status before the required final fields exist.
+  update public.lead_contact_tasks set
+    status = 'completed',
+    outcome = 'answered',
+    note = trim(coalesce(p_note, '')),
+    completed_at = now(),
+    performed_at = p_performed_at,
+    recorded_at = now(),
+    completed_by = v_user_id,
+    updated_at = now()
+  where id = v_task.id;
+
+  insert into public.lead_activities (lead_id, actor_user_id, activity_type, title, detail, metadata)
+  values (v_task.lead_id, v_user_id, case when v_task.channel = 'call' then 'contact' else 'follow_up' end,
+    case when v_task.channel = 'call' then 'Intento de llamada ' || v_task.call_attempt || ' contestado'
+      else 'WhatsApp de seguimiento ' || v_task.message_step || ' contestado' end,
+    trim(coalesce(p_note, '')),
+    jsonb_build_object('task_id', v_task.id, 'channel', v_task.channel, 'outcome', 'answered',
+      'call_attempt', v_task.call_attempt, 'message_step', v_task.message_step,
+      'performed_at', p_performed_at, 'recorded_at', now()));
+
+  perform private.cancel_lead_contact_protocol(v_task.lead_id, 'El cliente respondió');
+
+  if p_status = 'entrevista' then v_activity_type := 'interview'; end if;
+  if p_status in ('contacto_futuro', 'en_proceso') then v_activity_type := 'follow_up'; end if;
+  if p_status = 'en_proceso' then v_activity_type := 'contact'; end if;
+  v_title := case p_status
+    when 'contacto_futuro' then 'El cliente pidió contacto futuro'
+    when 'en_proceso' then 'Contacto en proceso'
+    when 'entrevista' then 'Entrevista programada'
+    when 'cierre' then 'Oportunidad en cierre'
+    when 'sena' then 'Seña registrada'
+    when 'desistir' then 'Lead enviado a base fría'
+  end;
+
+  update public.lead_crm set
+    status = p_status,
+    priority = case when p_status = 'cierre' then 'high' else p_priority end,
+    status_reason = case when p_status = 'desistir' then trim(coalesce(p_note, '')) else status_reason end,
+    next_contact_at = case when p_status in ('contacto_futuro', 'en_proceso') then p_next_contact_at else null end,
+    next_contact_note = case when p_status in ('contacto_futuro', 'en_proceso') then v_next_note else '' end,
+    next_contact_source = case when p_status in ('contacto_futuro', 'en_proceso') then 'manual' else null end,
+    last_contact_at = p_performed_at,
+    last_contact_outcome = 'answered',
+    interview_at = case when p_status = 'entrevista' then p_interview_at else interview_at end,
+    interview_location = case when p_status = 'entrevista' then trim(coalesce(p_interview_location, '')) else interview_location end,
+    deposit_amount = case when p_status = 'sena' then p_deposit_amount else deposit_amount end,
+    deposit_at = case when p_status = 'sena' then now() else deposit_at end,
+    cold_base_at = case when p_status = 'desistir' then now() else null end,
+    updated_by = v_user_id,
+    updated_at = now()
+  where lead_id = v_task.lead_id;
+
+  insert into public.lead_activities (lead_id, actor_user_id, activity_type, title, detail, metadata)
+  values (v_task.lead_id, v_user_id, v_activity_type, v_title, trim(coalesce(p_note, '')),
+    jsonb_build_object('previous_status', v_previous_status, 'status', p_status,
+      'next_contact_at', case when p_status in ('contacto_futuro', 'en_proceso') then p_next_contact_at else null end,
+      'next_contact_note', case when p_status in ('contacto_futuro', 'en_proceso') then v_next_note else null end,
+      'next_contact_source', case when p_status in ('contacto_futuro', 'en_proceso') then 'manual' else null end,
+      'interview_at', p_interview_at, 'interview_location', trim(coalesce(p_interview_location, '')),
+      'deposit_amount', p_deposit_amount, 'performed_at', p_performed_at));
 end;
 $$;
 

@@ -10,6 +10,7 @@ const agendaModel = readFileSync(new URL("../vendedores/agenda-model.js", import
 const sales = readFileSync(new URL("../vendedores/sales.js", import.meta.url), "utf8");
 const transitionSource = readFileSync(new URL("../vendedores/crm-transition-model.js", import.meta.url), "utf8");
 const migration = readFileSync(new URL("../supabase/migrations/20260907150000_crm_v2_transition_matrix.sql", import.meta.url), "utf8");
+const contactAnswerIntegration = readFileSync(new URL("./crm-v2-contact-answer.integration.sql", import.meta.url), "utf8");
 const context = {};
 context.globalThis = context;
 runInNewContext(transitionSource, context);
@@ -144,6 +145,36 @@ test("una respuesta desde Sin contacto ofrece sólo resultados comerciales váli
   assert.ok(crm.includes("state.pendingProtocolAnsweredTaskId"));
   assert.ok(crm.includes('rpc("record_contact_answer_with_transition"'));
   assert.match(migration, /p_status not in \('contacto_futuro', 'en_proceso', 'entrevista', 'cierre', 'sena', 'desistir'\)/);
+});
+
+test("la respuesta atómica registra la tarea sin invocar la transición legacy intermedia", () => {
+  const flow = migration.match(/create or replace function public\.record_contact_answer_with_transition[\s\S]*?grant execute on function public\.record_contact_answer_with_transition[\s\S]*?authenticated;/)?.[0] || "";
+  assert.doesNotMatch(flow, /record_contact_task_result|complete_contact_task\s*\(/);
+  assert.match(flow, /select \* into v_task[\s\S]*for update/);
+  assert.ok(flow.includes("v_task.status <> 'pending'"));
+  assert.ok(flow.includes("v_task.seller_user_id <> v_user_id"));
+  assert.ok(flow.includes("private.crm_transition_allowed(v_previous_status, p_status)"));
+  for (const assignment of ["status = 'completed'", "outcome = 'answered'", "completed_at = now()", "performed_at = p_performed_at", "recorded_at = now()", "completed_by = v_user_id"]) assert.ok(flow.includes(assignment), assignment);
+  assert.ok(flow.indexOf("update public.lead_contact_tasks") < flow.indexOf("private.cancel_lead_contact_protocol"));
+  assert.ok(flow.indexOf("private.cancel_lead_contact_protocol") < flow.indexOf("update public.lead_crm"));
+  assert.ok(flow.includes("last_contact_at = p_performed_at"));
+  assert.ok(flow.includes("last_contact_outcome = 'answered'"));
+  assert.ok(flow.includes("next_contact_source = case when p_status in ('contacto_futuro', 'en_proceso') then 'manual'"));
+  assert.ok(flow.includes("En gestión requiere un próximo contacto con fecha y hora"));
+  assert.ok(flow.includes("Programá el contacto solicitado"));
+});
+
+test("la prueba SQL aislada cubre éxito, rollback integral e Inválido", () => {
+  for (const expected of [
+    "Sin contacto -> En gestión must apply the final state",
+    "answered task must preserve performed_at and recorded_at",
+    "remaining protocol tasks must be cancelled",
+    "Sin contacto -> Pide contacto futuro must succeed",
+    "failed final transition must roll back the answered attempt",
+    "failed final transition must leave Sin contacto observable",
+    "Inválido must remain available from Sin contacto"
+  ]) assert.ok(contactAnswerIntegration.includes(expected), expected);
+  assert.ok(contactAnswerIntegration.includes("status = 'pending' and outcome = '' and performed_at is null and recorded_at is null"));
 });
 
 test("smoke: las herramientas comunes siguen siendo instancias únicas", () => {
