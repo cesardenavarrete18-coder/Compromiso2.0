@@ -5,6 +5,7 @@ import { runInNewContext } from "node:vm";
 
 const migration = readFileSync(new URL("../supabase/migrations/20260903133015_unify_canonical_next_action.sql", import.meta.url), "utf8");
 const advisoryMigration = readFileSync(new URL("../supabase/migrations/20260903202218_protocol_advisory_layer.sql", import.meta.url), "utf8");
+const crmV2Migration = readFileSync(new URL("../supabase/migrations/20260907150000_crm_v2_transition_matrix.sql", import.meta.url), "utf8");
 const modelSource = readFileSync(new URL("../vendedores/supervisor/followup-model.js", import.meta.url), "utf8");
 const sellerCrm = readFileSync(new URL("../vendedores/crm.js", import.meta.url), "utf8");
 const sellerHtml = readFileSync(new URL("../vendedores/index.html", import.meta.url), "utf8");
@@ -90,22 +91,24 @@ test("9. las llamadas de media tarde y tarde usan los helpers canónicos", () =>
   assert.ok(migration.includes("elsif v_local::time < time '19:00'"));
 });
 
-test("10. el protocolo avanza por seis franjas comerciales válidas", () => {
-  assert.ok(migration.includes("for v_call_attempt in 1..6 loop"));
-  assert.ok(migration.includes("v_cursor := v_call_end + interval '1 second'"));
-  assert.ok(sellerCrm.includes("6 llamadas en las próximas 6 franjas comerciales disponibles"));
-  assert.doesNotMatch(sellerCrm, /seguimiento en \d+ días comerciales/);
+test("10. el protocolo CRM V2 cubre tres días y sus tres franjas comerciales", () => {
+  assert.ok(crmV2Migration.includes("for v_day_number in 1..3 loop"));
+  assert.ok(crmV2Migration.includes("for v_slot in 1..3 loop"));
+  assert.ok(crmV2Migration.includes("for v_band_attempt in 1..2 loop"));
+  assert.ok(sellerCrm.includes("18 llamadas en 3 días comerciales · 2 por franja"));
 });
 
-test("11. el protocolo nuevo tiene exactamente 6 llamadas y 2 WhatsApp", () => {
-  assert.ok(migration.includes("for v_call_attempt in 1..6 loop"));
-  assert.ok(migration.includes("if v_call_attempt in (1, 4) then"));
-  assert.ok(sellerCrm.includes("6 franjas comerciales disponibles · 2 WhatsApp después de las llamadas 1 y 4"));
+test("11. el protocolo nuevo tiene exactamente 18 llamadas y conserva 2 WhatsApp", () => {
+  assert.ok(crmV2Migration.includes("v_call_attempt integer := 0"));
+  assert.ok(crmV2Migration.includes("for v_day_number in 1..3 loop"));
+  assert.ok(crmV2Migration.includes("for v_slot in 1..3 loop"));
+  assert.ok(crmV2Migration.includes("for v_band_attempt in 1..2 loop"));
+  assert.ok(crmV2Migration.includes("if v_call_attempt in (1, 4) then"));
 });
 
-test("12. WhatsApp aparece solo después de las llamadas 1 y 4", () => {
-  assert.match(migration, /v_call_attempt in \(1, 4\)/);
-  assert.ok(!migration.includes("v_call_attempt in (2, 3, 5, 6)"));
+test("12. WhatsApp conserva la cadencia existente después de las llamadas 1 y 4", () => {
+  assert.match(crmV2Migration, /v_call_attempt in \(1, 4\)/);
+  assert.ok(!crmV2Migration.includes("v_call_attempt in (2, 3, 5, 6)"));
 });
 
 test("13. restart reemplaza toda la secuencia por una única secuencia canónica", () => {

@@ -8,7 +8,201 @@ alter table public.lead_crm add constraint lead_crm_status check (status in (
 
 alter table public.lead_contact_tasks
   add column if not exists performed_at timestamptz,
-  add column if not exists recorded_at timestamptz;
+  add column if not exists recorded_at timestamptz,
+  add column if not exists protocol_day smallint,
+  add column if not exists protocol_band text,
+  add column if not exists band_attempt smallint;
+
+alter table public.lead_contact_tasks
+  drop constraint if exists lead_contact_tasks_call;
+alter table public.lead_contact_tasks
+  add constraint lead_contact_tasks_call check (
+    (channel = 'call' and call_attempt between 1 and 18 and message_step is null)
+    or (channel = 'whatsapp' and message_step between 1 and 4 and call_attempt is null)
+  ),
+  add constraint lead_contact_tasks_protocol_metadata check (
+    (protocol_day is null and protocol_band is null and band_attempt is null)
+    or (protocol_day between 1 and 3
+      and protocol_band in ('10-12', '14-16', '17-19')
+      and ((channel = 'call' and band_attempt between 1 and 2)
+        or (channel = 'whatsapp' and band_attempt is null)))
+  );
+
+-- CRM V2 canonical protocol: three complete business days, two calls in each
+-- commercial band. WhatsApp keeps the existing cadence after calls 1 and 4.
+create or replace function private.create_lead_contact_sequence(
+  p_lead_id uuid,
+  p_seller_user_id uuid,
+  p_started_at timestamptz default now()
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_sequence_id uuid;
+  v_local timestamp := greatest(coalesce(p_started_at, now()), now()) at time zone 'America/Argentina/Buenos_Aires';
+  v_first_day date;
+  v_day date;
+  v_day_number integer;
+  v_slot integer;
+  v_band_attempt integer;
+  v_call_attempt integer := 0;
+  v_sequence_order integer := 0;
+  v_message_step integer := 0;
+  v_call_start timestamptz;
+  v_call_end timestamptz;
+  v_message_end timestamptz;
+  v_status text;
+  v_manual_action timestamptz;
+  v_band text;
+begin
+  if p_seller_user_id is null then return null; end if;
+
+  select crm.status, crm.next_contact_at
+  into v_status, v_manual_action
+  from public.leads lead
+  join public.lead_crm crm on crm.lead_id = lead.id
+  where lead.id = p_lead_id
+    and lead.assigned_seller_user_id = p_seller_user_id
+    and lead.closed_at is null
+    and not coalesce(lead.do_not_contact, false)
+  for update of lead, crm;
+
+  if not found or v_status not in ('nuevo', 'no_contesta') or v_manual_action is not null then return null; end if;
+
+  select id into v_sequence_id
+  from public.lead_contact_sequences
+  where lead_id = p_lead_id and status = 'active';
+  if v_sequence_id is not null then return v_sequence_id; end if;
+
+  v_first_day := private.business_date(v_local::date, 0);
+  -- A complete V2 day always contains all three bands. If the first band has
+  -- begun, start on the next business day rather than creating past tasks.
+  if v_first_day <> v_local::date or v_local::time >= time '10:00' then
+    if v_first_day = v_local::date then v_first_day := private.business_date(v_first_day, 1); end if;
+  end if;
+
+  insert into public.lead_contact_sequences (lead_id, seller_user_id, started_at)
+  values (p_lead_id, p_seller_user_id, greatest(coalesce(p_started_at, now()), now()))
+  returning id into v_sequence_id;
+
+  for v_day_number in 1..3 loop
+    v_day := private.business_date(v_first_day, v_day_number - 1);
+    for v_slot in 1..3 loop
+      v_band := case v_slot when 1 then '10-12' when 2 then '14-16' else '17-19' end;
+      v_call_start := private.contact_window_start(v_day, v_slot);
+      v_call_end := private.contact_window_end(v_day, v_slot);
+      for v_band_attempt in 1..2 loop
+        v_call_attempt := v_call_attempt + 1;
+        v_sequence_order := v_sequence_order + 1;
+        insert into public.lead_contact_tasks (
+          sequence_id, lead_id, seller_user_id, sequence_order, channel,
+          call_attempt, message_step, template_id, due_start, due_end, status,
+          protocol_day, protocol_band, band_attempt
+        ) values (
+          v_sequence_id, p_lead_id, p_seller_user_id, v_sequence_order, 'call',
+          v_call_attempt, null, null, v_call_start, v_call_end,
+          case when v_call_attempt = 1 then 'pending' else 'scheduled' end,
+          v_day_number, v_band, v_band_attempt
+        );
+
+        if v_call_attempt in (1, 4) then
+          v_message_step := v_message_step + 1;
+          v_sequence_order := v_sequence_order + 1;
+          v_message_end := least(v_call_start + interval '2 hours', v_call_end);
+          insert into public.lead_contact_tasks (
+            sequence_id, lead_id, seller_user_id, sequence_order, channel,
+            call_attempt, message_step, template_id, due_start, due_end, status,
+            protocol_day, protocol_band, band_attempt
+          ) values (
+            v_sequence_id, p_lead_id, p_seller_user_id, v_sequence_order, 'whatsapp',
+            null, v_message_step,
+            (select id from public.contact_message_templates where step_number = v_message_step),
+            v_call_start, greatest(v_call_start + interval '1 minute', v_message_end), 'scheduled',
+            v_day_number, v_band, null
+          );
+        end if;
+      end loop;
+    end loop;
+  end loop;
+  return v_sequence_id;
+end;
+$$;
+
+revoke all on function private.create_lead_contact_sequence(uuid, uuid, timestamptz) from public, anon, authenticated;
+
+create or replace function public.reconcile_lead_contact_protocol(p_lead_id uuid)
+returns uuid
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_user_id uuid := (select auth.uid());
+  v_seller uuid;
+  v_sequence_id uuid;
+  v_new_sequence_id uuid;
+begin
+  if v_user_id is null or not private.current_user_active() then raise exception 'Acceso no autorizado'; end if;
+
+  select lead.assigned_seller_user_id, sequence.id
+  into v_seller, v_sequence_id
+  from public.leads lead
+  join public.lead_contact_sequences sequence on sequence.lead_id = lead.id and sequence.status = 'active'
+  where lead.id = p_lead_id
+  for update of lead, sequence;
+
+  if not found then raise exception 'No existe un protocolo activo para reconciliar'; end if;
+  if v_seller <> v_user_id and not private.current_user_is_management() then raise exception 'Acceso no autorizado'; end if;
+  if (
+    select count(*) = 18
+      and count(distinct protocol_day) = 3
+      and count(distinct (protocol_day, protocol_band, band_attempt)) = 18
+      and count(distinct (due_start at time zone 'America/Argentina/Buenos_Aires')::date) = 3
+      and min((due_start at time zone 'America/Argentina/Buenos_Aires')::date) filter (where protocol_day = 1)
+        < min((due_start at time zone 'America/Argentina/Buenos_Aires')::date) filter (where protocol_day = 2)
+      and min((due_start at time zone 'America/Argentina/Buenos_Aires')::date) filter (where protocol_day = 2)
+        < min((due_start at time zone 'America/Argentina/Buenos_Aires')::date) filter (where protocol_day = 3)
+      and bool_and(case protocol_band
+        when '10-12' then (due_start at time zone 'America/Argentina/Buenos_Aires')::time >= time '10:00'
+          and (due_end at time zone 'America/Argentina/Buenos_Aires')::time <= time '12:00'
+        when '14-16' then (due_start at time zone 'America/Argentina/Buenos_Aires')::time >= time '14:00'
+          and (due_end at time zone 'America/Argentina/Buenos_Aires')::time <= time '16:00'
+        when '17-19' then (due_start at time zone 'America/Argentina/Buenos_Aires')::time >= time '17:00'
+          and (due_end at time zone 'America/Argentina/Buenos_Aires')::time <= time '19:00'
+        else false end)
+    from public.lead_contact_tasks
+    where sequence_id = v_sequence_id and channel = 'call'
+  ) then raise exception 'El protocolo activo ya cumple el contrato CRM V2'; end if;
+
+  -- Never rewrite performed/completed history. Only unfinished legacy work is
+  -- retired before creating a fresh, auditable V2 sequence.
+  update public.lead_contact_tasks
+  set status = 'cancelled', updated_at = now()
+  where sequence_id = v_sequence_id and status in ('pending', 'scheduled');
+  update public.lead_contact_sequences
+  set status = 'cancelled', completed_at = coalesce(completed_at, now()),
+      stopped_reason = 'Reconciliación explícita a protocolo CRM V2', updated_at = now()
+  where id = v_sequence_id;
+
+  insert into public.lead_activities (lead_id, actor_user_id, activity_type, title, detail, metadata)
+  values (p_lead_id, v_user_id, 'management', 'Protocolo reconciliado a CRM V2',
+    'Se conservaron los intentos históricos y se cancelaron únicamente tareas pendientes del protocolo anterior.',
+    jsonb_build_object('previous_sequence_id', v_sequence_id, 'action', 'protocol_v2_reconciliation'));
+
+  v_new_sequence_id := private.create_lead_contact_sequence(p_lead_id, v_seller, now());
+  if v_new_sequence_id is null then raise exception 'No se pudo iniciar el protocolo CRM V2'; end if;
+  return v_new_sequence_id;
+end;
+$$;
+
+revoke all on function public.reconcile_lead_contact_protocol(uuid) from public, anon;
+grant execute on function public.reconcile_lead_contact_protocol(uuid) to authenticated;
+
+comment on function public.reconcile_lead_contact_protocol(uuid)
+  is 'Acción explícita: conserva intentos históricos, cancela pendientes legacy, audita y crea un protocolo CRM V2.';
 
 create or replace function private.crm_transition_allowed(p_from text, p_to text)
 returns boolean

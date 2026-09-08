@@ -15,6 +15,11 @@ context.globalThis = context;
 runInNewContext(transitionSource, context);
 const transitions = context.grupoSurCRMTransitions;
 
+const agendaContext = {};
+agendaContext.globalThis = agendaContext;
+runInNewContext(agendaModel, agendaContext);
+const agenda = agendaContext.grupoSurAgendaModel;
+
 test("el Workspace común abre Nuevo y En gestión antes de mostrar el diálogo", () => {
   const openLead = crm.match(/async function openLead\(leadId\)[\s\S]*?await Promise\.all/)?.[0] || "";
   assert.ok(html.includes('id="crmWorkspaceBack"'));
@@ -149,4 +154,60 @@ test("smoke: las herramientas comunes siguen siendo instancias únicas", () => {
   assert.ok(crm.includes('document.getElementById("crmSaleButton")'));
   assert.ok(crm.includes('document.getElementById("crmCommentButton")'));
   assert.ok(crm.includes('document.getElementById("crmWhatsappLink").href'));
+});
+
+test("el protocolo V2 canónico crea 18 llamadas en 3 días y 2 por franja", () => {
+  const creator = migration.match(/create or replace function private\.create_lead_contact_sequence[\s\S]*?revoke all on function private\.create_lead_contact_sequence/)?.[0] || "";
+  assert.ok(creator.includes("for v_day_number in 1..3 loop"));
+  assert.ok(creator.includes("for v_slot in 1..3 loop"));
+  assert.ok(creator.includes("for v_band_attempt in 1..2 loop"));
+  assert.ok(creator.includes("v_call_attempt := v_call_attempt + 1"));
+  assert.ok(creator.includes("private.business_date(v_first_day, v_day_number - 1)"));
+  assert.ok(creator.includes("private.contact_window_start(v_day, v_slot)"));
+  assert.ok(creator.includes("private.contact_window_end(v_day, v_slot)"));
+  assert.ok(creator.includes("if v_call_attempt in (1, 4) then"));
+
+  const starts = ["10:00", "14:00", "17:00"];
+  const dates = ["2026-09-08", "2026-09-09", "2026-09-10"];
+  const tasks = [];
+  for (let day = 1; day <= 3; day += 1) {
+    for (let band = 0; band < 3; band += 1) {
+      for (let attempt = 1; attempt <= 2; attempt += 1) {
+        tasks.push({ channel: "call", protocol_day: day, protocol_band: ["10-12", "14-16", "17-19"][band], band_attempt: attempt, sequence_order: tasks.length + 1, due_start: `${dates[day - 1]}T${starts[band]}:00-03:00`, due_end: `${dates[day - 1]}T${["12:00", "16:00", "19:00"][band]}:00-03:00` });
+      }
+    }
+  }
+  assert.equal(tasks.length, 18);
+  assert.equal(new Set(tasks.map(task => task.protocol_day)).size, 3);
+  for (const day of [1, 2, 3]) {
+    assert.equal(tasks.filter(task => task.protocol_day === day).length, 6);
+    for (const band of ["10-12", "14-16", "17-19"]) assert.equal(tasks.filter(task => task.protocol_day === day && task.protocol_band === band).length, 2);
+  }
+  assert.equal(agenda.isCanonicalV2Protocol(tasks), true);
+  assert.deepEqual(tasks.slice().reverse().sort(agenda.protocolTaskOrder).map(task => task.sequence_order), tasks.map(task => task.sequence_order));
+  assert.ok(new Date(tasks[0].due_start) < new Date(tasks[6].due_start));
+  assert.ok(new Date(tasks[6].due_start) < new Date(tasks[12].due_start));
+});
+
+test("la reconciliación legacy es explícita, conserva realizados y cancela sólo pendientes", () => {
+  const reconciliation = migration.match(/create or replace function public\.reconcile_lead_contact_protocol[\s\S]*?grant execute on function public\.reconcile_lead_contact_protocol\(uuid\) to authenticated;/)?.[0] || "";
+  assert.ok(reconciliation.includes("count(*) = 18"));
+  assert.ok(reconciliation.includes("count(distinct protocol_day) = 3"));
+  assert.match(reconciliation, /where sequence_id = v_sequence_id and status in \('pending', 'scheduled'\)/);
+  const taskUpdate = reconciliation.match(/update public\.lead_contact_tasks[\s\S]*?where sequence_id = v_sequence_id and status in \('pending', 'scheduled'\);/)?.[0] || "";
+  assert.doesNotMatch(taskUpdate, /performed_at\s*=|completed_at\s*=/);
+  assert.doesNotMatch(reconciliation, /delete\s+from/i);
+  assert.ok(reconciliation.includes("insert into public.lead_activities"));
+  assert.ok(reconciliation.includes("previous_sequence_id"));
+  assert.ok(reconciliation.includes("private.create_lead_contact_sequence"));
+  assert.ok(crm.includes('data-reconcile-protocol'));
+  const openLead = crm.match(/async function openLead\(leadId\)[\s\S]*?await Promise\.all/)?.[0] || "";
+  assert.doesNotMatch(openLead, /reconcile_lead_contact_protocol/);
+});
+
+test("Modo compatible carga historial pero bloquea la transición atómica inexistente", () => {
+  assert.ok(crm.includes("state.taskSchema === \"legacy\""));
+  assert.ok(crm.includes("La transición atómica y la reconciliación requieren la migración CRM V2"));
+  assert.ok(crm.includes('if (state.taskSchema !== "v2")'));
+  assert.ok(crm.includes("Registrar una respuesta con transición desde el protocolo requiere la migración CRM V2"));
 });

@@ -3,7 +3,7 @@
 
   var TIME_ZONE = "America/Argentina/Buenos_Aires";
   var TERMINAL_STATUSES = ["venta", "desistir", "invalido"];
-  var TASK_FIELDS = "id, sequence_id, lead_id, sequence_order, channel, call_attempt, message_step, due_start, due_end, status, outcome, note, performed_at, recorded_at, completed_at, updated_at, template:contact_message_templates(title,body)";
+  var TASK_FIELDS = "id, sequence_id, lead_id, sequence_order, channel, call_attempt, message_step, protocol_day, protocol_band, band_attempt, due_start, due_end, status, outcome, note, performed_at, recorded_at, completed_at, updated_at, template:contact_message_templates(title,body)";
   var LEGACY_TASK_FIELDS = "id, sequence_id, lead_id, sequence_order, channel, call_attempt, message_step, due_start, due_end, status, outcome, note, completed_at, updated_at, template:contact_message_templates(title,body)";
 
   function crmOf(lead) {
@@ -83,7 +83,7 @@
 
   function missingTaskAuditColumns(error) {
     var message = String(error && error.message || "");
-    return Boolean(error && /performed_at|recorded_at/i.test(message) && (["42703", "PGRST204"].includes(error.code) || /does not exist|schema cache|could not find/i.test(message)));
+    return Boolean(error && /performed_at|recorded_at|protocol_day|protocol_band|band_attempt/i.test(message) && (["42703", "PGRST204"].includes(error.code) || /does not exist|schema cache|could not find/i.test(message)));
   }
 
   function normalizeTasks(tasks, schema) {
@@ -94,6 +94,39 @@
         recorded_at: task.completed_at || task.updated_at || null
       });
     });
+  }
+
+  var BAND_ORDER = { "10-12": 1, "14-16": 2, "17-19": 3 };
+
+  function protocolTaskOrder(a, b) {
+    return (Number(a.protocol_day) - Number(b.protocol_day))
+      || ((BAND_ORDER[a.protocol_band] || 99) - (BAND_ORDER[b.protocol_band] || 99))
+      || (Number(a.band_attempt || 0) - Number(b.band_attempt || 0))
+      || (Number(a.sequence_order) - Number(b.sequence_order));
+  }
+
+  function isCanonicalV2Protocol(tasks) {
+    var calls = (tasks || []).filter(function (task) { return task.channel === "call"; });
+    if (calls.length !== 18) return false;
+    var dates = [];
+    var validShape = [1, 2, 3].every(function (day) {
+      var dayCalls = calls.filter(function (task) { return task.protocol_day === day; });
+      var dayDates = Array.from(new Set(dayCalls.map(function (task) { return dateKey(task.due_start); })));
+      if (dayDates.length !== 1) return false;
+      dates.push(dayDates[0]);
+      return ["10-12", "14-16", "17-19"].every(function (band) {
+        var attempts = calls.filter(function (task) { return task.protocol_day === day && task.protocol_band === band; })
+          .map(function (task) { return task.band_attempt; }).sort();
+        var bounds = band.split("-").map(Number);
+        var insideBand = calls.filter(function (task) { return task.protocol_day === day && task.protocol_band === band; }).every(function (task) {
+          var startHour = Number(new Intl.DateTimeFormat("en-US", { timeZone: TIME_ZONE, hour: "2-digit", hourCycle: "h23" }).format(new Date(task.due_start)));
+          var endHour = Number(new Intl.DateTimeFormat("en-US", { timeZone: TIME_ZONE, hour: "2-digit", hourCycle: "h23" }).format(new Date(task.due_end)));
+          return startHour >= bounds[0] && endHour <= bounds[1];
+        });
+        return attempts.length === 2 && attempts[0] === 1 && attempts[1] === 2 && insideBand;
+      });
+    });
+    return validShape && dates[0] < dates[1] && dates[1] < dates[2];
   }
 
   async function loadContactTasks(client) {
@@ -156,6 +189,8 @@
     portfolioSections: portfolioSections,
     missingTaskAuditColumns: missingTaskAuditColumns,
     normalizeTasks: normalizeTasks,
+    protocolTaskOrder: protocolTaskOrder,
+    isCanonicalV2Protocol: isCanonicalV2Protocol,
     loadContactTasks: loadContactTasks
   };
 
