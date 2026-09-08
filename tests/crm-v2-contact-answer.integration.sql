@@ -1,5 +1,6 @@
 -- Run only against an isolated Supabase test database after all migrations.
--- The surrounding test runner must wrap this fixture in a transaction and roll it back.
+-- Self-contained transaction: every synthetic row is rolled back before the
+-- residue audit, including on assertion failure when run with ON_ERROR_STOP.
 
 create or replace function pg_temp.assert_true(p_value boolean, p_message text)
 returns void language plpgsql as $$
@@ -8,42 +9,44 @@ begin
 end;
 $$;
 
+begin;
+
 insert into auth.users (id, aud, role, email, raw_app_meta_data, raw_user_meta_data, created_at, updated_at)
 values
   ('9e330000-0000-4000-8000-000000000101', 'authenticated', 'authenticated', 'crm-v2-answer-seller@example.invalid', '{}', '{}', now(), now()),
   ('9e330000-0000-4000-8000-000000000102', 'authenticated', 'authenticated', 'crm-v2-answer-supervisor@example.invalid', '{}', '{}', now(), now());
 insert into public.profiles (user_id, email, role, seller_code, full_name, active)
 values
-  ('9e330000-0000-4000-8000-000000000101', 'crm-v2-answer-seller@example.invalid', 'seller', 'E2E-V2-ANSWER', 'Vendedor CRM V2 E2E', true),
-  ('9e330000-0000-4000-8000-000000000102', 'crm-v2-answer-supervisor@example.invalid', 'supervisor', 'E2E-V2-SUP', 'Supervisor CRM V2 E2E', true);
+  ('9e330000-0000-4000-8000-000000000101', 'crm-v2-answer-seller@example.invalid', 'seller', 'QA-CRM-V2-SELLER', 'QA CRM V2 - Vendedor', true),
+  ('9e330000-0000-4000-8000-000000000102', 'crm-v2-answer-supervisor@example.invalid', 'supervisor', 'QA-CRM-V2-SUP', 'QA CRM V2 - Supervisor', true);
 
 insert into public.customers (id, normalized_phone, primary_phone, full_name)
 values
-  ('9e330000-0000-4000-8000-000000000201', '5491100001201', '5491100001201', 'E2E En gestión'),
-  ('9e330000-0000-4000-8000-000000000202', '5491100001202', '5491100001202', 'E2E Contacto futuro'),
-  ('9e330000-0000-4000-8000-000000000203', '5491100001203', '5491100001203', 'E2E Rollback'),
-  ('9e330000-0000-4000-8000-000000000204', '5491100001204', '5491100001204', 'E2E Inválido'),
-  ('9e330000-0000-4000-8000-000000000205', '5491100001205', '5491100001205', 'E2E Venta'),
-  ('9e330000-0000-4000-8000-000000000206', '5491100001206', '5491100001206', 'E2E Presupuesto incompatible'),
-  ('9e330000-0000-4000-8000-000000000207', '5491100001207', '5491100001207', 'E2E Venta rechazada'),
-  ('9e330000-0000-4000-8000-000000000208', '5491100001208', '5491100001208', 'E2E Desistir literal'),
-  ('9e330000-0000-4000-8000-000000000209', '5491100001209', '5491100001209', 'E2E Respondió y desistió'),
-  ('9e330000-0000-4000-8000-000000000210', '5491100001210', '5491100001210', 'E2E Protocolo completo');
+  ('9e330000-0000-4000-8000-000000000201', '5491100001201', '5491100001201', 'QA CRM V2 - En gestión'),
+  ('9e330000-0000-4000-8000-000000000202', '5491100001202', '5491100001202', 'QA CRM V2 - Contacto futuro'),
+  ('9e330000-0000-4000-8000-000000000203', '5491100001203', '5491100001203', 'QA CRM V2 - Rollback'),
+  ('9e330000-0000-4000-8000-000000000204', '5491100001204', '5491100001204', 'QA CRM V2 - Inválido'),
+  ('9e330000-0000-4000-8000-000000000205', '5491100001205', '5491100001205', 'QA CRM V2 - Venta'),
+  ('9e330000-0000-4000-8000-000000000206', '5491100001206', '5491100001206', 'QA CRM V2 - Presupuesto incompatible'),
+  ('9e330000-0000-4000-8000-000000000207', '5491100001207', '5491100001207', 'QA CRM V2 - Venta rechazada'),
+  ('9e330000-0000-4000-8000-000000000208', '5491100001208', '5491100001208', 'QA CRM V2 - Desistir literal'),
+  ('9e330000-0000-4000-8000-000000000209', '5491100001209', '5491100001209', 'QA CRM V2 - Respondió y desistió'),
+  ('9e330000-0000-4000-8000-000000000210', '5491100001210', '5491100001210', 'QA CRM V2 - Protocolo completo');
 insert into public.leads (
   id, customer_id, customer_phone, customer_name, source_channel, qualification_status,
   routing_status, routing_reason, assigned_seller_user_id, assigned_by_user_id, assigned_at
 )
 values
-  ('9e330000-0000-4000-8000-000000000301', '9e330000-0000-4000-8000-000000000201', '5491100001201', 'E2E En gestión', 'manual', 'qualified', 'assigned_manual', 'crm_v2_e2e', '9e330000-0000-4000-8000-000000000101', '9e330000-0000-4000-8000-000000000101', now()),
-  ('9e330000-0000-4000-8000-000000000302', '9e330000-0000-4000-8000-000000000202', '5491100001202', 'E2E Contacto futuro', 'manual', 'qualified', 'assigned_manual', 'crm_v2_e2e', '9e330000-0000-4000-8000-000000000101', '9e330000-0000-4000-8000-000000000101', now()),
-  ('9e330000-0000-4000-8000-000000000303', '9e330000-0000-4000-8000-000000000203', '5491100001203', 'E2E Rollback', 'manual', 'qualified', 'assigned_manual', 'crm_v2_e2e', '9e330000-0000-4000-8000-000000000101', '9e330000-0000-4000-8000-000000000101', now()),
-  ('9e330000-0000-4000-8000-000000000304', '9e330000-0000-4000-8000-000000000204', '5491100001204', 'E2E Inválido', 'manual', 'qualified', 'assigned_manual', 'crm_v2_e2e', '9e330000-0000-4000-8000-000000000101', '9e330000-0000-4000-8000-000000000101', now()),
-  ('9e330000-0000-4000-8000-000000000305', '9e330000-0000-4000-8000-000000000205', '5491100001205', 'E2E Venta', 'manual', 'qualified', 'assigned_manual', 'crm_v2_e2e', '9e330000-0000-4000-8000-000000000101', '9e330000-0000-4000-8000-000000000101', now()),
-  ('9e330000-0000-4000-8000-000000000306', '9e330000-0000-4000-8000-000000000206', '5491100001206', 'E2E Presupuesto incompatible', 'manual', 'qualified', 'assigned_manual', 'crm_v2_e2e', '9e330000-0000-4000-8000-000000000101', '9e330000-0000-4000-8000-000000000101', now()),
-  ('9e330000-0000-4000-8000-000000000307', '9e330000-0000-4000-8000-000000000207', '5491100001207', 'E2E Venta rechazada', 'manual', 'qualified', 'assigned_manual', 'crm_v2_e2e', '9e330000-0000-4000-8000-000000000101', '9e330000-0000-4000-8000-000000000101', now()),
-  ('9e330000-0000-4000-8000-000000000308', '9e330000-0000-4000-8000-000000000208', '5491100001208', 'E2E Desistir literal', 'manual', 'qualified', 'assigned_manual', 'crm_v2_e2e', '9e330000-0000-4000-8000-000000000101', '9e330000-0000-4000-8000-000000000101', now()),
-  ('9e330000-0000-4000-8000-000000000309', '9e330000-0000-4000-8000-000000000209', '5491100001209', 'E2E Respondió y desistió', 'manual', 'qualified', 'assigned_manual', 'crm_v2_e2e', '9e330000-0000-4000-8000-000000000101', '9e330000-0000-4000-8000-000000000101', now()),
-  ('9e330000-0000-4000-8000-000000000310', '9e330000-0000-4000-8000-000000000210', '5491100001210', 'E2E Protocolo completo', 'manual', 'qualified', 'assigned_manual', 'crm_v2_e2e', '9e330000-0000-4000-8000-000000000101', '9e330000-0000-4000-8000-000000000101', now());
+  ('9e330000-0000-4000-8000-000000000301', '9e330000-0000-4000-8000-000000000201', '5491100001201', 'QA CRM V2 - En gestión', 'manual', 'qualified', 'assigned_manual', 'crm_v2_e2e', '9e330000-0000-4000-8000-000000000101', '9e330000-0000-4000-8000-000000000101', now()),
+  ('9e330000-0000-4000-8000-000000000302', '9e330000-0000-4000-8000-000000000202', '5491100001202', 'QA CRM V2 - Contacto futuro', 'manual', 'qualified', 'assigned_manual', 'crm_v2_e2e', '9e330000-0000-4000-8000-000000000101', '9e330000-0000-4000-8000-000000000101', now()),
+  ('9e330000-0000-4000-8000-000000000303', '9e330000-0000-4000-8000-000000000203', '5491100001203', 'QA CRM V2 - Rollback', 'manual', 'qualified', 'assigned_manual', 'crm_v2_e2e', '9e330000-0000-4000-8000-000000000101', '9e330000-0000-4000-8000-000000000101', now()),
+  ('9e330000-0000-4000-8000-000000000304', '9e330000-0000-4000-8000-000000000204', '5491100001204', 'QA CRM V2 - Inválido', 'manual', 'qualified', 'assigned_manual', 'crm_v2_e2e', '9e330000-0000-4000-8000-000000000101', '9e330000-0000-4000-8000-000000000101', now()),
+  ('9e330000-0000-4000-8000-000000000305', '9e330000-0000-4000-8000-000000000205', '5491100001205', 'QA CRM V2 - Venta', 'manual', 'qualified', 'assigned_manual', 'crm_v2_e2e', '9e330000-0000-4000-8000-000000000101', '9e330000-0000-4000-8000-000000000101', now()),
+  ('9e330000-0000-4000-8000-000000000306', '9e330000-0000-4000-8000-000000000206', '5491100001206', 'QA CRM V2 - Presupuesto incompatible', 'manual', 'qualified', 'assigned_manual', 'crm_v2_e2e', '9e330000-0000-4000-8000-000000000101', '9e330000-0000-4000-8000-000000000101', now()),
+  ('9e330000-0000-4000-8000-000000000307', '9e330000-0000-4000-8000-000000000207', '5491100001207', 'QA CRM V2 - Venta rechazada', 'manual', 'qualified', 'assigned_manual', 'crm_v2_e2e', '9e330000-0000-4000-8000-000000000101', '9e330000-0000-4000-8000-000000000101', now()),
+  ('9e330000-0000-4000-8000-000000000308', '9e330000-0000-4000-8000-000000000208', '5491100001208', 'QA CRM V2 - Desistir literal', 'manual', 'qualified', 'assigned_manual', 'crm_v2_e2e', '9e330000-0000-4000-8000-000000000101', '9e330000-0000-4000-8000-000000000101', now()),
+  ('9e330000-0000-4000-8000-000000000309', '9e330000-0000-4000-8000-000000000209', '5491100001209', 'QA CRM V2 - Respondió y desistió', 'manual', 'qualified', 'assigned_manual', 'crm_v2_e2e', '9e330000-0000-4000-8000-000000000101', '9e330000-0000-4000-8000-000000000101', now()),
+  ('9e330000-0000-4000-8000-000000000310', '9e330000-0000-4000-8000-000000000210', '5491100001210', 'QA CRM V2 - Protocolo completo', 'manual', 'qualified', 'assigned_manual', 'crm_v2_e2e', '9e330000-0000-4000-8000-000000000101', '9e330000-0000-4000-8000-000000000101', now());
 update public.lead_crm set status = 'no_contesta' where lead_id in (
   '9e330000-0000-4000-8000-000000000301', '9e330000-0000-4000-8000-000000000302',
   '9e330000-0000-4000-8000-000000000303', '9e330000-0000-4000-8000-000000000304',
@@ -60,6 +63,7 @@ select public.record_contact_answer_with_transition(
   'answered', null, '', null, 'normal', now() - interval '2 minutes'
 );
 reset role;
+
 
 -- Seña -> Venta reuses the existing request/review/Admin circuit and never
 -- demotes Seña while the request is pending.
@@ -332,3 +336,55 @@ select public.record_lead_follow_up(p_lead_id => '9e330000-0000-4000-8000-000000
 select pg_temp.assert_true((select status = 'desistir' and deposit_amount = 250000 and deposit_at is not null and previous_status = 'sena'
   from public.lead_crm where lead_id = '9e330000-0000-4000-8000-000000000301'), 'Seña -> Desistir must preserve deposit amount and date');
 reset role;
+rollback;
+
+-- Post-rollback residue audit. These predicates cover fixture UUIDs, visible
+-- QA names, reserved fixture phones and seller codes without touching users
+-- outside this deterministic namespace.
+select pg_temp.assert_true(not exists (
+  select 1 from public.leads
+  where id::text like '9e330000-0000-4000-8000-0000000003%'
+     or customer_name like 'QA CRM V2%'
+     or customer_phone like '54911000012%'
+), 'cleanup audit: synthetic leads = 0');
+select pg_temp.assert_true(not exists (
+  select 1 from public.customers
+  where id::text like '9e330000-0000-4000-8000-0000000002%'
+     or full_name like 'QA CRM V2%'
+     or primary_phone like '54911000012%'
+), 'cleanup audit: synthetic customers = 0');
+select pg_temp.assert_true(not exists (
+  select 1 from public.lead_contact_sequences
+  where lead_id::text like '9e330000-0000-4000-8000-0000000003%'
+), 'cleanup audit: synthetic contact sequences = 0');
+select pg_temp.assert_true(not exists (
+  select 1 from public.lead_contact_tasks
+  where lead_id::text like '9e330000-0000-4000-8000-0000000003%'
+), 'cleanup audit: synthetic contact tasks = 0');
+select pg_temp.assert_true(not exists (
+  select 1 from public.lead_sale_requests
+  where lead_id::text like '9e330000-0000-4000-8000-0000000003%'
+), 'cleanup audit: synthetic sale requests = 0');
+select pg_temp.assert_true(not exists (
+  select 1 from public.sales_cases
+  where lead_id::text like '9e330000-0000-4000-8000-0000000003%'
+), 'cleanup audit: synthetic sales cases = 0');
+select pg_temp.assert_true(not exists (
+  select 1 from public.lead_activities
+  where lead_id::text like '9e330000-0000-4000-8000-0000000003%'
+), 'cleanup audit: synthetic activities = 0');
+select pg_temp.assert_true(not exists (
+  select 1 from public.commercial_applications application
+  join public.sales_cases sales_case on sales_case.id = application.sales_case_id
+  where sales_case.lead_id::text like '9e330000-0000-4000-8000-0000000003%'
+), 'cleanup audit: synthetic applications/datero = 0');
+select pg_temp.assert_true(not exists (
+  select 1 from public.profiles
+  where user_id::text like '9e330000-0000-4000-8000-0000000001%'
+     or seller_code like 'QA-CRM-V2-%'
+), 'cleanup audit: synthetic profiles = 0');
+select pg_temp.assert_true(not exists (
+  select 1 from auth.users
+  where id::text like '9e330000-0000-4000-8000-0000000001%'
+     or email like 'crm-v2-answer-%@example.invalid'
+), 'cleanup audit: synthetic auth users = 0');

@@ -481,9 +481,9 @@
       cierre: "Este lead quedará automáticamente en prioridad alta.",
       sena: "Registrá el importe de la seña; la venta seguirá requiriendo confirmación.",
       invalido: "Explicá por qué el teléfono o contacto es inválido.",
-      desistir: "Indicá el motivo. El lead pasará a la base fría para remarketing."
+      desistir: "Indicá el motivo del desistimiento comercial."
     };
-    document.getElementById("crmFormHelp").textContent = automated ? "El checklist propone los intentos recomendados. Podés conservar esa fecha o definir manualmente el próximo contacto." : (help[status] || "Guardá un resumen breve y programá el próximo paso cuando corresponda.");
+    document.getElementById("crmFormHelp").textContent = automated ? "El protocolo organiza los intentos de contacto por franja y habilita cada paso de forma secuencial." : (help[status] || "Guardá un resumen breve y programá el próximo paso cuando corresponda.");
   }
 
   function renderProtocol(lead) {

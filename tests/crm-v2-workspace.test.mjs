@@ -5,6 +5,7 @@ import { runInNewContext } from "node:vm";
 
 const html = readFileSync(new URL("../vendedores/index.html", import.meta.url), "utf8");
 const crm = readFileSync(new URL("../vendedores/crm.js", import.meta.url), "utf8");
+const css = readFileSync(new URL("../vendedores/crm.css", import.meta.url), "utf8");
 const management = readFileSync(new URL("../vendedores/en-gestion.js", import.meta.url), "utf8");
 const agendaModel = readFileSync(new URL("../vendedores/agenda-model.js", import.meta.url), "utf8");
 const sales = readFileSync(new URL("../vendedores/sales.js", import.meta.url), "utf8");
@@ -36,6 +37,8 @@ test("Nuevo pregunta por contacto y presenta sólo resultados válidos", () => {
   assert.ok(html.includes('data-contact-decision="no_answer"'));
   assert.ok(crm.includes('["contacto_futuro", "en_proceso", "entrevista", "cierre", "sena", "venta", "desistir"]'));
   assert.ok(crm.includes('["no_contesta", "invalido"]'));
+  assert.ok(css.includes(".crm-new-outcomes>div{justify-content:center}"));
+  assert.ok(css.includes(".crm-new-outcomes>div{display:flex;flex-wrap:wrap;justify-content:center}"));
 });
 
 test("Sin contacto completa o inicia protocolo y no crea agenda manual", () => {
@@ -110,6 +113,8 @@ test("Sin contacto renderiza cada intento por día, franja, canal y resultado", 
   assert.ok(crm.includes('class="crm-protocol-day"'));
   assert.ok(crm.includes('class="crm-protocol-attempt '));
   for (const field of ["Hora efectiva", "Registrado", "Resultado"]) assert.ok(crm.includes(field));
+  assert.ok(crm.includes("El protocolo organiza los intentos de contacto por franja y habilita cada paso de forma secuencial."));
+  assert.doesNotMatch(crm, /El checklist propone los intentos recomendados/);
   assert.ok(agendaModel.includes("performed_at, recorded_at, completed_at"));
 });
 
@@ -195,6 +200,10 @@ test("la prueba SQL aislada cubre éxito, rollback integral e Inválido", () => 
     "Venta must enter the existing Administration circuit"
   ]) assert.ok(contactAnswerIntegration.includes(expected), expected);
   assert.ok(contactAnswerIntegration.includes("status = 'pending' and outcome = '' and performed_at is null and recorded_at is null"));
+  assert.match(contactAnswerIntegration, /\nbegin;[\s\S]*\nrollback;\n/);
+  for (const residue of ["leads", "customers", "contact sequences", "contact tasks", "sale requests", "sales cases", "activities", "applications/datero", "profiles", "auth users"]) {
+    assert.ok(contactAnswerIntegration.includes(`cleanup audit: synthetic ${residue} = 0`), residue);
+  }
 });
 
 test("smoke: las herramientas comunes siguen siendo instancias únicas", () => {
