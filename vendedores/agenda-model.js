@@ -105,28 +105,31 @@
       || (Number(a.sequence_order) - Number(b.sequence_order));
   }
 
-  function isCanonicalV2Protocol(tasks) {
+  function isCanonicalV2Protocol(tasks, startedAt) {
     var calls = (tasks || []).filter(function (task) { return task.channel === "call"; });
     if (calls.length !== 18) return false;
-    var dates = [];
-    var validShape = [1, 2, 3].every(function (day) {
-      var dayCalls = calls.filter(function (task) { return task.protocol_day === day; });
-      var dayDates = Array.from(new Set(dayCalls.map(function (task) { return dateKey(task.due_start); })));
-      if (dayDates.length !== 1) return false;
-      dates.push(dayDates[0]);
-      return ["10-12", "14-16", "17-19"].every(function (band) {
-        var attempts = calls.filter(function (task) { return task.protocol_day === day && task.protocol_band === band; })
-          .map(function (task) { return task.band_attempt; }).sort();
-        var bounds = band.split("-").map(Number);
-        var insideBand = calls.filter(function (task) { return task.protocol_day === day && task.protocol_band === band; }).every(function (task) {
-          var startHour = Number(new Intl.DateTimeFormat("en-US", { timeZone: TIME_ZONE, hour: "2-digit", hourCycle: "h23" }).format(new Date(task.due_start)));
-          var endHour = Number(new Intl.DateTimeFormat("en-US", { timeZone: TIME_ZONE, hour: "2-digit", hourCycle: "h23" }).format(new Date(task.due_end)));
-          return startHour >= bounds[0] && endHour <= bounds[1];
-        });
-        return attempts.length === 2 && attempts[0] === 1 && attempts[1] === 2 && insideBand;
-      });
+    var groups = {};
+    var dayDates = {};
+    var valid = calls.every(function (task) {
+      if (![1, 2, 3, 4].includes(task.protocol_day) || !BAND_ORDER[task.protocol_band] || ![1, 2].includes(task.band_attempt)) return false;
+      var key = task.protocol_day + ":" + task.protocol_band;
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(task);
+      var date = dateKey(task.due_start);
+      if (dayDates[task.protocol_day] && dayDates[task.protocol_day] !== date) return false;
+      dayDates[task.protocol_day] = date;
+      var bounds = task.protocol_band.split("-").map(Number);
+      var startHour = Number(new Intl.DateTimeFormat("en-US", { timeZone: TIME_ZONE, hour: "2-digit", hourCycle: "h23" }).format(new Date(task.due_start)));
+      var endHour = Number(new Intl.DateTimeFormat("en-US", { timeZone: TIME_ZONE, hour: "2-digit", hourCycle: "h23" }).format(new Date(task.due_end)));
+      return startHour >= bounds[0] && endHour <= bounds[1] && (!startedAt || new Date(task.due_end) >= new Date(startedAt));
     });
-    return validShape && dates[0] < dates[1] && dates[1] < dates[2];
+    if (!valid || Object.keys(groups).length !== 9) return false;
+    if (!Object.values(groups).every(function (items) { return items.length === 2 && items.map(function (item) { return item.band_attempt; }).sort().join(",") === "1,2"; })) return false;
+    var days = Object.keys(dayDates).map(Number).sort();
+    if (days.length < 3 || days.length > 4 || days.some(function (day, index) { return day !== index + 1; })) return false;
+    if (!days.every(function (day, index) { return index === 0 || dayDates[days[index - 1]] < dayDates[day]; })) return false;
+    var ordered = calls.slice().sort(protocolTaskOrder);
+    return ordered.every(function (task, index) { return index === 0 || new Date(ordered[index - 1].due_start) <= new Date(task.due_start); });
   }
 
   async function loadContactTasks(client) {

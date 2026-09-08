@@ -156,48 +156,88 @@ test("smoke: las herramientas comunes siguen siendo instancias únicas", () => {
   assert.ok(crm.includes('document.getElementById("crmWhatsappLink").href'));
 });
 
-test("el protocolo V2 canónico crea 18 llamadas en 3 días y 2 por franja", () => {
+function expectedProtocol(startValue) {
+  const bands = [{ key: "10-12", start: 10, end: 12 }, { key: "14-16", start: 14, end: 16 }, { key: "17-19", start: 17, end: 19 }];
+  const start = new Date(startValue);
+  let cursor = new Date(start);
+  const windows = [];
+  const localParts = value => {
+    const parts = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Argentina/Buenos_Aires", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(value);
+    return Object.fromEntries(parts.map(part => [part.type, part.value]));
+  };
+  const localIso = (date, hour) => `${date}T${String(hour).padStart(2, "0")}:00:00-03:00`;
+  const nextBusinessDate = date => {
+    const result = new Date(`${date}T12:00:00Z`);
+    do result.setUTCDate(result.getUTCDate() + 1); while ([0, 6].includes(result.getUTCDay()));
+    return result.toISOString().slice(0, 10);
+  };
+  while (windows.length < 9) {
+    const local = localParts(cursor);
+    let date = `${local.year}-${local.month}-${local.day}`;
+    const weekday = new Date(`${date}T12:00:00Z`).getUTCDay();
+    if ([0, 6].includes(weekday)) {
+      do date = nextBusinessDate(date); while ([0, 6].includes(new Date(`${date}T12:00:00Z`).getUTCDay()));
+      cursor = new Date(localIso(date, 10));
+    }
+    const hour = Number(localParts(cursor).hour) + Number(localParts(cursor).minute) / 60;
+    let band = bands.find(item => hour < item.end);
+    if (!band) {
+      date = nextBusinessDate(date);
+      cursor = new Date(localIso(date, 10));
+      band = bands[0];
+    }
+    const dueStart = new Date(Math.max(cursor, new Date(localIso(date, band.start))));
+    const dueEnd = new Date(localIso(date, band.end));
+    windows.push({ date, band: band.key, dueStart, dueEnd });
+    cursor = new Date(dueEnd.getTime() + 1000);
+  }
+  let lastDate = "";
+  let protocolDay = 0;
+  return windows.flatMap((window, windowIndex) => {
+    if (window.date !== lastDate) { protocolDay += 1; lastDate = window.date; }
+    return [1, 2].map(attempt => ({ channel: "call", protocol_day: protocolDay, protocol_band: window.band, band_attempt: attempt, sequence_order: windowIndex * 2 + attempt, due_start: window.dueStart.toISOString(), due_end: window.dueEnd.toISOString() }));
+  });
+}
+
+test("el protocolo V2 canónico comienza en la primera franja disponible y completa 9 franjas", () => {
   const creator = migration.match(/create or replace function private\.create_lead_contact_sequence[\s\S]*?revoke all on function private\.create_lead_contact_sequence/)?.[0] || "";
-  assert.ok(creator.includes("for v_day_number in 1..3 loop"));
-  assert.ok(creator.includes("for v_slot in 1..3 loop"));
+  assert.ok(creator.includes("for v_band_number in 1..9 loop"));
+  assert.ok(creator.includes("private.next_protocol_call_window(v_cursor)"));
   assert.ok(creator.includes("for v_band_attempt in 1..2 loop"));
-  assert.ok(creator.includes("v_call_attempt := v_call_attempt + 1"));
-  assert.ok(creator.includes("private.business_date(v_first_day, v_day_number - 1)"));
-  assert.ok(creator.includes("private.contact_window_start(v_day, v_slot)"));
-  assert.ok(creator.includes("private.contact_window_end(v_day, v_slot)"));
+  assert.ok(creator.includes("v_cursor := v_call_end + interval '1 second'"));
   assert.ok(creator.includes("if v_call_attempt in (1, 4) then"));
 
-  const starts = ["10:00", "14:00", "17:00"];
-  const dates = ["2026-09-08", "2026-09-09", "2026-09-10"];
-  const tasks = [];
-  for (let day = 1; day <= 3; day += 1) {
-    for (let band = 0; band < 3; band += 1) {
-      for (let attempt = 1; attempt <= 2; attempt += 1) {
-        tasks.push({ channel: "call", protocol_day: day, protocol_band: ["10-12", "14-16", "17-19"][band], band_attempt: attempt, sequence_order: tasks.length + 1, due_start: `${dates[day - 1]}T${starts[band]}:00-03:00`, due_end: `${dates[day - 1]}T${["12:00", "16:00", "19:00"][band]}:00-03:00` });
-      }
-    }
+  const scenarios = [
+    ["09:00", "2026-09-14T09:00:00-03:00", "10-12"],
+    ["10:30", "2026-09-14T10:30:00-03:00", "10-12"],
+    ["15:00", "2026-09-14T15:00:00-03:00", "14-16"],
+    ["16:30", "2026-09-14T16:30:00-03:00", "17-19"],
+    ["después de 19:00", "2026-09-14T19:30:00-03:00", "10-12"]
+  ];
+  for (const [label, startedAt, firstBand] of scenarios) {
+    const tasks = expectedProtocol(startedAt);
+    assert.equal(tasks.length, 18, label);
+    assert.equal(new Set(tasks.map(task => `${task.protocol_day}:${task.protocol_band}`)).size, 9, label);
+    assert.equal(tasks[0].protocol_band, firstBand, label);
+    if (label === "15:00" || label === "16:30") assert.equal(tasks[0].due_start.slice(0, 10), new Date(startedAt).toISOString().slice(0, 10), label);
+    assert.ok(tasks.every(task => new Date(task.due_end) >= new Date(startedAt)), label);
+    for (const key of new Set(tasks.map(task => `${task.protocol_day}:${task.protocol_band}`))) assert.equal(tasks.filter(task => `${task.protocol_day}:${task.protocol_band}` === key).length, 2, `${label} ${key}`);
+    assert.equal(agenda.isCanonicalV2Protocol(tasks, startedAt), true, label);
   }
-  assert.equal(tasks.length, 18);
-  assert.equal(new Set(tasks.map(task => task.protocol_day)).size, 3);
-  for (const day of [1, 2, 3]) {
-    assert.equal(tasks.filter(task => task.protocol_day === day).length, 6);
-    for (const band of ["10-12", "14-16", "17-19"]) assert.equal(tasks.filter(task => task.protocol_day === day && task.protocol_band === band).length, 2);
-  }
-  assert.equal(agenda.isCanonicalV2Protocol(tasks), true);
-  assert.deepEqual(tasks.slice().reverse().sort(agenda.protocolTaskOrder).map(task => task.sequence_order), tasks.map(task => task.sequence_order));
-  assert.ok(new Date(tasks[0].due_start) < new Date(tasks[6].due_start));
-  assert.ok(new Date(tasks[6].due_start) < new Date(tasks[12].due_start));
 });
 
 test("la reconciliación legacy es explícita, conserva realizados y cancela sólo pendientes", () => {
   const reconciliation = migration.match(/create or replace function public\.reconcile_lead_contact_protocol[\s\S]*?grant execute on function public\.reconcile_lead_contact_protocol\(uuid\) to authenticated;/)?.[0] || "";
   assert.ok(reconciliation.includes("count(*) = 18"));
-  assert.ok(reconciliation.includes("count(distinct protocol_day) = 3"));
+  assert.ok(reconciliation.includes("count(distinct (protocol_day, protocol_band)) = 9"));
+  assert.ok(reconciliation.includes("max(protocol_day) between 3 and 4"));
   assert.match(reconciliation, /where sequence_id = v_sequence_id and status in \('pending', 'scheduled'\)/);
   const taskUpdate = reconciliation.match(/update public\.lead_contact_tasks[\s\S]*?where sequence_id = v_sequence_id and status in \('pending', 'scheduled'\);/)?.[0] || "";
   assert.doesNotMatch(taskUpdate, /performed_at\s*=|completed_at\s*=/);
   assert.doesNotMatch(reconciliation, /delete\s+from/i);
   assert.ok(reconciliation.includes("insert into public.lead_activities"));
+  assert.ok(reconciliation.includes("'follow_up', 'Protocolo reconciliado a CRM V2'"));
+  assert.doesNotMatch(reconciliation, /'management'/);
   assert.ok(reconciliation.includes("previous_sequence_id"));
   assert.ok(reconciliation.includes("private.create_lead_contact_sequence"));
   assert.ok(crm.includes('data-reconcile-protocol'));

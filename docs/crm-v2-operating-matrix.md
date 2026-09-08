@@ -133,9 +133,9 @@ Franjas previstas:
 - 14:00–16:00;
 - 17:00–19:00.
 
-Base funcional discutida: dos intentos por franja, durante dos o tres días según configuración final del protocolo.
+El protocolo canónico comienza en la primera franja comercial disponible desde el ingreso y recorre nueve franjas efectivas consecutivas. Cada franja contiene dos llamadas: 18 llamadas en total. Un inicio parcial puede distribuir las nueve franjas sobre tres o cuatro fechas operativas.
 
-El sistema debe poder parametrizar cantidad de días/intentos sin hardcodear la regla de negocio en la UI.
+No se crean tareas en el pasado: si la franja actual continúa vigente se utiliza desde la hora de ingreso; si terminó, se avanza a la siguiente franja de un día hábil según el calendario existente. La UI deriva las jornadas de las fechas efectivamente programadas y no fuerza tres fechas calendario.
 
 ## Datos que deben conservarse por intento
 

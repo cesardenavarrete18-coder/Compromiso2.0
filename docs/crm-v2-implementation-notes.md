@@ -144,12 +144,13 @@ Evitar reemplazar una métrica única defectuosa por otra métrica única (por e
 
 ## 9. Protocolo de Sin contacto
 
-La implementación debe permitir parametrizar:
+El contrato canónico utiliza:
 
 - franjas 10–12 / 14–16 / 17–19;
-- cantidad de intentos por franja;
-- cantidad de días;
-- secuencia de WhatsApp.
+- nueve franjas comerciales consecutivas desde la primera disponible;
+- dos llamadas por franja, 18 en total;
+- tres o cuatro fechas operativas según la franja de ingreso;
+- la secuencia de WhatsApp vigente, sin alterar su cadencia.
 
 Cada intento debe conservar horario exacto y resultado.
 

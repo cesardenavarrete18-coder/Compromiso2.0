@@ -22,14 +22,14 @@ alter table public.lead_contact_tasks
   ),
   add constraint lead_contact_tasks_protocol_metadata check (
     (protocol_day is null and protocol_band is null and band_attempt is null)
-    or (protocol_day between 1 and 3
+    or (protocol_day between 1 and 4
       and protocol_band in ('10-12', '14-16', '17-19')
       and ((channel = 'call' and band_attempt between 1 and 2)
         or (channel = 'whatsapp' and band_attempt is null)))
   );
 
--- CRM V2 canonical protocol: three complete business days, two calls in each
--- commercial band. WhatsApp keeps the existing cadence after calls 1 and 4.
+-- CRM V2 canonical protocol: nine consecutive available commercial bands,
+-- with two calls per band. WhatsApp keeps the existing cadence after calls 1 and 4.
 create or replace function private.create_lead_contact_sequence(
   p_lead_id uuid,
   p_seller_user_id uuid,
@@ -42,18 +42,19 @@ set search_path = ''
 as $$
 declare
   v_sequence_id uuid;
-  v_local timestamp := greatest(coalesce(p_started_at, now()), now()) at time zone 'America/Argentina/Buenos_Aires';
-  v_first_day date;
-  v_day date;
-  v_day_number integer;
-  v_slot integer;
+  v_cursor timestamptz := greatest(coalesce(p_started_at, now()), now());
+  v_started_at timestamptz := greatest(coalesce(p_started_at, now()), now());
+  v_call_start timestamptz;
+  v_call_end timestamptz;
+  v_message_end timestamptz;
+  v_window_day date;
+  v_previous_day date;
+  v_protocol_day integer := 0;
+  v_band_number integer;
   v_band_attempt integer;
   v_call_attempt integer := 0;
   v_sequence_order integer := 0;
   v_message_step integer := 0;
-  v_call_start timestamptz;
-  v_call_end timestamptz;
-  v_message_end timestamptz;
   v_status text;
   v_manual_action timestamptz;
   v_band text;
@@ -77,55 +78,58 @@ begin
   where lead_id = p_lead_id and status = 'active';
   if v_sequence_id is not null then return v_sequence_id; end if;
 
-  v_first_day := private.business_date(v_local::date, 0);
-  -- A complete V2 day always contains all three bands. If the first band has
-  -- begun, start on the next business day rather than creating past tasks.
-  if v_first_day <> v_local::date or v_local::time >= time '10:00' then
-    if v_first_day = v_local::date then v_first_day := private.business_date(v_first_day, 1); end if;
-  end if;
-
   insert into public.lead_contact_sequences (lead_id, seller_user_id, started_at)
-  values (p_lead_id, p_seller_user_id, greatest(coalesce(p_started_at, now()), now()))
+  values (p_lead_id, p_seller_user_id, v_started_at)
   returning id into v_sequence_id;
 
-  for v_day_number in 1..3 loop
-    v_day := private.business_date(v_first_day, v_day_number - 1);
-    for v_slot in 1..3 loop
-      v_band := case v_slot when 1 then '10-12' when 2 then '14-16' else '17-19' end;
-      v_call_start := private.contact_window_start(v_day, v_slot);
-      v_call_end := private.contact_window_end(v_day, v_slot);
-      for v_band_attempt in 1..2 loop
-        v_call_attempt := v_call_attempt + 1;
+  for v_band_number in 1..9 loop
+    select w.due_start, w.due_end
+    into v_call_start, v_call_end
+    from private.next_protocol_call_window(v_cursor) w;
+
+    v_window_day := (v_call_start at time zone 'America/Argentina/Buenos_Aires')::date;
+    if v_previous_day is distinct from v_window_day then
+      v_protocol_day := v_protocol_day + 1;
+      v_previous_day := v_window_day;
+    end if;
+    v_band := case
+      when (v_call_end at time zone 'America/Argentina/Buenos_Aires')::time = time '12:00' then '10-12'
+      when (v_call_end at time zone 'America/Argentina/Buenos_Aires')::time = time '16:00' then '14-16'
+      else '17-19'
+    end;
+
+    for v_band_attempt in 1..2 loop
+      v_call_attempt := v_call_attempt + 1;
+      v_sequence_order := v_sequence_order + 1;
+      insert into public.lead_contact_tasks (
+        sequence_id, lead_id, seller_user_id, sequence_order, channel,
+        call_attempt, message_step, template_id, due_start, due_end, status,
+        protocol_day, protocol_band, band_attempt
+      ) values (
+        v_sequence_id, p_lead_id, p_seller_user_id, v_sequence_order, 'call',
+        v_call_attempt, null, null, v_call_start, v_call_end,
+        case when v_call_attempt = 1 then 'pending' else 'scheduled' end,
+        v_protocol_day, v_band, v_band_attempt
+      );
+
+      if v_call_attempt in (1, 4) then
+        v_message_step := v_message_step + 1;
         v_sequence_order := v_sequence_order + 1;
+        v_message_end := least(v_call_start + interval '2 hours', v_call_end);
         insert into public.lead_contact_tasks (
           sequence_id, lead_id, seller_user_id, sequence_order, channel,
           call_attempt, message_step, template_id, due_start, due_end, status,
           protocol_day, protocol_band, band_attempt
         ) values (
-          v_sequence_id, p_lead_id, p_seller_user_id, v_sequence_order, 'call',
-          v_call_attempt, null, null, v_call_start, v_call_end,
-          case when v_call_attempt = 1 then 'pending' else 'scheduled' end,
-          v_day_number, v_band, v_band_attempt
+          v_sequence_id, p_lead_id, p_seller_user_id, v_sequence_order, 'whatsapp',
+          null, v_message_step,
+          (select id from public.contact_message_templates where step_number = v_message_step),
+          v_call_start, greatest(v_call_start + interval '1 minute', v_message_end), 'scheduled',
+          v_protocol_day, v_band, null
         );
-
-        if v_call_attempt in (1, 4) then
-          v_message_step := v_message_step + 1;
-          v_sequence_order := v_sequence_order + 1;
-          v_message_end := least(v_call_start + interval '2 hours', v_call_end);
-          insert into public.lead_contact_tasks (
-            sequence_id, lead_id, seller_user_id, sequence_order, channel,
-            call_attempt, message_step, template_id, due_start, due_end, status,
-            protocol_day, protocol_band, band_attempt
-          ) values (
-            v_sequence_id, p_lead_id, p_seller_user_id, v_sequence_order, 'whatsapp',
-            null, v_message_step,
-            (select id from public.contact_message_templates where step_number = v_message_step),
-            v_call_start, greatest(v_call_start + interval '1 minute', v_message_end), 'scheduled',
-            v_day_number, v_band, null
-          );
-        end if;
-      end loop;
+      end if;
     end loop;
+    v_cursor := v_call_end + interval '1 second';
   end loop;
   return v_sequence_id;
 end;
@@ -158,13 +162,11 @@ begin
   if v_seller <> v_user_id and not private.current_user_is_management() then raise exception 'Acceso no autorizado'; end if;
   if (
     select count(*) = 18
-      and count(distinct protocol_day) = 3
+      and count(distinct (protocol_day, protocol_band)) = 9
       and count(distinct (protocol_day, protocol_band, band_attempt)) = 18
-      and count(distinct (due_start at time zone 'America/Argentina/Buenos_Aires')::date) = 3
-      and min((due_start at time zone 'America/Argentina/Buenos_Aires')::date) filter (where protocol_day = 1)
-        < min((due_start at time zone 'America/Argentina/Buenos_Aires')::date) filter (where protocol_day = 2)
-      and min((due_start at time zone 'America/Argentina/Buenos_Aires')::date) filter (where protocol_day = 2)
-        < min((due_start at time zone 'America/Argentina/Buenos_Aires')::date) filter (where protocol_day = 3)
+      and min(protocol_day) = 1 and max(protocol_day) between 3 and 4
+      and bool_and(band_attempt between 1 and 2)
+      and bool_and(due_end >= sequence.started_at)
       and bool_and(case protocol_band
         when '10-12' then (due_start at time zone 'America/Argentina/Buenos_Aires')::time >= time '10:00'
           and (due_end at time zone 'America/Argentina/Buenos_Aires')::time <= time '12:00'
@@ -173,8 +175,9 @@ begin
         when '17-19' then (due_start at time zone 'America/Argentina/Buenos_Aires')::time >= time '17:00'
           and (due_end at time zone 'America/Argentina/Buenos_Aires')::time <= time '19:00'
         else false end)
-    from public.lead_contact_tasks
-    where sequence_id = v_sequence_id and channel = 'call'
+    from public.lead_contact_tasks task
+    join public.lead_contact_sequences sequence on sequence.id = task.sequence_id
+    where task.sequence_id = v_sequence_id and task.channel = 'call'
   ) then raise exception 'El protocolo activo ya cumple el contrato CRM V2'; end if;
 
   -- Never rewrite performed/completed history. Only unfinished legacy work is
@@ -188,7 +191,7 @@ begin
   where id = v_sequence_id;
 
   insert into public.lead_activities (lead_id, actor_user_id, activity_type, title, detail, metadata)
-  values (p_lead_id, v_user_id, 'management', 'Protocolo reconciliado a CRM V2',
+  values (p_lead_id, v_user_id, 'follow_up', 'Protocolo reconciliado a CRM V2',
     'Se conservaron los intentos históricos y se cancelaron únicamente tareas pendientes del protocolo anterior.',
     jsonb_build_object('previous_sequence_id', v_sequence_id, 'action', 'protocol_v2_reconciliation'));
 

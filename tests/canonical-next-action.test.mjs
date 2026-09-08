@@ -91,17 +91,17 @@ test("9. las llamadas de media tarde y tarde usan los helpers canónicos", () =>
   assert.ok(migration.includes("elsif v_local::time < time '19:00'"));
 });
 
-test("10. el protocolo CRM V2 cubre tres días y sus tres franjas comerciales", () => {
-  assert.ok(crmV2Migration.includes("for v_day_number in 1..3 loop"));
-  assert.ok(crmV2Migration.includes("for v_slot in 1..3 loop"));
+test("10. el protocolo CRM V2 cubre nueve franjas comerciales consecutivas", () => {
+  assert.ok(crmV2Migration.includes("for v_band_number in 1..9 loop"));
+  assert.ok(crmV2Migration.includes("private.next_protocol_call_window(v_cursor)"));
+  assert.ok(crmV2Migration.includes("v_cursor := v_call_end + interval '1 second'"));
   assert.ok(crmV2Migration.includes("for v_band_attempt in 1..2 loop"));
-  assert.ok(sellerCrm.includes("18 llamadas en 3 días comerciales · 2 por franja"));
+  assert.ok(sellerCrm.includes("18 llamadas en 9 franjas comerciales consecutivas · 2 por franja"));
 });
 
 test("11. el protocolo nuevo tiene exactamente 18 llamadas y conserva 2 WhatsApp", () => {
   assert.ok(crmV2Migration.includes("v_call_attempt integer := 0"));
-  assert.ok(crmV2Migration.includes("for v_day_number in 1..3 loop"));
-  assert.ok(crmV2Migration.includes("for v_slot in 1..3 loop"));
+  assert.ok(crmV2Migration.includes("for v_band_number in 1..9 loop"));
   assert.ok(crmV2Migration.includes("for v_band_attempt in 1..2 loop"));
   assert.ok(crmV2Migration.includes("if v_call_attempt in (1, 4) then"));
 });

@@ -487,7 +487,7 @@
     var progress = protocolProgress(lead.id);
     var nextTask = nextPendingTask(lead.id);
     var nextSummary = nextTask ? taskTitle(nextTask) + " · " + formatDate(nextTask.due_start, true) : "Proceso completado";
-    container.innerHTML = '<details class="crm-protocol-disclosure"><summary><div><span class="protocol-kicker">Proceso de seguimiento</span><strong>' + progress.completed + '/' + progress.total + ' completadas</strong><small>Próxima: ' + escapeHtml(nextSummary) + '</small></div><span class="protocol-toggle-label">Ver tareas</span></summary><div class="protocol-expanded"><div class="protocol-heading"><div><span class="protocol-kicker">Organización comercial</span><strong>Proceso de seguimiento</strong><span>18 llamadas en 3 días comerciales · 2 por franja · WhatsApp según secuencia vigente</span></div><span class="protocol-progress"><b>' + progress.completed + '</b><small>de ' + progress.total + '</small></span></div>' +
+    container.innerHTML = '<details class="crm-protocol-disclosure"><summary><div><span class="protocol-kicker">Proceso de seguimiento</span><strong>' + progress.completed + '/' + progress.total + ' completadas</strong><small>Próxima: ' + escapeHtml(nextSummary) + '</small></div><span class="protocol-toggle-label">Ver tareas</span></summary><div class="protocol-expanded"><div class="protocol-heading"><div><span class="protocol-kicker">Organización comercial</span><strong>Proceso de seguimiento</strong><span>18 llamadas en 9 franjas comerciales consecutivas · 2 por franja · WhatsApp según secuencia vigente</span></div><span class="protocol-progress"><b>' + progress.completed + '</b><small>de ' + progress.total + '</small></span></div>' +
       '<div class="protocol-task-list">' + tasks.map(function (task) {
         var pending = task.status === "pending";
         var isNext = nextTask && nextTask.id === task.id;
@@ -558,7 +558,8 @@
       || (active.length > 0 && !agendaModel.isCanonicalV2Protocol(active));
     var compatibility = state.taskSchema === "legacy" ? '<div class="crm-protocol-compatibility"><strong>Modo compatible</strong><span>Se muestran horarios históricos disponibles. La transición atómica y la reconciliación requieren la migración CRM V2 en un entorno de test.</span></div>' : '';
     var reconcile = malformedPending ? '<div class="crm-protocol-reconciliation"><div><strong>Protocolo anterior incompatible</strong><span>Los intentos realizados se preservan. La reconciliación cancela sólo pendientes y crea una secuencia V2 nueva.</span></div>' + (state.taskSchema === "v2" ? '<button type="button" data-reconcile-protocol>Reconciliar protocolo</button>' : '') + '</div>' : '';
-    var days = [1, 2, 3].map(function (day) {
+    var protocolDays = Array.from(new Set(active.map(function (task) { return task.protocol_day; }))).sort(function (a, b) { return a - b; });
+    var days = protocolDays.map(function (day) {
       var dayTasks = active.filter(function (task) { return task.protocol_day === day; });
       if (!dayTasks.length) return "";
       return '<section class="crm-protocol-day"><header><div><span>Día ' + day + '</span><strong>' + escapeHtml(new Intl.DateTimeFormat("es-AR", { timeZone: "America/Argentina/Buenos_Aires", weekday: "long", day: "2-digit", month: "2-digit" }).format(new Date(dayTasks[0].due_start))) + '</strong></div><small>Franjas 10–12 · 14–16 · 17–19</small></header><div class="crm-protocol-attempts">' + dayTasks.map(function (task) { return protocolAttemptCard(task, lead, false); }).join("") + '</div></section>';
