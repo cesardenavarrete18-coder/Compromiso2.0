@@ -136,17 +136,11 @@
 .crm-v2-workspace .crm-lead-meta span{color:var(--cv2-text-tertiary)}
 .crm-v2-workspace .crm-stage-badge{background:var(--cv2-text-primary);color:#fff;border-radius:999px;font-weight:800}
 
-/* Fila de contexto: modelo/origen/días/última interacción secundarios,
-   en una sola línea compacta de 4 columnas. "Próxima acción" (5º ítem,
-   siempre último en renderWorkspaceContext) pasa a ocupar el ancho
-   completo como barra hito, con más peso tipográfico. */
-.crm-workspace-context{grid-template-columns:repeat(4,minmax(0,1fr));border-radius:var(--cv2-radius-md);gap:1px;margin-top:14px}
-.crm-workspace-context>div{background:var(--cv2-surface-muted);padding:9px 12px}
+/* Fila de contexto: ver sección 18 ("TERCERA PASADA") más abajo —
+   se reemplazó la grilla de celdas por una única línea compacta de
+   metadata bajo el header, sin caja destacada para ningún ítem. */
 .crm-workspace-context span{color:var(--cv2-text-tertiary);font-size:8px}
 .crm-workspace-context strong{color:var(--cv2-text-secondary);font-weight:700}
-.crm-workspace-context>div:last-child{grid-column:1/-1;display:flex;align-items:baseline;gap:10px;padding:13px 16px;background:var(--cv2-primary-soft)}
-.crm-workspace-context>div:last-child span{flex:0 0 auto;color:var(--cv2-primary-strong);font-size:9px}
-.crm-workspace-context>div:last-child strong{color:var(--cv2-primary-strong);font-size:14px;font-weight:800;white-space:normal}
 
 /* ------------------------------------------------------------
    4. Toolbar de acciones — agrupada por función
@@ -387,11 +381,60 @@
 
 @media(max-width:760px){
   .crm-cartera-header{padding:16px 16px 4px}
-  .crm-workspace-context{grid-template-columns:1fr 1fr}
   .crm-state-facts{grid-template-columns:1fr 1fr}
   .crm-management-fields label.crm-conditional[data-status-field]{grid-column:1/-1}
   /* La grilla pasa a 1 columna: el divisor sólo hace falta una vez,
      sobre el primer campo de cada grupo (ver regla :has() arriba). */
   .crm-management-fields label:has(#crmNextContactTimeInput),
   .crm-management-fields label:has(#crmInterviewTimeInput){margin-top:0;padding-top:0;border-top:0}
+}
+
+/* ============================================================
+   TERCERA PASADA — quitar redundancia, compactar el Workspace
+   ============================================================ */
+
+/* ------------------------------------------------------------
+   18. Header del Lead — una sola línea de metadata compacta,
+   sin la grilla de 5 celdas. "Próxima acción" (último ítem que
+   emite renderWorkspaceContext) sólo se muestra acá para Nuevo,
+   que no tiene ningún otro indicador de próxima acción en el
+   panel; el resto de los estados ya la muestran de forma
+   prominente en su propio panel (ver punto 19 y siguientes), así
+   que repetirla acá sería la misma fecha dos veces.
+   ------------------------------------------------------------ */
+.crm-v2-workspace .crm-dialog-head{padding-bottom:0;border-bottom:0}
+.crm-workspace-context{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 14px;margin:8px 0 0;padding:0 0 14px;border:0;border-bottom:1px solid var(--cv2-border);border-radius:0;background:none}
+.crm-workspace-context>div{display:inline-flex;align-items:baseline;gap:4px;min-width:0;padding:0;background:none}
+.crm-workspace-context span{display:inline}
+.crm-workspace-context span:after{content:":"}
+.crm-workspace-context strong{display:inline;margin:0;overflow:visible;font-size:11px;font-weight:650;white-space:nowrap;text-overflow:clip}
+.crm-workspace-context>div:nth-child(3) span,
+.crm-workspace-context>div:nth-child(3) strong{color:var(--cv2-text-tertiary);font-weight:500}
+.crm-v2-workspace:not(.is-new) .crm-workspace-context>div:last-child{display:none}
+
+/* ------------------------------------------------------------
+   19. En Gestión — la cabecera del panel no repite nombre y
+   vehículo (ya están en el header del Lead); se queda con el
+   estado, la necesidad comercial real (o el texto por defecto)
+   y el progreso del playbook.
+   ------------------------------------------------------------ */
+.en-gestion-head h3{display:none}
+
+/* ------------------------------------------------------------
+   20. "Contexto comercial" — bloque redundante (modelo, origen,
+   último contacto, próximo objetivo ya están visibles en otras
+   zonas del Workspace). Se oculta la presentación sin tocar
+   en-gestion.js: sigue calculándose, sólo no se pinta.
+   ------------------------------------------------------------ */
+.en-gestion-context{display:none}
+
+/* ------------------------------------------------------------
+   21. Status chips — misma geometría para todos los estados en
+   Mi Cartera; sólo cambia el color. Neutraliza el font-size:12px
+   que en-gestion.css fija únicamente para "en_proceso".
+   ------------------------------------------------------------ */
+.crm-stage[data-stage]{display:inline-flex;align-items:center;justify-content:center;min-width:76px;height:21px;padding:0 10px;font-size:9px;font-weight:800;line-height:1;letter-spacing:.03em;white-space:nowrap;box-sizing:border-box}
+
+@media(max-width:760px){
+  .crm-workspace-context{gap:3px 10px;padding-bottom:12px}
 }
