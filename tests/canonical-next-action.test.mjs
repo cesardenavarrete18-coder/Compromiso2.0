@@ -133,17 +133,15 @@ test("15. una respuesta con próxima fecha deja source manual", () => {
 
 test("16. respuesta desde protocolo reutiliza el mismo comentario en historial y próxima acción", () => {
   const flow = sellerCrm.match(/async function saveAnsweredFollowUp\(\)[\s\S]*?^  }/m)?.[0] || "";
-  const rpc = migration.match(/create or replace function public\.complete_contact_task_with_follow_up[\s\S]*?grant execute on function public\.complete_contact_task_with_follow_up[\s\S]*?authenticated;/)?.[0] || "";
   assert.ok(sellerHtml.includes("Resultado / comentario"));
   assert.ok(sellerHtml.includes("Hablé con el cliente, me pide que lo llame a las 18hs cuando sale del trabajo"));
   assert.equal((sellerHtml.match(/id="crmAnsweredNote"/g) || []).length, 1);
-  assert.ok(flow.includes('p_outcome: "answered"'));
+  assert.ok(flow.includes('rpc("record_contact_answer_with_transition"'));
+  assert.ok(flow.includes('p_status: "en_proceso"'));
+  assert.ok(flow.includes('p_contact_outcome: "answered"'));
   assert.ok(flow.includes("p_note: note"));
   assert.ok(flow.includes("p_next_contact_note: note"));
   assert.ok(!flow.includes('p_note: "El cliente respondió"'));
-  assert.ok(rpc.includes("v_result := public.complete_contact_task(p_task_id, p_outcome, p_note)"));
-  assert.ok(rpc.includes("next_contact_note = v_next_note"));
-  assert.ok(rpc.includes("next_contact_source = 'manual'"));
   assert.ok(migration.includes("perform private.cancel_lead_contact_protocol(v_task.lead_id"));
 });
 

@@ -468,15 +468,16 @@
   function updateConditionalFields() {
     var status = document.getElementById("crmStatusInput").value;
     var terminalStatus = ["desistir", "invalido"].includes(status);
+    var protocolStatus = status === "no_contesta";
     document.querySelectorAll("[data-status-field]").forEach(function (field) { field.classList.toggle("visible", field.dataset.statusField === status); });
-    document.querySelectorAll("[data-next-contact-field]").forEach(function (field) { field.hidden = terminalStatus; });
-    if (terminalStatus) {
+    document.querySelectorAll("[data-next-contact-field]").forEach(function (field) { field.hidden = terminalStatus || protocolStatus; });
+    if (terminalStatus || protocolStatus) {
       document.getElementById("crmNextContactDateInput").value = "";
       document.getElementById("crmNextContactTimeInput").value = "";
     }
     var automated = state.activeLead && nextPendingTask(state.activeLead.id) && ["nuevo", "no_contesta"].includes(status);
     var help = {
-      no_contesta: automated ? "El proceso de seguimiento ya programó automáticamente el próximo intento." : "Programá el próximo intento.",
+      no_contesta: "El protocolo programa automáticamente el próximo intento.",
       entrevista: "La entrevista requiere día, hora y, de ser posible, sucursal.",
       cierre: "Este lead quedará automáticamente en prioridad alta.",
       sena: "Registrá el importe de la seña; la venta seguirá requiriendo confirmación.",
@@ -812,7 +813,7 @@
     var nextContact = null;
     var interview = null;
     try {
-      if (!terminalStatus) {
+      if (!terminalStatus && status !== "no_contesta") {
         nextContact = parseArgentineDateTime(document.getElementById("crmNextContactDateInput").value, document.getElementById("crmNextContactTimeInput").value, "próximo contacto");
       }
       if (status === "entrevista") {
@@ -822,11 +823,6 @@
       errorBox.textContent = error.message;
       return;
     }
-    if (status === "no_contesta" && !nextContact) {
-      var automatedTask = nextPendingTask(state.activeLead.id);
-      nextContact = automatedTask ? automatedTask.due_start : null;
-    }
-    if (status === "no_contesta" && !nextContact) { errorBox.textContent = "Programá el próximo intento de contacto."; return; }
     if (nextContact && new Date(nextContact).getTime() <= Date.now()) { errorBox.textContent = "El próximo contacto debe quedar programado a futuro."; return; }
     if (["contacto_futuro", "en_proceso", "cierre", "sena"].includes(status) && !nextContact) { errorBox.textContent = "Programá la próxima acción antes de guardar."; return; }
     if (status === "entrevista" && !interview) { errorBox.textContent = "Indicá la fecha y hora de la entrevista."; return; }
@@ -1008,12 +1004,14 @@
     var leadId = state.activeLead && state.activeLead.id;
     var protocolWasOpen = !!document.querySelector("#crmProtocol details[open]");
     setBusy(button, true, "Guardando…");
-    var result = await supabaseClient.rpc("complete_contact_task_with_follow_up", {
+    var result = await supabaseClient.rpc("record_contact_answer_with_transition", {
       p_task_id: pendingAnsweredTaskId,
-      p_outcome: "answered",
+      p_status: "en_proceso",
       p_note: note,
       p_next_contact_at: nextContact,
-      p_next_contact_note: note
+      p_next_contact_note: note,
+      p_contact_outcome: "answered",
+      p_performed_at: new Date().toISOString()
     });
     if (result.error) { errorBox.textContent = result.error.message; setBusy(button, false); return; }
     pendingAnsweredTaskId = null;
