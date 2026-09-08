@@ -75,6 +75,8 @@ test("Venta permanece terminal y reutiliza Datero/Administración", () => {
   assert.ok(crm.includes("El estado permanece Venta y no vuelve al funnel comercial"));
   const requestSale = rpc("request_lead_sale_v2");
   const reviewSale = rpc("review_lead_sale");
+  assert.doesNotMatch(requestSale, /public\.sales_quotes/);
+  assert.ok(requestSale.includes("p_quote_id is not null and not private.sale_quote_matches_lead"));
   assert.ok(requestSale.includes("case when v_current_status = 'sena' then 'sena' else 'cierre' end"));
   assert.ok(reviewSale.includes("case when p_approved then 'venta' when v_current_status = 'sena' then 'sena' else 'cierre' end"));
 });

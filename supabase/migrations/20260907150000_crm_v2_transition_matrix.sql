@@ -861,6 +861,26 @@ grant execute on function public.record_contact_answer_with_transition(uuid, tex
 
 -- Preserve the commercial fact of a deposit while the existing sale/admin
 -- workflow runs. A pending or rejected sale request never demotes Seña.
+-- Quote validation is isolated so the quote-less path never plans a reference
+-- to sales_quotes on historical schemas where that optional module is absent.
+create or replace function private.sale_quote_matches_lead(
+  p_quote_id uuid, p_lead_id uuid, p_seller_user_id uuid
+)
+returns boolean language plpgsql stable security definer set search_path = '' as $$
+declare v_matches boolean;
+begin
+  select exists (
+    select 1 from public.sales_quotes
+    where id = p_quote_id and lead_id = p_lead_id
+      and seller_user_id = p_seller_user_id and status in ('issued', 'converted')
+  ) into v_matches;
+  return v_matches;
+exception when undefined_table then
+  raise exception 'Este entorno no dispone de asociación de presupuestos para la venta';
+end;
+$$;
+revoke all on function private.sale_quote_matches_lead(uuid, uuid, uuid) from public, anon, authenticated;
+
 create or replace function public.request_lead_sale_v2(
   p_lead_id uuid, p_vehicle text, p_amount numeric default null,
   p_notes text default '', p_quote_id uuid default null
@@ -877,7 +897,9 @@ begin
   if p_amount is not null and p_amount < 0 then raise exception 'El importe no puede ser negativo'; end if;
   if exists (select 1 from public.lead_sale_requests where lead_id = p_lead_id and status = 'pending') then raise exception 'Ya existe una venta pendiente de confirmación'; end if;
   if exists (select 1 from public.sales_cases where lead_id = p_lead_id) then raise exception 'La venta ya se encuentra en el circuito administrativo'; end if;
-  if p_quote_id is not null and not exists (select 1 from public.sales_quotes where id = p_quote_id and lead_id = p_lead_id and seller_user_id = v_user_id and status in ('issued', 'converted')) then raise exception 'El presupuesto no corresponde a este lead'; end if;
+  if p_quote_id is not null and not private.sale_quote_matches_lead(p_quote_id, p_lead_id, v_user_id) then
+    raise exception 'El presupuesto no corresponde a este lead';
+  end if;
 
   select status into v_current_status from public.lead_crm where lead_id = p_lead_id for update;
   if v_current_status = 'venta' then raise exception 'La venta ya fue confirmada'; end if;

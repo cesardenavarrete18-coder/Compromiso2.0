@@ -56,7 +56,10 @@ select set_config('request.jwt.claim.sub', '9e330000-0000-4000-8000-000000000101
 select public.record_lead_follow_up(p_lead_id => '9e330000-0000-4000-8000-000000000305', p_status => 'en_proceso', p_note => 'Gestión activa', p_next_contact_at => now() + interval '1 day');
 select public.record_lead_follow_up(p_lead_id => '9e330000-0000-4000-8000-000000000305', p_status => 'cierre', p_note => 'Propuesta final', p_next_contact_at => now() + interval '1 day');
 select public.record_lead_follow_up(p_lead_id => '9e330000-0000-4000-8000-000000000305', p_status => 'sena', p_note => 'Seña venta', p_next_contact_at => now() + interval '1 day', p_deposit_amount => 300000);
-select public.request_lead_sale_v2('9e330000-0000-4000-8000-000000000305', 'Vehículo E2E', 10000000, 'Enviar a Administración', null);
+select public.request_lead_sale_v2(
+  p_lead_id => '9e330000-0000-4000-8000-000000000305', p_vehicle => 'Vehículo E2E',
+  p_amount => 10000000, p_notes => 'Enviar a Administración', p_quote_id => null
+);
 select pg_temp.assert_true((select status = 'sena' and sale_confirmation_status = 'pending' from public.lead_crm where lead_id = '9e330000-0000-4000-8000-000000000305'), 'pending sale request must preserve Seña');
 select set_config('request.jwt.claim.sub', '9e330000-0000-4000-8000-000000000102', true);
 select public.review_lead_sale((select id from public.lead_sale_requests where lead_id = '9e330000-0000-4000-8000-000000000305' and status = 'pending'), true, 'Venta aprobada E2E');
