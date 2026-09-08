@@ -192,6 +192,19 @@
     return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Argentina/Buenos_Aires", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(value));
   }
 
+  function formatNextContact(value) {
+    if (!value) return "Sin programar";
+    var target = new Date(value);
+    var now = new Date();
+    var time = new Intl.DateTimeFormat("es-AR", { timeZone: "America/Argentina/Buenos_Aires", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(target);
+    if (localDateKey(target) === localDateKey(now)) return "Hoy · " + time;
+    if (localDateKey(target) === localDateKey(new Date(now.getTime() + 86400000))) return "Mañana · " + time;
+    var parts = {};
+    new Intl.DateTimeFormat("es-AR", { timeZone: "America/Argentina/Buenos_Aires", weekday: "short", day: "numeric", month: "short" }).formatToParts(target).forEach(function (part) { if (part.type !== "literal") parts[part.type] = part.value; });
+    var capitalize = function (text) { text = text.replace(/\./g, ""); return text.charAt(0).toUpperCase() + text.slice(1); };
+    return capitalize(parts.weekday) + " " + parts.day + " " + capitalize(parts.month) + " · " + time;
+  }
+
   function dateParts(value) {
     if (!value) return { date: "", time: "" };
     var parts = new Intl.DateTimeFormat("es-AR", {
@@ -339,7 +352,7 @@
     var progress = protocolProgress(lead.id);
     var actionTitle = crm.status === "nuevo" ? "Primer contacto" : crm.status === "entrevista" ? "Entrevista acordada" : crm.status === "sena" ? "Continuar operación" : "Próximo objetivo";
     var actionDetail = crm.status === "nuevo" ? "Contactar al cliente" : manual && manual.note || recommendation && taskTitle(recommendation.task) || "Definir la próxima acción";
-    var timing = crm.status === "nuevo" ? relativeFrom(lead.assigned_at || lead.created_at) : manual ? (isOverdue ? "Vencido · " : "Programado · ") + formatDate(manual.at) : recommendation ? recommendationLabel(recommendation) : "Requiere corrección de agenda";
+    var timing = crm.status === "nuevo" ? relativeFrom(lead.assigned_at || lead.created_at) : manual ? (isOverdue ? "Vencido · " : "Programado · ") + formatNextContact(manual.at) : recommendation ? recommendationLabel(recommendation) : "Requiere corrección de agenda";
     var protocol = crm.status === "no_contesta" && progress ? '<small class="portfolio-protocol">Protocolo ' + progress.completed + '/' + progress.total + (progress.pending ? ' · ' + taskTitle(progress.pending) : '') + '</small>' : '';
     return '<article class="crm-lead-card portfolio-card" data-crm-lead-id="' + lead.id + '" data-card-stage="' + escapeHtml(crm.status || "nuevo") + '">' +
       '<div class="portfolio-client"><strong>' + escapeHtml(lead.customer_name || "Cliente sin nombre") + '</strong><small>' + escapeHtml(lead.customer_phone ? "+" + lead.customer_phone : "Sin teléfono") + '</small></div>' +
@@ -598,7 +611,7 @@
       ["Origen", originLabel(lead)],
       ["Días en etapa", "Calculando…", "stage-age"],
       ["Última interacción", crm.last_contact_at ? formatDate(crm.last_contact_at) : lead.last_message_at ? formatDate(lead.last_message_at) : "Sin registro"],
-      ["Próxima acción", manual ? formatDate(manual.at) + " · " + manual.note : crm.status === "nuevo" ? "Realizar primer contacto" : "Requiere definición"]
+      ["Próxima acción", manual ? formatNextContact(manual.at) + " · " + manual.note : crm.status === "nuevo" ? "Realizar primer contacto" : "Requiere definición"]
     ].map(function (item) {
       return '<div' + (item[2] ? ' data-workspace-context="' + item[2] + '"' : '') + '><span>' + escapeHtml(item[0]) + '</span><strong>' + escapeHtml(item[1]) + '</strong></div>';
     }).join("");
@@ -660,7 +673,7 @@
     var target = document.getElementById("crmFutureCommitment");
     var overdue = crm.next_contact_at && new Date(crm.next_contact_at).getTime() < Date.now();
     target.classList.toggle("is-overdue", Boolean(overdue));
-    target.innerHTML = '<span>' + (overdue ? "Contacto solicitado vencido" : "Contacto solicitado") + '</span><strong>' + escapeHtml(crm.next_contact_at ? formatDate(crm.next_contact_at, true) : "Falta fecha y hora") + '</strong><p>' + escapeHtml(crm.next_contact_note || "Sin contexto adicional") + '</p><small>' + (overdue ? "El intento todavía no fue registrado: no se infiere que el cliente no contestó." : "Registrá el resultado cuando realices el contacto.") + '</small>';
+    target.innerHTML = '<span>' + (overdue ? "Contacto solicitado vencido" : "Contacto solicitado") + '</span><strong>' + escapeHtml(crm.next_contact_at ? formatNextContact(crm.next_contact_at) : "Falta fecha y hora") + '</strong><p>' + escapeHtml(crm.next_contact_note || "Sin contexto adicional") + '</p><small>' + (overdue ? "El intento todavía no fue registrado: no se infiere que el cliente no contestó." : "Registrá el resultado cuando realices el contacto.") + '</small>';
     document.getElementById("crmFutureOutcomes").hidden = true;
     document.getElementById("crmFutureError").textContent = "";
   }
@@ -676,8 +689,8 @@
     await openLead(leadId);
   }
 
-  function stateFact(label, value) {
-    return '<div><span>' + escapeHtml(label) + '</span><strong>' + escapeHtml(value || "—") + '</strong></div>';
+  function stateFact(label, value, overdue) {
+    return '<div' + (overdue ? ' class="is-overdue"' : '') + '><span>' + escapeHtml(label) + '</span><strong>' + escapeHtml(value || "—") + '</strong></div>';
   }
 
   function statePlaybook(groups) {
@@ -693,20 +706,20 @@
     var supported = ["entrevista", "cierre", "sena", "venta", "desistir", "invalido"].includes(status);
     panel.hidden = !supported;
     if (!supported) { target.innerHTML = ""; return; }
-    var next = crm.next_contact_at ? formatDate(crm.next_contact_at, true) : "Sin próxima acción registrada";
+    var next = crm.next_contact_at ? formatNextContact(crm.next_contact_at) : "Sin próxima acción registrada";
     var operation = lead.model_interest || crm.vehicle_sold || "Operación a definir";
     var results = function (items) { return '<div class="crm-state-results" aria-label="Resultados comerciales">' + transitionButtons(items) + '</div>'; };
 
     if (status === "entrevista") {
       var interviewParts = dateParts(crm.interview_at);
       target.innerHTML = '<article class="crm-state-panel"><header><div><p class="eyebrow dark">Entrevista</p><h3>Entrevista comercial concreta</h3><p>Presencial o Videollamada. Los estados operativos no modifican por sí solos el estado comercial.</p></div><span class="crm-stage" data-stage="entrevista">' + escapeHtml(stageLabel(status)) + '</span></header>' +
-        '<div class="crm-state-facts">' + stateFact("Fecha y hora", crm.interview_at ? formatDate(crm.interview_at, true) : "Pendiente") + stateFact("Modalidad", crm.interview_mode === "videollamada" ? "Videollamada" : crm.interview_mode === "presencial" ? "Presencial" : "Pendiente") + stateFact("Estado operativo", crm.interview_operational_status || "scheduled") + stateFact("Objetivo", crm.interview_objective || "Sin contexto") + '</div>' +
+        '<div class="crm-state-facts">' + stateFact("Fecha y hora", crm.interview_at ? formatNextContact(crm.interview_at) : "Pendiente", crm.interview_at && new Date(crm.interview_at).getTime() < Date.now() && crm.interview_operational_status !== "completed") + stateFact("Modalidad", crm.interview_mode === "videollamada" ? "Videollamada" : crm.interview_mode === "presencial" ? "Presencial" : "Pendiente") + stateFact("Estado operativo", crm.interview_operational_status || "scheduled") + stateFact("Objetivo", crm.interview_objective || "Sin contexto") + '</div>' +
         '<div class="crm-state-operation"><label>Fecha<input id="crmInterviewOperationDate" value="' + escapeHtml(interviewParts.date) + '" placeholder="dd/mm/aaaa"></label><label>Hora<input id="crmInterviewOperationTime" type="time" value="' + escapeHtml(interviewParts.time) + '"></label><label>Modalidad<select id="crmInterviewOperationMode"><option value="presencial"' + (crm.interview_mode === "presencial" ? " selected" : "") + '>Presencial</option><option value="videollamada"' + (crm.interview_mode === "videollamada" ? " selected" : "") + '>Videollamada</option></select></label><label>Lugar / medio<input id="crmInterviewOperationLocation" value="' + escapeHtml(crm.interview_location || "") + '"></label><label class="wide">Objetivo / contexto<textarea id="crmInterviewOperationObjective">' + escapeHtml(crm.interview_objective || "") + '</textarea></label></div>' +
         '<div class="crm-state-actions"><button type="button" data-interview-operation="confirmed">Confirmar</button><button type="button" data-interview-operation="rescheduled">Reprogramar</button><button type="button" data-interview-operation="no_show">No-show</button><button class="primary" type="button" data-show-interview-results>Completar entrevista y registrar resultado</button></div>' +
         statePlaybook([{ title: "Preparación", items: ["Contexto comercial disponible", "Propuesta o presupuesto", "Información necesaria"] }, { title: "Confirmación", items: ["Confirmar asistencia", "Confirmar Presencial o Videollamada"] }, { title: "Entrevista", items: ["Revisar operación", "Resolver dudas", "Registrar información relevante"] }, { title: "Resultado", items: ["Registrar el siguiente estado comercial"] }]) +
         '<div><p class="eyebrow dark">Resultado comercial</p>' + results(["en_proceso", "entrevista", "cierre", "sena", "venta", "desistir"]) + '</div></article>';
     } else if (status === "cierre") {
-      target.innerHTML = '<article class="crm-state-panel"><header><div><p class="eyebrow dark">Cierre</p><h3>Definir si la operación se concreta</h3><p>La modalidad, capacidad, anticipo, usado y calificación deben estar resueltos antes de esta etapa.</p></div><span class="crm-stage" data-stage="cierre">Cierre</span></header><div class="crm-state-facts">' + stateFact("Operación / propuesta", operation) + stateFact("Próximo contacto", next) + stateFact("Impedimento final", crm.final_objection || crm.status_reason || "Pendiente de registrar") + stateFact("Acción principal", crm.next_contact_note || "Resolver y confirmar decisión") + '</div>' + statePlaybook([{ title: "Condición final", items: ["Propuesta definida", "Impedimento final identificado"] }, { title: "Resolución", items: ["Resolver objeción", "Confirmar decisión", "Formalizar la operación"] }]) + '<div><p class="eyebrow dark">Resultado comercial</p>' + results(["cierre", "entrevista", "en_proceso", "sena", "venta", "desistir"]) + '</div></article>';
+      target.innerHTML = '<article class="crm-state-panel"><header><div><p class="eyebrow dark">Cierre</p><h3>Definir si la operación se concreta</h3><p>La modalidad, capacidad, anticipo, usado y calificación deben estar resueltos antes de esta etapa.</p></div><span class="crm-stage" data-stage="cierre">Cierre</span></header><div class="crm-state-facts">' + stateFact("Operación / propuesta", operation) + stateFact("Próximo contacto", next, Boolean(crm.next_contact_at) && new Date(crm.next_contact_at).getTime() < Date.now()) + stateFact("Impedimento final", crm.final_objection || crm.status_reason || "Pendiente de registrar") + stateFact("Acción principal", crm.next_contact_note || "Resolver y confirmar decisión") + '</div>' + statePlaybook([{ title: "Condición final", items: ["Propuesta definida", "Impedimento final identificado"] }, { title: "Resolución", items: ["Resolver objeción", "Confirmar decisión", "Formalizar la operación"] }]) + '<div><p class="eyebrow dark">Resultado comercial</p>' + results(["cierre", "entrevista", "en_proceso", "sena", "venta", "desistir"]) + '</div></article>';
     } else if (status === "sena") {
       var postParts = dateParts(crm.post_deposit_action_at);
       target.innerHTML = '<article class="crm-state-panel"><header><div><p class="eyebrow dark">Seña</p><h3>Compromiso económico registrado</h3><p>Las acciones posteriores ocurren dentro de Seña y nunca degradan el estado comercial.</p></div><span class="crm-stage" data-stage="sena">Seña</span></header><div class="crm-state-facts">' + stateFact("Importe", crm.deposit_amount ? money(crm.deposit_amount) : "Pendiente") + stateFact("Fecha", crm.deposit_at ? formatDate(crm.deposit_at, true) : "Pendiente") + stateFact("Condición / validación", crm.deposit_validation || "Sin detalle") + stateFact("Operación", operation) + '</div><div class="crm-state-operation"><label>Próxima acción<input id="crmPostDepositDate" value="' + escapeHtml(postParts.date) + '" placeholder="dd/mm/aaaa"></label><label>Hora<input id="crmPostDepositTime" type="time" value="' + escapeHtml(postParts.time) + '"></label><label>Modalidad<select id="crmPostDepositMode"><option value="presencial">Presencial</option><option value="videollamada">Videollamada</option></select></label><label>Estado<strong>' + escapeHtml(crm.post_deposit_action_status || "Sin programar") + '</strong></label><label class="wide">Contexto<input id="crmPostDepositNote" placeholder="Objetivo de la acción posterior a la seña"></label></div><div class="crm-state-actions"><button type="button" data-post-deposit-operation="scheduled">Programar</button><button type="button" data-post-deposit-operation="confirmed">Confirmar</button><button type="button" data-post-deposit-operation="rescheduled">Reprogramar</button><button class="primary" type="button" data-post-deposit-operation="completed">Completar</button></div><div><p class="eyebrow dark">Resultado comercial</p>' + results(["sena", "venta", "desistir"]) + '</div></article>';

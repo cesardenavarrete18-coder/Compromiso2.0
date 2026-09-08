@@ -438,3 +438,65 @@
 @media(max-width:760px){
   .crm-workspace-context{gap:3px 10px;padding-bottom:12px}
 }
+
+/* ============================================================
+   CUARTA PASADA — panel "Próxima acción" (Contacto vencido /
+   Próximo contacto / Contacto de hoy / Entrevista) como patrón
+   reutilizable: estado (chip) → fecha/hora → contexto → acciones.
+   ============================================================ */
+
+/* ------------------------------------------------------------
+   22. En Gestión — .en-gestion-next. Ya está dividido en
+   zona izquierda informativa (.en-gestion-next-main) y zona
+   derecha de acciones (.en-gestion-next-actions); se refina
+   jerarquía, chip de estado y acento de urgencia.
+   ------------------------------------------------------------ */
+.en-gestion-next{position:relative;overflow:hidden;padding:18px 22px 18px 26px}
+.en-gestion-next:before{position:absolute;inset:0 auto 0 0;width:4px;background:var(--cv2-primary);content:""}
+.en-gestion-next.is-overdue:before{background:var(--cv2-danger)}
+.en-gestion-next span{display:inline-flex;align-items:center;gap:6px;width:fit-content;margin:0 0 8px;padding:3px 10px 3px 8px;border-radius:999px;background:var(--cv2-primary-soft);color:var(--cv2-primary-strong);font-size:9px;font-weight:800;letter-spacing:.04em}
+.en-gestion-next span:before{width:5px;height:5px;flex:0 0 auto;border-radius:50%;background:currentColor;content:""}
+.en-gestion-next.is-overdue span{background:var(--cv2-danger-soft);color:var(--cv2-danger)}
+.en-gestion-next-main strong,.en-gestion-next>div>strong{font-size:24px;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.en-gestion-next.is-overdue strong{color:var(--cv2-danger)}
+.en-gestion-next p{color:var(--cv2-text-secondary)}
+.en-gestion-next-actions button.primary{box-shadow:0 6px 16px rgba(11,111,216,.25)}
+.en-gestion-next.is-overdue .en-gestion-next-actions button.primary{background:var(--cv2-danger);border-color:var(--cv2-danger);box-shadow:0 6px 16px rgba(191,59,46,.25)}
+
+/* ------------------------------------------------------------
+   23. Pide contacto futuro — .crm-future-commitment y
+   .crm-future-actions son hermanos estáticos en index.html; se
+   unifican en una sola tarjeta con la misma zona izquierda
+   informativa / derecha de acciones que En Gestión, sin tocar
+   markup (el contenedor pasa a fila flex).
+   ------------------------------------------------------------ */
+.crm-future-contact-experience{display:flex;flex-wrap:wrap;align-items:stretch;gap:0;border:1px solid var(--cv2-border);border-radius:var(--cv2-radius-lg);overflow:hidden;box-shadow:var(--cv2-shadow-xs)}
+.crm-future-contact-experience:has(.crm-future-commitment.is-overdue){border-color:var(--cv2-danger)}
+.crm-future-commitment{position:relative;flex:1 1 320px;display:flex;flex-direction:column;justify-content:center;gap:2px;padding:20px 24px 20px 28px;border:0;border-radius:0}
+.crm-future-commitment:before{position:absolute;inset:0 auto 0 0;width:4px;background:var(--cv2-violet);content:""}
+.crm-future-commitment.is-overdue:before{background:var(--cv2-danger)}
+.crm-future-commitment>span{display:inline-flex;align-items:center;gap:6px;width:fit-content;padding:3px 10px 3px 8px;border-radius:999px;background:var(--cv2-violet-soft);color:var(--cv2-violet)}
+.crm-future-commitment>span:before{width:5px;height:5px;flex:0 0 auto;border-radius:50%;background:currentColor;content:""}
+.crm-future-commitment.is-overdue>span{background:var(--cv2-danger-soft);color:var(--cv2-danger)}
+.crm-future-commitment>strong{font-size:24px;font-variant-numeric:tabular-nums;margin-top:6px}
+.crm-future-commitment>p{color:var(--cv2-text-secondary);font-size:12px}
+.crm-future-commitment>small{color:var(--cv2-text-tertiary)}
+.crm-future-actions{flex:0 0 auto;align-items:center;gap:8px;margin:0;padding:20px 24px;border-left:1px solid var(--cv2-border)}
+.crm-future-actions button:first-child{box-shadow:0 6px 16px rgba(106,75,214,.22)}
+.crm-future-outcomes{flex:1 1 100%;margin:0;border:0;border-top:1px solid var(--cv2-border);border-radius:0}
+
+/* ------------------------------------------------------------
+   24. Entrevista / Cierre — el hecho más relevante de
+   .crm-state-facts (ya destacado como primer ítem) señala
+   vencimiento con el mismo lenguaje de color que los paneles
+   anteriores, sin agregar una tarjeta nueva.
+   ------------------------------------------------------------ */
+.crm-state-facts>div.is-overdue{background:var(--cv2-danger-soft)}
+.crm-state-facts>div.is-overdue span{color:var(--cv2-danger)}
+.crm-state-facts>div.is-overdue strong{color:var(--cv2-danger);font-variant-numeric:tabular-nums}
+.crm-state-facts>div:first-child strong{font-variant-numeric:tabular-nums}
+
+@media(max-width:760px){
+  .crm-future-contact-experience{flex-direction:column}
+  .crm-future-actions{flex-direction:row;flex-wrap:wrap;border-left:0;border-top:1px solid var(--cv2-border)}
+}

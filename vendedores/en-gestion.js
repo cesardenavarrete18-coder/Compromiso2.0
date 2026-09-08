@@ -55,12 +55,18 @@
     var time = new Intl.DateTimeFormat("es-AR", {
       timeZone: TIME_ZONE,
       hour: "2-digit",
-      minute: "2-digit"
+      minute: "2-digit",
+      hourCycle: "h23"
     }).format(target);
     if (dateKey(target) === dateKey(now)) return "Hoy · " + time;
     var tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
     if (dateKey(target) === dateKey(tomorrow)) return "Mañana · " + time;
-    return formatDate(target);
+    var parts = {};
+    new Intl.DateTimeFormat("es-AR", { timeZone: TIME_ZONE, weekday: "short", day: "numeric", month: "short" }).formatToParts(target).forEach(function (part) {
+      if (part.type !== "literal") parts[part.type] = part.value;
+    });
+    var capitalize = function (text) { text = text.replace(/\./g, ""); return text.charAt(0).toUpperCase() + text.slice(1); };
+    return capitalize(parts.weekday) + " " + parts.day + " " + capitalize(parts.month) + " · " + time;
   }
 
   function originLabel(lead) {
