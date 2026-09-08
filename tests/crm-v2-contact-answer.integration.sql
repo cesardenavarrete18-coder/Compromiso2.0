@@ -31,7 +31,12 @@ values
   ('9e330000-0000-4000-8000-000000000207', '5491100001207', '5491100001207', 'QA CRM V2 - Venta rechazada'),
   ('9e330000-0000-4000-8000-000000000208', '5491100001208', '5491100001208', 'QA CRM V2 - Desistir literal'),
   ('9e330000-0000-4000-8000-000000000209', '5491100001209', '5491100001209', 'QA CRM V2 - Respondió y desistió'),
-  ('9e330000-0000-4000-8000-000000000210', '5491100001210', '5491100001210', 'QA CRM V2 - Protocolo completo');
+  ('9e330000-0000-4000-8000-000000000210', '5491100001210', '5491100001210', 'QA CRM V2 - Protocolo completo'),
+  ('9e330000-0000-4000-8000-000000000211', '5491100001211', '5491100001211', 'QA CRM V2 - Sin contacto'),
+  ('9e330000-0000-4000-8000-000000000212', '5491100001212', '5491100001212', 'QA CRM V2 - Futuro sin respuesta'),
+  ('9e330000-0000-4000-8000-000000000213', '5491100001213', '5491100001213', 'QA CRM V2 - Sin interés'),
+  ('9e330000-0000-4000-8000-000000000214', '5491100001214', '5491100001214', 'QA CRM V2 - No contactar'),
+  ('9e330000-0000-4000-8000-000000000215', '5491100001215', '5491100001215', 'QA CRM V2 - Protocolo parcial');
 insert into public.leads (
   id, customer_id, customer_phone, customer_name, source_channel, qualification_status,
   routing_status, routing_reason, assigned_seller_user_id, assigned_by_user_id, assigned_at
@@ -46,7 +51,12 @@ values
   ('9e330000-0000-4000-8000-000000000307', '9e330000-0000-4000-8000-000000000207', '5491100001207', 'QA CRM V2 - Venta rechazada', 'manual', 'qualified', 'assigned_manual', 'crm_v2_e2e', '9e330000-0000-4000-8000-000000000101', '9e330000-0000-4000-8000-000000000101', now()),
   ('9e330000-0000-4000-8000-000000000308', '9e330000-0000-4000-8000-000000000208', '5491100001208', 'QA CRM V2 - Desistir literal', 'manual', 'qualified', 'assigned_manual', 'crm_v2_e2e', '9e330000-0000-4000-8000-000000000101', '9e330000-0000-4000-8000-000000000101', now()),
   ('9e330000-0000-4000-8000-000000000309', '9e330000-0000-4000-8000-000000000209', '5491100001209', 'QA CRM V2 - Respondió y desistió', 'manual', 'qualified', 'assigned_manual', 'crm_v2_e2e', '9e330000-0000-4000-8000-000000000101', '9e330000-0000-4000-8000-000000000101', now()),
-  ('9e330000-0000-4000-8000-000000000310', '9e330000-0000-4000-8000-000000000210', '5491100001210', 'QA CRM V2 - Protocolo completo', 'manual', 'qualified', 'assigned_manual', 'crm_v2_e2e', '9e330000-0000-4000-8000-000000000101', '9e330000-0000-4000-8000-000000000101', now());
+  ('9e330000-0000-4000-8000-000000000310', '9e330000-0000-4000-8000-000000000210', '5491100001210', 'QA CRM V2 - Protocolo completo', 'manual', 'qualified', 'assigned_manual', 'crm_v2_e2e', '9e330000-0000-4000-8000-000000000101', '9e330000-0000-4000-8000-000000000101', now()),
+  ('9e330000-0000-4000-8000-000000000311', '9e330000-0000-4000-8000-000000000211', '5491100001211', 'QA CRM V2 - Sin contacto', 'manual', 'qualified', 'assigned_manual', 'crm_v2_e2e', '9e330000-0000-4000-8000-000000000101', '9e330000-0000-4000-8000-000000000101', now()),
+  ('9e330000-0000-4000-8000-000000000312', '9e330000-0000-4000-8000-000000000212', '5491100001212', 'QA CRM V2 - Futuro sin respuesta', 'manual', 'qualified', 'assigned_manual', 'crm_v2_e2e', '9e330000-0000-4000-8000-000000000101', '9e330000-0000-4000-8000-000000000101', now()),
+  ('9e330000-0000-4000-8000-000000000313', '9e330000-0000-4000-8000-000000000213', '5491100001213', 'QA CRM V2 - Sin interés', 'manual', 'qualified', 'assigned_manual', 'crm_v2_e2e', '9e330000-0000-4000-8000-000000000101', '9e330000-0000-4000-8000-000000000101', now()),
+  ('9e330000-0000-4000-8000-000000000314', '9e330000-0000-4000-8000-000000000214', '5491100001214', 'QA CRM V2 - No contactar', 'manual', 'qualified', 'assigned_manual', 'crm_v2_e2e', '9e330000-0000-4000-8000-000000000101', '9e330000-0000-4000-8000-000000000101', now()),
+  ('9e330000-0000-4000-8000-000000000315', '9e330000-0000-4000-8000-000000000215', '5491100001215', 'QA CRM V2 - Protocolo parcial', 'manual', 'qualified', 'assigned_manual', 'crm_v2_e2e', '9e330000-0000-4000-8000-000000000101', '9e330000-0000-4000-8000-000000000101', now());
 update public.lead_crm set status = 'no_contesta' where lead_id in (
   '9e330000-0000-4000-8000-000000000301', '9e330000-0000-4000-8000-000000000302',
   '9e330000-0000-4000-8000-000000000303', '9e330000-0000-4000-8000-000000000304',
@@ -54,6 +64,94 @@ update public.lead_crm set status = 'no_contesta' where lead_id in (
   '9e330000-0000-4000-8000-000000000307', '9e330000-0000-4000-8000-000000000308',
   '9e330000-0000-4000-8000-000000000309', '9e330000-0000-4000-8000-000000000310'
 );
+
+-- Protocol-driven Sin contacto never accepts or preserves a manual agenda,
+-- and repeatedly guaranteeing it remains idempotent.
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '9e330000-0000-4000-8000-000000000101', true);
+select public.record_lead_follow_up(
+  p_lead_id => '9e330000-0000-4000-8000-000000000311', p_status => 'no_contesta',
+  p_note => 'Primer intento sin respuesta', p_next_contact_at => null
+);
+select public.record_lead_follow_up(
+  p_lead_id => '9e330000-0000-4000-8000-000000000311', p_status => 'no_contesta',
+  p_note => 'Garantía idempotente', p_next_contact_at => null
+);
+select pg_temp.assert_true(
+  (select status = 'no_contesta' and next_contact_at is null and next_contact_source is null
+   from public.lead_crm where lead_id = '9e330000-0000-4000-8000-000000000311'),
+  'Nuevo -> no_contesta must not require a manual next contact'
+);
+select pg_temp.assert_true(
+  (select count(*) = 1 from public.lead_contact_sequences
+   where lead_id = '9e330000-0000-4000-8000-000000000311' and status = 'active'),
+  'entering no_contesta repeatedly must keep exactly one active sequence'
+);
+select pg_temp.assert_true(
+  (select count(*) filter (where channel = 'call') = 18
+      and count(distinct (protocol_day, protocol_band)) filter (where channel = 'call') = 9
+      and count(*) filter (where channel = 'whatsapp') = 2
+   from public.lead_contact_tasks where lead_id = '9e330000-0000-4000-8000-000000000311'),
+  'no_contesta must use the 18-call, 9-band, 2-WhatsApp protocol'
+);
+
+select public.record_lead_follow_up(
+  p_lead_id => '9e330000-0000-4000-8000-000000000312', p_status => 'contacto_futuro',
+  p_note => 'Llamar mañana', p_next_contact_at => now() + interval '1 day'
+);
+select public.start_no_contact_protocol_from_future('9e330000-0000-4000-8000-000000000312');
+select pg_temp.assert_true(
+  (select status = 'no_contesta' and next_contact_at is null and next_contact_source is null
+   from public.lead_crm where lead_id = '9e330000-0000-4000-8000-000000000312')
+  and (select count(*) = 1 from public.lead_contact_sequences
+       where lead_id = '9e330000-0000-4000-8000-000000000312' and status = 'active'),
+  'contacto_futuro without answer must enter no_contesta with one canonical protocol'
+);
+
+select public.record_contact_task_result(
+  (select id from public.lead_contact_tasks where lead_id = '9e330000-0000-4000-8000-000000000313' and status = 'pending'),
+  'no_interest', 'No desea continuar', now()
+);
+select pg_temp.assert_true(
+  (select status = 'desistir' and terminal_at is not null and previous_status = 'nuevo' and cold_base_at is null from public.lead_crm
+   where lead_id = '9e330000-0000-4000-8000-000000000313'),
+  'no_interest must desist terminally, preserve previous status, and avoid Base fria'
+);
+
+select public.record_contact_task_result(
+  (select id from public.lead_contact_tasks where lead_id = '9e330000-0000-4000-8000-000000000314' and status = 'pending'),
+  'requested_no_contact', 'Solicitó no recibir contactos', now()
+);
+select pg_temp.assert_true(
+  (select status = 'desistir' and terminal_at is not null and previous_status = 'nuevo' and cold_base_at is null from public.lead_crm
+   where lead_id = '9e330000-0000-4000-8000-000000000314')
+  and (select do_not_contact from public.leads where id = '9e330000-0000-4000-8000-000000000314'),
+  'requested_no_contact must desist terminally, preserve previous status, and opt out without Base fria'
+);
+
+select public.record_contact_task_result(
+  (select id from public.lead_contact_tasks where lead_id = '9e330000-0000-4000-8000-000000000315' and status = 'pending'),
+  'no_answer', 'Primer intento sin respuesta', now()
+);
+select pg_temp.assert_true(
+  (select cold_base_at is null and status = 'no_contesta' from public.lead_crm
+   where lead_id = '9e330000-0000-4000-8000-000000000315'),
+  'partial protocol completion must not create Base fria'
+);
+do $$
+begin
+  begin
+    perform public.record_contact_task_result(
+      (select id from public.lead_contact_tasks where lead_id = '9e330000-0000-4000-8000-000000000315' and status = 'pending'),
+      'answered', 'Respondió', now()
+    );
+    raise exception 'expected non-atomic answered rejection';
+  exception when others then
+    if sqlerrm <> 'Una respuesta requiere record_contact_answer_with_transition' then raise; end if;
+  end;
+end;
+$$;
+reset role;
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '9e330000-0000-4000-8000-000000000101', true);
@@ -265,8 +363,11 @@ select public.record_contact_task_result(
   'invalid', 'Dato erróneo', now()
 );
 reset role;
-select pg_temp.assert_true((select status = 'invalido' from public.lead_crm
-  where lead_id = '9e330000-0000-4000-8000-000000000304'), 'Inválido must remain available from Sin contacto');
+select pg_temp.assert_true((select status = 'invalido' and terminal_at is not null
+    and previous_status = 'no_contesta' and next_contact_at is null and next_contact_note = ''
+    and next_contact_source is null and cold_base_at is null
+  from public.lead_crm where lead_id = '9e330000-0000-4000-8000-000000000304'),
+  'Invalid must be terminal, preserve previous status, and avoid Base fria');
 
 -- Remaining CRM V2 workspaces: operational interview events stay inside
 -- Entrevista, while commercial results use the canonical transition RPC.
