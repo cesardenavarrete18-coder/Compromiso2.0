@@ -102,8 +102,9 @@ test("schema legacy sin performed_at/recorded_at mantiene disponibles las tareas
   assert.equal(result.schema, "legacy");
   assert.equal(result.error, null);
   assert.equal(result.tasks.length, 1);
-  assert.equal(result.tasks[0].performed_at, legacyTask.completed_at);
+  assert.equal(result.tasks[0].performed_at, null);
   assert.equal(result.tasks[0].recorded_at, legacyTask.completed_at);
+  assert.equal(result.tasks[0].presentation_schema, "legacy");
   assert.equal(selects.length, 2);
 });
 

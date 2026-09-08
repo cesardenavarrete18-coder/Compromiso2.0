@@ -250,4 +250,7 @@ test("Modo compatible carga historial pero bloquea la transición atómica inexi
   assert.ok(crm.includes("La transición atómica y la reconciliación requieren la migración CRM V2"));
   assert.ok(crm.includes('if (state.taskSchema !== "v2")'));
   assert.ok(crm.includes("Registrar una respuesta con transición desde el protocolo requiere la migración CRM V2"));
+  assert.ok(crm.includes("Hora registrada (legacy)"));
+  assert.ok(crm.includes('taskTitle(task)'));
+  assert.ok(crm.includes('"Llamada " + task.call_attempt + " de " + total'));
 });

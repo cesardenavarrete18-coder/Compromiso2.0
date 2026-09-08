@@ -90,8 +90,9 @@
     return (tasks || []).map(function (task) {
       if (schema === "v2") return task;
       return Object.assign({}, task, {
-        performed_at: task.completed_at || null,
-        recorded_at: task.completed_at || task.updated_at || null
+        performed_at: null,
+        recorded_at: task.completed_at || task.updated_at || null,
+        presentation_schema: "legacy"
       });
     });
   }
