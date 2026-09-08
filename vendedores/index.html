@@ -18,6 +18,7 @@
   <link rel="stylesheet" href="/vendedores/workflow-polish.css?v=20260818-1">
   <link rel="stylesheet" href="/vendedores/recalls.css?v=20260821-1">
   <link rel="stylesheet" href="/vendedores/auth-loading.css?v=20260817-1">
+  <link rel="stylesheet" href="/vendedores/crm-v2-design-system.css?v=20260908-1">
   <style>#crmAppraisalButton,#crmAppraisalDialog{display:none!important}</style>
 </head>
 <body>
@@ -409,9 +410,12 @@
         </section>
 
         <section class="view crm-view" id="crmAgendaView" aria-labelledby="crmAgendaTitle">
-          <div class="crm-hero">
-            <div><h1 id="crmAgendaTitle">Mi Cartera</h1><p>Tus oportunidades comerciales, ordenadas por prioridad y próxima acción.</p></div>
-            <div class="crm-hero-actions"><label class="crm-search"><span>⌕</span><input id="crmAgendaSearch" type="search" placeholder="Buscar cliente, teléfono o modelo"></label><button class="primary-button compact-button" id="crmRefreshButton" type="button">Actualizar</button></div>
+          <div class="crm-cartera-header">
+            <div class="crm-hero">
+              <div><h1 id="crmAgendaTitle">Mi Cartera</h1><p>Tus oportunidades comerciales, ordenadas por prioridad y próxima acción.</p></div>
+              <div class="crm-hero-actions"><label class="crm-search"><span>⌕</span><input id="crmAgendaSearch" type="search" placeholder="Buscar cliente, teléfono o modelo"></label><button class="primary-button compact-button" id="crmRefreshButton" type="button">Actualizar</button></div>
+            </div>
+            <div class="crm-summary" id="crmSummary"></div>
           </div>
           <p class="crm-message" id="crmAgendaMessage" role="status"></p>
           <div class="portfolio-toolbar" aria-label="Filtros de Mi Cartera">
@@ -431,7 +435,6 @@
               <button type="button" data-portfolio-view="upcoming" aria-pressed="false">Próximos</button>
             </div></div>
           </div>
-          <div class="crm-summary" id="crmSummary"></div>
           <div class="agenda-sections" id="crmAgenda"></div>
         </section>
 
@@ -495,7 +498,11 @@
       <div class="crm-detail-grid">
         <section class="crm-detail-main">
           <div class="crm-client-summary" id="crmClientSummary"></div>
-          <div class="crm-quick-actions"><a class="crm-action-link" id="crmCallLink" href="#">Llamar</a><a class="crm-action-link accent" id="crmWhatsappLink" href="#" target="_blank" rel="noopener">WhatsApp</a><button class="crm-action-link" id="crmCommentButton" type="button">Agregar comentario</button><button class="crm-action-link" id="crmAppraisalButton" type="button">Tasación del usado</button><button class="crm-action-link" id="crmBudgetButton" type="button">Presupuesto</button><button class="crm-action-link" id="crmSaleButton" type="button">Enviar datero</button></div>
+          <div class="crm-quick-actions">
+            <div class="crm-toolbar-group crm-toolbar-communication" data-toolbar-group="comunicacion"><a class="crm-action-link" id="crmCallLink" href="#">Llamar</a><a class="crm-action-link accent" id="crmWhatsappLink" href="#" target="_blank" rel="noopener">WhatsApp</a></div>
+            <div class="crm-toolbar-group crm-toolbar-context" data-toolbar-group="contexto"><button class="crm-action-link" id="crmCommentButton" type="button">Agregar comentario</button></div>
+            <div class="crm-toolbar-group crm-toolbar-commercial" data-toolbar-group="comercial"><button class="crm-action-link" id="crmAppraisalButton" type="button">Tasación del usado</button><button class="crm-action-link" id="crmBudgetButton" type="button">Presupuesto</button><button class="crm-action-link" id="crmSaleButton" type="button">Enviar datero</button></div>
+          </div>
           <div class="crm-appraisal-summary" id="crmAppraisalSummary" hidden></div>
           <div class="crm-tabs"><button class="active" type="button" data-crm-tab="manage">Gestión y seguimiento</button><button type="button" data-crm-tab="timeline">Historial</button><button type="button" data-crm-tab="customer">Consultas previas</button><button type="button" data-crm-tab="chat">Conversación IA</button></div>
           <div class="crm-tab-panel active" data-crm-panel="manage">
