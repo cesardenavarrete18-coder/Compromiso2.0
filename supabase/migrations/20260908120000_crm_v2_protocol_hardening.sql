@@ -18,6 +18,7 @@ declare
   v_next public.lead_contact_tasks%rowtype;
   v_next_task_id uuid;
   v_customer_id uuid;
+  v_previous_status text;
   v_sequence_finished boolean := false;
 begin
   if v_user_id is null or not private.current_user_active() then raise exception 'Acceso no autorizado'; end if;
@@ -67,8 +68,13 @@ begin
   );
 
   if p_outcome in ('invalid', 'no_interest', 'requested_no_contact') then
+    select status into v_previous_status
+    from public.lead_crm
+    where lead_id = v_task.lead_id
+    for update;
+    if v_previous_status is null then raise exception 'No se encontró la ficha CRM del lead'; end if;
+
     perform private.cancel_lead_contact_protocol(v_task.lead_id, case p_outcome
-      when 'answered' then 'El cliente respondió'
       when 'invalid' then 'Contacto inválido'
       when 'requested_no_contact' then 'Solicitó no ser contactado'
       else 'El cliente no desea continuar'
@@ -84,6 +90,8 @@ begin
       last_contact_at = now(),
       last_contact_outcome = p_outcome,
       cold_base_at = null,
+      previous_status = v_previous_status,
+      terminal_at = now(),
       updated_by = v_user_id,
       updated_at = now()
     where lead_id = v_task.lead_id;
@@ -142,24 +150,14 @@ language plpgsql
 security definer
 set search_path = ''
 as $$
-declare
-  v_result jsonb;
-  v_lead_id uuid;
-  v_next_note text := left(coalesce(
-    nullif(trim(coalesce(p_next_contact_note, '')), ''),
-    nullif(trim(coalesce(p_note, '')), ''),
-    'Próximo contacto programado'
-  ), 1000);
 begin
   if p_outcome = 'answered' then
     raise exception 'Una respuesta requiere record_contact_answer_with_transition';
   end if;
 
-  v_result := public.complete_contact_task(p_task_id, p_outcome, p_note);
-  v_lead_id := (v_result ->> 'lead_id')::uuid;
-
-
-  return v_result;
+  -- Signature retained for the legacy frontend fallback. Its only active
+  -- caller passes null/empty follow-up values, which are intentionally ignored.
+  return public.complete_contact_task(p_task_id, p_outcome, p_note);
 end;
 $$;
 
@@ -197,11 +195,6 @@ begin
     performed_at = p_performed_at,
     recorded_at = now()
   where id = p_task_id;
-
-  if p_outcome = 'invalid' then
-    update public.lead_crm set terminal_at = now(), updated_at = now()
-    where lead_id = (v_result ->> 'lead_id')::uuid and status = 'invalido';
-  end if;
 
   if coalesce((v_result ->> 'sequence_finished')::boolean, false) then
     select sequence_id into v_sequence_id from public.lead_contact_tasks where id = p_task_id;

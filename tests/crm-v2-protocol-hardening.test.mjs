@@ -37,6 +37,18 @@ test("generic completion is internal, cannot record answered, and cannot classif
     assert.doesNotMatch(generic, /cold_base_at = now\(\)|'segment', 'base_fria'|6 llamadas|Protocolo completado sin respuesta/);
   }
   assert.match(complete, /cold_base_at = null/);
+  for (const terminalField of [
+    "previous_status = v_previous_status",
+    "terminal_at = now()",
+    "next_contact_at = null",
+    "next_contact_note = ''",
+    "next_contact_source = null",
+    "cold_base_at = null"
+  ]) assert.ok(complete.includes(terminalField), terminalField);
+  assert.match(complete, /select status into v_previous_status[\s\S]*for update/);
+  assert.doesNotMatch(wrapper, /v_lead_id|v_next_note|next_contact_at\s*=|next_contact_note\s*=/);
+  assert.ok(wrapper.includes("return public.complete_contact_task(p_task_id, p_outcome, p_note)"));
+  assert.ok(crm.includes('p_next_contact_at: null, p_next_contact_note: ""'));
   assert.ok(crm.includes('rpc("record_contact_answer_with_transition"'));
 });
 
@@ -58,8 +70,9 @@ test("E2E fixture covers all pre-main protocol invariants", () => {
     "entering no_contesta repeatedly must keep exactly one active sequence",
     "no_contesta must use the 18-call, 9-band, 2-WhatsApp protocol",
     "contacto_futuro without answer must enter no_contesta with one canonical protocol",
-    "no_interest must desist without Base fria",
-    "requested_no_contact must desist and opt out without Base fria",
+    "no_interest must desist terminally, preserve previous status, and avoid Base fria",
+    "requested_no_contact must desist terminally, preserve previous status, and opt out without Base fria",
+    "Invalid must be terminal, preserve previous status, and avoid Base fria",
     "partial protocol completion must not create Base fria",
     "Base fría requires all 18 canonical calls without answer",
     "only completed canonical protocol emits one Base fría activity"

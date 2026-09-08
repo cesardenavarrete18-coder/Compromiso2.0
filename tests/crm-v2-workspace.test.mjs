@@ -185,7 +185,7 @@ test("la prueba SQL aislada cubre éxito, rollback integral e Inválido", () => 
     "Sin contacto -> Pide contacto futuro must succeed",
     "failed final transition must roll back the answered attempt",
     "failed final transition must leave Sin contacto observable",
-    "Inválido must remain available from Sin contacto",
+    "Invalid must be terminal, preserve previous status, and avoid Base fria",
     "confirmed interview must remain Entrevista",
     "rescheduled interview must remain Entrevista",
     "no-show must not change the commercial status",

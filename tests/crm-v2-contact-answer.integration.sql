@@ -113,9 +113,9 @@ select public.record_contact_task_result(
   'no_interest', 'No desea continuar', now()
 );
 select pg_temp.assert_true(
-  (select status = 'desistir' and cold_base_at is null from public.lead_crm
+  (select status = 'desistir' and terminal_at is not null and previous_status = 'nuevo' and cold_base_at is null from public.lead_crm
    where lead_id = '9e330000-0000-4000-8000-000000000313'),
-  'no_interest must desist without Base fria'
+  'no_interest must desist terminally, preserve previous status, and avoid Base fria'
 );
 
 select public.record_contact_task_result(
@@ -123,10 +123,10 @@ select public.record_contact_task_result(
   'requested_no_contact', 'Solicitó no recibir contactos', now()
 );
 select pg_temp.assert_true(
-  (select status = 'desistir' and cold_base_at is null from public.lead_crm
+  (select status = 'desistir' and terminal_at is not null and previous_status = 'nuevo' and cold_base_at is null from public.lead_crm
    where lead_id = '9e330000-0000-4000-8000-000000000314')
   and (select do_not_contact from public.leads where id = '9e330000-0000-4000-8000-000000000314'),
-  'requested_no_contact must desist and opt out without Base fria'
+  'requested_no_contact must desist terminally, preserve previous status, and opt out without Base fria'
 );
 
 select public.record_contact_task_result(
@@ -363,8 +363,11 @@ select public.record_contact_task_result(
   'invalid', 'Dato erróneo', now()
 );
 reset role;
-select pg_temp.assert_true((select status = 'invalido' from public.lead_crm
-  where lead_id = '9e330000-0000-4000-8000-000000000304'), 'Inválido must remain available from Sin contacto');
+select pg_temp.assert_true((select status = 'invalido' and terminal_at is not null
+    and previous_status = 'no_contesta' and next_contact_at is null and next_contact_note = ''
+    and next_contact_source is null and cold_base_at is null
+  from public.lead_crm where lead_id = '9e330000-0000-4000-8000-000000000304'),
+  'Invalid must be terminal, preserve previous status, and avoid Base fria');
 
 -- Remaining CRM V2 workspaces: operational interview events stay inside
 -- Entrevista, while commercial results use the canonical transition RPC.
