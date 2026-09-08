@@ -76,7 +76,12 @@ test("Venta permanece terminal y reutiliza Datero/Administración", () => {
   const requestSale = rpc("request_lead_sale_v2");
   const reviewSale = rpc("review_lead_sale");
   assert.doesNotMatch(requestSale, /public\.sales_quotes/);
+  assert.doesNotMatch(requestSale, /notes, quote_id/);
+  assert.ok(requestSale.includes("if p_quote_id is null then"));
+  assert.ok(requestSale.includes("insert into public.lead_sale_requests (lead_id, seller_user_id, vehicle, sale_amount, notes)"));
   assert.ok(requestSale.includes("p_quote_id is not null and not private.sale_quote_matches_lead"));
+  assert.ok(requestSale.includes("private.create_lead_sale_request_with_quote"));
+  assert.ok(migration.includes("Este entorno no soporta asociar presupuestos a solicitudes de venta"));
   assert.ok(requestSale.includes("case when v_current_status = 'sena' then 'sena' else 'cierre' end"));
   assert.ok(reviewSale.includes("case when p_approved then 'venta' when v_current_status = 'sena' then 'sena' else 'cierre' end"));
 });

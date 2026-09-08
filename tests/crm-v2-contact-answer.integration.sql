@@ -23,7 +23,8 @@ values
   ('9e330000-0000-4000-8000-000000000202', '5491100001202', '5491100001202', 'E2E Contacto futuro'),
   ('9e330000-0000-4000-8000-000000000203', '5491100001203', '5491100001203', 'E2E Rollback'),
   ('9e330000-0000-4000-8000-000000000204', '5491100001204', '5491100001204', 'E2E Inválido'),
-  ('9e330000-0000-4000-8000-000000000205', '5491100001205', '5491100001205', 'E2E Venta');
+  ('9e330000-0000-4000-8000-000000000205', '5491100001205', '5491100001205', 'E2E Venta'),
+  ('9e330000-0000-4000-8000-000000000206', '5491100001206', '5491100001206', 'E2E Presupuesto incompatible');
 insert into public.leads (
   id, customer_id, customer_phone, customer_name, source_channel, qualification_status,
   routing_status, routing_reason, assigned_seller_user_id, assigned_by_user_id, assigned_at
@@ -33,11 +34,12 @@ values
   ('9e330000-0000-4000-8000-000000000302', '9e330000-0000-4000-8000-000000000202', '5491100001202', 'E2E Contacto futuro', 'manual', 'qualified', 'assigned_manual', 'crm_v2_e2e', '9e330000-0000-4000-8000-000000000101', '9e330000-0000-4000-8000-000000000101', now()),
   ('9e330000-0000-4000-8000-000000000303', '9e330000-0000-4000-8000-000000000203', '5491100001203', 'E2E Rollback', 'manual', 'qualified', 'assigned_manual', 'crm_v2_e2e', '9e330000-0000-4000-8000-000000000101', '9e330000-0000-4000-8000-000000000101', now()),
   ('9e330000-0000-4000-8000-000000000304', '9e330000-0000-4000-8000-000000000204', '5491100001204', 'E2E Inválido', 'manual', 'qualified', 'assigned_manual', 'crm_v2_e2e', '9e330000-0000-4000-8000-000000000101', '9e330000-0000-4000-8000-000000000101', now()),
-  ('9e330000-0000-4000-8000-000000000305', '9e330000-0000-4000-8000-000000000205', '5491100001205', 'E2E Venta', 'manual', 'qualified', 'assigned_manual', 'crm_v2_e2e', '9e330000-0000-4000-8000-000000000101', '9e330000-0000-4000-8000-000000000101', now());
+  ('9e330000-0000-4000-8000-000000000305', '9e330000-0000-4000-8000-000000000205', '5491100001205', 'E2E Venta', 'manual', 'qualified', 'assigned_manual', 'crm_v2_e2e', '9e330000-0000-4000-8000-000000000101', '9e330000-0000-4000-8000-000000000101', now()),
+  ('9e330000-0000-4000-8000-000000000306', '9e330000-0000-4000-8000-000000000206', '5491100001206', 'E2E Presupuesto incompatible', 'manual', 'qualified', 'assigned_manual', 'crm_v2_e2e', '9e330000-0000-4000-8000-000000000101', '9e330000-0000-4000-8000-000000000101', now());
 update public.lead_crm set status = 'no_contesta' where lead_id in (
   '9e330000-0000-4000-8000-000000000301', '9e330000-0000-4000-8000-000000000302',
   '9e330000-0000-4000-8000-000000000303', '9e330000-0000-4000-8000-000000000304',
-  '9e330000-0000-4000-8000-000000000305'
+  '9e330000-0000-4000-8000-000000000305', '9e330000-0000-4000-8000-000000000306'
 );
 
 set local role authenticated;
@@ -65,6 +67,35 @@ select set_config('request.jwt.claim.sub', '9e330000-0000-4000-8000-000000000102
 select public.review_lead_sale((select id from public.lead_sale_requests where lead_id = '9e330000-0000-4000-8000-000000000305' and status = 'pending'), true, 'Venta aprobada E2E');
 select pg_temp.assert_true((select status = 'venta' and sale_confirmation_status = 'confirmed' from public.lead_crm where lead_id = '9e330000-0000-4000-8000-000000000305'), 'Seña -> Venta must succeed through approval');
 select pg_temp.assert_true(exists (select 1 from public.sales_cases where lead_id = '9e330000-0000-4000-8000-000000000305'), 'Venta must enter the existing Administration circuit');
+reset role;
+
+-- A historical schema without quote association rejects a supplied quote
+-- explicitly and atomically: no request is left behind.
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '9e330000-0000-4000-8000-000000000101', true);
+do $$
+declare v_before bigint;
+begin
+  select count(*) into v_before from public.lead_sale_requests;
+  begin
+    perform public.request_lead_sale_v2(
+      p_lead_id => '9e330000-0000-4000-8000-000000000306', p_vehicle => 'Vehículo E2E',
+      p_amount => 9000000, p_notes => 'Presupuesto no compatible',
+      p_quote_id => '9e330000-0000-4000-8000-000000000999'
+    );
+    raise exception 'expected quote compatibility failure';
+  exception when others then
+    if sqlerrm not like 'Este entorno no dispone de asociación de presupuestos para la venta%'
+       and sqlerrm not like 'Este entorno no soporta asociar presupuestos a solicitudes de venta%' then
+      raise;
+    end if;
+  end;
+  perform pg_temp.assert_true(
+    (select count(*) from public.lead_sale_requests) = v_before,
+    'unsupported quote association must leave the transaction intact'
+  );
+end;
+$$;
 reset role;
 
 select pg_temp.assert_true((select status = 'en_proceso' and next_contact_at is not null and next_contact_source = 'manual'

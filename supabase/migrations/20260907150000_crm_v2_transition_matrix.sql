@@ -881,6 +881,28 @@ end;
 $$;
 revoke all on function private.sale_quote_matches_lead(uuid, uuid, uuid) from public, anon, authenticated;
 
+-- Historical request schemas do not have quote_id. Keep the optional quote
+-- association in a lazily planned helper so quote-less requests remain
+-- compatible without conflating it with provisional_application_id.
+create or replace function private.create_lead_sale_request_with_quote(
+  p_lead_id uuid, p_seller_user_id uuid, p_vehicle text, p_amount numeric,
+  p_notes text, p_quote_id uuid
+)
+returns uuid language plpgsql security definer set search_path = '' as $$
+declare v_request_id uuid;
+begin
+  insert into public.lead_sale_requests
+    (lead_id, seller_user_id, vehicle, sale_amount, notes, quote_id)
+  values
+    (p_lead_id, p_seller_user_id, p_vehicle, p_amount, p_notes, p_quote_id)
+  returning id into v_request_id;
+  return v_request_id;
+exception when undefined_column then
+  raise exception 'Este entorno no soporta asociar presupuestos a solicitudes de venta';
+end;
+$$;
+revoke all on function private.create_lead_sale_request_with_quote(uuid, uuid, text, numeric, text, uuid) from public, anon, authenticated;
+
 create or replace function public.request_lead_sale_v2(
   p_lead_id uuid, p_vehicle text, p_amount numeric default null,
   p_notes text default '', p_quote_id uuid default null
@@ -904,9 +926,16 @@ begin
   select status into v_current_status from public.lead_crm where lead_id = p_lead_id for update;
   if v_current_status = 'venta' then raise exception 'La venta ya fue confirmada'; end if;
 
-  insert into public.lead_sale_requests (lead_id, seller_user_id, vehicle, sale_amount, notes, quote_id)
-  values (p_lead_id, v_user_id, trim(p_vehicle), p_amount, trim(coalesce(p_notes, '')), p_quote_id)
-  returning id into v_request_id;
+  if p_quote_id is null then
+    insert into public.lead_sale_requests (lead_id, seller_user_id, vehicle, sale_amount, notes)
+    values (p_lead_id, v_user_id, trim(p_vehicle), p_amount, trim(coalesce(p_notes, '')))
+    returning id into v_request_id;
+  else
+    v_request_id := private.create_lead_sale_request_with_quote(
+      p_lead_id, v_user_id, trim(p_vehicle), p_amount,
+      trim(coalesce(p_notes, '')), p_quote_id
+    );
+  end if;
 
   update public.lead_crm set status = case when v_current_status = 'sena' then 'sena' else 'cierre' end,
     priority = 'high', sale_confirmation_status = 'pending', sale_requested_at = now(),
