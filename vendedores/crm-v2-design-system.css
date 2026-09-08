@@ -137,14 +137,16 @@
 .crm-v2-workspace .crm-stage-badge{background:var(--cv2-text-primary);color:#fff;border-radius:999px;font-weight:800}
 
 /* Fila de contexto: modelo/origen/días/última interacción secundarios,
-   "Próxima acción" (5º ítem, siempre último) se destaca como hito. */
-.crm-workspace-context{border-radius:var(--cv2-radius-md);gap:1px;margin-top:14px}
-.crm-workspace-context>div{background:var(--cv2-surface-muted);padding:10px 13px}
+   en una sola línea compacta de 4 columnas. "Próxima acción" (5º ítem,
+   siempre último en renderWorkspaceContext) pasa a ocupar el ancho
+   completo como barra hito, con más peso tipográfico. */
+.crm-workspace-context{grid-template-columns:repeat(4,minmax(0,1fr));border-radius:var(--cv2-radius-md);gap:1px;margin-top:14px}
+.crm-workspace-context>div{background:var(--cv2-surface-muted);padding:9px 12px}
 .crm-workspace-context span{color:var(--cv2-text-tertiary);font-size:8px}
 .crm-workspace-context strong{color:var(--cv2-text-secondary);font-weight:700}
-.crm-workspace-context>div:last-child{background:var(--cv2-primary-soft);grid-column:span 2}
-.crm-workspace-context>div:last-child span{color:var(--cv2-primary-strong)}
-.crm-workspace-context>div:last-child strong{color:var(--cv2-primary-strong);font-size:12px;font-weight:800;white-space:normal}
+.crm-workspace-context>div:last-child{grid-column:1/-1;display:flex;align-items:baseline;gap:10px;padding:13px 16px;background:var(--cv2-primary-soft)}
+.crm-workspace-context>div:last-child span{flex:0 0 auto;color:var(--cv2-primary-strong);font-size:9px}
+.crm-workspace-context>div:last-child strong{color:var(--cv2-primary-strong);font-size:14px;font-weight:800;white-space:normal}
 
 /* ------------------------------------------------------------
    4. Toolbar de acciones — agrupada por función
@@ -297,4 +299,99 @@
 }
 @media(max-width:600px){
   .crm-action-link{flex:1 1 auto;justify-content:center}
+}
+
+/* ============================================================
+   SEGUNDA PASADA — refinamientos visuales
+   ============================================================ */
+
+/* ------------------------------------------------------------
+   14. Mi Cartera — header con resumen contextual integrado
+   ------------------------------------------------------------ */
+.crm-cartera-header{margin:0 0 18px;padding:20px 22px 6px;border:1px solid var(--cv2-border);border-radius:var(--cv2-radius-lg);background:linear-gradient(160deg,#fff 0%,var(--cv2-surface-muted) 130%);box-shadow:var(--cv2-shadow-xs)}
+.crm-cartera-header .crm-hero{margin-bottom:0;padding-bottom:16px;border-bottom:1px solid var(--cv2-border)}
+#crmAgendaView .crm-cartera-header .crm-summary{margin:16px 0 0;padding-bottom:16px;border-bottom:0}
+.crm-cartera-header .crm-stat{background:var(--cv2-surface)}
+
+/* ------------------------------------------------------------
+   15. Sidebar — jerarquía, ritmo e identidad SaaS premium
+   ------------------------------------------------------------ */
+.sidebar{padding:26px 16px 18px}
+.sidebar-logo{padding:0 6px 20px;border-bottom-color:rgba(255,255,255,.07)}
+.sidebar-nav{margin-top:20px;gap:3px}
+.nav-item{position:relative;min-height:42px;gap:11px;padding:9px 11px;border-radius:9px;color:rgba(255,255,255,.56);font-size:12.5px;transition:background .12s,color .12s}
+.nav-item:hover{border-color:transparent;background:rgba(255,255,255,.06);color:rgba(255,255,255,.92)}
+.nav-item.is-active{border-color:transparent;background:rgba(11,111,216,.18);color:#fff}
+.nav-item.is-active:before{position:absolute;inset:6px auto 6px 0;width:3px;border-radius:0 4px 4px 0;background:var(--cv2-primary);content:""}
+.nav-icon{width:24px;height:24px;border-radius:7px;background:rgba(255,255,255,.07);color:rgba(255,255,255,.7);font-size:13px;transition:background .12s,color .12s}
+.nav-item:hover .nav-icon{background:rgba(255,255,255,.12);color:#fff}
+.nav-item.is-active .nav-icon{background:var(--cv2-primary);color:#fff}
+.nav-count{background:var(--cv2-danger);box-shadow:0 0 0 2px var(--navy-950)}
+.seller-card{margin-top:auto;padding:11px;border:1px solid rgba(255,255,255,.08);border-radius:12px;background:rgba(255,255,255,.04)}
+.seller-avatar{background:linear-gradient(135deg,var(--cv2-primary),#35c6e8);box-shadow:0 0 0 2px rgba(255,255,255,.1)}
+.logout-button{margin-top:10px;border-radius:9px;border-color:rgba(255,255,255,.1);color:rgba(255,255,255,.55);transition:background .12s,color .12s,border-color .12s}
+.logout-button:hover{border-color:rgba(191,59,46,.4);color:#fff;background:rgba(191,59,46,.2)}
+@media(max-width:1200px){
+  .nav-item.is-active:before{inset:8px auto 8px 2px}
+}
+
+/* ------------------------------------------------------------
+   16. Datos del lead — grillas que aprovechan mejor el ancho
+   ------------------------------------------------------------ */
+.crm-state-facts{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+.crm-state-facts>div:first-child{background:var(--cv2-primary-soft)}
+.crm-state-facts>div:first-child span{color:var(--cv2-primary-strong)}
+.crm-state-facts>div:first-child strong{color:var(--cv2-primary-strong);font-size:13px}
+.crm-state-intro{max-width:none}
+.crm-state-intro>div{max-width:640px}
+
+/* ------------------------------------------------------------
+   17. "Resultado y próximo paso" — workspace form section moderna
+   Se agrupa por CSS (sin envolver los campos) para no alterar los
+   toggles de [data-next-contact-field] / [data-status-field].
+   ------------------------------------------------------------ */
+.crm-management-heading{align-items:center;padding:18px 0 4px;margin:22px 0 14px;border-top:1px solid var(--cv2-border)}
+.crm-management-heading span{color:var(--cv2-primary-strong)}
+.crm-management-heading strong{color:var(--cv2-text-primary);font-size:15px}
+.crm-form-grid.crm-management-fields{gap:14px 16px}
+.crm-management-fields label{gap:6px;color:var(--cv2-text-tertiary);font-size:9.5px;font-weight:800;letter-spacing:.03em;text-transform:uppercase}
+.crm-management-fields select,.crm-management-fields textarea,.crm-management-fields input{text-transform:none;letter-spacing:normal}
+.crm-status-legacy select{font-weight:700;color:var(--cv2-text-primary)}
+
+/* Chips de campo para Entrevista / Seña: agrupan sin envolver el DOM */
+.crm-management-fields label.crm-conditional[data-status-field]{padding:9px 11px;border-radius:var(--cv2-radius-sm)}
+.crm-management-fields label[data-status-field="entrevista"]{background:var(--cv2-cyan-soft)}
+.crm-management-fields label[data-status-field="entrevista"] span,
+.crm-management-fields label[data-status-field="entrevista"]{color:var(--cv2-cyan)}
+.crm-management-fields label[data-status-field="sena"]{background:var(--cv2-success-soft);color:var(--cv2-success-strong)}
+
+/* Separadores de subsección — anclados por id, sin tocar el markup.
+   "Fecha" y "Hora" comparten fila en la grilla de 2 columnas: el
+   divisor se aplica a AMBOS campos de la fila para que no se
+   desalineen verticalmente; el texto del rótulo sólo se dibuja
+   sobre el primero. */
+.crm-management-fields label:has(#crmNextContactDateInput),
+.crm-management-fields label:has(#crmNextContactTimeInput){position:relative;margin-top:8px;padding-top:18px;border-top:1px dashed var(--cv2-border)}
+.crm-management-fields label:has(#crmInterviewDateInput),
+.crm-management-fields label:has(#crmInterviewTimeInput){position:relative;margin-top:8px;padding-top:18px;border-top:1px dashed var(--cv2-border);background:transparent}
+.crm-management-fields label:has(#crmDepositInput){position:relative;margin-top:8px;padding-top:18px;border-top:1px dashed var(--cv2-border);background:transparent}
+.crm-management-fields label:has(#crmNextContactDateInput):before,
+.crm-management-fields label:has(#crmInterviewDateInput):before,
+.crm-management-fields label:has(#crmDepositInput):before{position:absolute;top:-7px;left:0;padding-right:6px;background:var(--cv2-surface);font-size:9px;font-weight:800;letter-spacing:.06em;text-transform:uppercase}
+.crm-management-fields label:has(#crmNextContactDateInput):before{content:"Próximo contacto";color:var(--cv2-primary-strong)}
+.crm-management-fields label:has(#crmInterviewDateInput):before{content:"Entrevista";color:var(--cv2-cyan)}
+.crm-management-fields label:has(#crmDepositInput):before{content:"Seña";color:var(--cv2-success-strong)}
+
+.crm-next-contact-shortcuts{padding:12px;border:1px solid var(--cv2-border);border-radius:var(--cv2-radius-sm);background:var(--cv2-surface-muted)}
+.crm-next-contact-shortcuts>span{color:var(--cv2-text-tertiary);font-size:9px;font-weight:800;letter-spacing:.03em;text-transform:uppercase}
+
+@media(max-width:760px){
+  .crm-cartera-header{padding:16px 16px 4px}
+  .crm-workspace-context{grid-template-columns:1fr 1fr}
+  .crm-state-facts{grid-template-columns:1fr 1fr}
+  .crm-management-fields label.crm-conditional[data-status-field]{grid-column:1/-1}
+  /* La grilla pasa a 1 columna: el divisor sólo hace falta una vez,
+     sobre el primer campo de cada grupo (ver regla :has() arriba). */
+  .crm-management-fields label:has(#crmNextContactTimeInput),
+  .crm-management-fields label:has(#crmInterviewTimeInput){margin-top:0;padding-top:0;border-top:0}
 }

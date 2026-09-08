@@ -410,9 +410,12 @@
         </section>
 
         <section class="view crm-view" id="crmAgendaView" aria-labelledby="crmAgendaTitle">
-          <div class="crm-hero">
-            <div><h1 id="crmAgendaTitle">Mi Cartera</h1><p>Tus oportunidades comerciales, ordenadas por prioridad y próxima acción.</p></div>
-            <div class="crm-hero-actions"><label class="crm-search"><span>⌕</span><input id="crmAgendaSearch" type="search" placeholder="Buscar cliente, teléfono o modelo"></label><button class="primary-button compact-button" id="crmRefreshButton" type="button">Actualizar</button></div>
+          <div class="crm-cartera-header">
+            <div class="crm-hero">
+              <div><h1 id="crmAgendaTitle">Mi Cartera</h1><p>Tus oportunidades comerciales, ordenadas por prioridad y próxima acción.</p></div>
+              <div class="crm-hero-actions"><label class="crm-search"><span>⌕</span><input id="crmAgendaSearch" type="search" placeholder="Buscar cliente, teléfono o modelo"></label><button class="primary-button compact-button" id="crmRefreshButton" type="button">Actualizar</button></div>
+            </div>
+            <div class="crm-summary" id="crmSummary"></div>
           </div>
           <p class="crm-message" id="crmAgendaMessage" role="status"></p>
           <div class="portfolio-toolbar" aria-label="Filtros de Mi Cartera">
@@ -432,7 +435,6 @@
               <button type="button" data-portfolio-view="upcoming" aria-pressed="false">Próximos</button>
             </div></div>
           </div>
-          <div class="crm-summary" id="crmSummary"></div>
           <div class="agenda-sections" id="crmAgenda"></div>
         </section>
 
