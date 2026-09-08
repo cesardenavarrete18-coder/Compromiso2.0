@@ -24,7 +24,8 @@ values
   ('9e330000-0000-4000-8000-000000000203', '5491100001203', '5491100001203', 'E2E Rollback'),
   ('9e330000-0000-4000-8000-000000000204', '5491100001204', '5491100001204', 'E2E Inválido'),
   ('9e330000-0000-4000-8000-000000000205', '5491100001205', '5491100001205', 'E2E Venta'),
-  ('9e330000-0000-4000-8000-000000000206', '5491100001206', '5491100001206', 'E2E Presupuesto incompatible');
+  ('9e330000-0000-4000-8000-000000000206', '5491100001206', '5491100001206', 'E2E Presupuesto incompatible'),
+  ('9e330000-0000-4000-8000-000000000207', '5491100001207', '5491100001207', 'E2E Venta rechazada');
 insert into public.leads (
   id, customer_id, customer_phone, customer_name, source_channel, qualification_status,
   routing_status, routing_reason, assigned_seller_user_id, assigned_by_user_id, assigned_at
@@ -35,11 +36,13 @@ values
   ('9e330000-0000-4000-8000-000000000303', '9e330000-0000-4000-8000-000000000203', '5491100001203', 'E2E Rollback', 'manual', 'qualified', 'assigned_manual', 'crm_v2_e2e', '9e330000-0000-4000-8000-000000000101', '9e330000-0000-4000-8000-000000000101', now()),
   ('9e330000-0000-4000-8000-000000000304', '9e330000-0000-4000-8000-000000000204', '5491100001204', 'E2E Inválido', 'manual', 'qualified', 'assigned_manual', 'crm_v2_e2e', '9e330000-0000-4000-8000-000000000101', '9e330000-0000-4000-8000-000000000101', now()),
   ('9e330000-0000-4000-8000-000000000305', '9e330000-0000-4000-8000-000000000205', '5491100001205', 'E2E Venta', 'manual', 'qualified', 'assigned_manual', 'crm_v2_e2e', '9e330000-0000-4000-8000-000000000101', '9e330000-0000-4000-8000-000000000101', now()),
-  ('9e330000-0000-4000-8000-000000000306', '9e330000-0000-4000-8000-000000000206', '5491100001206', 'E2E Presupuesto incompatible', 'manual', 'qualified', 'assigned_manual', 'crm_v2_e2e', '9e330000-0000-4000-8000-000000000101', '9e330000-0000-4000-8000-000000000101', now());
+  ('9e330000-0000-4000-8000-000000000306', '9e330000-0000-4000-8000-000000000206', '5491100001206', 'E2E Presupuesto incompatible', 'manual', 'qualified', 'assigned_manual', 'crm_v2_e2e', '9e330000-0000-4000-8000-000000000101', '9e330000-0000-4000-8000-000000000101', now()),
+  ('9e330000-0000-4000-8000-000000000307', '9e330000-0000-4000-8000-000000000207', '5491100001207', 'E2E Venta rechazada', 'manual', 'qualified', 'assigned_manual', 'crm_v2_e2e', '9e330000-0000-4000-8000-000000000101', '9e330000-0000-4000-8000-000000000101', now());
 update public.lead_crm set status = 'no_contesta' where lead_id in (
   '9e330000-0000-4000-8000-000000000301', '9e330000-0000-4000-8000-000000000302',
   '9e330000-0000-4000-8000-000000000303', '9e330000-0000-4000-8000-000000000304',
-  '9e330000-0000-4000-8000-000000000305', '9e330000-0000-4000-8000-000000000306'
+  '9e330000-0000-4000-8000-000000000305', '9e330000-0000-4000-8000-000000000306',
+  '9e330000-0000-4000-8000-000000000307'
 );
 
 set local role authenticated;
@@ -65,8 +68,40 @@ select public.request_lead_sale_v2(
 select pg_temp.assert_true((select status = 'sena' and sale_confirmation_status = 'pending' from public.lead_crm where lead_id = '9e330000-0000-4000-8000-000000000305'), 'pending sale request must preserve Seña');
 select set_config('request.jwt.claim.sub', '9e330000-0000-4000-8000-000000000102', true);
 select public.review_lead_sale((select id from public.lead_sale_requests where lead_id = '9e330000-0000-4000-8000-000000000305' and status = 'pending'), true, 'Venta aprobada E2E');
-select pg_temp.assert_true((select status = 'venta' and sale_confirmation_status = 'confirmed' from public.lead_crm where lead_id = '9e330000-0000-4000-8000-000000000305'), 'Seña -> Venta must succeed through approval');
-select pg_temp.assert_true(exists (select 1 from public.sales_cases where lead_id = '9e330000-0000-4000-8000-000000000305'), 'Venta must enter the existing Administration circuit');
+select pg_temp.assert_true((select status = 'venta' and sale_confirmation_status = 'confirmed' and deposit_amount = 300000 and deposit_at is not null from public.lead_crm where lead_id = '9e330000-0000-4000-8000-000000000305'), 'Seña -> Venta must succeed through approval and preserve deposit');
+select pg_temp.assert_true((select count(*) = 1 from public.sales_cases where lead_id = '9e330000-0000-4000-8000-000000000305'), 'Venta must enter the existing Administration circuit exactly once');
+do $$
+begin
+  begin
+    perform public.review_lead_sale(
+      (select id from public.lead_sale_requests where lead_id = '9e330000-0000-4000-8000-000000000305'),
+      true, 'Aprobación duplicada'
+    );
+    raise exception 'expected duplicate review rejection';
+  exception when others then
+    if sqlerrm not like 'La solicitud ya fue revisada%' then raise; end if;
+  end;
+  perform pg_temp.assert_true(
+    (select count(*) from public.sales_cases where lead_id = '9e330000-0000-4000-8000-000000000305') = 1,
+    'duplicate approval must not duplicate the Administration case'
+  );
+end;
+$$;
+reset role;
+
+-- Rejection is also portable: only status is required on the historical
+-- request row, Seña and its deposit remain, and no Administration case exists.
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '9e330000-0000-4000-8000-000000000101', true);
+select public.record_lead_follow_up(p_lead_id => '9e330000-0000-4000-8000-000000000307', p_status => 'en_proceso', p_note => 'Gestión activa', p_next_contact_at => now() + interval '1 day');
+select public.record_lead_follow_up(p_lead_id => '9e330000-0000-4000-8000-000000000307', p_status => 'cierre', p_note => 'Propuesta final', p_next_contact_at => now() + interval '1 day');
+select public.record_lead_follow_up(p_lead_id => '9e330000-0000-4000-8000-000000000307', p_status => 'sena', p_note => 'Seña a observar', p_next_contact_at => now() + interval '1 day', p_deposit_amount => 250000);
+select public.request_lead_sale_v2(p_lead_id => '9e330000-0000-4000-8000-000000000307', p_vehicle => 'Vehículo rechazado', p_quote_id => null);
+select set_config('request.jwt.claim.sub', '9e330000-0000-4000-8000-000000000102', true);
+select public.review_lead_sale((select id from public.lead_sale_requests where lead_id = '9e330000-0000-4000-8000-000000000307' and status = 'pending'), false, 'Venta observada E2E');
+select pg_temp.assert_true((select status = 'sena' and sale_confirmation_status = 'rejected' and deposit_amount = 250000 and deposit_at is not null from public.lead_crm where lead_id = '9e330000-0000-4000-8000-000000000307'), 'rejection must preserve Seña and its deposit');
+select pg_temp.assert_true((select status = 'rejected' from public.lead_sale_requests where lead_id = '9e330000-0000-4000-8000-000000000307'), 'historical request must be rejected using status only');
+select pg_temp.assert_true(not exists (select 1 from public.sales_cases where lead_id = '9e330000-0000-4000-8000-000000000307'), 'rejection must not create an Administration case');
 reset role;
 
 -- A historical schema without quote association rejects a supplied quote
@@ -96,6 +131,15 @@ begin
   );
 end;
 $$;
+select public.record_lead_follow_up(
+  p_lead_id => '9e330000-0000-4000-8000-000000000306', p_status => 'desistir',
+  p_note => 'Operación cancelada por el cliente'
+);
+select pg_temp.assert_true(
+  (select status = 'desistir' and cold_base_at is null from public.lead_crm
+   where lead_id = '9e330000-0000-4000-8000-000000000306'),
+  'manual Desistir must not classify the lead as Base fría'
+);
 reset role;
 
 select pg_temp.assert_true((select status = 'en_proceso' and next_contact_at is not null and next_contact_source = 'manual'

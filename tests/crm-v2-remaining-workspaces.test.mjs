@@ -83,6 +83,9 @@ test("Venta permanece terminal y reutiliza Datero/Administración", () => {
   assert.ok(requestSale.includes("private.create_lead_sale_request_with_quote"));
   assert.ok(migration.includes("Este entorno no soporta asociar presupuestos a solicitudes de venta"));
   assert.ok(requestSale.includes("case when v_current_status = 'sena' then 'sena' else 'cierre' end"));
+  assert.doesNotMatch(reviewSale, /reviewed_by|reviewed_at|review_note\s*=/);
+  assert.ok(reviewSale.includes("perform private.enrich_lead_sale_request_review"));
+  assert.ok(reviewSale.includes("insert into public.sales_cases"));
   assert.ok(reviewSale.includes("case when p_approved then 'venta' when v_current_status = 'sena' then 'sena' else 'cierre' end"));
 });
 
@@ -91,6 +94,8 @@ test("Desistir e Inválido son terminales manuales con trazabilidad", () => {
   assert.deepEqual(Array.from(transitions.allowedFrom("invalido")), []);
   assert.equal(transitions.canTransition("desistir", "nuevo"), false);
   assert.equal(transitions.canTransition("invalido", "nuevo"), false);
+  assert.ok(migration.includes("p_status = 'desistir' and trim(coalesce(p_note, '')) = 'No contactado post protocolo' then now()"));
+  assert.ok(migration.includes("else 'Oportunidad desistida' end"));
   assert.match(migration, /p_status in \('invalido', 'desistir'\)[\s\S]*Indicá el motivo/);
   assert.ok(migration.includes("previous_status = case when p_status in ('desistir', 'invalido')"));
   assert.ok(crm.includes('baseCold ? "Base fría"'));

@@ -661,7 +661,8 @@ begin
     when 'entrevista' then 'Entrevista programada'
     when 'cierre' then 'Oportunidad en cierre'
     when 'sena' then 'Seña registrada'
-    when 'desistir' then 'Lead enviado a base fría'
+    when 'desistir' then case when trim(coalesce(p_note, '')) = 'No contactado post protocolo'
+      then 'Lead enviado a base fría' else 'Oportunidad desistida' end
   end;
 
   perform private.cancel_lead_contact_protocol(p_lead_id, 'Gestión manual registrada');
@@ -684,7 +685,7 @@ begin
     deposit_amount = coalesce(p_deposit_amount, deposit_amount),
     deposit_at = case when p_status = 'sena' then now() else deposit_at end,
     deposit_validation = case when p_status = 'sena' then trim(coalesce(p_deposit_validation, '')) else deposit_validation end,
-    cold_base_at = case when p_status = 'desistir' then now() else null end,
+    cold_base_at = case when p_status = 'desistir' and trim(coalesce(p_note, '')) = 'No contactado post protocolo' then now() else null end,
     previous_status = case when p_status in ('desistir', 'invalido') then v_previous_status else previous_status end,
     terminal_at = case when p_status in ('desistir', 'invalido') then now() else null end,
     updated_by = v_user_id,
@@ -817,7 +818,8 @@ begin
     when 'entrevista' then 'Entrevista programada'
     when 'cierre' then 'Oportunidad en cierre'
     when 'sena' then 'Seña registrada'
-    when 'desistir' then 'Lead enviado a base fría'
+    when 'desistir' then case when trim(coalesce(p_note, '')) = 'No contactado post protocolo'
+      then 'Lead enviado a base fría' else 'Oportunidad desistida' end
   end;
 
   update public.lead_crm set
@@ -838,7 +840,7 @@ begin
     deposit_amount = case when p_status = 'sena' then p_deposit_amount else deposit_amount end,
     deposit_at = case when p_status = 'sena' then now() else deposit_at end,
     deposit_validation = case when p_status = 'sena' then trim(coalesce(p_deposit_validation, '')) else deposit_validation end,
-    cold_base_at = case when p_status = 'desistir' then now() else null end,
+    cold_base_at = case when p_status = 'desistir' and trim(coalesce(p_note, '')) = 'No contactado post protocolo' then now() else null end,
     previous_status = case when p_status = 'desistir' then v_previous_status else previous_status end,
     terminal_at = case when p_status = 'desistir' then now() else null end,
     updated_by = v_user_id,
@@ -953,6 +955,23 @@ $$;
 revoke all on function public.request_lead_sale_v2(uuid, text, numeric, text, uuid) from public, anon;
 grant execute on function public.request_lead_sale_v2(uuid, text, numeric, text, uuid) to authenticated;
 
+-- Review metadata is optional in historical lead_sale_requests schemas. The
+-- status remains the canonical portable field; richer audit also lives in
+-- lead_crm and lead_activities.
+create or replace function private.enrich_lead_sale_request_review(
+  p_request_id uuid, p_reviewer_id uuid, p_review_note text
+)
+returns void language plpgsql security definer set search_path = '' as $$
+begin
+  update public.lead_sale_requests
+  set reviewed_by = p_reviewer_id, reviewed_at = now(), review_note = p_review_note
+  where id = p_request_id;
+exception when undefined_column then
+  null;
+end;
+$$;
+revoke all on function private.enrich_lead_sale_request_review(uuid, uuid, text) from public, anon, authenticated;
+
 create or replace function public.review_lead_sale(p_request_id uuid, p_approved boolean, p_review_note text default '')
 returns void language plpgsql security definer set search_path = '' as $$
 declare
@@ -966,8 +985,12 @@ begin
   if v_request.status <> 'pending' then raise exception 'La solicitud ya fue revisada'; end if;
   select status into v_current_status from public.lead_crm where lead_id = v_request.lead_id for update;
 
-  update public.lead_sale_requests set status = case when p_approved then 'confirmed' else 'rejected' end,
-    reviewed_by = v_user_id, reviewed_at = now(), review_note = trim(coalesce(p_review_note, '')) where id = p_request_id;
+  update public.lead_sale_requests
+  set status = case when p_approved then 'confirmed' else 'rejected' end
+  where id = p_request_id;
+  perform private.enrich_lead_sale_request_review(
+    p_request_id, v_user_id, trim(coalesce(p_review_note, ''))
+  );
   update public.lead_crm set status = case when p_approved then 'venta' when v_current_status = 'sena' then 'sena' else 'cierre' end,
     priority = 'high', sale_confirmation_status = case when p_approved then 'confirmed' else 'rejected' end,
     sale_confirmed_at = case when p_approved then now() else null end,
@@ -978,6 +1001,14 @@ begin
     next_contact_source = case when p_approved then null else next_contact_source end,
     updated_by = v_user_id, updated_at = now()
   where lead_id = v_request.lead_id;
+  if p_approved and not exists (
+    select 1 from public.sales_cases where lead_id = v_request.lead_id
+  ) then
+    insert into public.sales_cases
+      (sale_request_id, lead_id, seller_user_id, vehicle, sale_amount)
+    values
+      (v_request.id, v_request.lead_id, v_request.seller_user_id, v_request.vehicle, v_request.sale_amount);
+  end if;
   insert into public.lead_activities (lead_id, actor_user_id, activity_type, title, detail, metadata)
   values (v_request.lead_id, v_user_id, 'sale_confirmation', case when p_approved then 'Venta confirmada' else 'Venta observada por supervisión' end,
     trim(coalesce(p_review_note, '')), jsonb_build_object('approved', p_approved, 'vehicle', v_request.vehicle,
