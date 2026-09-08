@@ -83,7 +83,7 @@
 
   function missingTaskAuditColumns(error) {
     var message = String(error && error.message || "");
-    return Boolean(error && /performed_at|recorded_at|protocol_day|protocol_band|band_attempt/i.test(message) && (["42703", "PGRST204"].includes(error.code) || /does not exist|schema cache|could not find/i.test(message)));
+    return Boolean(error && /performed_at|recorded_at|protocol_day|protocol_band|band_attempt|interview_mode|interview_operational_status|interview_objective|final_objection|deposit_validation|post_deposit_action|previous_status|terminal_at/i.test(message) && (["42703", "PGRST204"].includes(error.code) || /does not exist|schema cache|could not find/i.test(message)));
   }
 
   function normalizeTasks(tasks, schema) {

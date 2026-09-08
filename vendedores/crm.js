@@ -21,7 +21,9 @@
     { value: "desistir", label: "Desistir" }
   ];
   var CLOSED_STAGES = ["venta", "desistir", "invalido"];
-  var state = { leads: [], tasks: [], taskSchema: "unknown", taskLoadError: null, appraisals: [], commercialCatalog: [], activeLead: null, view: "agenda", searchAgenda: "", searchPipeline: "", portfolioStatus: "all", portfolioView: "all", pendingProtocolAnsweredTaskId: null, loading: false };
+  var LEAD_FIELDS_LEGACY = "id, customer_id, customer_phone, customer_name, source_channel, source_detail, qualification_status, priority, intent_summary, model_interest, assigned_at, last_message_at, created_at, customer:customers(full_name,primary_phone,email,document_number,cuil), attribution:lead_attributions(platform,source_type,campaign_name,adset_name,ad_name,headline,source_url), crm:lead_crm(status, priority, status_reason, next_contact_at, next_contact_note, next_contact_source, last_contact_at, last_contact_outcome, interview_at, interview_location, deposit_amount, deposit_at, cold_base_at, sale_confirmation_status, sale_requested_at, sale_confirmed_at, vehicle_sold, sale_amount, updated_at)";
+  var LEAD_FIELDS_V2 = LEAD_FIELDS_LEGACY.replace("interview_at, interview_location,", "interview_at, interview_location, interview_mode, interview_operational_status, interview_objective, final_objection,").replace("deposit_amount, deposit_at,", "deposit_amount, deposit_at, deposit_validation, post_deposit_action_at, post_deposit_action_status, previous_status, terminal_at,");
+  var state = { leads: [], tasks: [], crmSchema: "unknown", taskSchema: "unknown", taskLoadError: null, appraisals: [], commercialCatalog: [], activeLead: null, view: "agenda", searchAgenda: "", searchPipeline: "", portfolioStatus: "all", portfolioView: "all", pendingProtocolAnsweredTaskId: null, loading: false };
   var leadDialog = document.getElementById("crmLeadDialog");
   var commentDialog = document.getElementById("crmCommentDialog");
   var commercialSelectionDialog = document.getElementById("crmCommercialSelectionDialog");
@@ -254,6 +256,14 @@
       .join(" ").toLocaleLowerCase("es-AR").includes(query);
   }
 
+  async function loadPortfolioLeads() {
+    var v2 = await supabaseClient.from("leads").select(LEAD_FIELDS_V2).order("last_message_at", { ascending: false }).limit(500);
+    if (!v2.error) return { data: v2.data, error: null, schema: "v2" };
+    if (!agendaModel.missingTaskAuditColumns(v2.error)) return { data: [], error: v2.error, schema: "unavailable" };
+    var legacy = await supabaseClient.from("leads").select(LEAD_FIELDS_LEGACY).order("last_message_at", { ascending: false }).limit(500);
+    return { data: legacy.data || [], error: legacy.error || null, schema: legacy.error ? "unavailable" : "legacy" };
+  }
+
   async function loadLeads(silent) {
     if (state.loading) return;
     state.loading = true;
@@ -261,15 +271,14 @@
     if (!silent) message.textContent = "Actualizando cartera…";
     try {
       var responses = await Promise.all([
-        supabaseClient.from("leads").select(
-          "id, customer_id, customer_phone, customer_name, source_channel, source_detail, qualification_status, priority, intent_summary, model_interest, assigned_at, last_message_at, created_at, customer:customers(full_name,primary_phone,email,document_number,cuil), attribution:lead_attributions(platform,source_type,campaign_name,adset_name,ad_name,headline,source_url), crm:lead_crm(status, priority, status_reason, next_contact_at, next_contact_note, next_contact_source, last_contact_at, last_contact_outcome, interview_at, interview_location, deposit_amount, deposit_at, cold_base_at, sale_confirmation_status, sale_requested_at, sale_confirmed_at, vehicle_sold, sale_amount, updated_at)"
-        ).order("last_message_at", { ascending: false }).limit(500),
+        loadPortfolioLeads(),
         agendaModel.loadContactTasks(supabaseClient),
         supabaseClient.from("vehicle_appraisals").select("id, lead_id, brand, model, version, vehicle_year, mileage_km, condition, notes, estimated_min, estimated_max, market_median, suggested_value, market_currency, estimate_source, estimate_basis, reference_count, market_references, market_checked_at, status, confirmed_value, confirmed_currency, review_note, updated_at").order("updated_at", { ascending: false }).limit(500)
       ]);
       if (responses[0].error) throw responses[0].error;
       if (responses[2].error) throw responses[2].error;
       state.leads = responses[0].data || [];
+      state.crmSchema = responses[0].schema;
       state.tasks = responses[1].tasks || [];
       state.taskSchema = responses[1].schema;
       state.taskLoadError = responses[1].error || null;
@@ -603,8 +612,9 @@
 
   function renderTransitionPicker(fromStatus) {
     var picker = document.getElementById("crmTransitionPicker");
-    picker.hidden = ["nuevo", "no_contesta", "contacto_futuro", "venta"].includes(fromStatus);
-    document.getElementById("crmTransitionOptions").innerHTML = transitionButtons(transitionModel.allowedFrom(fromStatus));
+    var allowed = transitionModel.allowedFrom(fromStatus);
+    picker.hidden = ["nuevo", "no_contesta", "contacto_futuro", "venta"].includes(fromStatus) || allowed.length === 0;
+    document.getElementById("crmTransitionOptions").innerHTML = transitionButtons(allowed);
   }
 
   function selectWorkspaceTransition(status) {
@@ -666,6 +676,53 @@
     await openLead(leadId);
   }
 
+  function stateFact(label, value) {
+    return '<div><span>' + escapeHtml(label) + '</span><strong>' + escapeHtml(value || "—") + '</strong></div>';
+  }
+
+  function statePlaybook(groups) {
+    return '<div class="crm-state-playbook">' + groups.map(function (group) {
+      return '<section><strong>' + escapeHtml(group.title) + '</strong><ul>' + group.items.map(function (item) { return '<li>' + escapeHtml(item) + '</li>'; }).join("") + '</ul></section>';
+    }).join("") + '</div>';
+  }
+
+  function renderStateWorkspace(lead, crm) {
+    var panel = document.getElementById("crmStateWorkspace");
+    var target = document.getElementById("crmStateWorkspaceContent");
+    var status = crm.status;
+    var supported = ["entrevista", "cierre", "sena", "venta", "desistir", "invalido"].includes(status);
+    panel.hidden = !supported;
+    if (!supported) { target.innerHTML = ""; return; }
+    var next = crm.next_contact_at ? formatDate(crm.next_contact_at, true) : "Sin próxima acción registrada";
+    var operation = lead.model_interest || crm.vehicle_sold || "Operación a definir";
+    var results = function (items) { return '<div class="crm-state-results" aria-label="Resultados comerciales">' + transitionButtons(items) + '</div>'; };
+
+    if (status === "entrevista") {
+      var interviewParts = dateParts(crm.interview_at);
+      target.innerHTML = '<article class="crm-state-panel"><header><div><p class="eyebrow dark">Entrevista</p><h3>Entrevista comercial concreta</h3><p>Presencial o Videollamada. Los estados operativos no modifican por sí solos el estado comercial.</p></div><span class="crm-stage" data-stage="entrevista">' + escapeHtml(stageLabel(status)) + '</span></header>' +
+        '<div class="crm-state-facts">' + stateFact("Fecha y hora", crm.interview_at ? formatDate(crm.interview_at, true) : "Pendiente") + stateFact("Modalidad", crm.interview_mode === "videollamada" ? "Videollamada" : crm.interview_mode === "presencial" ? "Presencial" : "Pendiente") + stateFact("Estado operativo", crm.interview_operational_status || "scheduled") + stateFact("Objetivo", crm.interview_objective || "Sin contexto") + '</div>' +
+        '<div class="crm-state-operation"><label>Fecha<input id="crmInterviewOperationDate" value="' + escapeHtml(interviewParts.date) + '" placeholder="dd/mm/aaaa"></label><label>Hora<input id="crmInterviewOperationTime" type="time" value="' + escapeHtml(interviewParts.time) + '"></label><label>Modalidad<select id="crmInterviewOperationMode"><option value="presencial"' + (crm.interview_mode === "presencial" ? " selected" : "") + '>Presencial</option><option value="videollamada"' + (crm.interview_mode === "videollamada" ? " selected" : "") + '>Videollamada</option></select></label><label>Lugar / medio<input id="crmInterviewOperationLocation" value="' + escapeHtml(crm.interview_location || "") + '"></label><label class="wide">Objetivo / contexto<textarea id="crmInterviewOperationObjective">' + escapeHtml(crm.interview_objective || "") + '</textarea></label></div>' +
+        '<div class="crm-state-actions"><button type="button" data-interview-operation="confirmed">Confirmar</button><button type="button" data-interview-operation="rescheduled">Reprogramar</button><button type="button" data-interview-operation="no_show">No-show</button><button class="primary" type="button" data-show-interview-results>Completar entrevista y registrar resultado</button></div>' +
+        statePlaybook([{ title: "Preparación", items: ["Contexto comercial disponible", "Propuesta o presupuesto", "Información necesaria"] }, { title: "Confirmación", items: ["Confirmar asistencia", "Confirmar Presencial o Videollamada"] }, { title: "Entrevista", items: ["Revisar operación", "Resolver dudas", "Registrar información relevante"] }, { title: "Resultado", items: ["Registrar el siguiente estado comercial"] }]) +
+        '<div><p class="eyebrow dark">Resultado comercial</p>' + results(["en_proceso", "entrevista", "cierre", "sena", "venta", "desistir"]) + '</div></article>';
+    } else if (status === "cierre") {
+      target.innerHTML = '<article class="crm-state-panel"><header><div><p class="eyebrow dark">Cierre</p><h3>Definir si la operación se concreta</h3><p>La modalidad, capacidad, anticipo, usado y calificación deben estar resueltos antes de esta etapa.</p></div><span class="crm-stage" data-stage="cierre">Cierre</span></header><div class="crm-state-facts">' + stateFact("Operación / propuesta", operation) + stateFact("Próximo contacto", next) + stateFact("Impedimento final", crm.final_objection || crm.status_reason || "Pendiente de registrar") + stateFact("Acción principal", crm.next_contact_note || "Resolver y confirmar decisión") + '</div>' + statePlaybook([{ title: "Condición final", items: ["Propuesta definida", "Impedimento final identificado"] }, { title: "Resolución", items: ["Resolver objeción", "Confirmar decisión", "Formalizar la operación"] }]) + '<div><p class="eyebrow dark">Resultado comercial</p>' + results(["cierre", "entrevista", "en_proceso", "sena", "venta", "desistir"]) + '</div></article>';
+    } else if (status === "sena") {
+      var postParts = dateParts(crm.post_deposit_action_at);
+      target.innerHTML = '<article class="crm-state-panel"><header><div><p class="eyebrow dark">Seña</p><h3>Compromiso económico registrado</h3><p>Las acciones posteriores ocurren dentro de Seña y nunca degradan el estado comercial.</p></div><span class="crm-stage" data-stage="sena">Seña</span></header><div class="crm-state-facts">' + stateFact("Importe", crm.deposit_amount ? money(crm.deposit_amount) : "Pendiente") + stateFact("Fecha", crm.deposit_at ? formatDate(crm.deposit_at, true) : "Pendiente") + stateFact("Condición / validación", crm.deposit_validation || "Sin detalle") + stateFact("Operación", operation) + '</div><div class="crm-state-operation"><label>Próxima acción<input id="crmPostDepositDate" value="' + escapeHtml(postParts.date) + '" placeholder="dd/mm/aaaa"></label><label>Hora<input id="crmPostDepositTime" type="time" value="' + escapeHtml(postParts.time) + '"></label><label>Modalidad<select id="crmPostDepositMode"><option value="presencial">Presencial</option><option value="videollamada">Videollamada</option></select></label><label>Estado<strong>' + escapeHtml(crm.post_deposit_action_status || "Sin programar") + '</strong></label><label class="wide">Contexto<input id="crmPostDepositNote" placeholder="Objetivo de la acción posterior a la seña"></label></div><div class="crm-state-actions"><button type="button" data-post-deposit-operation="scheduled">Programar</button><button type="button" data-post-deposit-operation="confirmed">Confirmar</button><button type="button" data-post-deposit-operation="rescheduled">Reprogramar</button><button class="primary" type="button" data-post-deposit-operation="completed">Completar</button></div><div><p class="eyebrow dark">Resultado comercial</p>' + results(["sena", "venta", "desistir"]) + '</div></article>';
+    } else if (status === "venta") {
+      var adminStatus = crm.sale_confirmation_status === "confirmed" ? "Confirmada" : crm.sale_confirmation_status === "pending" ? "Enviada a Administración" : "Datero pendiente";
+      target.innerHTML = '<article class="crm-state-panel crm-sale-panel"><header><div><p class="eyebrow dark">Venta</p><h3>Operación enviada al circuito administrativo</h3><p>El estado permanece Venta y no vuelve al funnel comercial.</p></div><span class="crm-stage" data-stage="venta">Venta</span></header><div class="crm-state-facts">' + stateFact("Operación vendida", crm.vehicle_sold || operation) + stateFact("Importe", crm.sale_amount ? money(crm.sale_amount) : "Según Datero") + stateFact("Administración", adminStatus) + stateFact("Envío", crm.sale_requested_at ? formatDate(crm.sale_requested_at, true) : "Pendiente") + '</div><div class="crm-state-actions"><button class="primary" type="button" data-open-existing-datero>Completar / ver Datero</button></div></article>';
+    } else {
+      var invalid = status === "invalido";
+      var baseCold = !invalid && crm.status_reason === "No contactado post protocolo";
+      target.innerHTML = '<article class="crm-state-panel crm-terminal-panel"><header><div><p class="eyebrow dark">' + escapeHtml(invalid ? "Calidad del dato" : "Oportunidad cerrada") + '</p><h3>' + escapeHtml(invalid ? "Inválido / Dato erróneo" : "Desistir") + '</h3><p>No se ofrecen transiciones comerciales manuales. Una reactivación requiere un nuevo ciclo autorizado.</p></div><span class="crm-stage" data-stage="' + escapeHtml(status) + '">' + escapeHtml(stageLabel(status)) + '</span></header><div class="crm-state-facts">' + stateFact("Motivo", crm.status_reason || "Sin motivo registrado") + stateFact("Fecha", crm.terminal_at ? formatDate(crm.terminal_at, true) : "Histórica sin fecha inferida") + stateFact("Estado anterior", crm.previous_status ? stageLabel(crm.previous_status) : "Ver historial") + stateFact("Segmento", baseCold ? "Base fría" : invalid ? "Calidad de dato" : "Cerrada") + '</div></article>';
+    }
+    var stateError = document.getElementById("crmStateWorkspaceError");
+    stateError.textContent = state.crmSchema === "v2" ? "" : "Modo compatible: las acciones estructuradas de este estado requieren la migración CRM V2.";
+    if (state.crmSchema !== "v2") target.querySelectorAll("[data-interview-operation],[data-post-deposit-operation]").forEach(function (button) { button.disabled = true; });
+  }
+
   async function openLead(leadId) {
     var lead = state.leads.find(function (item) { return item.id === leadId; });
     if (!lead) return;
@@ -675,11 +732,13 @@
     var isManagement = crm.status === "en_proceso";
     var isNoContact = crm.status === "no_contesta";
     var isFutureContact = crm.status === "contacto_futuro";
-    leadDialog.classList.toggle("crm-v2-workspace", isNew || isManagement || isNoContact || isFutureContact);
+    var isStateWorkspace = ["entrevista", "cierre", "sena", "venta", "desistir", "invalido"].includes(crm.status);
+    leadDialog.classList.toggle("crm-v2-workspace", true);
     leadDialog.classList.toggle("is-new", isNew);
     leadDialog.classList.toggle("is-management", isManagement);
     leadDialog.classList.toggle("is-no-contact", isNoContact);
     leadDialog.classList.toggle("is-future-contact", isFutureContact);
+    leadDialog.classList.toggle("is-state-workspace", isStateWorkspace);
     leadDialog.classList.remove("is-editing-outcome");
     document.getElementById("crmNewExperience").hidden = !isNew;
     document.getElementById("crmNoContactExperience").hidden = !isNoContact;
@@ -688,6 +747,7 @@
     if (isNew) renderNewExperience();
     if (isNoContact) renderNoContactProtocol(lead);
     if (isFutureContact) renderFutureContact(lead, crm);
+    renderStateWorkspace(lead, crm);
     if (window.grupoSurEnGestionExperience) window.grupoSurEnGestionExperience.openLead(lead);
     document.getElementById("crmLeadName").textContent = lead.customer_name || "Cliente sin nombre";
     var phoneDigits = String(lead.customer_phone || "").replace(/\D/g, "");
@@ -716,7 +776,9 @@
     document.getElementById("crmInterviewDateInput").value = interviewParts.date;
     document.getElementById("crmInterviewTimeInput").value = interviewParts.time;
     document.getElementById("crmInterviewLocationInput").value = crm.interview_location || "";
+    document.getElementById("crmInterviewModeInput").value = crm.interview_mode || "presencial";
     document.getElementById("crmDepositInput").value = crm.deposit_amount || "";
+    document.getElementById("crmDepositValidationInput").value = crm.deposit_validation || "";
     document.getElementById("crmFormError").textContent = "";
     var saleButton = document.getElementById("crmSaleButton");
     var managementButton = document.getElementById("crmSaveManagement");
@@ -783,6 +845,11 @@
       p_deposit_amount: deposit ? Number(deposit) : null,
       p_priority: document.getElementById("crmPriorityInput").value
     };
+    if (state.crmSchema === "v2") {
+      payload.p_interview_mode = status === "entrevista" ? document.getElementById("crmInterviewModeInput").value : null;
+      payload.p_interview_operational_status = status === "entrevista" ? "scheduled" : null;
+      payload.p_deposit_validation = status === "sena" ? document.getElementById("crmDepositValidationInput").value.trim() : "";
+    }
     if (state.pendingProtocolAnsweredTaskId) {
       if (state.taskSchema !== "v2") {
         errorBox.textContent = "Registrar una respuesta con transición desde el protocolo requiere la migración CRM V2 en este entorno.";
@@ -866,6 +933,45 @@
     if (protocol && protocolWasOpen) protocol.open = true;
   }
 
+  async function saveInterviewOperation(status) {
+    var errorBox = document.getElementById("crmStateWorkspaceError");
+    errorBox.textContent = "";
+    try {
+      var at = parseArgentineDateTime(document.getElementById("crmInterviewOperationDate").value, document.getElementById("crmInterviewOperationTime").value, "la entrevista");
+      var result = await supabaseClient.rpc("record_interview_operation", {
+        p_lead_id: state.activeLead.id,
+        p_operational_status: status,
+        p_interview_at: at,
+        p_mode: document.getElementById("crmInterviewOperationMode").value,
+        p_objective: document.getElementById("crmInterviewOperationObjective").value.trim(),
+        p_location: document.getElementById("crmInterviewOperationLocation").value.trim()
+      });
+      if (result.error) throw result.error;
+      var leadId = state.activeLead.id;
+      await loadLeads(true);
+      await openLead(leadId);
+    } catch (error) { errorBox.textContent = error.message; }
+  }
+
+  async function savePostDepositOperation(status) {
+    var errorBox = document.getElementById("crmStateWorkspaceError");
+    errorBox.textContent = "";
+    try {
+      var at = parseArgentineDateTime(document.getElementById("crmPostDepositDate").value, document.getElementById("crmPostDepositTime").value, "la acción posterior a la seña");
+      var result = await supabaseClient.rpc("record_post_deposit_interview", {
+        p_lead_id: state.activeLead.id,
+        p_operational_status: status,
+        p_action_at: at,
+        p_mode: document.getElementById("crmPostDepositMode").value,
+        p_note: document.getElementById("crmPostDepositNote").value.trim()
+      });
+      if (result.error) throw result.error;
+      var leadId = state.activeLead.id;
+      await loadLeads(true);
+      await openLead(leadId);
+    } catch (error) { errorBox.textContent = error.message; }
+  }
+
   function suggestedFollowUp() {
     var candidate = new Date();
     candidate.setDate(candidate.getDate() + 1);
@@ -920,6 +1026,20 @@
   }
 
   document.addEventListener("click", function (event) {
+    if (event.target.closest("[data-show-interview-results]")) {
+      var interviewResults = document.querySelector("#crmStateWorkspace .crm-state-results");
+      if (interviewResults) interviewResults.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+    var interviewOperation = event.target.closest("[data-interview-operation]");
+    if (interviewOperation && state.activeLead) { saveInterviewOperation(interviewOperation.dataset.interviewOperation); return; }
+    var postDepositOperation = event.target.closest("[data-post-deposit-operation]");
+    if (postDepositOperation && state.activeLead) { savePostDepositOperation(postDepositOperation.dataset.postDepositOperation); return; }
+    if (event.target.closest("[data-open-existing-datero]")) {
+      leadDialog.close();
+      openView("sales");
+      return;
+    }
     var reconcileProtocol = event.target.closest("[data-reconcile-protocol]");
     if (reconcileProtocol && state.activeLead) {
       reconcileProtocol.disabled = true;
