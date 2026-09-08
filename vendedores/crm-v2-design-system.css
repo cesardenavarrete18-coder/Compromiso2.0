@@ -500,3 +500,131 @@
   .crm-future-contact-experience{flex-direction:column}
   .crm-future-actions{flex-direction:row;flex-wrap:wrap;border-left:0;border-top:1px solid var(--cv2-border)}
 }
+
+/* ============================================================
+   QUINTA PASADA — MOBILE
+   Composición propia para mobile (no una versión apilada de
+   desktop): cards verticales sin overflow, KPIs 2x2 uniformes,
+   header e "En Gestión" compactos, toolbar en 2 filas, tabs con
+   scroll interno propio. Todo dentro de media queries; desktop
+   no cambia. Probado en 360 / 390 / 430px.
+   ============================================================ */
+
+@media(max-width:760px){
+
+  /* ------------------------------------------------------------
+     25. Mi Cartera — cards en columna, sin grid heredado de
+     desktop. El grid de crm.css (1fr auto con placements
+     explícitos sólo en algunos hijos) es lo que hoy corta
+     contenido: se reemplaza por una columna simple donde el
+     orden del DOM ya coincide con el orden pedido
+     (Cliente → Vehículo → Estado → Objetivo/Vencimiento → Botón).
+     ------------------------------------------------------------ */
+  .portfolio-card{display:flex;flex-direction:column;align-items:stretch;gap:7px;min-width:0;overflow:hidden;padding:13px 14px 13px 16px}
+  .portfolio-card>div,.portfolio-card>button{grid-column:auto;grid-row:auto;width:100%;min-width:0;max-width:100%;padding:0;border:0}
+  .portfolio-client,.portfolio-vehicle,.portfolio-action{min-width:0}
+  .portfolio-client strong,.portfolio-vehicle strong,.portfolio-action strong{overflow-wrap:anywhere;word-break:break-word;white-space:normal}
+  .portfolio-client small,.portfolio-vehicle small,.portfolio-action small,.portfolio-action span,.portfolio-protocol{overflow-wrap:anywhere;word-break:break-word;white-space:normal;overflow:visible;text-overflow:clip}
+  .portfolio-stage{flex-direction:row;align-items:center;gap:8px}
+  .portfolio-action{padding-top:8px;border-top:1px solid var(--cv2-border)}
+  .portfolio-sale-pending{position:static;order:2;align-self:flex-start;margin:0}
+  .portfolio-card .crm-open{width:100%;min-height:40px}
+
+  /* ------------------------------------------------------------
+     26. KPIs de Mi Cartera — 2x2 uniforme; anula el
+     grid-column:1/-1 que crm.css aplica a la última card.
+     ------------------------------------------------------------ */
+  #crmAgendaView .crm-summary{grid-template-columns:1fr 1fr;gap:8px}
+  #crmAgendaView .crm-summary .crm-stat:last-child{grid-column:auto}
+  .crm-cartera-header{padding:14px 14px 4px}
+  .crm-cartera-header .crm-hero{padding-bottom:12px}
+  .crm-stat{padding:11px 12px;min-height:0}
+  .crm-stat span{font-size:9px}
+  .crm-stat strong{margin:2px 0;font-size:19px}
+  .crm-stat small{font-size:8px}
+  .portfolio-toolbar{padding:11px 12px}
+
+  /* ------------------------------------------------------------
+     27. Header del Lead — compacto: nombre+chip en una fila,
+     teléfono debajo, vehículo/origen como línea prominente y
+     días en etapa/última interacción como metadata secundaria
+     en su propia línea (mismos elementos que ya renderiza
+     crm.js; sólo cambia el orden visual y el peso tipográfico).
+     ------------------------------------------------------------ */
+  .crm-dialog-shell{padding:16px 14px}
+  .crm-v2-workspace .crm-dialog-head{flex-direction:row;flex-wrap:nowrap;align-items:center;gap:8px}
+  .crm-v2-workspace .crm-dialog-head>div:first-child{flex:1 1 auto;min-width:0}
+  .crm-v2-workspace .crm-dialog-head>div:first-child>p.eyebrow{display:none}
+  .crm-v2-workspace .crm-lead-title{flex-wrap:nowrap;min-width:0}
+  .crm-v2-workspace .crm-lead-title h2{overflow:hidden;min-width:0;flex:1 1 auto;font-size:16px;text-overflow:ellipsis;white-space:nowrap}
+  .crm-v2-workspace .crm-lead-title #crmEditLeadName,.crm-v2-workspace .crm-lead-title button{flex:0 0 auto;padding:4px 8px;font-size:9px}
+  .crm-v2-workspace .crm-stage-badge{flex:0 0 auto;align-self:flex-start;padding:5px 9px;font-size:9px}
+  .crm-v2-workspace .crm-lead-meta{margin-top:4px}
+  .crm-workspace-context{margin-top:6px;padding-bottom:10px;gap:2px 12px}
+  .crm-workspace-context>div:nth-child(1),.crm-workspace-context>div:nth-child(2){order:1}
+  .crm-workspace-context>div:nth-child(3){order:2;flex-basis:100%}
+  .crm-workspace-context>div:nth-child(4){order:3}
+  .crm-workspace-context>div:last-child{order:4}
+  .crm-workspace-context>div:nth-child(1) strong,.crm-workspace-context>div:nth-child(2) strong{font-size:12px}
+
+  /* ------------------------------------------------------------
+     28. Toolbar — 2 filas: Llamar/WhatsApp arriba a ancho
+     completo, Comentario + Presupuesto + Datero abajo, más
+     compactos. Reemplaza el apilado de 3 bloques con
+     separadores de la pasada 1.
+     ------------------------------------------------------------ */
+  .crm-quick-actions{display:flex;flex-flow:row wrap;gap:6px;margin:10px 0}
+  .crm-toolbar-group{padding:0;border:0;gap:5px}
+  .crm-toolbar-group+.crm-toolbar-group{padding-left:0;border-left:0;padding-top:0;border-top:0}
+  .crm-toolbar-communication{flex:1 1 100%}
+  .crm-toolbar-communication .crm-action-link{flex:1;justify-content:center}
+  .crm-toolbar-context,.crm-toolbar-commercial{flex:0 1 auto;min-width:0}
+  .crm-toolbar-context .crm-action-link,.crm-toolbar-commercial .crm-action-link{padding:7px 7px;font-size:8px;gap:4px;min-width:0}
+  .crm-action-link:before{width:10px;height:10px}
+
+  /* ------------------------------------------------------------
+     29. Tabs — menos altura; si no entran, scroll horizontal
+     contenido dentro de .crm-tabs (nunca en la página).
+     ------------------------------------------------------------ */
+  .crm-tabs{flex-wrap:nowrap;gap:0;overflow-x:auto;max-width:100%;-webkit-overflow-scrolling:touch;scrollbar-width:thin}
+  .crm-tabs button{flex:0 0 auto;padding:8px 9px;font-size:9px;white-space:nowrap}
+
+  /* ------------------------------------------------------------
+     30. En Gestión / paneles de estado — cabecera compacta:
+     kicker y progreso comparten fila, la descripción pasa a una
+     segunda línea propia en vez de una card alta con todo
+     apilado.
+     ------------------------------------------------------------ */
+  .en-gestion-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 10px;padding:12px 14px}
+  .en-gestion-head>div:first-child{display:contents}
+  .en-gestion-kicker{order:1;margin:0}
+  .en-gestion-head p{order:3;flex-basis:100%;margin:0;font-size:11px}
+  .en-gestion-progress{order:2;margin-left:auto;padding:0;text-align:right}
+  .en-gestion-progress strong{font-size:16px}
+  .en-gestion-progress span{margin-top:0;font-size:8.5px}
+  .en-gestion-playbook{gap:10px;margin-bottom:14px}
+  .crm-state-panel{padding:16px}
+  .crm-state-panel>header{flex-direction:row;flex-wrap:wrap;align-items:center;gap:6px 10px}
+  .crm-state-panel>header>div{flex:1 1 100%;order:1}
+  .crm-state-panel>header .crm-stage{order:0}
+  .crm-state-panel h3{margin:0;font-size:16px}
+  .crm-state-panel>header p:not(.eyebrow){display:none}
+
+  /* ------------------------------------------------------------
+     31. Próxima acción / Contacto vencido — menos padding
+     vertical; acciones a 50/50 cuando entran, apiladas si el
+     viewport es muy angosto.
+     ------------------------------------------------------------ */
+  .en-gestion-next{flex-direction:column;align-items:stretch;padding:13px 15px 13px 18px}
+  .en-gestion-next-main strong,.en-gestion-next>div>strong{font-size:20px}
+  .en-gestion-next-actions{width:100%;justify-content:stretch}
+  .en-gestion-next-actions button{flex:1 1 0;min-width:0;padding:9px 6px;font-size:10.5px}
+  .crm-future-commitment{padding:14px 16px 14px 19px}
+  .crm-future-commitment>strong{font-size:20px}
+  .crm-future-actions{padding:12px 14px}
+}
+
+@media(max-width:400px){
+  .en-gestion-next-actions{flex-direction:column}
+  .crm-toolbar-context,.crm-toolbar-commercial{flex-basis:100%}
+}
