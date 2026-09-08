@@ -123,10 +123,18 @@ test("cada intento registra hora efectiva separada de la hora de registro", () =
 
 test("el fin de protocolo desiste con motivo canónico y clasifica Base fría", () => {
   const flow = migration.match(/create or replace function public\.record_contact_task_result[\s\S]*?grant execute on function public\.record_contact_task_result[\s\S]*?authenticated;/)?.[0] || "";
+  const manualFlow = migration.match(/create or replace function public\.record_lead_follow_up[\s\S]*?grant execute on function public\.record_lead_follow_up[\s\S]*?authenticated;/)?.[0] || "";
+  const answeredFlow = migration.match(/create or replace function public\.record_contact_answer_with_transition[\s\S]*?grant execute on function public\.record_contact_answer_with_transition[\s\S]*?authenticated;/)?.[0] || "";
   assert.ok(flow.includes("status = 'desistir'"));
   assert.ok(flow.includes("status_reason = 'No contactado post protocolo'"));
   assert.ok(flow.includes("cold_base_at = now()"));
   assert.ok(flow.includes("'segment', 'base_fria'"));
+  assert.equal((migration.match(/'segment', 'base_fria'/g) || []).length, 1);
+  for (const callerFlow of [manualFlow, answeredFlow]) {
+    assert.ok(callerFlow.includes("when 'desistir' then 'Oportunidad desistida'"));
+    assert.doesNotMatch(callerFlow, /cold_base_at\s*=\s*now\(\)/);
+    assert.doesNotMatch(callerFlow, /'segment',\s*'base_fria'/);
+  }
   assert.doesNotMatch(transitionSource, /base_fria\s*:/);
 });
 

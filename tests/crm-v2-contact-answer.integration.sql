@@ -25,7 +25,10 @@ values
   ('9e330000-0000-4000-8000-000000000204', '5491100001204', '5491100001204', 'E2E Inválido'),
   ('9e330000-0000-4000-8000-000000000205', '5491100001205', '5491100001205', 'E2E Venta'),
   ('9e330000-0000-4000-8000-000000000206', '5491100001206', '5491100001206', 'E2E Presupuesto incompatible'),
-  ('9e330000-0000-4000-8000-000000000207', '5491100001207', '5491100001207', 'E2E Venta rechazada');
+  ('9e330000-0000-4000-8000-000000000207', '5491100001207', '5491100001207', 'E2E Venta rechazada'),
+  ('9e330000-0000-4000-8000-000000000208', '5491100001208', '5491100001208', 'E2E Desistir literal'),
+  ('9e330000-0000-4000-8000-000000000209', '5491100001209', '5491100001209', 'E2E Respondió y desistió'),
+  ('9e330000-0000-4000-8000-000000000210', '5491100001210', '5491100001210', 'E2E Protocolo completo');
 insert into public.leads (
   id, customer_id, customer_phone, customer_name, source_channel, qualification_status,
   routing_status, routing_reason, assigned_seller_user_id, assigned_by_user_id, assigned_at
@@ -37,12 +40,16 @@ values
   ('9e330000-0000-4000-8000-000000000304', '9e330000-0000-4000-8000-000000000204', '5491100001204', 'E2E Inválido', 'manual', 'qualified', 'assigned_manual', 'crm_v2_e2e', '9e330000-0000-4000-8000-000000000101', '9e330000-0000-4000-8000-000000000101', now()),
   ('9e330000-0000-4000-8000-000000000305', '9e330000-0000-4000-8000-000000000205', '5491100001205', 'E2E Venta', 'manual', 'qualified', 'assigned_manual', 'crm_v2_e2e', '9e330000-0000-4000-8000-000000000101', '9e330000-0000-4000-8000-000000000101', now()),
   ('9e330000-0000-4000-8000-000000000306', '9e330000-0000-4000-8000-000000000206', '5491100001206', 'E2E Presupuesto incompatible', 'manual', 'qualified', 'assigned_manual', 'crm_v2_e2e', '9e330000-0000-4000-8000-000000000101', '9e330000-0000-4000-8000-000000000101', now()),
-  ('9e330000-0000-4000-8000-000000000307', '9e330000-0000-4000-8000-000000000207', '5491100001207', 'E2E Venta rechazada', 'manual', 'qualified', 'assigned_manual', 'crm_v2_e2e', '9e330000-0000-4000-8000-000000000101', '9e330000-0000-4000-8000-000000000101', now());
+  ('9e330000-0000-4000-8000-000000000307', '9e330000-0000-4000-8000-000000000207', '5491100001207', 'E2E Venta rechazada', 'manual', 'qualified', 'assigned_manual', 'crm_v2_e2e', '9e330000-0000-4000-8000-000000000101', '9e330000-0000-4000-8000-000000000101', now()),
+  ('9e330000-0000-4000-8000-000000000308', '9e330000-0000-4000-8000-000000000208', '5491100001208', 'E2E Desistir literal', 'manual', 'qualified', 'assigned_manual', 'crm_v2_e2e', '9e330000-0000-4000-8000-000000000101', '9e330000-0000-4000-8000-000000000101', now()),
+  ('9e330000-0000-4000-8000-000000000309', '9e330000-0000-4000-8000-000000000209', '5491100001209', 'E2E Respondió y desistió', 'manual', 'qualified', 'assigned_manual', 'crm_v2_e2e', '9e330000-0000-4000-8000-000000000101', '9e330000-0000-4000-8000-000000000101', now()),
+  ('9e330000-0000-4000-8000-000000000310', '9e330000-0000-4000-8000-000000000210', '5491100001210', 'E2E Protocolo completo', 'manual', 'qualified', 'assigned_manual', 'crm_v2_e2e', '9e330000-0000-4000-8000-000000000101', '9e330000-0000-4000-8000-000000000101', now());
 update public.lead_crm set status = 'no_contesta' where lead_id in (
   '9e330000-0000-4000-8000-000000000301', '9e330000-0000-4000-8000-000000000302',
   '9e330000-0000-4000-8000-000000000303', '9e330000-0000-4000-8000-000000000304',
   '9e330000-0000-4000-8000-000000000305', '9e330000-0000-4000-8000-000000000306',
-  '9e330000-0000-4000-8000-000000000307'
+  '9e330000-0000-4000-8000-000000000307', '9e330000-0000-4000-8000-000000000308',
+  '9e330000-0000-4000-8000-000000000309', '9e330000-0000-4000-8000-000000000310'
 );
 
 set local role authenticated;
@@ -139,6 +146,68 @@ select pg_temp.assert_true(
   (select status = 'desistir' and cold_base_at is null from public.lead_crm
    where lead_id = '9e330000-0000-4000-8000-000000000306'),
   'manual Desistir must not classify the lead as Base fría'
+);
+select public.record_lead_follow_up(
+  p_lead_id => '9e330000-0000-4000-8000-000000000308', p_status => 'desistir',
+  p_note => 'No contactado post protocolo'
+);
+select pg_temp.assert_true(
+  (select status = 'desistir' and cold_base_at is null from public.lead_crm
+   where lead_id = '9e330000-0000-4000-8000-000000000308'),
+  'manual reason text must not simulate Base fría'
+);
+select public.record_contact_answer_with_transition(
+  (select id from public.lead_contact_tasks where lead_id = '9e330000-0000-4000-8000-000000000309' and status = 'pending'),
+  'desistir', 'No contactado post protocolo', null, '', 'answered', null, '', null, 'normal', now()
+);
+select pg_temp.assert_true(
+  (select status = 'desistir' and cold_base_at is null and last_contact_outcome = 'answered'
+   from public.lead_crm where lead_id = '9e330000-0000-4000-8000-000000000309'),
+  'answered then Desistir must never classify the lead as Base fría'
+);
+select pg_temp.assert_true(
+  not exists (
+    select 1 from public.lead_activities
+    where lead_id in ('9e330000-0000-4000-8000-000000000306', '9e330000-0000-4000-8000-000000000308', '9e330000-0000-4000-8000-000000000309')
+      and metadata ->> 'segment' = 'base_fria'
+  ),
+  'manual and answered paths must not emit Base fría metadata'
+);
+
+-- Only actual exhaustion of the canonical sequence may classify Base fría.
+do $$
+declare
+  v_task_id uuid;
+  v_channel text;
+begin
+  loop
+    v_task_id := null;
+    select id, channel into v_task_id, v_channel
+    from public.lead_contact_tasks
+    where lead_id = '9e330000-0000-4000-8000-000000000310' and status = 'pending'
+    limit 1;
+    exit when v_task_id is null;
+    perform public.record_contact_task_result(
+      v_task_id, case when v_channel = 'call' then 'no_answer' else 'sent' end,
+      'Intento E2E sin respuesta', now()
+    );
+  end loop;
+end;
+$$;
+select pg_temp.assert_true(
+  (select count(*) = 18 from public.lead_contact_tasks
+   where lead_id = '9e330000-0000-4000-8000-000000000310' and channel = 'call' and status = 'completed' and outcome = 'no_answer'),
+  'Base fría requires all 18 canonical calls without answer'
+);
+select pg_temp.assert_true(
+  (select status = 'desistir' and status_reason = 'No contactado post protocolo' and cold_base_at is not null
+   from public.lead_crm where lead_id = '9e330000-0000-4000-8000-000000000310'),
+  'completed canonical protocol must classify Base fría'
+);
+select pg_temp.assert_true(
+  (select count(*) = 1 from public.lead_activities
+   where lead_id = '9e330000-0000-4000-8000-000000000310' and metadata ->> 'segment' = 'base_fria'),
+  'only completed canonical protocol emits one Base fría activity'
 );
 reset role;
 

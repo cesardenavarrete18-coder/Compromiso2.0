@@ -661,8 +661,7 @@ begin
     when 'entrevista' then 'Entrevista programada'
     when 'cierre' then 'Oportunidad en cierre'
     when 'sena' then 'Seña registrada'
-    when 'desistir' then case when trim(coalesce(p_note, '')) = 'No contactado post protocolo'
-      then 'Lead enviado a base fría' else 'Oportunidad desistida' end
+    when 'desistir' then 'Oportunidad desistida'
   end;
 
   perform private.cancel_lead_contact_protocol(p_lead_id, 'Gestión manual registrada');
@@ -685,7 +684,7 @@ begin
     deposit_amount = coalesce(p_deposit_amount, deposit_amount),
     deposit_at = case when p_status = 'sena' then now() else deposit_at end,
     deposit_validation = case when p_status = 'sena' then trim(coalesce(p_deposit_validation, '')) else deposit_validation end,
-    cold_base_at = case when p_status = 'desistir' and trim(coalesce(p_note, '')) = 'No contactado post protocolo' then now() else null end,
+    cold_base_at = null,
     previous_status = case when p_status in ('desistir', 'invalido') then v_previous_status else previous_status end,
     terminal_at = case when p_status in ('desistir', 'invalido') then now() else null end,
     updated_by = v_user_id,
@@ -818,8 +817,7 @@ begin
     when 'entrevista' then 'Entrevista programada'
     when 'cierre' then 'Oportunidad en cierre'
     when 'sena' then 'Seña registrada'
-    when 'desistir' then case when trim(coalesce(p_note, '')) = 'No contactado post protocolo'
-      then 'Lead enviado a base fría' else 'Oportunidad desistida' end
+    when 'desistir' then 'Oportunidad desistida'
   end;
 
   update public.lead_crm set
@@ -840,7 +838,7 @@ begin
     deposit_amount = case when p_status = 'sena' then p_deposit_amount else deposit_amount end,
     deposit_at = case when p_status = 'sena' then now() else deposit_at end,
     deposit_validation = case when p_status = 'sena' then trim(coalesce(p_deposit_validation, '')) else deposit_validation end,
-    cold_base_at = case when p_status = 'desistir' and trim(coalesce(p_note, '')) = 'No contactado post protocolo' then now() else null end,
+    cold_base_at = null,
     previous_status = case when p_status = 'desistir' then v_previous_status else previous_status end,
     terminal_at = case when p_status = 'desistir' then now() else null end,
     updated_by = v_user_id,
