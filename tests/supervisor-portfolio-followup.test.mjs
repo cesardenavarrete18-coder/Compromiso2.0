@@ -219,7 +219,7 @@ test("19. Protocolo sigue sin escribir la agenda manual; Sin contacto lo usa com
   assert.ok(migration.includes("from public.lead_contact_tasks task"));
   assert.ok(modelSource.includes('sourceLabel: "RECOMENDADO"'));
   assert.ok(modelSource.includes('if (crm.status === "no_contesta") {'));
-  assert.ok(modelSource.includes("return protocolRecommendation(summary);"));
+  assert.ok(modelSource.includes("return protocolRecommendation(summary) || manualAction(lead);"));
 });
 
 test("20. Rellamados no se modifica", () => {

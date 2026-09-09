@@ -72,11 +72,58 @@ test("Entrevista prioriza fecha/hora de la entrevista sobre la agenda manual aus
   assert.equal(derived.nextAction.source, "interview");
 });
 
+test("Entrevista prioriza interview_at incluso con una agenda manual vieja también cargada", () => {
+  const withBoth = lead({
+    crm: {
+      status: "entrevista",
+      interview_at: new Date(Date.now() + 26 * 3600000).toISOString(),
+      next_contact_at: new Date(Date.now() - 5 * 3600000).toISOString(),
+      next_contact_source: "manual"
+    }
+  });
+  const derived = followUpModel.deriveFollowUpStatus(withBoth, {});
+  assert.equal(derived.nextAction.source, "interview");
+  assert.equal(derived.key, "upcoming", "a stale manual date must not make an upcoming interview read as overdue");
+});
+
 test("Seña muestra la acción posterior sin degradar el estado comercial", () => {
   const withPostDeposit = lead({ crm: { status: "sena", post_deposit_action_at: new Date(Date.now() + 3600000).toISOString() } });
   const derived = followUpModel.deriveFollowUpStatus(withPostDeposit, {});
   assert.equal(derived.nextAction.source, "post_deposit");
   assert.equal(derived.active, true);
+});
+
+test("Seña prioriza post_deposit_action_at incluso con una agenda manual vieja también cargada", () => {
+  const withBoth = lead({
+    crm: {
+      status: "sena",
+      post_deposit_action_at: new Date(Date.now() + 3600000).toISOString(),
+      next_contact_at: new Date(Date.now() - 5 * 3600000).toISOString(),
+      next_contact_source: "manual"
+    }
+  });
+  const derived = followUpModel.deriveFollowUpStatus(withBoth, {});
+  assert.equal(derived.nextAction.source, "post_deposit");
+  assert.notEqual(derived.key, "overdue", "a stale manual date must not make an upcoming post-deposit action read as overdue");
+});
+
+test("Sin contacto prioriza el protocolo incluso con una agenda manual vieja también cargada", () => {
+  const withBoth = lead({
+    crm: {
+      status: "no_contesta",
+      next_contact_at: new Date(Date.now() - 5 * 3600000).toISOString(),
+      next_contact_source: "manual"
+    }
+  });
+  const summaryWithProtocol = {
+    next_task_id: "task-x",
+    next_task_due_start: new Date(Date.now() + 26 * 3600000).toISOString(),
+    next_task_channel: "call",
+    next_task_call_attempt: 2
+  };
+  const derived = followUpModel.deriveFollowUpStatus(withBoth, summaryWithProtocol);
+  assert.equal(derived.nextAction.source, "protocol_recommendation");
+  assert.equal(derived.key, "upcoming");
 });
 
 test("terminales no aparecen como activos ni son reasignables", () => {
@@ -114,4 +161,11 @@ test("Ventas para confirmar filtra pending en el backend; sin segunda lógica co
   const salesQuery = supervisorJs.match(/lead_sale_requests[\s\S]{0,700}\.eq\("status", "pending"\)/);
   assert.ok(salesQuery, "the sales query must filter status=pending server-side");
   assert.doesNotMatch(supervisorJs, /state\.sales\.filter\(function[^)]*\)\s*\{\s*return[^}]*status/);
+});
+
+test("Rechazo de venta: el mensaje refleja el estado comercial resultante real (Seña vs Cierre)", () => {
+  assert.match(supervisorJs, /var reviewedLeadId = state\.activeSale\.lead_id;/);
+  assert.match(supervisorJs, /resultingStatus\.status === "sena"/);
+  assert.match(supervisorJs, /"La venta fue observada y el Lead permanece en Seña\."/);
+  assert.match(supervisorJs, /"La venta fue observada y volvió a Cierre\."/);
 });

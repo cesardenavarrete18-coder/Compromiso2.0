@@ -50,24 +50,26 @@
     };
   }
 
-  // Sin contacto's principal action is the canonical protocol itself: it must
-  // never read as "Sin programar" while a protocol sequence is active.
-  // Entrevista and Seña prioritize their own operational dates over a stale
-  // or absent manual agenda entry, without degrading the commercial status.
+  // The state-defining operational date takes priority over a stale or
+  // absent manual agenda entry, so it can never be silently overridden:
+  // Sin contacto reads from the canonical protocol (never "Sin programar"
+  // while a sequence is active), Entrevista from interview_at, Seña from
+  // post_deposit_action_at. contacto_futuro/en_proceso/cierre have no such
+  // state-defining date, so the human-agreed manual action stays primary.
   function nextAction(lead, summary) {
-    var manual = manualAction(lead);
-    if (manual) return manual;
     var crm = crmOf(lead);
     if (crm.status === "no_contesta") {
-      return protocolRecommendation(summary);
+      return protocolRecommendation(summary) || manualAction(lead);
     }
-    if (crm.status === "entrevista" && crm.interview_at) {
-      return { at: crm.interview_at, label: "Entrevista comercial", source: "interview", sourceLabel: "ENTREVISTA" };
+    if (crm.status === "entrevista") {
+      if (crm.interview_at) return { at: crm.interview_at, label: "Entrevista comercial", source: "interview", sourceLabel: "ENTREVISTA" };
+      return manualAction(lead);
     }
-    if (crm.status === "sena" && crm.post_deposit_action_at) {
-      return { at: crm.post_deposit_action_at, label: "Acción posterior a la seña", source: "post_deposit", sourceLabel: "SEÑA" };
+    if (crm.status === "sena") {
+      if (crm.post_deposit_action_at) return { at: crm.post_deposit_action_at, label: "Acción posterior a la seña", source: "post_deposit", sourceLabel: "SEÑA" };
+      return manualAction(lead);
     }
-    return null;
+    return manualAction(lead);
   }
 
   function deriveFollowUpStatus(lead, summary, nowValue) {

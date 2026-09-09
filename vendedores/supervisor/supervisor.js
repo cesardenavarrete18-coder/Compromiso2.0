@@ -820,11 +820,22 @@
       p_next_contact_note: document.getElementById("supervisorNextNote").value.trim()
     }, this, "Próxima acción guardada y atribuida a Supervisión.");
   });
+  document.getElementById("supervisorStatus").addEventListener("change", function () {
+    document.getElementById("supervisorDesistReasonLabel").hidden = this.value !== "desistir";
+  });
   document.getElementById("supervisorStatusSave").addEventListener("click", function () {
+    var status = document.getElementById("supervisorStatus").value;
+    var message = document.getElementById("leadSupervisionMessage");
+    if (status === "desistir" && !document.getElementById("supervisorDesistReason").value) {
+      message.classList.add("error");
+      message.textContent = "Seleccioná el motivo del desistimiento.";
+      return;
+    }
     runSupervisorManagement("status", {
-      p_status: document.getElementById("supervisorStatus").value,
+      p_status: status,
       p_priority: document.getElementById("supervisorPriority").value,
-      p_note: document.getElementById("supervisorStatusNote").value.trim()
+      p_note: document.getElementById("supervisorStatusNote").value.trim(),
+      p_desist_reason: status === "desistir" ? document.getElementById("supervisorDesistReason").value : null
     }, this, "Estado comercial actualizado.");
   });
   document.getElementById("supervisorManagementSave").addEventListener("click", function () {
@@ -1150,12 +1161,21 @@
     message.textContent = "";
     if (!approved && note.length < 3) { message.textContent = "Indicá el motivo del rechazo para orientar al vendedor."; return; }
     setBusy(button, true, approved ? "Confirmando…" : "Rechazando…");
+    var reviewedLeadId = state.activeSale.lead_id;
     var result = await supabaseClient.rpc("review_lead_sale", { p_request_id: state.activeSale.id, p_approved: approved, p_review_note: note });
     if (result.error) { message.textContent = result.error.message; setBusy(button, false); return; }
     document.getElementById("saleReviewDialog").close();
     state.activeSale = null;
     await loadData(true);
-    pageMessage.textContent = approved ? "Venta confirmada y sumada al ranking." : "La venta fue observada y volvió a Cierre.";
+    if (approved) {
+      pageMessage.textContent = "Venta confirmada y sumada al ranking.";
+    } else {
+      var reviewedLead = (state.leads || []).find(function (item) { return item.id === reviewedLeadId; });
+      var resultingStatus = reviewedLead && (Array.isArray(reviewedLead.crm) ? reviewedLead.crm[0] : reviewedLead.crm) || {};
+      pageMessage.textContent = resultingStatus.status === "sena"
+        ? "La venta fue observada y el Lead permanece en Seña."
+        : "La venta fue observada y volvió a Cierre.";
+    }
     setBusy(button, false);
   }
 
