@@ -48,6 +48,8 @@ test("migration keeps legacy anchor nullable and RPC security-invoker", () => {
   assert.match(migration, /alter column model_id drop not null/i);
   assert.match(migration, /security invoker/i);
   assert.match(migration, /private\.current_user_is_admin\(\)/i);
+  assert.match(migration, /validate_sales_quote_bank_credit_applicability/i);
+  assert.match(migration, /version\.model_id = new\.model_id/i);
   assert.match(migration, /revoke all on function public\.admin_upsert_bank_credit_offer/i);
   assert.match(migration, /grant execute on function public\.admin_upsert_bank_credit_offer[\s\S]*to authenticated/i);
 });
