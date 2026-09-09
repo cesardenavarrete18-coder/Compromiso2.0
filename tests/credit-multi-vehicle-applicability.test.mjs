@@ -61,4 +61,12 @@ test("seller and admin adapters filter applicability by version model_id", () =>
   assert.match(seller, /model_id: model\.id/);
   assert.match(admin, /admin_upsert_bank_credit_offer/);
   assert.match(admin, /p_version_ids: Array\.from\(state\.selectedVersionIds\)/);
+  assert.match(admin, /sales_quotes[\s\S]*bank_credit_offer_id/);
+  assert.match(admin, /update\(\{ active: false \}\)/);
+});
+
+test("legacy single-model selector cannot block the multi-model form", () => {
+  const loader = fs.readFileSync(path.join(root, "vendedores", "supabase-config.js"), "utf8");
+  assert.match(loader, /legacyCreditModel\.required = false/);
+  assert.match(loader, /legacyCreditModel\.disabled = true/);
 });
