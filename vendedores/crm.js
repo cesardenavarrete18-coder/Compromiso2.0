@@ -22,7 +22,7 @@
   ];
   var CLOSED_STAGES = ["venta", "desistir", "invalido"];
   var LEAD_FIELDS_LEGACY = "id, customer_id, customer_phone, customer_name, source_channel, source_detail, qualification_status, priority, intent_summary, model_interest, assigned_at, last_message_at, created_at, customer:customers(full_name,primary_phone,email,document_number,cuil), attribution:lead_attributions(platform,source_type,campaign_name,adset_name,ad_name,headline,source_url), crm:lead_crm(status, priority, status_reason, next_contact_at, next_contact_note, next_contact_source, last_contact_at, last_contact_outcome, interview_at, interview_location, deposit_amount, deposit_at, cold_base_at, sale_confirmation_status, sale_requested_at, sale_confirmed_at, vehicle_sold, sale_amount, updated_at)";
-  var LEAD_FIELDS_V2 = LEAD_FIELDS_LEGACY.replace("interview_at, interview_location,", "interview_at, interview_location, interview_mode, interview_operational_status, interview_objective, final_objection,").replace("deposit_amount, deposit_at,", "deposit_amount, deposit_at, deposit_validation, post_deposit_action_at, post_deposit_action_status, previous_status, terminal_at,");
+  var LEAD_FIELDS_V2 = LEAD_FIELDS_LEGACY.replace("interview_at, interview_location,", "interview_at, interview_location, interview_mode, interview_operational_status, interview_objective, final_objection,").replace("deposit_amount, deposit_at,", "deposit_amount, deposit_at, deposit_validation, post_deposit_action_at, post_deposit_action_status, previous_status, terminal_at,").replace("status_reason,", "status_reason, desist_reason,");
   var state = { leads: [], tasks: [], crmSchema: "unknown", taskSchema: "unknown", taskLoadError: null, appraisals: [], commercialCatalog: [], activeLead: null, view: "agenda", searchAgenda: "", searchPipeline: "", portfolioStatus: "all", portfolioView: "all", pendingProtocolAnsweredTaskId: null, loading: false };
   var leadDialog = document.getElementById("crmLeadDialog");
   var commentDialog = document.getElementById("crmCommentDialog");
@@ -729,7 +729,7 @@
       target.innerHTML = '<article class="crm-state-panel crm-sale-panel"><header><div><p class="eyebrow dark">Venta</p><h3>Operación enviada al circuito administrativo</h3><p>El estado permanece Venta y no vuelve al funnel comercial.</p></div><span class="crm-stage" data-stage="venta">Venta</span></header><div class="crm-state-facts">' + stateFact("Operación vendida", crm.vehicle_sold || operation) + stateFact("Importe", crm.sale_amount ? money(crm.sale_amount) : "Según Datero") + stateFact("Administración", adminStatus) + stateFact("Envío", crm.sale_requested_at ? formatDate(crm.sale_requested_at, true) : "Pendiente") + '</div><div class="crm-state-actions"><button class="primary" type="button" data-open-existing-datero>Completar / ver Datero</button></div></article>';
     } else {
       var invalid = status === "invalido";
-      var baseCold = !invalid && crm.status_reason === "No contactado post protocolo";
+      var baseCold = !invalid && Boolean(crm.cold_base_at);
       target.innerHTML = '<article class="crm-state-panel crm-terminal-panel"><header><div><p class="eyebrow dark">' + escapeHtml(invalid ? "Calidad del dato" : "Oportunidad cerrada") + '</p><h3>' + escapeHtml(invalid ? "Inválido / Dato erróneo" : "Desistir") + '</h3><p>No se ofrecen transiciones comerciales manuales. Una reactivación requiere un nuevo ciclo autorizado.</p></div><span class="crm-stage" data-stage="' + escapeHtml(status) + '">' + escapeHtml(stageLabel(status)) + '</span></header><div class="crm-state-facts">' + stateFact("Motivo", crm.status_reason || "Sin motivo registrado") + stateFact("Fecha", crm.terminal_at ? formatDate(crm.terminal_at, true) : "Histórica sin fecha inferida") + stateFact("Estado anterior", crm.previous_status ? stageLabel(crm.previous_status) : "Ver historial") + stateFact("Segmento", baseCold ? "Base fría" : invalid ? "Calidad de dato" : "Cerrada") + '</div></article>';
     }
     var stateError = document.getElementById("crmStateWorkspaceError");
@@ -783,6 +783,7 @@
     document.getElementById("crmStatusInput").innerHTML = statusOptions;
     document.getElementById("crmPriorityInput").value = crm.priority || "normal";
     document.getElementById("crmNoteInput").value = "";
+    document.getElementById("crmDesistReasonInput").value = "";
     var nextContactParts = dateParts(crm.next_contact_at);
     document.getElementById("crmNextContactDateInput").value = nextContactParts.date;
     document.getElementById("crmNextContactTimeInput").value = nextContactParts.time;
@@ -799,8 +800,9 @@
     document.getElementById("crmStatusInput").disabled = crm.status === "venta";
     managementButton.disabled = crm.status === "venta";
     managementButton.textContent = crm.status === "venta" ? "Venta confirmada" : "Guardar gestión";
-    saleButton.disabled = crm.sale_confirmation_status === "pending" || crm.sale_confirmation_status === "confirmed";
-    saleButton.textContent = crm.sale_confirmation_status === "pending" ? "Datero pendiente" : crm.sale_confirmation_status === "confirmed" ? "Venta confirmada" : "Enviar datero";
+    var saleBlockedByStage = ["desistir", "invalido", "venta"].includes(crm.status);
+    saleButton.disabled = saleBlockedByStage || crm.sale_confirmation_status === "pending" || crm.sale_confirmation_status === "confirmed";
+    saleButton.textContent = crm.sale_confirmation_status === "pending" ? "Datero pendiente" : crm.sale_confirmation_status === "confirmed" || crm.status === "venta" ? "Venta confirmada" : saleBlockedByStage ? "No disponible" : "Enviar datero";
     renderAppraisalSummary(lead.id);
     renderNextCard(lead);
     renderProtocol(lead);
@@ -858,6 +860,7 @@
       payload.p_interview_mode = status === "entrevista" ? document.getElementById("crmInterviewModeInput").value : null;
       payload.p_interview_operational_status = status === "entrevista" ? "scheduled" : null;
       payload.p_deposit_validation = status === "sena" ? document.getElementById("crmDepositValidationInput").value.trim() : "";
+      payload.p_desist_reason = status === "desistir" ? (document.getElementById("crmDesistReasonInput").value || null) : null;
     }
     if (state.pendingProtocolAnsweredTaskId) {
       if (state.taskSchema !== "v2") {
