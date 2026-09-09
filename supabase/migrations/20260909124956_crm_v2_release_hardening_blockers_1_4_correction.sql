@@ -1,78 +1,34 @@
--- CRM V2 release-hardening: Saturday protocol, Datero terminality/integrity,
--- Desistir with pending sale, answered-from-Nuevo, structured desist reason,
--- clean new-cycle reset (lead_crm + playbook) and opt-out protection.
--- Forward-only: nothing here edits an already-applied migration.
+-- Second-round audit corrections to 20260909090000_crm_v2_release_hardening.sql.
+--
+-- That migration was already applied to QA before these corrections existed;
+-- editing it a second time in place left QA's
+-- supabase_migrations.schema_migrations history storing the ORIGINAL applied
+-- SQL while the live functions had moved on to the corrected bodies below.
+-- That migration file has since been restored verbatim to its original
+-- 5e89d3652a8962fdf2edeff629ae46af0dbb3d07 content, and this file reconciles
+-- the rest: it is named and timestamped to match the migration QA's history
+-- already recorded under version 20260909124956 /
+-- crm_v2_release_hardening_blockers_1_4_correction when these corrections
+-- were first applied (through supabase_migrations, not a raw execute_sql
+-- patch) - so this file need not be re-applied, only committed, for local
+-- migration history to exactly reproduce what QA already has. Replaying
+-- every migration in this repo in filename order now reaches the same
+-- schema and function bodies QA is actually running. This forward-only
+-- migration is where the second-round corrections live in migration
+-- history:
+--
+-- 1) submit_crm_lead_sale (the real Datero entrypoint) only accepts Cierre or
+--    Seña, instead of merely blocking the three terminals. Every other state
+--    must go through record_contact_answer_with_transition or
+--    record_lead_follow_up first.
+-- 2) record_lead_follow_up and record_contact_answer_with_transition both
+--    reject p_status = 'desistir' with a null p_desist_reason. Application
+--    level only, so historical rows and the automatic protocol-exhaustion
+--    path (which never calls these RPCs) are unaffected.
+-- 3) private.start_lead_crm_cycle unconditionally (idempotently) guarantees
+--    the canonical protocol after a successful non-opt-out reset, instead of
+--    only when the previous status was already 'nuevo'.
 
--- 1) Saturday is now a commercial day for the 18-call / 9-band protocol.
--- Only Sunday is excluded. Saturday keeps the 10-12 and 14-16 bands; the
--- 17-19 band never exists on Saturday, so a call due after 16:00 on Saturday
--- rolls to the next business day (Monday) at 10-12.
-create or replace function private.business_date(p_date date, p_offset integer default 0)
-returns date
-language plpgsql
-immutable
-set search_path = ''
-as $$
-declare
-  v_date date := p_date;
-  v_remaining integer := greatest(p_offset, 0);
-begin
-  while extract(isodow from v_date) = 7 loop
-    v_date := v_date + 1;
-  end loop;
-  while v_remaining > 0 loop
-    v_date := v_date + 1;
-    if extract(isodow from v_date) <> 7 then
-      v_remaining := v_remaining - 1;
-    end if;
-  end loop;
-  return v_date;
-end;
-$$;
-
-create or replace function private.next_protocol_call_window(p_after timestamptz)
-returns table (due_start timestamptz, due_end timestamptz)
-language plpgsql
-stable
-set search_path = ''
-as $$
-declare
-  v_after timestamptz := greatest(coalesce(p_after, now()), now());
-  v_local timestamp;
-  v_day date;
-  v_slot integer;
-  v_window_start timestamptz;
-  v_window_end timestamptz;
-  v_is_saturday boolean;
-begin
-  v_local := v_after at time zone 'America/Argentina/Buenos_Aires';
-  v_day := private.business_date(v_local::date, 0);
-  v_is_saturday := extract(isodow from v_day) = 6;
-
-  if v_day <> v_local::date then
-    v_slot := 1;
-  elsif v_local::time < time '12:00' then
-    v_slot := 1;
-  elsif v_local::time < time '16:00' then
-    v_slot := 2;
-  elsif not v_is_saturday and v_local::time < time '19:00' then
-    v_slot := 3;
-  else
-    v_day := private.business_date(v_day, 1);
-    v_slot := 1;
-  end if;
-
-  v_window_start := private.contact_window_start(v_day, v_slot);
-  v_window_end := private.contact_window_end(v_day, v_slot);
-  due_start := greatest(v_after, v_window_start);
-  due_end := v_window_end;
-  return next;
-end;
-$$;
-
--- 2) Datero real entrypoint (submit_crm_lead_sale). The Datero must never
--- bypass the CRM matrix: block terminal states, never demote Seña to Cierre,
--- and keep the request idempotent per application.
 create or replace function public.submit_crm_lead_sale(
   p_application_id uuid,
   p_notes text default ''
@@ -147,8 +103,13 @@ begin
   where lead_id = v_application.lead_id
   for update;
   if v_current_status is null then raise exception 'No se encontró la ficha CRM del Lead'; end if;
-  if v_current_status in ('venta', 'desistir', 'invalido') then
-    raise exception 'El Lead ya se encuentra en un estado terminal (%) y no admite un nuevo Datero', v_current_status;
+  -- The Datero is only a valid side effect of a Lead that already reached a
+  -- sale-ready commercial state through the canonical transition flow. Every
+  -- other state (nuevo, no_contesta, contacto_futuro, en_proceso, entrevista,
+  -- and the terminals venta/desistir/invalido) must go through
+  -- record_contact_answer_with_transition or record_lead_follow_up first.
+  if v_current_status not in ('cierre', 'sena') then
+    raise exception 'El Datero sólo puede enviarse desde Cierre o Seña (estado actual: %)', v_current_status;
   end if;
 
   select
@@ -247,8 +208,9 @@ begin
   end if;
 
   v_vehicle := trim(concat_ws(' ', v_brand_name, v_model_name, v_version_name, v_transmission));
-  -- Seña never demotes to Cierre while a sale confirmation is pending.
-  v_new_status := case when v_current_status = 'sena' then 'sena' else 'cierre' end;
+  -- v_current_status is already constrained to cierre/sena above; Seña stays
+  -- Seña, Cierre stays Cierre. Neither ever demotes while confirmation is pending.
+  v_new_status := v_current_status;
 
   insert into public.lead_sale_requests (
     lead_id,
@@ -311,84 +273,6 @@ $$;
 
 revoke all on function public.submit_crm_lead_sale(uuid, text) from public, anon;
 grant execute on function public.submit_crm_lead_sale(uuid, text) to authenticated;
-
--- 3) Desistir with a pending sale request must, in the same transaction,
--- close that request as rejected with canonical traceability. This covers
--- every current and future path that sets lead_crm.status = 'desistir'.
-create or replace function private.close_pending_sale_on_desistir()
-returns trigger
-language plpgsql
-security definer
-set search_path = ''
-as $$
-begin
-  if new.status = 'desistir' and old.status is distinct from 'desistir' then
-    update public.lead_sale_requests
-    set status = 'rejected',
-        reviewed_by = coalesce(new.updated_by, reviewed_by),
-        reviewed_at = now(),
-        review_note = 'Cancelada automáticamente: el cliente desistió antes de la confirmación administrativa'
-    where lead_id = new.lead_id and status = 'pending';
-
-    if found then
-      insert into public.lead_activities (lead_id, actor_user_id, activity_type, title, detail, metadata)
-      values (new.lead_id, new.updated_by, 'sale_confirmation', 'Venta pendiente cancelada por desistimiento',
-        'Cancelada automáticamente: el cliente desistió antes de la confirmación administrativa',
-        jsonb_build_object('approved', false, 'origin', 'desistir_pending_sale', 'previous_status', old.status));
-    end if;
-  end if;
-  return new;
-end;
-$$;
-
-revoke all on function private.close_pending_sale_on_desistir() from public, anon, authenticated;
-
-drop trigger if exists lead_crm_close_pending_sale_on_desistir on public.lead_crm;
-create trigger lead_crm_close_pending_sale_on_desistir
-after update of status on public.lead_crm
-for each row execute function private.close_pending_sale_on_desistir();
-
--- 4) Structured desistir reason. "No contactado post protocolo" stays an
--- internal, system-only reason and is intentionally excluded here.
-alter table public.lead_crm
-  add column if not exists desist_reason text;
-
-alter table public.lead_crm
-  drop constraint if exists lead_crm_desist_reason;
-alter table public.lead_crm
-  add constraint lead_crm_desist_reason check (desist_reason is null or desist_reason in (
-    'no_interest', 'conditions_not_viable', 'chose_other_option',
-    'postponed_without_date', 'requested_no_contact', 'other'
-  ));
-
-create or replace function private.apply_lead_opt_out(p_lead_id uuid, p_reason text)
-returns void
-language plpgsql
-security definer
-set search_path = ''
-as $$
-declare
-  v_customer_id uuid;
-begin
-  select customer_id into v_customer_id from public.leads where id = p_lead_id;
-  update public.leads set do_not_contact = true, do_not_contact_at = now(),
-    do_not_contact_reason = coalesce(nullif(trim(p_reason), ''), 'Solicitud individual')
-  where id = p_lead_id;
-  if v_customer_id is not null then
-    update public.customers set do_not_contact = true, do_not_contact_at = now(),
-      do_not_contact_reason = coalesce(nullif(trim(p_reason), ''), 'Solicitud individual')
-    where id = v_customer_id;
-  end if;
-end;
-$$;
-
-revoke all on function private.apply_lead_opt_out(uuid, text) from public, anon, authenticated;
-
--- 5) record_lead_follow_up: accept the structured desist reason and apply
--- opt-out explicitly (never inferred from free text).
--- The signature grows by one trailing parameter: the prior overload is
--- dropped first so PostgREST never sees two ambiguous candidates.
-drop function if exists public.record_lead_follow_up(uuid, text, text, timestamptz, text, text, timestamptz, text, numeric, text, text, text, text);
 
 create or replace function public.record_lead_follow_up(
   p_lead_id uuid,
@@ -453,6 +337,13 @@ begin
   if p_status = 'entrevista' and p_interview_mode not in ('presencial', 'videollamada') then raise exception 'La entrevista debe ser Presencial o Videollamada'; end if;
   if p_status = 'sena' and (p_deposit_amount is null or p_deposit_amount <= 0) then raise exception 'Indicá el importe de la seña'; end if;
   if p_status in ('invalido', 'desistir') and char_length(trim(coalesce(p_note, ''))) < 3 then raise exception 'Indicá el motivo para este estado'; end if;
+  -- Every NEW manual Desistir must carry a structured reason. This is an
+  -- application-level rule, not a table constraint, so historical rows and
+  -- the automatic protocol-exhaustion path (which never calls this RPC)
+  -- remain valid with desist_reason left null.
+  if p_status = 'desistir' and p_desist_reason is null then
+    raise exception 'Seleccioná el motivo del desistimiento';
+  end if;
   if p_status = 'desistir' and p_desist_reason is not null and p_desist_reason not in (
     'no_interest', 'conditions_not_viable', 'chose_other_option',
     'postponed_without_date', 'requested_no_contact', 'other'
@@ -553,11 +444,6 @@ comment on function public.record_lead_follow_up(uuid, text, text, timestamptz, 
 revoke all on function public.record_lead_follow_up(uuid, text, text, timestamptz, text, text, timestamptz, text, numeric, text, text, text, text, text) from public, anon;
 grant execute on function public.record_lead_follow_up(uuid, text, text, timestamptz, text, text, timestamptz, text, numeric, text, text, text, text, text) to authenticated;
 
--- 6) record_contact_answer_with_transition: a pending protocol task answered
--- from Nuevo now closes atomically exactly like from Sin contacto, and also
--- accepts the structured desist reason.
-drop function if exists public.record_contact_answer_with_transition(uuid, text, text, timestamptz, text, text, timestamptz, text, numeric, text, timestamptz, text, text);
-
 create or replace function public.record_contact_answer_with_transition(
   p_task_id uuid,
   p_status text,
@@ -593,6 +479,9 @@ begin
   if p_priority not in ('low', 'normal', 'high') then raise exception 'Prioridad inválida'; end if;
   if p_status not in ('contacto_futuro', 'en_proceso', 'entrevista', 'cierre', 'sena', 'desistir') then
     raise exception 'Resultado comercial no permitido después de una respuesta';
+  end if;
+  if p_status = 'desistir' and p_desist_reason is null then
+    raise exception 'Seleccioná el motivo del desistimiento';
   end if;
   if p_status = 'desistir' and p_desist_reason is not null and p_desist_reason not in (
     'no_interest', 'conditions_not_viable', 'chose_other_option',
@@ -710,212 +599,6 @@ $$;
 
 revoke all on function public.record_contact_answer_with_transition(uuid, text, text, timestamptz, text, text, timestamptz, text, numeric, text, timestamptz, text, text, text) from public, anon;
 grant execute on function public.record_contact_answer_with_transition(uuid, text, text, timestamptz, text, text, timestamptz, text, numeric, text, timestamptz, text, text, text) to authenticated;
-
--- 7) Automatic protocol outcomes (no_interest / requested_no_contact) also
--- record a structured desist reason, consistent with manual desistimientos.
-create or replace function public.complete_contact_task(
-  p_task_id uuid,
-  p_outcome text,
-  p_note text default ''
-)
-returns jsonb
-language plpgsql
-security definer
-set search_path = ''
-as $$
-declare
-  v_user_id uuid := (select auth.uid());
-  v_task public.lead_contact_tasks%rowtype;
-  v_next public.lead_contact_tasks%rowtype;
-  v_next_task_id uuid;
-  v_previous_status text;
-  v_sequence_finished boolean := false;
-begin
-  if v_user_id is null or not private.current_user_active() then raise exception 'Acceso no autorizado'; end if;
-  if p_outcome = 'answered' then
-    raise exception 'Una respuesta requiere record_contact_answer_with_transition';
-  end if;
-  if p_outcome not in ('no_answer', 'sent', 'skipped', 'invalid', 'no_interest', 'requested_no_contact') then
-    raise exception 'Resultado de contacto inválido';
-  end if;
-  if char_length(trim(coalesce(p_note, ''))) > 3000 then raise exception 'El detalle es demasiado extenso'; end if;
-
-  select * into v_task
-  from public.lead_contact_tasks
-  where id = p_task_id
-  for update;
-  if v_task.id is null or v_task.status <> 'pending' then raise exception 'La tarea ya fue procesada o no existe'; end if;
-  if v_task.seller_user_id <> v_user_id and not private.current_user_is_management() then raise exception 'La tarea no corresponde a este vendedor'; end if;
-  if v_task.channel = 'call' and p_outcome = 'sent' then raise exception 'Resultado incompatible con una llamada'; end if;
-  if v_task.channel = 'whatsapp' and p_outcome = 'no_answer' then raise exception 'Resultado incompatible con WhatsApp'; end if;
-
-  update public.lead_contact_tasks set
-    status = case when p_outcome = 'skipped' then 'skipped' else 'completed' end,
-    outcome = p_outcome,
-    note = trim(coalesce(p_note, '')),
-    completed_at = now(),
-    completed_by = v_user_id,
-    updated_at = now()
-  where id = p_task_id;
-
-  insert into public.lead_activities (lead_id, actor_user_id, activity_type, title, detail, metadata)
-  values (
-    v_task.lead_id,
-    v_user_id,
-    case when v_task.channel = 'call' then 'contact' else 'follow_up' end,
-    case when v_task.channel = 'call'
-      then 'Intento de llamada ' || v_task.call_attempt || ' registrado'
-      else 'WhatsApp de seguimiento ' || v_task.message_step || ' registrado'
-    end,
-    trim(coalesce(p_note, '')),
-    jsonb_build_object(
-      'task_id', v_task.id,
-      'channel', v_task.channel,
-      'outcome', p_outcome,
-      'call_attempt', v_task.call_attempt,
-      'message_step', v_task.message_step
-    )
-  );
-
-  if p_outcome in ('invalid', 'no_interest', 'requested_no_contact') then
-    select status into v_previous_status
-    from public.lead_crm
-    where lead_id = v_task.lead_id
-    for update;
-    if v_previous_status is null then raise exception 'No se encontró la ficha CRM del lead'; end if;
-
-    perform private.cancel_lead_contact_protocol(v_task.lead_id, case p_outcome
-      when 'invalid' then 'Contacto inválido'
-      when 'requested_no_contact' then 'Solicitó no ser contactado'
-      else 'El cliente no desea continuar'
-    end);
-
-    update public.lead_crm set
-      status = case when p_outcome = 'invalid' then 'invalido' else 'desistir' end,
-      status_reason = coalesce(nullif(trim(p_note), ''),
-        case when p_outcome = 'invalid' then 'Contacto inválido' when p_outcome = 'requested_no_contact' then 'Solicitó no ser contactado' else 'No desea continuar' end),
-      desist_reason = case when p_outcome = 'no_interest' then 'no_interest' when p_outcome = 'requested_no_contact' then 'requested_no_contact' else desist_reason end,
-      next_contact_at = null,
-      next_contact_note = '',
-      next_contact_source = null,
-      last_contact_at = now(),
-      last_contact_outcome = p_outcome,
-      cold_base_at = null,
-      previous_status = v_previous_status,
-      terminal_at = now(),
-      updated_by = v_user_id,
-      updated_at = now()
-    where lead_id = v_task.lead_id;
-
-    if p_outcome = 'requested_no_contact' then
-      perform private.apply_lead_opt_out(v_task.lead_id, trim(coalesce(p_note, '')));
-    end if;
-  else
-    v_next_task_id := private.sync_protocol_next_action(v_task.sequence_id, v_task.lead_id);
-    if v_next_task_id is null then
-      v_sequence_finished := true;
-      update public.lead_contact_sequences set
-        status = 'completed',
-        completed_at = now(),
-        stopped_reason = 'Protocolo CRM V2 procesado por completo',
-        updated_at = now()
-      where id = v_task.sequence_id;
-    else
-      select * into v_next from public.lead_contact_tasks where id = v_next_task_id;
-      update public.lead_crm set
-        status = case when p_outcome = 'no_answer' and status = 'nuevo' then 'no_contesta' else status end,
-        last_contact_at = now(),
-        last_contact_outcome = p_outcome,
-        updated_by = v_user_id,
-        updated_at = now()
-      where lead_id = v_task.lead_id;
-    end if;
-  end if;
-
-  return jsonb_build_object(
-    'lead_id', v_task.lead_id,
-    'sequence_finished', v_sequence_finished,
-    'next_task_id', v_next.id,
-    'next_due_at', v_next.due_start
-  );
-end;
-$$;
-
-revoke all on function public.complete_contact_task(uuid, text, text) from public, anon, authenticated;
-
--- 8) reactivate_lead_cycle must never silently reactivate an opted-out Lead.
-drop function if exists public.reactivate_lead_cycle(uuid, uuid, text);
-
-create or replace function public.reactivate_lead_cycle(
-  p_lead_id uuid,
-  p_seller_user_id uuid,
-  p_reason text,
-  p_confirm_opt_out_override boolean default false
-)
-returns void
-language plpgsql
-security definer
-set search_path = ''
-as $$
-declare
-  v_user_id uuid := (select auth.uid());
-  v_previous_seller uuid;
-  v_do_not_contact boolean;
-  v_reason text := trim(coalesce(p_reason, ''));
-begin
-  if v_user_id is null or not private.current_user_is_management() then
-    raise exception 'Se requiere permiso de supervisión';
-  end if;
-  if char_length(v_reason) < 3 or char_length(v_reason) > 1000 then
-    raise exception 'Indicá un motivo válido para la reactivación';
-  end if;
-  if not exists (
-    select 1 from public.profiles
-    where user_id = p_seller_user_id and role::text = 'seller' and active = true
-  ) then raise exception 'El vendedor seleccionado no está activo'; end if;
-  if exists (select 1 from public.sales_cases where lead_id = p_lead_id) then
-    raise exception 'Una Venta no puede reactivarse como oportunidad nueva';
-  end if;
-
-  select assigned_seller_user_id, coalesce(do_not_contact, false)
-  into v_previous_seller, v_do_not_contact
-  from public.leads where id = p_lead_id for update;
-  if not found then raise exception 'No se encontró el Lead'; end if;
-  if v_do_not_contact and not p_confirm_opt_out_override then
-    raise exception 'El Lead solicitó no ser contactado. Confirmá explícitamente la excepción para reactivarlo';
-  end if;
-
-  update public.leads set
-    assigned_seller_user_id = p_seller_user_id,
-    assigned_by_user_id = v_user_id,
-    assigned_at = now(),
-    routing_status = 'assigned_manual',
-    routing_reason = 'authorized_reactivation',
-    closed_at = null
-  where id = p_lead_id;
-
-  insert into public.lead_assignments (lead_id, seller_user_id, assigned_by_user_id, assignment_type, reason)
-  values (p_lead_id, p_seller_user_id, v_user_id, 'reassigned', v_reason);
-
-  insert into public.lead_activities (lead_id, actor_user_id, activity_type, title, detail, metadata)
-  values (p_lead_id, v_user_id, 'assignment', 'Reactivación autorizada', v_reason,
-    jsonb_build_object('origin', 'reactivation', 'previous_seller_user_id', v_previous_seller,
-      'seller_user_id', p_seller_user_id, 'opt_out_override', v_do_not_contact and p_confirm_opt_out_override));
-
-  if v_previous_seller is not distinct from p_seller_user_id then
-    perform private.start_lead_crm_cycle(p_lead_id, v_user_id, 'reactivation', v_reason, p_confirm_opt_out_override);
-  end if;
-end;
-$$;
-
-revoke all on function public.reactivate_lead_cycle(uuid, uuid, text, boolean) from public, anon;
-grant execute on function public.reactivate_lead_cycle(uuid, uuid, text, boolean) to authenticated;
-
--- 9) start_lead_crm_cycle: clean, complete reset of every V2 operational
--- field, a full snapshot preserved in lead_activities before the reset, an
--- opt-out guard (defensive, never breaks the assignment transaction), and a
--- reset of the En Gestión playbook to pending without losing its history.
-drop function if exists private.start_lead_crm_cycle(uuid, uuid, text, text);
 
 create or replace function private.start_lead_crm_cycle(
   p_lead_id uuid,
@@ -1035,11 +718,13 @@ begin
   set completed = false
   where lead_id = p_lead_id and completed = true;
 
-  -- A status change into Nuevo starts the protocol through the canonical CRM
-  -- trigger. If the Lead was already Nuevo, start it explicitly instead.
-  if v_previous.status = 'nuevo' then
-    perform private.create_lead_contact_sequence(p_lead_id, v_seller, now());
-  end if;
+  -- Always guarantee exactly one active canonical protocol for the current
+  -- seller after a successful reset, regardless of the previous status.
+  -- create_lead_contact_sequence is idempotent (it returns the existing
+  -- active sequence id instead of creating a duplicate), so this is safe to
+  -- call unconditionally and safe to call again on a repeated/idempotent
+  -- invocation of this function.
+  perform private.create_lead_contact_sequence(p_lead_id, v_seller, now());
 end;
 $$;
 
