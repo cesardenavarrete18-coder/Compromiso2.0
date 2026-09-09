@@ -50,8 +50,24 @@
     };
   }
 
-  function nextAction(lead) {
-    return manualAction(lead);
+  // Sin contacto's principal action is the canonical protocol itself: it must
+  // never read as "Sin programar" while a protocol sequence is active.
+  // Entrevista and Seña prioritize their own operational dates over a stale
+  // or absent manual agenda entry, without degrading the commercial status.
+  function nextAction(lead, summary) {
+    var manual = manualAction(lead);
+    if (manual) return manual;
+    var crm = crmOf(lead);
+    if (crm.status === "no_contesta") {
+      return protocolRecommendation(summary);
+    }
+    if (crm.status === "entrevista" && crm.interview_at) {
+      return { at: crm.interview_at, label: "Entrevista comercial", source: "interview", sourceLabel: "ENTREVISTA" };
+    }
+    if (crm.status === "sena" && crm.post_deposit_action_at) {
+      return { at: crm.post_deposit_action_at, label: "Acción posterior a la seña", source: "post_deposit", sourceLabel: "SEÑA" };
+    }
+    return null;
   }
 
   function deriveFollowUpStatus(lead, summary, nowValue) {
@@ -65,7 +81,7 @@
     // history. It must not be inferred from the absence of an effective contact:
     // an untouched "nuevo" Lead belongs to Sin gestion, not Sin primer contacto.
     var withoutFirstContact = Boolean(active && summary.without_first_contact === true);
-    var action = active ? nextAction(lead) : null;
+    var action = active ? nextAction(lead, summary) : null;
     var recommendation = active ? protocolRecommendation(summary) : null;
     var key = "completed";
 

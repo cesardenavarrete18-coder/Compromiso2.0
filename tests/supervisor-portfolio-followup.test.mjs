@@ -105,14 +105,20 @@ test("4. Acción del día queda Hoy usando Buenos Aires", () => {
   assert.equal(model.TIME_ZONE, "America/Argentina/Buenos_Aires");
 });
 
-test("5. Recomendación posterior no convierte un Lead en Próxima", () => {
+// CRM V2 release hardening (section 19): Sin contacto's operational
+// classification now reads the protocol's next task when there is no manual
+// commitment, so a future protocol task correctly reads as Próxima instead
+// of a bare Sin programar. Persistence is unaffected: the protocol still
+// never writes lead_crm.next_contact_* (covered elsewhere in this suite).
+test("5. Recomendación posterior clasifica Próxima cuando no hay agenda manual", () => {
   const result = model.deriveFollowUpStatus(
     lead({ crm: { status: "no_contesta", next_contact_at: null, next_contact_note: "", next_contact_source: null } }),
     summary({ next_task_id: "task-2", next_task_due_start: "2026-08-29T10:00:00-03:00", next_task_channel: "call", next_task_call_attempt: 2 }),
     now
   );
-  assert.equal(result.key, "unscheduled");
-  assert.equal(result.nextAction, null);
+  assert.equal(result.key, "upcoming");
+  assert.ok(result.nextAction);
+  assert.equal(result.nextAction.source, "protocol_recommendation");
   assert.equal(result.protocolRecommendation.source, "protocol_recommendation");
 });
 
@@ -205,11 +211,15 @@ test("18. Vendedor continúa viendo y gestionando sus Leads", () => {
   assert.ok(sellerHtml.includes('id="crmSaveManagement"'));
 });
 
-test("19. Protocolo sigue visible como recomendación sin alimentar la agenda", () => {
+// The protocol still never writes lead_crm's manual agenda fields; it is now
+// additionally read (not written) as the Sin contacto fallback action so
+// Supervisor's classification matches CRM V2 release hardening section 19.
+test("19. Protocolo sigue sin escribir la agenda manual; Sin contacto lo usa como respaldo de clasificación", () => {
   assert.ok(sellerCrm.includes('rpc("complete_contact_task_with_follow_up"'));
   assert.ok(migration.includes("from public.lead_contact_tasks task"));
   assert.ok(modelSource.includes('sourceLabel: "RECOMENDADO"'));
-  assert.ok(modelSource.includes("return manualAction(lead)"));
+  assert.ok(modelSource.includes('if (crm.status === "no_contesta") {'));
+  assert.ok(modelSource.includes("return protocolRecommendation(summary);"));
 });
 
 test("20. Rellamados no se modifica", () => {

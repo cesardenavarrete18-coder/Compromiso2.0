@@ -104,7 +104,7 @@
   }
 
   function loadSupervisorLeads() {
-    var select = "id, customer_phone, customer_name, source_channel, source_detail, seller_code_received, qualification_status, priority, intent_summary, model_interest, routing_status, routing_reason, assigned_seller_user_id, assigned_at, last_message_at, created_at, attribution:lead_attributions(platform,campaign_name,adset_name,ad_name,headline), tiktok_attributions:lead_tiktok_attributions(identifier_type,raw_identifier,outcome,routing_reason,created_at), crm:lead_crm(status, priority, status_reason, next_contact_at, next_contact_note, next_contact_source, last_contact_at, last_contact_outcome, interview_at, sale_confirmation_status, sale_confirmed_at)";
+    var select = "id, customer_phone, customer_name, source_channel, source_detail, seller_code_received, qualification_status, priority, intent_summary, model_interest, routing_status, routing_reason, assigned_seller_user_id, assigned_at, last_message_at, created_at, attribution:lead_attributions(platform,campaign_name,adset_name,ad_name,headline), tiktok_attributions:lead_tiktok_attributions(identifier_type,raw_identifier,outcome,routing_reason,created_at), crm:lead_crm(status, priority, status_reason, next_contact_at, next_contact_note, next_contact_source, last_contact_at, last_contact_outcome, interview_at, post_deposit_action_at, sale_confirmation_status, sale_confirmed_at)";
     return loadPagedRows(function () { return supabaseClient.from("leads").select(select).order("last_message_at", { ascending: false }); });
   }
 
@@ -155,7 +155,7 @@
   }
 
   function crmStatusLabel(value) {
-    return { nuevo: "Nuevo", no_contesta: "No contesta", en_proceso: "En proceso", invalido: "Inválido / Erróneo", entrevista: "Entrevista", cierre: "Cierre", sena: "Seña", venta: "Venta", desistir: "Desistir" }[value] || "Nuevo";
+    return { nuevo: "Nuevo", no_contesta: "Sin contacto", contacto_futuro: "Pide contacto futuro", en_proceso: "En Gestión", invalido: "Inválido / Erróneo", entrevista: "Entrevista", cierre: "Cierre", sena: "Seña", venta: "Venta", desistir: "Desistir" }[value] || "Nuevo";
   }
 
   function priorityLabel(value) {
