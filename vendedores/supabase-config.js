@@ -11,7 +11,7 @@
     var isAdminPortal = /^\/(?:administracion|vendedores\/admin)(?:\/|$)/.test(window.location.pathname);
     var isSupervisorPortal = /^\/(?:supervisores|vendedores\/supervisor)(?:\/|$)/.test(window.location.pathname);
     var isSalesAdminPortal = /^\/(?:admventas|vendedores\/admventas)(?:\/|$)/.test(window.location.pathname);
-    var isSellerPortal = /^\/vendedores\/?$/.test(window.location.pathname);
+    var isSellerPortal = /^\/vendedores(?:\/index\.html)?\/?$/.test(window.location.pathname);
     window.grupoSurSupabaseClient = window.supabase.createClient(config.url, config.publishableKey, {
       auth: {
         persistSession: true,
