@@ -40,7 +40,10 @@ function applyExtractedFields(state, extracted = {}) {
   if (extracted.trade_in_vehicle) {
     for (const [key, value] of Object.entries(extracted.trade_in_vehicle)) {
       if (value?.semantic_status === "explicitly_unknown") state.trade_in_vehicle[key] = field(null, "explicitly_unknown", { ...source, evidence: value.evidence ?? null });
-      else if (value !== undefined) state.trade_in_vehicle[key] = field(value, "known", source);
+      // Family O: a null/undefined value is never "known" - field() would throw
+      // KNOWN_FIELD_REQUIRES_VALUE. Leave the sub-field untouched (still missing) rather
+      // than trusting an upstream adapter to never pass one through.
+      else if (value !== undefined && value !== null) state.trade_in_vehicle[key] = field(value, "known", source);
     }
   }
   if (extracted.owned_vehicle) return registerOwnedVehicle(state, extracted.owned_vehicle);
@@ -53,7 +56,10 @@ export function runFilterV1Integration(input) {
   const lead = adaptLeadContext(input.lead);
   const operational = adaptOperationalControl(input.conversation_control);
   const catalog = input.catalog?.modelById instanceof Map ? input.catalog : adaptCatalogRows(input.catalog);
-  const acquisition = adaptAcquisitionContext(input.attribution, catalog);
+  // Family P: fall back to the referral already available in lead.metadata (written
+  // synchronously at claim-time, before Shadow ever runs) when no lead_attributions row
+  // exists yet for this turn - see adaptAcquisitionContext's own comment for why.
+  const acquisition = adaptAcquisitionContext(input.attribution, catalog, lead.metadata?.referral ?? null);
   const prior = previousState(input.previous_filter_state, lead);
   const version = advanceStateVersion({ currentStateVersion: prior.state_version, expectedStateVersion: input.expected_state_version ?? prior.state_version });
   if (version.status === "state_conflict") return Object.freeze({ status: "state_conflict", next_state: null, response_plan: null, handoff_decision: null, resolved_facts: [], warnings: ["STATE_VERSION_CONFLICT"], decision_trace: [{ decision: "state_version", result: "conflict", current_state_version: prior.state_version }] });
@@ -154,7 +160,9 @@ export function runFilterV1Integration(input) {
   const resolvedFacts = [];
   let answerFact = null;
   if (PLAN_INTENTS[intent] && factSubject) {
-    answerFact = resolvePlanFact({ targetModelId: factSubject.model_id, campaigns: adaptCampaignRows(input.campaigns), factType: PLAN_INTENTS[intent] });
+    // Family Q: campaigns are 0km-only data. A price/installment/advance question whose
+    // subject is explicitly a used unit must never be answered from that source.
+    answerFact = resolvePlanFact({ targetModelId: factSubject.model_id, campaigns: adaptCampaignRows(input.campaigns), factType: PLAN_INTENTS[intent], usedVehicleSubject: extraction.used_vehicle_subject === true });
     resolvedFacts.push(answerFact);
     decisionTrace.push({ decision: `${intent}_fact`, result: answerFact.value, status: answerFact.status, source_campaign_id: answerFact.source_campaign_id });
   } else if (intent === "technical_question") {
