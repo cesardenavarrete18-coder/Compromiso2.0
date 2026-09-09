@@ -11,6 +11,16 @@ const migration = readFileSync(
   new URL("../supabase/migrations/20260909140100_supervisor_manage_lead_v2_hardening.sql", import.meta.url),
   "utf8"
 );
+// A follow-up audit found the 'status' -> no_contesta path was not
+// idempotent (it cancelled and recreated the protocol even for a
+// no_contesta -> no_contesta call, discarding completed attempts and the
+// sequence id) and 'schedule' only failed closed for Sin contacto, not
+// Nuevo. This is a NEW forward-only migration, not an edit to the one
+// above; it is what's actually live now (the later CREATE OR REPLACE wins).
+const idempotencyFix = readFileSync(
+  new URL("../supabase/migrations/20260909170000_supervisor_manage_lead_idempotent_no_contesta.sql", import.meta.url),
+  "utf8"
+);
 
 test("1/10. Supervisor jamás setea cold_base_at: es exclusivo del agotamiento automático del protocolo", () => {
   const statusUpdate = migration.slice(
@@ -40,18 +50,39 @@ test("4. Sin contacto (no_contesta) no exige next_contact_at manual", () => {
   assert.doesNotMatch(statusBranch, /p_status = 'no_contesta'[\s\S]{0,80}p_next_contact_at is null/);
 });
 
-test("5. Entrar a Sin contacto limpia la agenda manual y asegura el protocolo canónico", () => {
-  assert.match(migration, /if p_status = 'no_contesta' then perform private\.cancel_lead_contact_protocol/);
-  assert.match(migration, /next_contact_at = case when p_status in \('invalido', 'desistir', 'no_contesta'\) then null/);
-  assert.match(migration, /if p_status = 'no_contesta' then\s*\n\s*if private\.create_lead_contact_sequence\(p_lead_id, v_seller, now\(\)\) is null then/);
+test("5. Entrar a Sin contacto limpia la agenda manual y asegura el protocolo canónico, de forma idempotente", () => {
+  // Superseded by 20260909170000: the unconditional cancel before create_lead_contact_sequence
+  // broke idempotency for a no_contesta -> no_contesta call (test 14 below).
+  assert.doesNotMatch(idempotencyFix, /if p_status = 'no_contesta' then perform private\.cancel_lead_contact_protocol/);
+  assert.match(idempotencyFix, /next_contact_at = case when p_status in \('invalido', 'desistir', 'no_contesta'\) then null/);
+  assert.match(idempotencyFix, /if p_status = 'no_contesta' then\s*\n(\s*--[^\n]*\n)*\s*if private\.create_lead_contact_sequence\(p_lead_id, v_seller, now\(\)\) is null then/);
 });
 
-test("6. 'schedule' rechaza mezclar agenda manual con un Lead en Sin contacto (no cancela el protocolo en su lugar)", () => {
-  const scheduleBranch = migration.slice(migration.indexOf("if p_action = 'schedule' then"), migration.indexOf("if p_action = 'status' then"));
-  assert.match(scheduleBranch, /if v_crm\.status = 'no_contesta' then\s*\n\s*raise exception 'El Lead está en Sin contacto/);
-  const rejectIndex = scheduleBranch.indexOf("raise exception 'El Lead está en Sin contacto");
+test("6. 'schedule' rechaza mezclar agenda manual con un Lead en Nuevo o en Sin contacto (no cancela el protocolo en su lugar)", () => {
+  const scheduleBranch = idempotencyFix.slice(idempotencyFix.indexOf("if p_action = 'schedule' then"), idempotencyFix.indexOf("if p_action = 'status' then"));
+  assert.match(scheduleBranch, /if v_crm\.status in \('nuevo', 'no_contesta'\) then\s*\n\s*raise exception 'El Lead está en %/);
+  const rejectIndex = scheduleBranch.indexOf("raise exception 'El Lead está en %");
   const cancelIndex = scheduleBranch.indexOf("cancel_lead_contact_protocol");
-  assert.ok(rejectIndex < cancelIndex, "the no_contesta rejection must happen before any cancel_lead_contact_protocol call in schedule");
+  assert.ok(rejectIndex < cancelIndex, "the nuevo/no_contesta rejection must happen before any cancel_lead_contact_protocol call in schedule");
+});
+
+test("14. Sin contacto -> Sin contacto nunca cancela/reinicia una secuencia activa válida (idempotente)", () => {
+  const statusBranch = idempotencyFix.slice(idempotencyFix.indexOf("if p_action = 'status' then"), idempotencyFix.indexOf("-- Legacy free-text"));
+  // No unconditional cancel keyed off p_status = 'no_contesta' anywhere in
+  // the status branch; only the terminal (invalido/desistir) cancel remains.
+  assert.doesNotMatch(statusBranch, /if p_status = 'no_contesta' then perform private\.cancel_lead_contact_protocol/);
+  assert.match(statusBranch, /if p_status in \('invalido', 'desistir'\) then perform private\.cancel_lead_contact_protocol/);
+  // create_lead_contact_sequence is the only thing that still runs for
+  // no_contesta, and it is documented (both here and at its own definition)
+  // as idempotent - it returns the existing active sequence untouched
+  // instead of creating a duplicate.
+  assert.match(statusBranch, /if p_status = 'no_contesta' then\s*\n(\s*--[^\n]*\n)*\s*if private\.create_lead_contact_sequence/);
+  assert.match(idempotencyFix, /Idempotent: returns the existing active sequence/);
+});
+
+test("15. 'schedule' falla cerrado también para Nuevo, no solo para Sin contacto", () => {
+  const scheduleBranch = idempotencyFix.slice(idempotencyFix.indexOf("if p_action = 'schedule' then"), idempotencyFix.indexOf("if p_action = 'status' then"));
+  assert.match(scheduleBranch, /v_crm\.status in \('nuevo', 'no_contesta'\)/);
 });
 
 test("7. Desistir manual exige un motivo estructurado válido (misma enumeración que las RPC del vendedor)", () => {
