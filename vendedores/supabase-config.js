@@ -37,6 +37,13 @@
 
     window.addEventListener("load", function () {
       if (!isAdminPortal && !isSellerPortal) return;
+      if (isAdminPortal) {
+        var legacyCreditModel = document.getElementById("creditModel");
+        if (legacyCreditModel) {
+          legacyCreditModel.required = false;
+          legacyCreditModel.disabled = true;
+        }
+      }
       loadCreditAdapter("/vendedores/credit-applicability-core.js?v=20260909-1", function () {
         loadCreditAdapter(isAdminPortal
           ? "/vendedores/credit-multi-vehicle-admin.js?v=20260909-1"
