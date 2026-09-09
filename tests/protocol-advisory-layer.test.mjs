@@ -109,11 +109,18 @@ test("12. no_contesta con protocolo queda recomendado y no Vencido", () => {
   assert.ok(!labelBody.includes("Vencido"));
 });
 
-test("13. Supervisor ignora protocolo para Vencida Hoy y Próxima", () => {
+// CRM V2 release hardening (section 19) clarified this contract: the
+// protocol stays advisory-only for persistence (lead_crm.next_contact_* is
+// still never written by the protocol, asserted throughout this file), but
+// Supervisor's operational Vencida/Hoy/Próxima classification for Sin
+// contacto now reads the next canonical protocol task, so it never shows a
+// bare "Sin programar" while a protocol is active.
+test("13. Supervisor clasifica Vencida/Hoy/Próxima desde el protocolo cuando no hay agenda manual", () => {
   const current = lead("no_contesta");
   const derived = followUp.deriveFollowUpStatus(current, { management_count: 1, next_task_id: task.id, next_task_due_start: task.due_start, next_task_channel: "call", next_task_call_attempt: 1 }, after);
-  assert.equal(derived.key, "unscheduled");
-  assert.equal(derived.nextAction, null);
+  assert.equal(derived.key, "overdue");
+  assert.ok(derived.nextAction);
+  assert.equal(derived.nextAction.source, "protocol_recommendation");
   assert.equal(derived.protocolRecommendation.source, "protocol_recommendation");
 });
 
