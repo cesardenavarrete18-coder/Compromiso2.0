@@ -10,9 +10,14 @@ function numericValue(value) {
   return Number.isFinite(number) ? number : null;
 }
 
-export function resolvePlanFact({ targetModelId, campaigns = [], factType }) {
+export function resolvePlanFact({ targetModelId, campaigns = [], factType, usedVehicleSubject = false }) {
   const sourceField = PLAN_FACT_FIELDS[factType];
   if (!sourceField) throw new TypeError(`UNSUPPORTED_PLAN_FACT_TYPE:${factType}`);
+  // Family Q: campaigns only ever carry 0km pricing. A price/installment/advance query
+  // about a used unit of the model must never be answered from that data - there is no
+  // structured used-vehicle price source, and estimating one would be fabrication. Guarded
+  // here, not only upstream, so no future caller of resolvePlanFact can bypass it.
+  if (usedVehicleSubject) return Object.freeze({ fact_type: factType, status: "not_materialized", value: null, source_campaign_id: null, source_field: sourceField, reason: "used_vehicle_subject_has_no_structured_source" });
   const candidates = campaigns.flatMap(campaign => {
     const value = numericValue(campaign[sourceField]);
     return campaign.active === true && campaign.model_id === targetModelId && value !== null
