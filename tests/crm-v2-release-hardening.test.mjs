@@ -3,15 +3,32 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 const migration = readFileSync(new URL("../supabase/migrations/20260909090000_crm_v2_release_hardening.sql", import.meta.url), "utf8");
+// 20260909090000 was already applied to QA before the second-round audit
+// corrections existed; a second edit of an already-applied migration would
+// have left QA's migration history and its live functions disagreeing. It
+// was restored to its exact originally-applied content, and the corrections
+// (Datero cierre/sena-only, mandatory desist_reason, idempotent protocol
+// guarantee on new cycle) now live exclusively in this forward-only
+// migration instead.
+const corrections = readFileSync(new URL("../supabase/migrations/20260909124956_crm_v2_release_hardening_blockers_1_4_correction.sql", import.meta.url), "utf8");
+// reactivate_lead_cycle's opt-out-with-seller-change fix: a separate,
+// independently timestamped forward-only migration (a newly found bug, not
+// one of the already-corrected behaviors `corrections` reproduces).
+const reactivationFix = readFileSync(new URL("../supabase/migrations/20260909094500_reactivate_lead_cycle_seller_change_fix.sql", import.meta.url), "utf8");
 const crm = readFileSync(new URL("../vendedores/crm.js", import.meta.url), "utf8");
 const html = readFileSync(new URL("../vendedores/index.html", import.meta.url), "utf8");
 
+// Migrations apply in filename order; a function redefined in a later file is
+// what's actually live (the last CREATE OR REPLACE wins). fn() resolves the
+// most recent definition first and falls back to the original migration for
+// every function none of the later ones touch.
 function fn(name, kind) {
   const marker = `create or replace function ${kind}.${name}`;
-  const start = migration.indexOf(marker);
+  const source = [reactivationFix, corrections, migration].find((candidate) => candidate.includes(marker)) || migration;
+  const start = source.indexOf(marker);
   assert.notEqual(start, -1, `${kind}.${name} not found`);
-  const end = migration.indexOf("\n$$;", start);
-  return migration.slice(start, end);
+  const end = source.indexOf("\n$$;", start);
+  return source.slice(start, end);
 }
 
 // --- A pure JS mirror of private.business_date / private.next_protocol_call_window,
@@ -242,6 +259,22 @@ test("opt-out nunca se reactiva silenciosamente", () => {
   const reactivate = fn("reactivate_lead_cycle", "public");
   assert.match(reactivate, /v_do_not_contact and not p_confirm_opt_out_override/);
   assert.match(reactivate, /raise exception 'El Lead solicitó no ser contactado/);
+});
+
+test("reactivación con override de opt-out reinicia el ciclo CRM tanto con el mismo vendedor como con uno distinto", () => {
+  const reactivate = fn("reactivate_lead_cycle", "public");
+  // Bug: the trigger only resets the cycle on a seller change when the Lead
+  // is NOT opted out (its own guard: `not new.do_not_contact`), and this
+  // function's own explicit call used to fire only when the seller stayed
+  // the same. An opted-out Lead reactivated with an override AND a new
+  // seller fell through both paths and never got a fresh cycle.
+  assert.match(reactivate, /v_previous_seller is not distinct from p_seller_user_id or v_do_not_contact/);
+  assert.match(reactivate, /perform private\.start_lead_crm_cycle\(p_lead_id, v_user_id, 'reactivation', v_reason, p_confirm_opt_out_override\)/);
+  // do_not_contact itself is never assigned here - the opt-out policy
+  // survives the reset; only start_lead_crm_cycle's own guard (fed the
+  // override) may still let the reset proceed without generating a protocol.
+  const leadsUpdate = reactivate.slice(reactivate.indexOf("update public.leads set"), reactivate.indexOf("where id = p_lead_id;"));
+  assert.doesNotMatch(leadsUpdate, /do_not_contact\s*=/);
 });
 
 test("restart_lead_contact_sequence backend guard against terminal bypass already exists", () => {
