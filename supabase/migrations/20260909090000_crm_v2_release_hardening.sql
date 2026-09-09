@@ -147,8 +147,13 @@ begin
   where lead_id = v_application.lead_id
   for update;
   if v_current_status is null then raise exception 'No se encontró la ficha CRM del Lead'; end if;
-  if v_current_status in ('venta', 'desistir', 'invalido') then
-    raise exception 'El Lead ya se encuentra en un estado terminal (%) y no admite un nuevo Datero', v_current_status;
+  -- The Datero is only a valid side effect of a Lead that already reached a
+  -- sale-ready commercial state through the canonical transition flow. Every
+  -- other state (nuevo, no_contesta, contacto_futuro, en_proceso, entrevista,
+  -- and the terminals venta/desistir/invalido) must go through
+  -- record_contact_answer_with_transition or record_lead_follow_up first.
+  if v_current_status not in ('cierre', 'sena') then
+    raise exception 'El Datero sólo puede enviarse desde Cierre o Seña (estado actual: %)', v_current_status;
   end if;
 
   select
@@ -247,8 +252,9 @@ begin
   end if;
 
   v_vehicle := trim(concat_ws(' ', v_brand_name, v_model_name, v_version_name, v_transmission));
-  -- Seña never demotes to Cierre while a sale confirmation is pending.
-  v_new_status := case when v_current_status = 'sena' then 'sena' else 'cierre' end;
+  -- v_current_status is already constrained to cierre/sena above; Seña stays
+  -- Seña, Cierre stays Cierre. Neither ever demotes while confirmation is pending.
+  v_new_status := v_current_status;
 
   insert into public.lead_sale_requests (
     lead_id,
@@ -453,6 +459,13 @@ begin
   if p_status = 'entrevista' and p_interview_mode not in ('presencial', 'videollamada') then raise exception 'La entrevista debe ser Presencial o Videollamada'; end if;
   if p_status = 'sena' and (p_deposit_amount is null or p_deposit_amount <= 0) then raise exception 'Indicá el importe de la seña'; end if;
   if p_status in ('invalido', 'desistir') and char_length(trim(coalesce(p_note, ''))) < 3 then raise exception 'Indicá el motivo para este estado'; end if;
+  -- Every NEW manual Desistir must carry a structured reason. This is an
+  -- application-level rule, not a table constraint, so historical rows and
+  -- the automatic protocol-exhaustion path (which never calls this RPC)
+  -- remain valid with desist_reason left null.
+  if p_status = 'desistir' and p_desist_reason is null then
+    raise exception 'Seleccioná el motivo del desistimiento';
+  end if;
   if p_status = 'desistir' and p_desist_reason is not null and p_desist_reason not in (
     'no_interest', 'conditions_not_viable', 'chose_other_option',
     'postponed_without_date', 'requested_no_contact', 'other'
@@ -593,6 +606,9 @@ begin
   if p_priority not in ('low', 'normal', 'high') then raise exception 'Prioridad inválida'; end if;
   if p_status not in ('contacto_futuro', 'en_proceso', 'entrevista', 'cierre', 'sena', 'desistir') then
     raise exception 'Resultado comercial no permitido después de una respuesta';
+  end if;
+  if p_status = 'desistir' and p_desist_reason is null then
+    raise exception 'Seleccioná el motivo del desistimiento';
   end if;
   if p_status = 'desistir' and p_desist_reason is not null and p_desist_reason not in (
     'no_interest', 'conditions_not_viable', 'chose_other_option',
@@ -1035,11 +1051,13 @@ begin
   set completed = false
   where lead_id = p_lead_id and completed = true;
 
-  -- A status change into Nuevo starts the protocol through the canonical CRM
-  -- trigger. If the Lead was already Nuevo, start it explicitly instead.
-  if v_previous.status = 'nuevo' then
-    perform private.create_lead_contact_sequence(p_lead_id, v_seller, now());
-  end if;
+  -- Always guarantee exactly one active canonical protocol for the current
+  -- seller after a successful reset, regardless of the previous status.
+  -- create_lead_contact_sequence is idempotent (it returns the existing
+  -- active sequence id instead of creating a duplicate), so this is safe to
+  -- call unconditionally and safe to call again on a repeated/idempotent
+  -- invocation of this function.
+  perform private.create_lead_contact_sequence(p_lead_id, v_seller, now());
 end;
 $$;
 
