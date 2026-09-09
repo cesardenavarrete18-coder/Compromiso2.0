@@ -144,6 +144,39 @@ begin
 end;
 $$;
 
+create or replace function private.validate_sales_quote_bank_credit_applicability()
+returns trigger
+language plpgsql
+security invoker
+set search_path = ''
+as $$
+begin
+  if new.offer_type = 'bank_credit' and not exists (
+    select 1
+    from public.bank_credit_offer_versions link
+    join public.model_versions version on version.id = link.version_id
+    where link.offer_id = new.bank_credit_offer_id
+      and version.model_id = new.model_id
+      and version.name = new.vehicle_version
+  ) then
+    raise exception 'Selected bank credit does not apply to this model/version'
+      using errcode = '23514',
+            constraint = 'sales_quotes_bank_credit_applicability';
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists validate_sales_quote_bank_credit_applicability on public.sales_quotes;
+create trigger validate_sales_quote_bank_credit_applicability
+before insert or update of bank_credit_offer_id, model_id, vehicle_version, offer_type
+on public.sales_quotes
+for each row
+execute function private.validate_sales_quote_bank_credit_applicability();
+
+revoke all on function private.validate_sales_quote_bank_credit_applicability() from public, anon, authenticated;
+
 revoke all on function public.admin_upsert_bank_credit_offer(
   uuid, text, text, integer, numeric, numeric, numeric, numeric, numeric,
   numeric, numeric, numeric, text, date, date, boolean, integer, uuid[]
