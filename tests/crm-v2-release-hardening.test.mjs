@@ -161,11 +161,11 @@ test("18 llamadas exactas en 9 franjas efectivas, cualquiera sea el punto de par
   }
 });
 
-test("submit_crm_lead_sale blocks terminal states and never demotes Seña to Cierre", () => {
+test("submit_crm_lead_sale only accepts Cierre/Seña; every other state is a rejected side-door", () => {
   const body = fn("submit_crm_lead_sale", "public");
-  assert.match(body, /v_current_status in \('venta', 'desistir', 'invalido'\)/);
-  assert.match(body, /raise exception 'El Lead ya se encuentra en un estado terminal/);
-  assert.match(body, /v_new_status := case when v_current_status = 'sena' then 'sena' else 'cierre' end/);
+  assert.match(body, /v_current_status not in \('cierre', 'sena'\)/);
+  assert.match(body, /raise exception 'El Datero sólo puede enviarse desde Cierre o Seña/);
+  assert.match(body, /v_new_status := v_current_status/);
   assert.match(body, /status = v_new_status/);
   assert.doesNotMatch(body, /status = 'cierre',\n\s*priority/);
 });
@@ -286,4 +286,32 @@ test("opt-out sigue impidiendo la generación automática de protocolo/WhatsApp"
   const start = advisory.indexOf("create or replace function private.create_lead_contact_sequence");
   const body = advisory.slice(start, advisory.indexOf("$$;", start));
   assert.match(body, /not coalesce\(lead\.do_not_contact, false\)/);
+});
+
+test("motivo de Desistir es obligatorio para toda gestión manual nueva, sin romper filas históricas", () => {
+  for (const name of ["record_lead_follow_up", "record_contact_answer_with_transition"]) {
+    const body = fn(name, "public");
+    assert.match(body, /p_status = 'desistir' and p_desist_reason is null then\s*\n\s*raise exception 'Seleccioná el motivo del desistimiento'/);
+  }
+  // Application-level only: no table constraint ties desist_reason to status,
+  // so historical rows and the automatic exhaustion path stay valid with it null.
+  assert.doesNotMatch(migration, /check\s*\(\s*status\s*<>\s*'desistir'\s*or\s*desist_reason/i);
+  assert.match(migration, /lead_crm_desist_reason check \(desist_reason is null or desist_reason in \(/);
+});
+
+test("el agotamiento automático del protocolo nunca pasa por record_lead_follow_up ni requiere motivo manual", () => {
+  const protocolHardening = readFileSync(new URL("../supabase/migrations/20260908120000_crm_v2_protocol_hardening.sql", import.meta.url), "utf8");
+  const start = protocolHardening.indexOf("create or replace function public.record_contact_task_result");
+  const body = protocolHardening.slice(start, protocolHardening.indexOf("$$;", start));
+  assert.match(body, /status_reason = 'No contactado post protocolo'/);
+  assert.doesNotMatch(body, /desist_reason/);
+  assert.doesNotMatch(body, /record_lead_follow_up/);
+});
+
+test("nuevo ciclo garantiza exactamente un protocolo activo, sin importar el estado previo, de forma idempotente", () => {
+  const body = fn("start_lead_crm_cycle", "private");
+  assert.doesNotMatch(body, /if v_previous\.status = 'nuevo' then/);
+  assert.match(body, /perform private\.create_lead_contact_sequence\(p_lead_id, v_seller, now\(\)\);\s*\n(\s*-- [^\n]*\n)*end;/);
+  const afterReset = body.slice(body.indexOf("update public.lead_management_playbook_items"));
+  assert.match(afterReset, /create_lead_contact_sequence/);
 });

@@ -23,7 +23,7 @@
   var CLOSED_STAGES = ["venta", "desistir", "invalido"];
   var LEAD_FIELDS_LEGACY = "id, customer_id, customer_phone, customer_name, source_channel, source_detail, qualification_status, priority, intent_summary, model_interest, assigned_at, last_message_at, created_at, customer:customers(full_name,primary_phone,email,document_number,cuil), attribution:lead_attributions(platform,source_type,campaign_name,adset_name,ad_name,headline,source_url), crm:lead_crm(status, priority, status_reason, next_contact_at, next_contact_note, next_contact_source, last_contact_at, last_contact_outcome, interview_at, interview_location, deposit_amount, deposit_at, cold_base_at, sale_confirmation_status, sale_requested_at, sale_confirmed_at, vehicle_sold, sale_amount, updated_at)";
   var LEAD_FIELDS_V2 = LEAD_FIELDS_LEGACY.replace("interview_at, interview_location,", "interview_at, interview_location, interview_mode, interview_operational_status, interview_objective, final_objection,").replace("deposit_amount, deposit_at,", "deposit_amount, deposit_at, deposit_validation, post_deposit_action_at, post_deposit_action_status, previous_status, terminal_at,").replace("status_reason,", "status_reason, desist_reason,");
-  var state = { leads: [], tasks: [], crmSchema: "unknown", taskSchema: "unknown", taskLoadError: null, appraisals: [], commercialCatalog: [], activeLead: null, view: "agenda", searchAgenda: "", searchPipeline: "", portfolioStatus: "all", portfolioView: "all", pendingProtocolAnsweredTaskId: null, loading: false };
+  var state = { leads: [], tasks: [], crmSchema: "unknown", taskSchema: "unknown", taskLoadError: null, appraisals: [], commercialCatalog: [], activeLead: null, view: "agenda", searchAgenda: "", searchPipeline: "", portfolioStatus: "all", portfolioView: "all", pendingProtocolAnsweredTaskId: null, pendingSaleAfterSave: false, loading: false };
   var leadDialog = document.getElementById("crmLeadDialog");
   var commentDialog = document.getElementById("crmCommentDialog");
   var commercialSelectionDialog = document.getElementById("crmCommercialSelectionDialog");
@@ -648,6 +648,48 @@
     if (note) note.focus({ preventScroll: true });
   }
 
+  // Venta must never bypass the CRM matrix by opening the Datero directly.
+  // submit_crm_lead_sale only accepts Cierre/Seña, so every other state is
+  // first driven through the canonical transition that actually applies to
+  // it, and only then does the Datero open. Never fakes an answered event:
+  // Nuevo/Sin contacto without an active protocol task fails closed.
+  async function prepareForSaleAndOpenDatero() {
+    if (!state.activeLead) return;
+    var status = crmOf(state.activeLead).status;
+    var errorBox = document.getElementById(status === "nuevo" ? "crmNewError" : "crmFormError");
+
+    if (["cierre", "sena"].includes(status)) {
+      document.getElementById("crmSaleButton").click();
+      return;
+    }
+
+    if (["nuevo", "no_contesta"].includes(status)) {
+      var pending = nextPendingTask(state.activeLead.id);
+      if (!pending) {
+        errorBox.textContent = "No hay una tarea de protocolo activa para registrar la respuesta antes de avanzar a Venta.";
+        return;
+      }
+      var leadId = state.activeLead.id;
+      var result = await supabaseClient.rpc("record_contact_answer_with_transition", {
+        p_task_id: pending.id,
+        p_status: "cierre",
+        p_note: "Contestó y avanza a Venta",
+        p_performed_at: new Date().toISOString()
+      });
+      if (result.error) { errorBox.textContent = result.error.message; return; }
+      await loadLeads(true);
+      await openLead(leadId);
+      document.getElementById("crmSaleButton").click();
+      return;
+    }
+
+    // contacto_futuro / en_proceso / entrevista: Cierre still requires a
+    // human-provided próximo contacto (never invented automatically), so
+    // pre-select it and continue to the Datero automatically once it saves.
+    state.pendingSaleAfterSave = true;
+    selectWorkspaceTransition("cierre");
+  }
+
   function renderNewExperience() {
     var panel = document.getElementById("crmNewExperience");
     panel.hidden = false;
@@ -740,6 +782,10 @@
   async function openLead(leadId) {
     var lead = state.leads.find(function (item) { return item.id === leadId; });
     if (!lead) return;
+    if (!state.activeLead || state.activeLead.id !== leadId) {
+      state.pendingProtocolAnsweredTaskId = null;
+      state.pendingSaleAfterSave = false;
+    }
     state.activeLead = lead;
     var crm = crmOf(lead);
     var isNew = crm.status === "nuevo";
@@ -843,6 +889,7 @@
     if (status === "entrevista" && !interview) { errorBox.textContent = "Indicá la fecha y hora de la entrevista."; return; }
     if (status === "sena" && (!deposit || Number(deposit) <= 0)) { errorBox.textContent = "Indicá el importe de la seña."; return; }
     if (["invalido", "desistir"].includes(status) && note.length < 3) { errorBox.textContent = "Explicá brevemente el motivo."; return; }
+    if (status === "desistir" && state.crmSchema === "v2" && !document.getElementById("crmDesistReasonInput").value) { errorBox.textContent = "Seleccioná el motivo del desistimiento."; return; }
     setBusy(button, true, "Guardando…");
     var payload = {
       p_lead_id: state.activeLead.id,
@@ -878,8 +925,16 @@
       : await supabaseClient.rpc("record_lead_follow_up", payload);
     if (result.error) { errorBox.textContent = result.error.message; setBusy(button, false); return; }
     state.pendingProtocolAnsweredTaskId = null;
+    var savedLeadId = state.activeLead.id;
+    var chainToSale = state.pendingSaleAfterSave && status === "cierre";
+    state.pendingSaleAfterSave = false;
     await loadLeads(true);
-    leadDialog.close();
+    if (chainToSale) {
+      await openLead(savedLeadId);
+      document.getElementById("crmSaleButton").click();
+    } else {
+      leadDialog.close();
+    }
     setBusy(button, false);
   }
 
@@ -1093,6 +1148,13 @@
     if (contactDecision) {
       var answered = contactDecision.dataset.contactDecision === "answered";
       var outcomes = document.getElementById("crmNewOutcomes");
+      if (answered && state.activeLead) {
+        // Contestó on a Nuevo Lead must close the real pending protocol task
+        // atomically (record_contact_answer_with_transition), exactly like
+        // the [data-protocol-answered] path from Sin contacto.
+        var pendingNewTask = nextPendingTask(state.activeLead.id);
+        state.pendingProtocolAnsweredTaskId = pendingNewTask ? pendingNewTask.id : null;
+      }
       outcomes.innerHTML = '<span>' + (answered ? "¿Cuál fue el resultado?" : "Registrá el resultado observado") + '</span><div>' + transitionButtons(answered ? ["contacto_futuro", "en_proceso", "entrevista", "cierre", "sena", "venta", "desistir"] : ["no_contesta", "invalido"]) + '</div>';
       outcomes.hidden = false;
       document.querySelectorAll("[data-contact-decision]").forEach(function (button) { button.classList.toggle("is-selected", button === contactDecision); });
@@ -1100,7 +1162,7 @@
     }
     var transition = event.target.closest("[data-crm-transition]");
     if (transition) {
-      if (transition.dataset.crmTransition === "venta") document.getElementById("crmSaleButton").click();
+      if (transition.dataset.crmTransition === "venta") prepareForSaleAndOpenDatero();
       else if (crmOf(state.activeLead).status === "nuevo" && transition.dataset.crmTransition === "no_contesta") registerNewNoAnswer();
       else selectWorkspaceTransition(transition.dataset.crmTransition);
       return;
