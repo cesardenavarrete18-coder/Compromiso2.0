@@ -628,6 +628,7 @@
       application: "Solicitud comercial",
       history: "Gestiones recientes"
     };
+    document.getElementById("pageTitle").hidden = false;
     document.getElementById("pageTitle").textContent = titles[viewName] || "Portal comercial";
     document.querySelectorAll(".nav-item").forEach(function (item) {
       item.classList.toggle("is-active", isHistory ? item.dataset.action === "history" : item.dataset.action === "home");

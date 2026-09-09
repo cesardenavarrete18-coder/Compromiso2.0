@@ -1,0 +1,1017 @@
+-- CRM V2: taxonomía y matriz canónica de transiciones.
+
+alter table public.lead_crm drop constraint if exists lead_crm_status;
+alter table public.lead_crm add constraint lead_crm_status check (status in (
+  'nuevo', 'no_contesta', 'contacto_futuro', 'en_proceso', 'invalido',
+  'entrevista', 'cierre', 'sena', 'venta', 'desistir'
+));
+
+alter table public.lead_contact_tasks
+  add column if not exists performed_at timestamptz,
+  add column if not exists recorded_at timestamptz,
+  add column if not exists protocol_day smallint,
+  add column if not exists protocol_band text,
+  add column if not exists band_attempt smallint;
+
+alter table public.lead_crm
+  add column if not exists interview_mode text,
+  add column if not exists interview_operational_status text,
+  add column if not exists interview_objective text not null default '',
+  add column if not exists final_objection text not null default '',
+  add column if not exists deposit_validation text not null default '',
+  add column if not exists post_deposit_action_at timestamptz,
+  add column if not exists post_deposit_action_status text,
+  add column if not exists previous_status text,
+  add column if not exists terminal_at timestamptz;
+
+alter table public.lead_crm
+  add constraint lead_crm_interview_mode check (interview_mode is null or interview_mode in ('presencial', 'videollamada')),
+  add constraint lead_crm_interview_operational_status check (interview_operational_status is null or interview_operational_status in ('scheduled', 'confirmed', 'rescheduled', 'no_show', 'completed')),
+  add constraint lead_crm_post_deposit_action_status check (post_deposit_action_status is null or post_deposit_action_status in ('scheduled', 'confirmed', 'rescheduled', 'completed'));
+
+alter table public.lead_contact_tasks
+  drop constraint if exists lead_contact_tasks_call;
+alter table public.lead_contact_tasks
+  add constraint lead_contact_tasks_call check (
+    (channel = 'call' and call_attempt between 1 and 18 and message_step is null)
+    or (channel = 'whatsapp' and message_step between 1 and 4 and call_attempt is null)
+  ),
+  add constraint lead_contact_tasks_protocol_metadata check (
+    (protocol_day is null and protocol_band is null and band_attempt is null)
+    or (protocol_day between 1 and 4
+      and protocol_band in ('10-12', '14-16', '17-19')
+      and ((channel = 'call' and band_attempt between 1 and 2)
+        or (channel = 'whatsapp' and band_attempt is null)))
+  );
+
+-- CRM V2 canonical protocol: nine consecutive available commercial bands,
+-- with two calls per band. WhatsApp keeps the existing cadence after calls 1 and 4.
+create or replace function private.create_lead_contact_sequence(
+  p_lead_id uuid,
+  p_seller_user_id uuid,
+  p_started_at timestamptz default now()
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_sequence_id uuid;
+  v_cursor timestamptz := greatest(coalesce(p_started_at, now()), now());
+  v_started_at timestamptz := greatest(coalesce(p_started_at, now()), now());
+  v_call_start timestamptz;
+  v_call_end timestamptz;
+  v_message_end timestamptz;
+  v_window_day date;
+  v_previous_day date;
+  v_protocol_day integer := 0;
+  v_band_number integer;
+  v_band_attempt integer;
+  v_call_attempt integer := 0;
+  v_sequence_order integer := 0;
+  v_message_step integer := 0;
+  v_status text;
+  v_manual_action timestamptz;
+  v_band text;
+begin
+  if p_seller_user_id is null then return null; end if;
+
+  select crm.status, crm.next_contact_at
+  into v_status, v_manual_action
+  from public.leads lead
+  join public.lead_crm crm on crm.lead_id = lead.id
+  where lead.id = p_lead_id
+    and lead.assigned_seller_user_id = p_seller_user_id
+    and lead.closed_at is null
+    and not coalesce(lead.do_not_contact, false)
+  for update of lead, crm;
+
+  if not found or v_status not in ('nuevo', 'no_contesta') or v_manual_action is not null then return null; end if;
+
+  select id into v_sequence_id
+  from public.lead_contact_sequences
+  where lead_id = p_lead_id and status = 'active';
+  if v_sequence_id is not null then return v_sequence_id; end if;
+
+  insert into public.lead_contact_sequences (lead_id, seller_user_id, started_at)
+  values (p_lead_id, p_seller_user_id, v_started_at)
+  returning id into v_sequence_id;
+
+  for v_band_number in 1..9 loop
+    select w.due_start, w.due_end
+    into v_call_start, v_call_end
+    from private.next_protocol_call_window(v_cursor) w;
+
+    v_window_day := (v_call_start at time zone 'America/Argentina/Buenos_Aires')::date;
+    if v_previous_day is distinct from v_window_day then
+      v_protocol_day := v_protocol_day + 1;
+      v_previous_day := v_window_day;
+    end if;
+    v_band := case
+      when (v_call_end at time zone 'America/Argentina/Buenos_Aires')::time = time '12:00' then '10-12'
+      when (v_call_end at time zone 'America/Argentina/Buenos_Aires')::time = time '16:00' then '14-16'
+      else '17-19'
+    end;
+
+    for v_band_attempt in 1..2 loop
+      v_call_attempt := v_call_attempt + 1;
+      v_sequence_order := v_sequence_order + 1;
+      insert into public.lead_contact_tasks (
+        sequence_id, lead_id, seller_user_id, sequence_order, channel,
+        call_attempt, message_step, template_id, due_start, due_end, status,
+        protocol_day, protocol_band, band_attempt
+      ) values (
+        v_sequence_id, p_lead_id, p_seller_user_id, v_sequence_order, 'call',
+        v_call_attempt, null, null, v_call_start, v_call_end,
+        case when v_call_attempt = 1 then 'pending' else 'scheduled' end,
+        v_protocol_day, v_band, v_band_attempt
+      );
+
+      if v_call_attempt in (1, 4) then
+        v_message_step := v_message_step + 1;
+        v_sequence_order := v_sequence_order + 1;
+        v_message_end := least(v_call_start + interval '2 hours', v_call_end);
+        insert into public.lead_contact_tasks (
+          sequence_id, lead_id, seller_user_id, sequence_order, channel,
+          call_attempt, message_step, template_id, due_start, due_end, status,
+          protocol_day, protocol_band, band_attempt
+        ) values (
+          v_sequence_id, p_lead_id, p_seller_user_id, v_sequence_order, 'whatsapp',
+          null, v_message_step,
+          (select id from public.contact_message_templates where step_number = v_message_step),
+          v_call_start, greatest(v_call_start + interval '1 minute', v_message_end), 'scheduled',
+          v_protocol_day, v_band, null
+        );
+      end if;
+    end loop;
+    v_cursor := v_call_end + interval '1 second';
+  end loop;
+  return v_sequence_id;
+end;
+$$;
+
+revoke all on function private.create_lead_contact_sequence(uuid, uuid, timestamptz) from public, anon, authenticated;
+
+create or replace function public.reconcile_lead_contact_protocol(p_lead_id uuid)
+returns uuid
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_user_id uuid := (select auth.uid());
+  v_seller uuid;
+  v_sequence_id uuid;
+  v_new_sequence_id uuid;
+begin
+  if v_user_id is null or not private.current_user_active() then raise exception 'Acceso no autorizado'; end if;
+
+  select lead.assigned_seller_user_id, sequence.id
+  into v_seller, v_sequence_id
+  from public.leads lead
+  join public.lead_contact_sequences sequence on sequence.lead_id = lead.id and sequence.status = 'active'
+  where lead.id = p_lead_id
+  for update of lead, sequence;
+
+  if not found then raise exception 'No existe un protocolo activo para reconciliar'; end if;
+  if v_seller <> v_user_id and not private.current_user_is_management() then raise exception 'Acceso no autorizado'; end if;
+  if (
+    select count(*) = 18
+      and count(distinct (protocol_day, protocol_band)) = 9
+      and count(distinct (protocol_day, protocol_band, band_attempt)) = 18
+      and min(protocol_day) = 1 and max(protocol_day) between 3 and 4
+      and bool_and(band_attempt between 1 and 2)
+      and bool_and(due_end >= sequence.started_at)
+      and bool_and(case protocol_band
+        when '10-12' then (due_start at time zone 'America/Argentina/Buenos_Aires')::time >= time '10:00'
+          and (due_end at time zone 'America/Argentina/Buenos_Aires')::time <= time '12:00'
+        when '14-16' then (due_start at time zone 'America/Argentina/Buenos_Aires')::time >= time '14:00'
+          and (due_end at time zone 'America/Argentina/Buenos_Aires')::time <= time '16:00'
+        when '17-19' then (due_start at time zone 'America/Argentina/Buenos_Aires')::time >= time '17:00'
+          and (due_end at time zone 'America/Argentina/Buenos_Aires')::time <= time '19:00'
+        else false end)
+    from public.lead_contact_tasks task
+    join public.lead_contact_sequences sequence on sequence.id = task.sequence_id
+    where task.sequence_id = v_sequence_id and task.channel = 'call'
+  ) then raise exception 'El protocolo activo ya cumple el contrato CRM V2'; end if;
+
+  -- Never rewrite performed/completed history. Only unfinished legacy work is
+  -- retired before creating a fresh, auditable V2 sequence.
+  update public.lead_contact_tasks
+  set status = 'cancelled', updated_at = now()
+  where sequence_id = v_sequence_id and status in ('pending', 'scheduled');
+  update public.lead_contact_sequences
+  set status = 'cancelled', completed_at = coalesce(completed_at, now()),
+      stopped_reason = 'Reconciliación explícita a protocolo CRM V2', updated_at = now()
+  where id = v_sequence_id;
+
+  insert into public.lead_activities (lead_id, actor_user_id, activity_type, title, detail, metadata)
+  values (p_lead_id, v_user_id, 'follow_up', 'Protocolo reconciliado a CRM V2',
+    'Se conservaron los intentos históricos y se cancelaron únicamente tareas pendientes del protocolo anterior.',
+    jsonb_build_object('previous_sequence_id', v_sequence_id, 'action', 'protocol_v2_reconciliation'));
+
+  v_new_sequence_id := private.create_lead_contact_sequence(p_lead_id, v_seller, now());
+  if v_new_sequence_id is null then raise exception 'No se pudo iniciar el protocolo CRM V2'; end if;
+  return v_new_sequence_id;
+end;
+$$;
+
+revoke all on function public.reconcile_lead_contact_protocol(uuid) from public, anon;
+grant execute on function public.reconcile_lead_contact_protocol(uuid) to authenticated;
+
+comment on function public.reconcile_lead_contact_protocol(uuid)
+  is 'Acción explícita: conserva intentos históricos, cancela pendientes legacy, audita y crea un protocolo CRM V2.';
+
+create or replace function private.crm_transition_allowed(p_from text, p_to text)
+returns boolean
+language sql
+immutable
+set search_path = ''
+as $$
+  select case p_from
+    when 'nuevo' then p_to in ('contacto_futuro','en_proceso','entrevista','cierre','sena','venta','desistir','no_contesta','invalido')
+    when 'no_contesta' then p_to in ('contacto_futuro','en_proceso','entrevista','cierre','sena','venta','desistir','no_contesta','invalido')
+    when 'contacto_futuro' then p_to in ('contacto_futuro','no_contesta','en_proceso','entrevista','cierre','sena','venta','desistir')
+    when 'en_proceso' then p_to in ('en_proceso','entrevista','cierre','sena','venta','desistir')
+    when 'entrevista' then p_to in ('en_proceso','entrevista','cierre','sena','venta','desistir')
+    when 'cierre' then p_to in ('cierre','entrevista','en_proceso','sena','venta','desistir')
+    when 'sena' then p_to in ('sena','venta','desistir')
+    when 'venta' then p_to = 'venta'
+    else false
+  end;
+$$;
+
+revoke all on function private.crm_transition_allowed(text, text) from public, anon, authenticated;
+
+-- Transfers and authorized reactivations are explicit new-cycle operations.
+-- They deliberately bypass the commercial transition matrix while preserving
+-- the previous cycle as an immutable activity snapshot.
+create or replace function private.start_lead_crm_cycle(
+  p_lead_id uuid,
+  p_actor_user_id uuid,
+  p_origin text,
+  p_reason text
+)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_previous public.lead_crm%rowtype;
+  v_seller uuid;
+begin
+  select * into v_previous
+  from public.lead_crm
+  where lead_id = p_lead_id
+  for update;
+  if not found then raise exception 'No se encontró la ficha CRM del Lead'; end if;
+
+  select assigned_seller_user_id into v_seller
+  from public.leads
+  where id = p_lead_id;
+  if v_seller is null then raise exception 'El Lead todavía no tiene vendedor'; end if;
+
+  perform private.cancel_lead_contact_protocol(p_lead_id, 'Inicio de nuevo ciclo: ' || p_origin);
+
+  insert into public.lead_activities (lead_id, actor_user_id, activity_type, title, detail, metadata)
+  values (
+    p_lead_id,
+    p_actor_user_id,
+    'assignment',
+    'Nuevo ciclo comercial iniciado',
+    left(trim(coalesce(p_reason, 'Nuevo ciclo autorizado')), 5000),
+    jsonb_build_object(
+      'origin', p_origin,
+      'previous_status', v_previous.status,
+      'previous_priority', v_previous.priority,
+      'previous_status_reason', v_previous.status_reason,
+      'previous_next_contact_at', v_previous.next_contact_at,
+      'previous_next_contact_note', v_previous.next_contact_note,
+      'previous_last_contact_at', v_previous.last_contact_at,
+      'previous_last_contact_outcome', v_previous.last_contact_outcome,
+      'previous_interview_at', v_previous.interview_at,
+      'previous_deposit_amount', v_previous.deposit_amount,
+      'previous_deposit_at', v_previous.deposit_at
+    )
+  );
+
+  update public.lead_crm set
+    status = 'nuevo',
+    priority = 'normal',
+    status_reason = '',
+    next_contact_at = null,
+    next_contact_note = '',
+    next_contact_source = null,
+    last_contact_at = null,
+    last_contact_outcome = '',
+    interview_at = null,
+    interview_location = '',
+    deposit_amount = null,
+    deposit_at = null,
+    cold_base_at = null,
+    updated_by = p_actor_user_id,
+    updated_at = now()
+  where lead_id = p_lead_id;
+
+  -- A status change into Nuevo starts the protocol through the canonical CRM
+  -- trigger. If the Lead was already Nuevo, start it explicitly instead.
+  if v_previous.status = 'nuevo' then
+    perform private.create_lead_contact_sequence(p_lead_id, v_seller, now());
+  end if;
+end;
+$$;
+
+revoke all on function private.start_lead_crm_cycle(uuid, uuid, text, text) from public, anon, authenticated;
+
+create or replace function private.start_contact_sequence_after_assignment()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if new.assigned_seller_user_id is not null
+    and tg_op = 'INSERT'
+    and not new.do_not_contact
+    and not exists (select 1 from public.sales_cases where lead_id = new.id) then
+    perform private.create_lead_contact_sequence(new.id, new.assigned_seller_user_id, greatest(coalesce(new.assigned_at, now()), now()));
+  elsif new.assigned_seller_user_id is not null
+    and old.assigned_seller_user_id is distinct from new.assigned_seller_user_id
+    and not new.do_not_contact
+    and not exists (select 1 from public.sales_cases where lead_id = new.id) then
+    perform private.start_lead_crm_cycle(
+      new.id,
+      coalesce(new.assigned_by_user_id, new.assigned_seller_user_id),
+      case when new.routing_reason = 'authorized_reactivation' then 'reactivation' when old.assigned_seller_user_id is null then 'assignment' else 'transfer' end,
+      case when new.routing_reason = 'authorized_reactivation' then 'Lead reactivado con autorización' when old.assigned_seller_user_id is null then 'Lead asignado' else 'Lead transferido a otro vendedor' end
+    );
+  end if;
+  return new;
+end;
+$$;
+
+revoke all on function private.start_contact_sequence_after_assignment() from public, anon, authenticated;
+
+create or replace function public.reactivate_lead_cycle(
+  p_lead_id uuid,
+  p_seller_user_id uuid,
+  p_reason text
+)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_user_id uuid := (select auth.uid());
+  v_previous_seller uuid;
+  v_reason text := trim(coalesce(p_reason, ''));
+begin
+  if v_user_id is null or not private.current_user_is_management() then
+    raise exception 'Se requiere permiso de supervisión';
+  end if;
+  if char_length(v_reason) < 3 or char_length(v_reason) > 1000 then
+    raise exception 'Indicá un motivo válido para la reactivación';
+  end if;
+  if not exists (
+    select 1 from public.profiles
+    where user_id = p_seller_user_id and role::text = 'seller' and active = true
+  ) then raise exception 'El vendedor seleccionado no está activo'; end if;
+  if exists (select 1 from public.sales_cases where lead_id = p_lead_id) then
+    raise exception 'Una Venta no puede reactivarse como oportunidad nueva';
+  end if;
+
+  select assigned_seller_user_id into v_previous_seller
+  from public.leads where id = p_lead_id for update;
+  if not found then raise exception 'No se encontró el Lead'; end if;
+
+  update public.leads set
+    assigned_seller_user_id = p_seller_user_id,
+    assigned_by_user_id = v_user_id,
+    assigned_at = now(),
+    routing_status = 'assigned_manual',
+    routing_reason = 'authorized_reactivation',
+    closed_at = null
+  where id = p_lead_id;
+
+  insert into public.lead_assignments (lead_id, seller_user_id, assigned_by_user_id, assignment_type, reason)
+  values (p_lead_id, p_seller_user_id, v_user_id, 'reassigned', v_reason);
+
+  insert into public.lead_activities (lead_id, actor_user_id, activity_type, title, detail, metadata)
+  values (p_lead_id, v_user_id, 'assignment', 'Reactivación autorizada', v_reason,
+    jsonb_build_object('origin', 'reactivation', 'previous_seller_user_id', v_previous_seller, 'seller_user_id', p_seller_user_id));
+
+  if v_previous_seller is not distinct from p_seller_user_id then
+    perform private.start_lead_crm_cycle(p_lead_id, v_user_id, 'reactivation', v_reason);
+  end if;
+end;
+$$;
+
+revoke all on function public.reactivate_lead_cycle(uuid, uuid, text) from public, anon;
+grant execute on function public.reactivate_lead_cycle(uuid, uuid, text) to authenticated;
+
+create or replace function public.record_contact_task_result(
+  p_task_id uuid,
+  p_outcome text,
+  p_note text default '',
+  p_performed_at timestamptz default now()
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_result jsonb;
+begin
+  if p_performed_at is null or p_performed_at > now() + interval '5 minutes' then
+    raise exception 'La hora efectiva del contacto no es válida';
+  end if;
+
+  v_result := public.complete_contact_task(p_task_id, p_outcome, p_note);
+
+  update public.lead_contact_tasks set
+    performed_at = p_performed_at,
+    recorded_at = now()
+  where id = p_task_id;
+
+  if p_outcome = 'invalid' then
+    update public.lead_crm set terminal_at = now(), updated_at = now()
+    where lead_id = (v_result ->> 'lead_id')::uuid and status = 'invalido';
+  end if;
+
+  if coalesce((v_result ->> 'sequence_finished')::boolean, false) then
+    update public.lead_crm set
+      status = 'desistir',
+      status_reason = 'No contactado post protocolo',
+      next_contact_at = null,
+      next_contact_note = '',
+      next_contact_source = null,
+      cold_base_at = now(),
+      previous_status = 'no_contesta',
+      terminal_at = now(),
+      updated_at = now()
+    where lead_id = (v_result ->> 'lead_id')::uuid;
+
+    insert into public.lead_activities (lead_id, actor_user_id, activity_type, title, detail, metadata)
+    values ((v_result ->> 'lead_id')::uuid, auth.uid(), 'status_change', 'Lead clasificado como Base fría',
+      'No contactado post protocolo', jsonb_build_object('status', 'desistir', 'segment', 'base_fria', 'reason', 'No contactado post protocolo'));
+  end if;
+
+  return v_result;
+end;
+$$;
+
+revoke all on function public.record_contact_task_result(uuid, text, text, timestamptz) from public, anon;
+grant execute on function public.record_contact_task_result(uuid, text, text, timestamptz) to authenticated;
+
+create or replace function public.start_no_contact_protocol_from_future(p_lead_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_user_id uuid := (select auth.uid());
+begin
+  if v_user_id is null or not private.current_user_active() then raise exception 'Acceso no autorizado'; end if;
+  if not private.current_user_is_management() and not exists (
+    select 1 from public.leads where id = p_lead_id and assigned_seller_user_id = v_user_id
+  ) then raise exception 'El Lead no está asignado a este vendedor'; end if;
+  if not exists (select 1 from public.lead_crm where lead_id = p_lead_id and status = 'contacto_futuro' for update) then
+    raise exception 'El Lead ya no está en Pide contacto futuro';
+  end if;
+
+  update public.lead_crm set
+    status = 'no_contesta',
+    next_contact_at = null,
+    next_contact_note = '',
+    next_contact_source = null,
+    last_contact_at = now(),
+    last_contact_outcome = 'no_answer',
+    updated_by = v_user_id,
+    updated_at = now()
+  where lead_id = p_lead_id;
+
+  insert into public.lead_activities (lead_id, actor_user_id, activity_type, title, detail, metadata)
+  values (p_lead_id, v_user_id, 'contact', 'Contacto futuro intentado sin respuesta', '',
+    jsonb_build_object('previous_status', 'contacto_futuro', 'status', 'no_contesta', 'performed_at', now(), 'recorded_at', now(), 'outcome', 'no_answer'));
+end;
+$$;
+
+revoke all on function public.start_no_contact_protocol_from_future(uuid) from public, anon;
+grant execute on function public.start_no_contact_protocol_from_future(uuid) to authenticated;
+
+create or replace function public.record_interview_operation(
+  p_lead_id uuid,
+  p_operational_status text,
+  p_interview_at timestamptz,
+  p_mode text,
+  p_objective text,
+  p_location text default ''
+)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare v_user_id uuid := auth.uid();
+begin
+  if v_user_id is null or not private.current_user_active() then raise exception 'Acceso no autorizado'; end if;
+  if not private.current_user_is_management() and not exists (select 1 from public.leads where id = p_lead_id and assigned_seller_user_id = v_user_id) then raise exception 'El Lead no está asignado a este vendedor'; end if;
+  if p_operational_status not in ('scheduled', 'confirmed', 'rescheduled', 'no_show') then raise exception 'Una entrevista completada requiere registrar el resultado comercial'; end if;
+  if p_mode not in ('presencial', 'videollamada') then raise exception 'La entrevista debe ser Presencial o Videollamada'; end if;
+  if p_interview_at is null then raise exception 'Indicá la fecha y hora de la entrevista'; end if;
+  if p_operational_status in ('scheduled', 'confirmed', 'rescheduled') and p_interview_at <= now() then raise exception 'La entrevista debe quedar programada a futuro'; end if;
+  if char_length(trim(coalesce(p_objective, ''))) < 2 then raise exception 'Indicá el objetivo o contexto de la entrevista'; end if;
+
+  update public.lead_crm set interview_at = p_interview_at, interview_mode = p_mode,
+    interview_operational_status = p_operational_status, interview_objective = trim(p_objective),
+    interview_location = trim(coalesce(p_location, '')), updated_by = v_user_id, updated_at = now()
+  where lead_id = p_lead_id and status = 'entrevista';
+  if not found then raise exception 'El Lead ya no está en Entrevista'; end if;
+
+  insert into public.lead_activities (lead_id, actor_user_id, activity_type, title, detail, metadata)
+  values (p_lead_id, v_user_id, 'interview', 'Entrevista ' || p_operational_status, trim(p_objective),
+    jsonb_build_object('status', 'entrevista', 'operational_status', p_operational_status,
+      'interview_at', p_interview_at, 'mode', p_mode, 'location', trim(coalesce(p_location, ''))));
+end;
+$$;
+revoke all on function public.record_interview_operation(uuid, text, timestamptz, text, text, text) from public, anon;
+grant execute on function public.record_interview_operation(uuid, text, timestamptz, text, text, text) to authenticated;
+
+create or replace function public.record_post_deposit_interview(
+  p_lead_id uuid,
+  p_operational_status text,
+  p_action_at timestamptz,
+  p_mode text,
+  p_note text default ''
+)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare v_user_id uuid := auth.uid();
+begin
+  if v_user_id is null or not private.current_user_active() then raise exception 'Acceso no autorizado'; end if;
+  if not private.current_user_is_management() and not exists (select 1 from public.leads where id = p_lead_id and assigned_seller_user_id = v_user_id) then raise exception 'El Lead no está asignado a este vendedor'; end if;
+  if p_operational_status not in ('scheduled', 'confirmed', 'rescheduled', 'completed') then raise exception 'Estado operativo post-seña inválido'; end if;
+  if p_mode not in ('presencial', 'videollamada') then raise exception 'La acción debe ser Presencial o Videollamada'; end if;
+  if p_action_at is null then raise exception 'Indicá la fecha y hora de la acción'; end if;
+  if p_operational_status in ('scheduled', 'confirmed', 'rescheduled') and p_action_at <= now() then raise exception 'La acción debe quedar programada a futuro'; end if;
+
+  update public.lead_crm set post_deposit_action_at = p_action_at,
+    post_deposit_action_status = p_operational_status, updated_by = v_user_id, updated_at = now()
+  where lead_id = p_lead_id and status = 'sena';
+  if not found then raise exception 'El Lead ya no está en Seña'; end if;
+
+  insert into public.lead_activities (lead_id, actor_user_id, activity_type, title, detail, metadata)
+  values (p_lead_id, v_user_id, 'follow_up', 'Acción posterior a la seña', trim(coalesce(p_note, '')),
+    jsonb_build_object('status', 'sena', 'operational_status', p_operational_status,
+      'action_at', p_action_at, 'mode', p_mode));
+end;
+$$;
+revoke all on function public.record_post_deposit_interview(uuid, text, timestamptz, text, text) from public, anon;
+grant execute on function public.record_post_deposit_interview(uuid, text, timestamptz, text, text) to authenticated;
+
+drop function if exists public.record_lead_follow_up(uuid, text, text, timestamptz, text, text, timestamptz, text, numeric, text);
+
+create or replace function public.record_lead_follow_up(
+  p_lead_id uuid,
+  p_status text,
+  p_note text default '',
+  p_next_contact_at timestamptz default null,
+  p_next_contact_note text default '',
+  p_contact_outcome text default '',
+  p_interview_at timestamptz default null,
+  p_interview_location text default '',
+  p_deposit_amount numeric default null,
+  p_priority text default 'normal',
+  p_interview_mode text default null,
+  p_interview_operational_status text default null,
+  p_deposit_validation text default ''
+)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_user_id uuid := (select auth.uid());
+  v_is_management boolean;
+  v_previous_status text;
+  v_activity_type text := 'status_change';
+  v_title text;
+  v_next_note text := left(
+    coalesce(nullif(trim(coalesce(p_note, '')), ''), 'Próximo contacto programado'),
+    1000
+  );
+begin
+  if v_user_id is null or not private.current_user_active() then
+    raise exception 'Acceso no autorizado';
+  end if;
+
+  v_is_management := private.current_user_is_management();
+  if not v_is_management and not exists (
+    select 1 from public.leads
+    where id = p_lead_id and assigned_seller_user_id = v_user_id
+  ) then
+    raise exception 'El lead no está asignado a este vendedor';
+  end if;
+
+  if p_status = 'nuevo' then
+    raise exception 'Nuevo es un estado de ingreso. Seleccioná el resultado de la gestión';
+  end if;
+  if p_status is null or p_status not in ('no_contesta', 'contacto_futuro', 'en_proceso', 'invalido', 'entrevista', 'cierre', 'sena', 'desistir') then
+    raise exception 'Estado comercial inválido';
+  end if;
+  if p_priority not in ('low', 'normal', 'high') then raise exception 'Prioridad inválida'; end if;
+  if char_length(trim(coalesce(p_note, ''))) > 3000 then raise exception 'El detalle es demasiado extenso'; end if;
+  if p_status in ('no_contesta', 'contacto_futuro', 'en_proceso', 'cierre', 'sena') and p_next_contact_at is null then
+    raise exception 'Programá el próximo contacto';
+  end if;
+  if p_next_contact_at is not null and p_next_contact_at <= now() then
+    raise exception 'El próximo contacto debe quedar programado a futuro';
+  end if;
+  if p_status = 'entrevista' and p_interview_at is null then raise exception 'Indicá la fecha y hora de la entrevista'; end if;
+  if p_status = 'entrevista' and p_interview_mode not in ('presencial', 'videollamada') then raise exception 'La entrevista debe ser Presencial o Videollamada'; end if;
+  if p_status = 'sena' and (p_deposit_amount is null or p_deposit_amount <= 0) then raise exception 'Indicá el importe de la seña'; end if;
+  if p_status in ('invalido', 'desistir') and char_length(trim(coalesce(p_note, ''))) < 3 then raise exception 'Indicá el motivo para este estado'; end if;
+
+  select status into v_previous_status
+  from public.lead_crm
+  where lead_id = p_lead_id
+  for update;
+  if v_previous_status is null then raise exception 'No se encontró la ficha CRM del lead'; end if;
+  if not private.crm_transition_allowed(v_previous_status, p_status) then
+    raise exception 'Transición comercial no permitida: % → %', v_previous_status, p_status;
+  end if;
+
+  if p_status = 'entrevista' then v_activity_type := 'interview'; end if;
+  if p_status in ('no_contesta', 'contacto_futuro') or p_next_contact_at is not null then v_activity_type := 'follow_up'; end if;
+  if p_status in ('en_proceso', 'invalido') then v_activity_type := 'contact'; end if;
+  v_title := case p_status
+    when 'no_contesta' then 'El cliente no respondió'
+    when 'contacto_futuro' then 'El cliente pidió contacto futuro'
+    when 'en_proceso' then 'Contacto en proceso'
+    when 'invalido' then 'Contacto inválido o erróneo'
+    when 'entrevista' then 'Entrevista programada'
+    when 'cierre' then 'Oportunidad en cierre'
+    when 'sena' then 'Seña registrada'
+    when 'desistir' then 'Oportunidad desistida'
+  end;
+
+  perform private.cancel_lead_contact_protocol(p_lead_id, 'Gestión manual registrada');
+
+  update public.lead_crm set
+    status = p_status,
+    priority = case when p_status = 'cierre' then 'high' else p_priority end,
+    status_reason = case when p_status in ('invalido', 'desistir') then trim(coalesce(p_note, '')) else status_reason end,
+    next_contact_at = case when p_status in ('desistir', 'invalido') then null else p_next_contact_at end,
+    next_contact_note = case when p_status in ('desistir', 'invalido') or p_next_contact_at is null then '' else v_next_note end,
+    next_contact_source = case when p_status in ('desistir', 'invalido') or p_next_contact_at is null then null else 'manual' end,
+    last_contact_at = now(),
+    last_contact_outcome = trim(coalesce(p_contact_outcome, '')),
+    interview_at = coalesce(p_interview_at, interview_at),
+    interview_location = case when p_interview_at is not null then trim(coalesce(p_interview_location, '')) else interview_location end,
+    interview_mode = case when p_status = 'entrevista' then p_interview_mode else interview_mode end,
+    interview_operational_status = case when p_status = 'entrevista' then coalesce(p_interview_operational_status, 'scheduled') when v_previous_status = 'entrevista' then 'completed' else interview_operational_status end,
+    interview_objective = case when p_status = 'entrevista' then trim(coalesce(p_note, '')) else interview_objective end,
+    final_objection = case when p_status = 'cierre' then trim(coalesce(p_note, '')) else final_objection end,
+    deposit_amount = coalesce(p_deposit_amount, deposit_amount),
+    deposit_at = case when p_status = 'sena' then now() else deposit_at end,
+    deposit_validation = case when p_status = 'sena' then trim(coalesce(p_deposit_validation, '')) else deposit_validation end,
+    cold_base_at = null,
+    previous_status = case when p_status in ('desistir', 'invalido') then v_previous_status else previous_status end,
+    terminal_at = case when p_status in ('desistir', 'invalido') then now() else null end,
+    updated_by = v_user_id,
+    updated_at = now()
+  where lead_id = p_lead_id;
+
+  insert into public.lead_activities (lead_id, actor_user_id, activity_type, title, detail, metadata)
+  values (
+    p_lead_id,
+    v_user_id,
+    v_activity_type,
+    v_title,
+    trim(coalesce(p_note, '')),
+    jsonb_build_object(
+      'previous_status', v_previous_status,
+      'status', p_status,
+      'next_contact_at', p_next_contact_at,
+      'next_contact_note', case when p_next_contact_at is null then null else v_next_note end,
+      'next_contact_source', case when p_next_contact_at is null then null else 'manual' end,
+      'interview_at', p_interview_at,
+      'interview_location', trim(coalesce(p_interview_location, '')),
+      'interview_mode', p_interview_mode,
+      'deposit_amount', p_deposit_amount
+    )
+  );
+end;
+$$;
+
+comment on function public.record_lead_follow_up(uuid, text, text, timestamptz, text, text, timestamptz, text, numeric, text, text, text, text)
+  is 'Registra una gestión, reemplaza el protocolo y usa el comentario como nota de la próxima acción manual.';
+
+revoke all on function public.record_lead_follow_up(uuid, text, text, timestamptz, text, text, timestamptz, text, numeric, text, text, text, text) from public, anon;
+grant execute on function public.record_lead_follow_up(uuid, text, text, timestamptz, text, text, timestamptz, text, numeric, text, text, text, text) to authenticated;
+
+create or replace function public.record_contact_answer_with_transition(
+  p_task_id uuid,
+  p_status text,
+  p_note text default '',
+  p_next_contact_at timestamptz default null,
+  p_next_contact_note text default '',
+  p_contact_outcome text default '',
+  p_interview_at timestamptz default null,
+  p_interview_location text default '',
+  p_deposit_amount numeric default null,
+  p_priority text default 'normal',
+  p_performed_at timestamptz default now(),
+  p_interview_mode text default null,
+  p_deposit_validation text default ''
+)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_user_id uuid := (select auth.uid());
+  v_task public.lead_contact_tasks%rowtype;
+  v_previous_status text;
+  v_next_note text := left(coalesce(nullif(trim(p_next_contact_note), ''), trim(p_note)), 1000);
+  v_activity_type text := 'status_change';
+  v_title text;
+begin
+  if v_user_id is null or not private.current_user_active() then raise exception 'Acceso no autorizado'; end if;
+  if p_performed_at is null or p_performed_at > now() + interval '5 minutes' then raise exception 'La hora efectiva del contacto no es válida'; end if;
+  if char_length(trim(coalesce(p_note, ''))) > 3000 then raise exception 'El detalle es demasiado extenso'; end if;
+  if p_priority not in ('low', 'normal', 'high') then raise exception 'Prioridad inválida'; end if;
+  if p_status not in ('contacto_futuro', 'en_proceso', 'entrevista', 'cierre', 'sena', 'desistir') then
+    raise exception 'Resultado comercial no permitido después de una respuesta';
+  end if;
+
+  select * into v_task
+  from public.lead_contact_tasks
+  where id = p_task_id
+  for update;
+  if v_task.id is null or v_task.status <> 'pending' then raise exception 'La tarea ya fue procesada o no existe'; end if;
+  if v_task.seller_user_id <> v_user_id and not private.current_user_is_management() then raise exception 'La tarea no corresponde a este vendedor'; end if;
+
+  select status into v_previous_status
+  from public.lead_crm
+  where lead_id = v_task.lead_id
+  for update;
+  if v_previous_status is null then raise exception 'No se encontró la ficha CRM del lead'; end if;
+  if v_previous_status <> 'no_contesta' then raise exception 'El Lead ya no está en Sin contacto'; end if;
+  if not private.crm_transition_allowed(v_previous_status, p_status) then
+    raise exception 'Transición comercial no permitida: % → %', v_previous_status, p_status;
+  end if;
+
+  if p_status in ('contacto_futuro', 'en_proceso') and (p_next_contact_at is null or p_next_contact_at <= now()) then
+    if p_status = 'en_proceso' then
+      raise exception 'En gestión requiere un próximo contacto con fecha y hora';
+    else
+      raise exception 'Programá el contacto solicitado';
+    end if;
+  end if;
+  if p_status = 'entrevista' and (p_interview_at is null or p_interview_at <= now()) then raise exception 'Indicá la fecha y hora futura de la entrevista'; end if;
+  if p_status = 'entrevista' and p_interview_mode not in ('presencial', 'videollamada') then raise exception 'La entrevista debe ser Presencial o Videollamada'; end if;
+  if p_status = 'sena' and (p_deposit_amount is null or p_deposit_amount <= 0) then raise exception 'Indicá el importe de la seña'; end if;
+  if p_status = 'desistir' and char_length(trim(coalesce(p_note, ''))) < 3 then raise exception 'Indicá el motivo para este estado'; end if;
+
+  -- Deliberately bypass the legacy task-completion RPC: it changes the CRM
+  -- status before the required final fields exist.
+  update public.lead_contact_tasks set
+    status = 'completed',
+    outcome = 'answered',
+    note = trim(coalesce(p_note, '')),
+    completed_at = now(),
+    performed_at = p_performed_at,
+    recorded_at = now(),
+    completed_by = v_user_id,
+    updated_at = now()
+  where id = v_task.id;
+
+  insert into public.lead_activities (lead_id, actor_user_id, activity_type, title, detail, metadata)
+  values (v_task.lead_id, v_user_id, case when v_task.channel = 'call' then 'contact' else 'follow_up' end,
+    case when v_task.channel = 'call' then 'Intento de llamada ' || v_task.call_attempt || ' contestado'
+      else 'WhatsApp de seguimiento ' || v_task.message_step || ' contestado' end,
+    trim(coalesce(p_note, '')),
+    jsonb_build_object('task_id', v_task.id, 'channel', v_task.channel, 'outcome', 'answered',
+      'call_attempt', v_task.call_attempt, 'message_step', v_task.message_step,
+      'performed_at', p_performed_at, 'recorded_at', now()));
+
+  perform private.cancel_lead_contact_protocol(v_task.lead_id, 'El cliente respondió');
+
+  if p_status = 'entrevista' then v_activity_type := 'interview'; end if;
+  if p_status in ('contacto_futuro', 'en_proceso') then v_activity_type := 'follow_up'; end if;
+  if p_status = 'en_proceso' then v_activity_type := 'contact'; end if;
+  v_title := case p_status
+    when 'contacto_futuro' then 'El cliente pidió contacto futuro'
+    when 'en_proceso' then 'Contacto en proceso'
+    when 'entrevista' then 'Entrevista programada'
+    when 'cierre' then 'Oportunidad en cierre'
+    when 'sena' then 'Seña registrada'
+    when 'desistir' then 'Oportunidad desistida'
+  end;
+
+  update public.lead_crm set
+    status = p_status,
+    priority = case when p_status = 'cierre' then 'high' else p_priority end,
+    status_reason = case when p_status = 'desistir' then trim(coalesce(p_note, '')) else status_reason end,
+    next_contact_at = case when p_status in ('contacto_futuro', 'en_proceso') then p_next_contact_at else null end,
+    next_contact_note = case when p_status in ('contacto_futuro', 'en_proceso') then v_next_note else '' end,
+    next_contact_source = case when p_status in ('contacto_futuro', 'en_proceso') then 'manual' else null end,
+    last_contact_at = p_performed_at,
+    last_contact_outcome = 'answered',
+    interview_at = case when p_status = 'entrevista' then p_interview_at else interview_at end,
+    interview_location = case when p_status = 'entrevista' then trim(coalesce(p_interview_location, '')) else interview_location end,
+    interview_mode = case when p_status = 'entrevista' then p_interview_mode else interview_mode end,
+    interview_operational_status = case when p_status = 'entrevista' then 'scheduled' else interview_operational_status end,
+    interview_objective = case when p_status = 'entrevista' then trim(coalesce(p_note, '')) else interview_objective end,
+    final_objection = case when p_status = 'cierre' then trim(coalesce(p_note, '')) else final_objection end,
+    deposit_amount = case when p_status = 'sena' then p_deposit_amount else deposit_amount end,
+    deposit_at = case when p_status = 'sena' then now() else deposit_at end,
+    deposit_validation = case when p_status = 'sena' then trim(coalesce(p_deposit_validation, '')) else deposit_validation end,
+    cold_base_at = null,
+    previous_status = case when p_status = 'desistir' then v_previous_status else previous_status end,
+    terminal_at = case when p_status = 'desistir' then now() else null end,
+    updated_by = v_user_id,
+    updated_at = now()
+  where lead_id = v_task.lead_id;
+
+  insert into public.lead_activities (lead_id, actor_user_id, activity_type, title, detail, metadata)
+  values (v_task.lead_id, v_user_id, v_activity_type, v_title, trim(coalesce(p_note, '')),
+    jsonb_build_object('previous_status', v_previous_status, 'status', p_status,
+      'next_contact_at', case when p_status in ('contacto_futuro', 'en_proceso') then p_next_contact_at else null end,
+      'next_contact_note', case when p_status in ('contacto_futuro', 'en_proceso') then v_next_note else null end,
+      'next_contact_source', case when p_status in ('contacto_futuro', 'en_proceso') then 'manual' else null end,
+      'interview_at', p_interview_at, 'interview_location', trim(coalesce(p_interview_location, '')),
+      'deposit_amount', p_deposit_amount, 'performed_at', p_performed_at));
+end;
+$$;
+
+revoke all on function public.record_contact_answer_with_transition(uuid, text, text, timestamptz, text, text, timestamptz, text, numeric, text, timestamptz, text, text) from public, anon;
+grant execute on function public.record_contact_answer_with_transition(uuid, text, text, timestamptz, text, text, timestamptz, text, numeric, text, timestamptz, text, text) to authenticated;
+
+-- Preserve the commercial fact of a deposit while the existing sale/admin
+-- workflow runs. A pending or rejected sale request never demotes Seña.
+-- Quote validation is isolated so the quote-less path never plans a reference
+-- to sales_quotes on historical schemas where that optional module is absent.
+create or replace function private.sale_quote_matches_lead(
+  p_quote_id uuid, p_lead_id uuid, p_seller_user_id uuid
+)
+returns boolean language plpgsql stable security definer set search_path = '' as $$
+declare v_matches boolean;
+begin
+  select exists (
+    select 1 from public.sales_quotes
+    where id = p_quote_id and lead_id = p_lead_id
+      and seller_user_id = p_seller_user_id and status in ('issued', 'converted')
+  ) into v_matches;
+  return v_matches;
+exception when undefined_table then
+  raise exception 'Este entorno no dispone de asociación de presupuestos para la venta';
+end;
+$$;
+revoke all on function private.sale_quote_matches_lead(uuid, uuid, uuid) from public, anon, authenticated;
+
+-- Historical request schemas do not have quote_id. Keep the optional quote
+-- association in a lazily planned helper so quote-less requests remain
+-- compatible without conflating it with provisional_application_id.
+create or replace function private.create_lead_sale_request_with_quote(
+  p_lead_id uuid, p_seller_user_id uuid, p_vehicle text, p_amount numeric,
+  p_notes text, p_quote_id uuid
+)
+returns uuid language plpgsql security definer set search_path = '' as $$
+declare v_request_id uuid;
+begin
+  insert into public.lead_sale_requests
+    (lead_id, seller_user_id, vehicle, sale_amount, notes, quote_id)
+  values
+    (p_lead_id, p_seller_user_id, p_vehicle, p_amount, p_notes, p_quote_id)
+  returning id into v_request_id;
+  return v_request_id;
+exception when undefined_column then
+  raise exception 'Este entorno no soporta asociar presupuestos a solicitudes de venta';
+end;
+$$;
+revoke all on function private.create_lead_sale_request_with_quote(uuid, uuid, text, numeric, text, uuid) from public, anon, authenticated;
+
+create or replace function public.request_lead_sale_v2(
+  p_lead_id uuid, p_vehicle text, p_amount numeric default null,
+  p_notes text default '', p_quote_id uuid default null
+)
+returns uuid language plpgsql security definer set search_path = '' as $$
+declare
+  v_user_id uuid := auth.uid();
+  v_request_id uuid;
+  v_current_status text;
+begin
+  if v_user_id is null or not private.current_user_active() then raise exception 'Acceso no autorizado'; end if;
+  if not private.current_user_is_management() and not exists (select 1 from public.leads where id = p_lead_id and assigned_seller_user_id = v_user_id) then raise exception 'El lead no está asignado a este vendedor'; end if;
+  if char_length(trim(coalesce(p_vehicle, ''))) < 2 or char_length(trim(p_vehicle)) > 160 then raise exception 'Indicá el vehículo vendido'; end if;
+  if p_amount is not null and p_amount < 0 then raise exception 'El importe no puede ser negativo'; end if;
+  if exists (select 1 from public.lead_sale_requests where lead_id = p_lead_id and status = 'pending') then raise exception 'Ya existe una venta pendiente de confirmación'; end if;
+  if exists (select 1 from public.sales_cases where lead_id = p_lead_id) then raise exception 'La venta ya se encuentra en el circuito administrativo'; end if;
+  if p_quote_id is not null and not private.sale_quote_matches_lead(p_quote_id, p_lead_id, v_user_id) then
+    raise exception 'El presupuesto no corresponde a este lead';
+  end if;
+
+  select status into v_current_status from public.lead_crm where lead_id = p_lead_id for update;
+  if v_current_status = 'venta' then raise exception 'La venta ya fue confirmada'; end if;
+
+  if p_quote_id is null then
+    insert into public.lead_sale_requests (lead_id, seller_user_id, vehicle, sale_amount, notes)
+    values (p_lead_id, v_user_id, trim(p_vehicle), p_amount, trim(coalesce(p_notes, '')))
+    returning id into v_request_id;
+  else
+    v_request_id := private.create_lead_sale_request_with_quote(
+      p_lead_id, v_user_id, trim(p_vehicle), p_amount,
+      trim(coalesce(p_notes, '')), p_quote_id
+    );
+  end if;
+
+  update public.lead_crm set status = case when v_current_status = 'sena' then 'sena' else 'cierre' end,
+    priority = 'high', sale_confirmation_status = 'pending', sale_requested_at = now(),
+    sale_requested_by = v_user_id, vehicle_sold = trim(p_vehicle), sale_amount = p_amount,
+    updated_by = v_user_id, updated_at = now()
+  where lead_id = p_lead_id;
+
+  insert into public.lead_activities (lead_id, actor_user_id, activity_type, title, detail, metadata)
+  values (p_lead_id, v_user_id, 'sale_request', 'Venta enviada a confirmación', trim(coalesce(p_notes, '')),
+    jsonb_build_object('vehicle', trim(p_vehicle), 'amount', p_amount, 'request_id', v_request_id,
+      'quote_id', p_quote_id, 'previous_status', v_current_status));
+  return v_request_id;
+end;
+$$;
+revoke all on function public.request_lead_sale_v2(uuid, text, numeric, text, uuid) from public, anon;
+grant execute on function public.request_lead_sale_v2(uuid, text, numeric, text, uuid) to authenticated;
+
+-- Review metadata is optional in historical lead_sale_requests schemas. The
+-- status remains the canonical portable field; richer audit also lives in
+-- lead_crm and lead_activities.
+create or replace function private.enrich_lead_sale_request_review(
+  p_request_id uuid, p_reviewer_id uuid, p_review_note text
+)
+returns void language plpgsql security definer set search_path = '' as $$
+begin
+  update public.lead_sale_requests
+  set reviewed_by = p_reviewer_id, reviewed_at = now(), review_note = p_review_note
+  where id = p_request_id;
+exception when undefined_column then
+  null;
+end;
+$$;
+revoke all on function private.enrich_lead_sale_request_review(uuid, uuid, text) from public, anon, authenticated;
+
+create or replace function public.review_lead_sale(p_request_id uuid, p_approved boolean, p_review_note text default '')
+returns void language plpgsql security definer set search_path = '' as $$
+declare
+  v_user_id uuid := auth.uid();
+  v_request public.lead_sale_requests%rowtype;
+  v_current_status text;
+begin
+  if v_user_id is null or not private.current_user_is_management() then raise exception 'Se requiere permiso de supervisión'; end if;
+  select * into v_request from public.lead_sale_requests where id = p_request_id for update;
+  if v_request.id is null then raise exception 'No se encontró la solicitud'; end if;
+  if v_request.status <> 'pending' then raise exception 'La solicitud ya fue revisada'; end if;
+  select status into v_current_status from public.lead_crm where lead_id = v_request.lead_id for update;
+
+  update public.lead_sale_requests
+  set status = case when p_approved then 'confirmed' else 'rejected' end
+  where id = p_request_id;
+  perform private.enrich_lead_sale_request_review(
+    p_request_id, v_user_id, trim(coalesce(p_review_note, ''))
+  );
+  update public.lead_crm set status = case when p_approved then 'venta' when v_current_status = 'sena' then 'sena' else 'cierre' end,
+    priority = 'high', sale_confirmation_status = case when p_approved then 'confirmed' else 'rejected' end,
+    sale_confirmed_at = case when p_approved then now() else null end,
+    sale_confirmed_by = case when p_approved then v_user_id else null end,
+    vehicle_sold = v_request.vehicle, sale_amount = v_request.sale_amount,
+    next_contact_at = case when p_approved then null else next_contact_at end,
+    next_contact_note = case when p_approved then '' else next_contact_note end,
+    next_contact_source = case when p_approved then null else next_contact_source end,
+    updated_by = v_user_id, updated_at = now()
+  where lead_id = v_request.lead_id;
+  if p_approved and not exists (
+    select 1 from public.sales_cases where lead_id = v_request.lead_id
+  ) then
+    insert into public.sales_cases
+      (sale_request_id, lead_id, seller_user_id, vehicle, sale_amount)
+    values
+      (v_request.id, v_request.lead_id, v_request.seller_user_id, v_request.vehicle, v_request.sale_amount);
+  end if;
+  insert into public.lead_activities (lead_id, actor_user_id, activity_type, title, detail, metadata)
+  values (v_request.lead_id, v_user_id, 'sale_confirmation', case when p_approved then 'Venta confirmada' else 'Venta observada por supervisión' end,
+    trim(coalesce(p_review_note, '')), jsonb_build_object('approved', p_approved, 'vehicle', v_request.vehicle,
+      'amount', v_request.sale_amount, 'request_id', p_request_id, 'previous_status', v_current_status));
+end;
+$$;
+revoke all on function public.review_lead_sale(uuid, boolean, text) from public, anon;
+grant execute on function public.review_lead_sale(uuid, boolean, text) to authenticated;

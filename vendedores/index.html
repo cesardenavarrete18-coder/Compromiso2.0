@@ -11,12 +11,14 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/vendedores/styles.css?v=20260813-6">
-  <link rel="stylesheet" href="/vendedores/crm.css?v=20260824-1">
+  <link rel="stylesheet" href="/vendedores/crm.css?v=20260907-1">
+  <link id="crm-en-gestion-style" rel="stylesheet" href="/vendedores/en-gestion.css?v=20260908-1">
   <link rel="stylesheet" href="/vendedores/seller-enhancements.css?v=20260826-1">
   <link rel="stylesheet" href="/vendedores/contact-protocol.css?v=20260903-1">
   <link rel="stylesheet" href="/vendedores/workflow-polish.css?v=20260818-1">
   <link rel="stylesheet" href="/vendedores/recalls.css?v=20260821-1">
   <link rel="stylesheet" href="/vendedores/auth-loading.css?v=20260817-1">
+  <link rel="stylesheet" href="/vendedores/crm-v2-design-system.css?v=20260908-1">
   <style>#crmAppraisalButton,#crmAppraisalDialog{display:none!important}</style>
 </head>
 <body>
@@ -72,7 +74,7 @@
       <nav class="sidebar-nav" aria-label="Navegación del portal">
         <button class="nav-item" type="button" data-crm-view="agenda">
           <span class="nav-icon" aria-hidden="true">▣</span>
-          Mi agenda
+          Mi Cartera
         </button>
         <button class="nav-item" type="button" data-crm-view="pipeline">
           <span class="nav-icon" aria-hidden="true">⌘</span>
@@ -112,7 +114,7 @@
       <details class="mobile-crm-menu" id="mobileCrmMenu">
         <summary aria-label="Abrir funciones del CRM"><span>Menú</span><strong id="mobileCrmMenuLabel">Nueva gestión</strong><i aria-hidden="true">⌄</i></summary>
         <nav aria-label="Funciones del CRM en versión móvil">
-          <button type="button" data-crm-view="agenda">Mi agenda</button>
+          <button type="button" data-crm-view="agenda">Mi Cartera</button>
           <button type="button" data-crm-view="pipeline">Embudo comercial</button>
           <button type="button" data-crm-view="ranking">Ranking</button>
           <button type="button" data-crm-view="quotes">Presupuestos</button>
@@ -408,12 +410,31 @@
         </section>
 
         <section class="view crm-view" id="crmAgendaView" aria-labelledby="crmAgendaTitle">
-          <div class="crm-hero">
-            <div><p class="eyebrow dark">Agenda comercial</p><h2 id="crmAgendaTitle">Lo importante para hoy</h2><p>Contactos vencidos, tareas del día y próximas oportunidades en una sola pantalla.</p></div>
-            <div class="crm-hero-actions"><label class="crm-search"><span>⌕</span><input id="crmAgendaSearch" type="search" placeholder="Buscar cliente, teléfono o modelo"></label><button class="primary-button compact-button" id="crmRefreshButton" type="button">Actualizar</button></div>
+          <div class="crm-cartera-header">
+            <div class="crm-hero">
+              <div><h1 id="crmAgendaTitle">Mi Cartera</h1><p>Tus oportunidades comerciales, ordenadas por prioridad y próxima acción.</p></div>
+              <div class="crm-hero-actions"><label class="crm-search"><span>⌕</span><input id="crmAgendaSearch" type="search" placeholder="Buscar cliente, teléfono o modelo"></label><button class="primary-button compact-button" id="crmRefreshButton" type="button">Actualizar</button></div>
+            </div>
+            <div class="crm-summary" id="crmSummary"></div>
           </div>
           <p class="crm-message" id="crmAgendaMessage" role="status"></p>
-          <div class="crm-summary" id="crmSummary"></div>
+          <div class="portfolio-toolbar" aria-label="Filtros de Mi Cartera">
+            <div class="portfolio-filter-group"><span>Filtrar por estado</span><div id="crmPortfolioStatusFilters" class="portfolio-filter-buttons">
+              <button class="is-active" type="button" data-portfolio-status="all" aria-pressed="true">Todos</button>
+              <button type="button" data-portfolio-status="nuevo" aria-pressed="false">Nuevo</button>
+              <button type="button" data-portfolio-status="no_contesta" aria-pressed="false">Sin contacto</button>
+              <button type="button" data-portfolio-status="contacto_futuro" aria-pressed="false">Pide contacto futuro</button>
+              <button type="button" data-portfolio-status="en_proceso" aria-pressed="false">En gestión</button>
+              <button type="button" data-portfolio-status="entrevista" aria-pressed="false">Entrevista</button>
+              <button type="button" data-portfolio-status="cierre" aria-pressed="false">Cierre</button>
+              <button type="button" data-portfolio-status="sena" aria-pressed="false">Seña</button>
+            </div></div>
+            <div class="portfolio-filter-group date"><span>Vista operativa</span><div id="crmPortfolioViewFilters" class="portfolio-filter-buttons">
+              <button type="button" data-portfolio-view="today" aria-pressed="false">Hoy</button>
+              <button type="button" data-portfolio-view="overdue" aria-pressed="false">Vencidos</button>
+              <button type="button" data-portfolio-view="upcoming" aria-pressed="false">Próximos</button>
+            </div></div>
+          </div>
           <div class="agenda-sections" id="crmAgenda"></div>
         </section>
 
@@ -471,19 +492,47 @@
   <dialog class="crm-dialog" id="crmLeadDialog">
     <form method="dialog" class="crm-dialog-shell" id="crmLeadForm">
       <button class="crm-dialog-close" value="cancel" aria-label="Cerrar">×</button>
-      <div class="crm-dialog-head"><div><p class="eyebrow dark">Ficha comercial</p><div class="crm-lead-title"><h2 id="crmLeadName">Cliente</h2><button id="crmEditLeadName" type="button">Editar nombre</button></div><p class="crm-lead-meta" id="crmLeadMeta"></p></div><span class="crm-stage-badge" id="crmLeadStage"></span></div>
+      <button class="crm-workspace-back" id="crmWorkspaceBack" type="button">← Volver a Mi Cartera</button>
+      <div class="crm-dialog-head"><div><p class="eyebrow dark">Workspace comercial</p><div class="crm-lead-title"><h2 id="crmLeadName">Cliente</h2><button id="crmEditLeadName" type="button">Editar nombre</button></div><p class="crm-lead-meta" id="crmLeadMeta"></p></div><span class="crm-stage-badge" id="crmLeadStage"></span></div>
+      <div class="crm-workspace-context" id="crmWorkspaceContext"></div>
       <div class="crm-detail-grid">
         <section class="crm-detail-main">
           <div class="crm-client-summary" id="crmClientSummary"></div>
-          <div class="crm-quick-actions"><a class="crm-action-link" id="crmCallLink" href="#">Llamar</a><button class="crm-action-link" id="crmCommentButton" type="button">Agregar comentario</button><button class="crm-action-link" id="crmAppraisalButton" type="button">Tasación del usado</button><button class="crm-action-link" id="crmBudgetButton" type="button">Presupuesto</button><button class="crm-action-link accent" id="crmSaleButton" type="button">Enviar datero</button></div>
+          <div class="crm-quick-actions">
+            <div class="crm-toolbar-group crm-toolbar-communication" data-toolbar-group="comunicacion"><a class="crm-action-link" id="crmCallLink" href="#">Llamar</a><a class="crm-action-link accent" id="crmWhatsappLink" href="#" target="_blank" rel="noopener">WhatsApp</a></div>
+            <div class="crm-toolbar-group crm-toolbar-context" data-toolbar-group="contexto"><button class="crm-action-link" id="crmCommentButton" type="button">Agregar comentario</button></div>
+            <div class="crm-toolbar-group crm-toolbar-commercial" data-toolbar-group="comercial"><button class="crm-action-link" id="crmAppraisalButton" type="button">Tasación del usado</button><button class="crm-action-link" id="crmBudgetButton" type="button">Presupuesto</button><button class="crm-action-link" id="crmSaleButton" type="button">Enviar datero</button></div>
+          </div>
           <div class="crm-appraisal-summary" id="crmAppraisalSummary" hidden></div>
           <div class="crm-tabs"><button class="active" type="button" data-crm-tab="manage">Gestión y seguimiento</button><button type="button" data-crm-tab="timeline">Historial</button><button type="button" data-crm-tab="customer">Consultas previas</button><button type="button" data-crm-tab="chat">Conversación IA</button></div>
           <div class="crm-tab-panel active" data-crm-panel="manage">
+            <section class="crm-new-experience" id="crmNewExperience" hidden>
+              <p class="eyebrow dark">Primer contacto</p><h3>¿Pudiste contactar al cliente?</h3><p>Registrá el hecho observado. El CRM habilitará únicamente los resultados comercialmente válidos.</p>
+              <div class="crm-contact-decision"><button type="button" data-contact-decision="answered">Contestó</button><button type="button" data-contact-decision="no_answer">No contestó</button></div>
+              <div class="crm-new-outcomes" id="crmNewOutcomes" hidden></div>
+              <p class="crm-form-error" id="crmNewError"></p>
+            </section>
+            <section class="crm-no-contact-experience" id="crmNoContactExperience" hidden>
+              <div class="crm-state-intro"><div><p class="eyebrow dark">Sin contacto</p><h3>Protocolo de contacto</h3><p>Cada intento conserva su horario, franja, canal y resultado.</p></div><button type="button" data-protocol-answered>El cliente contestó</button></div>
+              <div id="crmNoContactProtocol"></div>
+              <p class="crm-form-error" id="crmNoContactError"></p>
+            </section>
+            <section class="crm-future-contact-experience" id="crmFutureContactExperience" hidden>
+              <div class="crm-future-commitment" id="crmFutureCommitment"></div>
+              <div class="crm-future-actions"><button type="button" data-future-result="answered">Contestó</button><button type="button" data-future-result="rescheduled">Reprogramar</button><button type="button" data-future-result="no_answer">No contestó</button></div>
+              <div class="crm-future-outcomes" id="crmFutureOutcomes" hidden></div>
+              <p class="crm-form-error" id="crmFutureError"></p>
+            </section>
+            <section class="crm-state-workspace" id="crmStateWorkspace" hidden>
+              <div id="crmStateWorkspaceContent"></div>
+              <p class="crm-form-error" id="crmStateWorkspaceError"></p>
+            </section>
+            <section class="crm-transition-picker" id="crmTransitionPicker" hidden><span>Resultado de la gestión</span><div id="crmTransitionOptions"></div></section>
             <div id="crmProtocol"></div>
             <div class="crm-budget-entry"><div><span>Propuesta para el cliente</span><strong>Plan o crédito disponible</strong><small>Usá la precalificación para preparar un presupuesto y guardarlo en este Lead.</small></div><button class="crm-action-link" id="crmBudgetFromManagement" type="button">Generar presupuesto</button></div>
             <div class="crm-management-heading"><div><span>Registrar gestión</span><strong>Resultado y próximo paso</strong></div><small>Actualizá el estado y dejá organizada la próxima acción.</small></div>
-            <div class="crm-form-grid">
-              <label>Resultado de la gestión<select id="crmStatusInput"></select></label>
+            <div class="crm-form-grid crm-management-fields">
+              <label class="crm-status-legacy">Resultado de la gestión<select id="crmStatusInput"></select></label>
               <label>Prioridad<select id="crmPriorityInput"><option value="low">Baja</option><option value="normal">Normal</option><option value="high">Alta</option></select></label>
               <label class="wide">Resultado / comentario<textarea id="crmNoteInput" rows="3" placeholder="Qué se habló y cuál es el próximo paso"></textarea></label>
               <label data-next-contact-field>Fecha del próximo contacto<input id="crmNextContactDateInput" type="text" inputmode="numeric" maxlength="10" placeholder="dd/mm/aaaa" autocomplete="off"></label>
@@ -500,7 +549,10 @@
               <label class="crm-conditional" data-status-field="entrevista">Fecha de la entrevista<input id="crmInterviewDateInput" type="text" inputmode="numeric" maxlength="10" placeholder="dd/mm/aaaa" autocomplete="off"></label>
               <label class="crm-conditional" data-status-field="entrevista">Hora de la entrevista<input id="crmInterviewTimeInput" type="time" step="300"></label>
               <label class="crm-conditional" data-status-field="entrevista">Sucursal / lugar<input id="crmInterviewLocationInput" type="text" placeholder="Ej. Salón Volkswagen"></label>
+              <label class="crm-conditional" data-status-field="entrevista">Modalidad<select id="crmInterviewModeInput"><option value="presencial">Presencial</option><option value="videollamada">Videollamada</option></select></label>
               <label class="crm-conditional wide" data-status-field="sena">Importe de la seña<input id="crmDepositInput" type="number" min="1" step="1" placeholder="$"></label>
+              <label class="crm-conditional wide" data-status-field="sena">Condición / validación<input id="crmDepositValidationInput" type="text" placeholder="Medio, comprobante o validación pendiente"></label>
+              <label class="crm-conditional wide" data-status-field="desistir">Motivo del desistimiento<select id="crmDesistReasonInput"><option value="">Seleccioná un motivo</option><option value="no_interest">No desea continuar</option><option value="conditions_not_viable">Condiciones no viables</option><option value="chose_other_option">Eligió otra alternativa</option><option value="postponed_without_date">Decisión postergada sin fecha</option><option value="requested_no_contact">Solicitó no ser contactado</option><option value="other">Otro</option></select></label>
             </div>
             <p class="crm-form-help" id="crmFormHelp"></p><p class="crm-form-error" id="crmFormError"></p>
             <button class="primary-button" id="crmSaveManagement" type="button">Guardar gestión</button>
@@ -539,7 +591,10 @@
   <script src="/vendedores/supabase-config.js?v=20260813-2"></script>
   <script src="/vendedores/app.js?v=20260828-1"></script>
   <script src="/vendedores/agenda-model.js?v=20260903-1"></script>
-  <script src="/vendedores/crm.js?v=20260903-1"></script>
+  <script src="/vendedores/crm-transition-model.js?v=20260908-1"></script>
+  <script src="/vendedores/management-playbook-model.js?v=20260908-1"></script>
+  <script src="/vendedores/en-gestion.js?v=20260908-1"></script>
+  <script src="/vendedores/crm.js?v=20260908-1"></script>
   <script src="/vendedores/sales.js?v=20260828-2"></script>
   <script src="/vendedores/recalls.js?v=20260821-2"></script>
   <script src="/vendedores/mobile-navigation.js?v=20260820-1"></script>

@@ -1,4 +1,6 @@
 {
+  "buildCommand": "node scripts/configure-supabase-preview.mjs",
+  "outputDirectory": ".",
   "redirects": [
     {
       "source": "/vendedores/supervisor/:path*",

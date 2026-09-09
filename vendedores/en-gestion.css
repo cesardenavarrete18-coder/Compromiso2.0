@@ -1,0 +1,513 @@
+.en-gestion-playbook {
+  display: grid;
+  gap: 16px;
+  margin: 0 0 22px;
+}
+
+.en-gestion-playbook[hidden] {
+  display: none !important;
+}
+
+.crm-dialog.en-gestion-active .crm-dialog-shell {
+  width: min(1180px, calc(100vw - 32px));
+}
+
+.crm-dialog.en-gestion-active #crmProtocol,
+.crm-dialog.en-gestion-active .crm-budget-entry {
+  display: none;
+}
+
+.en-gestion-head,
+.en-gestion-next,
+.en-gestion-group,
+.en-gestion-toolbox,
+.en-gestion-context {
+  border: 1px solid #dfe6ef;
+  background: #ffffff;
+  box-shadow: 0 8px 24px rgba(31, 48, 73, 0.04);
+}
+
+.en-gestion-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 18px 20px;
+  border-radius: 18px;
+}
+
+.en-gestion-kicker,
+.en-gestion-section-heading span,
+.en-gestion-toolbox header span,
+.en-gestion-next span {
+  display: block;
+  margin-bottom: 4px;
+  color: #6f7c90;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.en-gestion-head h3 {
+  margin: 0 0 5px;
+  color: #17243b;
+  font-size: 20px;
+}
+
+.en-gestion-head p {
+  max-width: 760px;
+  margin: 0;
+  color: #68758a;
+  line-height: 1.5;
+}
+
+.en-gestion-progress {
+  min-width: 130px;
+  padding: 7px 0 0;
+  text-align: right;
+}
+
+.en-gestion-progress strong {
+  display: block;
+  color: #17243b;
+  font-size: 24px;
+  line-height: 1;
+}
+
+.en-gestion-progress span {
+  display: block;
+  margin-top: 5px;
+  color: #7b8799;
+  font-size: 11px;
+}
+
+.en-gestion-next {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 18px 20px;
+  border-radius: 18px;
+  border-color: #cbd8ee;
+  background: linear-gradient(135deg, #f7faff 0%, #ffffff 68%);
+}
+
+.en-gestion-next-main strong,
+.en-gestion-next > div > strong {
+  display: block;
+  color: #14213d;
+  font-size: 23px;
+  line-height: 1.15;
+}
+
+.en-gestion-next p {
+  margin: 6px 0 0;
+  color: #65738a;
+  font-size: 13px;
+}
+
+.en-gestion-next.is-overdue {
+  border-color: #e6b5aa;
+  background: #fff8f6;
+}
+
+.en-gestion-next.is-overdue span,
+.en-gestion-next.is-overdue strong {
+  color: #a84834;
+}
+
+.en-gestion-next-actions,
+.en-gestion-item-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.en-gestion-next-actions button,
+.en-gestion-integrity > button {
+  border: 1px solid #ced9e7;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #244d94;
+  padding: 9px 12px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.en-gestion-next-actions button.primary {
+  border-color: #214e9b;
+  background: #214e9b;
+  color: #ffffff;
+}
+
+.en-gestion-section-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 18px;
+  margin-top: 4px;
+}
+
+.en-gestion-section-heading.compact {
+  margin: 0 0 12px;
+}
+
+.en-gestion-section-heading strong {
+  display: block;
+  color: #26344f;
+  font-size: 15px;
+}
+
+.en-gestion-section-heading small {
+  color: #7c8798;
+  font-size: 11px;
+  text-align: right;
+}
+
+.en-gestion-groups {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.en-gestion-group {
+  overflow: hidden;
+  border-radius: 16px;
+}
+
+.en-gestion-group > header {
+  padding: 13px 15px;
+  border-bottom: 1px solid #edf1f6;
+  background: #f8fafc;
+}
+
+.en-gestion-group > header strong {
+  color: #26344f;
+  font-size: 14px;
+}
+
+.en-gestion-items {
+  display: grid;
+}
+
+.en-gestion-item {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  min-height: 64px;
+  padding: 11px 13px;
+  border-bottom: 1px solid #eef2f6;
+}
+
+.en-gestion-item:last-child {
+  border-bottom: 0;
+}
+
+.en-gestion-item .status-dot {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: 1.5px solid #bec8d6;
+  border-radius: 7px;
+  color: #ffffff;
+  font-size: 13px;
+}
+
+.en-gestion-item.is-complete .status-dot {
+  border-color: #208a5d;
+  background: #208a5d;
+}
+
+.en-gestion-item-copy strong {
+  display: block;
+  color: #25324a;
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+.en-gestion-item-copy small {
+  display: block;
+  margin-top: 3px;
+  color: #7b8799;
+  font-size: 10px;
+}
+
+.en-gestion-action,
+.en-gestion-record {
+  border: 1px solid #d7e0ec;
+  border-radius: 9px;
+  background: #ffffff;
+  color: #2452a4;
+  padding: 7px 9px;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.en-gestion-record {
+  color: #4f607a;
+}
+
+.en-gestion-record.is-complete {
+  border-color: #cbe5d9;
+  background: #f3fbf7;
+  color: #267251;
+}
+
+.en-gestion-action:hover,
+.en-gestion-record:hover,
+.en-gestion-next-actions button:hover {
+  background: #f4f8ff;
+}
+
+.en-gestion-action:disabled,
+.en-gestion-record:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.en-gestion-tools {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.en-gestion-toolbox {
+  min-width: 0;
+  padding: 15px;
+  border-radius: 16px;
+}
+
+.en-gestion-toolbox header {
+  margin-bottom: 12px;
+}
+
+.en-gestion-toolbox header strong {
+  display: block;
+  color: #26344f;
+  font-size: 14px;
+}
+
+.en-gestion-template-list,
+.en-gestion-material-list {
+  display: grid;
+  gap: 8px;
+}
+
+.en-gestion-template,
+.en-gestion-material {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 11px;
+  border: 1px solid #e6ebf2;
+  border-radius: 12px;
+  background: #fbfcfe;
+}
+
+.en-gestion-material.featured {
+  border-color: #d4e0f3;
+  background: #f7faff;
+}
+
+.en-gestion-template strong,
+.en-gestion-material strong {
+  display: block;
+  color: #25324a;
+  font-size: 12px;
+}
+
+.en-gestion-template p,
+.en-gestion-material small {
+  display: block;
+  margin: 3px 0 0;
+  color: #758196;
+  font-size: 10.5px;
+  line-height: 1.4;
+}
+
+.en-gestion-template p {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.en-gestion-tool-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.en-gestion-tool-actions button,
+.en-gestion-tool-actions a {
+  border: 1px solid #d8e2ef;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #2452a4;
+  padding: 7px 9px;
+  text-decoration: none;
+  font-size: 10.5px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.en-gestion-context {
+  padding: 15px;
+  border-radius: 16px;
+}
+
+.en-gestion-context dl {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 9px;
+  margin: 0;
+}
+
+.en-gestion-context dl > div {
+  padding: 10px 11px;
+  border: 1px solid #e8edf3;
+  border-radius: 11px;
+  background: #fbfcfe;
+}
+
+.en-gestion-context dt {
+  color: #7c8798;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.en-gestion-context dd {
+  margin: 3px 0 0;
+  color: #26344f;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.en-gestion-integrity {
+  align-items: center;
+  border-color: #edc878;
+  background: #fff8e7;
+}
+
+.en-gestion-integrity span,
+.en-gestion-integrity strong,
+.en-gestion-integrity p {
+  color: #795b16;
+}
+
+.en-gestion-persistence-note {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 12px;
+  border: 1px dashed #c7d2e2;
+  border-radius: 11px;
+  background: #f8fafc;
+  color: #64728a;
+  font-size: 11px;
+}
+
+.en-gestion-persistence-note strong {
+  color: #33445f;
+}
+
+.en-gestion-empty {
+  padding: 12px;
+  border: 1px dashed #dce3ec;
+  border-radius: 10px;
+  color: #7b8799;
+  font-size: 11px;
+}
+
+.en-gestion-status {
+  min-height: 18px;
+  margin: -2px 0 0;
+  color: #287253;
+  font-size: 11px;
+}
+
+.en-gestion-status.error {
+  color: #ad4936;
+}
+
+.en-gestion-attention {
+  outline: 3px solid rgba(41, 91, 178, 0.18) !important;
+  border-color: #4c78c4 !important;
+}
+
+/* Legacy records without a next action remain visible as a remediation queue.
+   Do not hide them: production currently contains historical inconsistencies. */
+.agenda-group.requires-action.integrity-remediation {
+  display: block;
+  border: 1px solid #e3c27f;
+  border-radius: 16px;
+  background: #fffaf0;
+}
+
+.agenda-group.requires-action.integrity-remediation .agenda-group-head h3 {
+  color: #7d5b16;
+}
+
+.crm-stage[data-stage="en_proceso"] {
+  font-size: 12px;
+}
+
+@media (max-width: 1020px) {
+  .en-gestion-context dl {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .crm-dialog.en-gestion-active .crm-dialog-shell {
+    width: min(100%, calc(100vw - 16px));
+  }
+
+  .en-gestion-groups,
+  .en-gestion-tools,
+  .en-gestion-context dl {
+    grid-template-columns: 1fr;
+  }
+
+  .en-gestion-head,
+  .en-gestion-next,
+  .en-gestion-section-heading {
+    display: grid;
+  }
+
+  .en-gestion-progress,
+  .en-gestion-section-heading small {
+    text-align: left;
+  }
+
+  .en-gestion-next-actions {
+    justify-content: flex-start;
+  }
+
+  .en-gestion-item {
+    grid-template-columns: 28px minmax(0, 1fr);
+  }
+
+  .en-gestion-item-actions {
+    grid-column: 2;
+    justify-content: flex-start;
+  }
+
+  .en-gestion-template,
+  .en-gestion-material {
+    grid-template-columns: 1fr;
+  }
+
+  .en-gestion-tool-actions {
+    justify-content: flex-start;
+  }
+}

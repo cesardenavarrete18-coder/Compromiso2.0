@@ -5,6 +5,7 @@ import { runInNewContext } from "node:vm";
 
 const migration = readFileSync(new URL("../supabase/migrations/20260903133015_unify_canonical_next_action.sql", import.meta.url), "utf8");
 const advisoryMigration = readFileSync(new URL("../supabase/migrations/20260903202218_protocol_advisory_layer.sql", import.meta.url), "utf8");
+const crmV2Migration = readFileSync(new URL("../supabase/migrations/20260907150000_crm_v2_transition_matrix.sql", import.meta.url), "utf8");
 const modelSource = readFileSync(new URL("../vendedores/supervisor/followup-model.js", import.meta.url), "utf8");
 const sellerCrm = readFileSync(new URL("../vendedores/crm.js", import.meta.url), "utf8");
 const sellerHtml = readFileSync(new URL("../vendedores/index.html", import.meta.url), "utf8");
@@ -90,22 +91,24 @@ test("9. las llamadas de media tarde y tarde usan los helpers canónicos", () =>
   assert.ok(migration.includes("elsif v_local::time < time '19:00'"));
 });
 
-test("10. el protocolo avanza por seis franjas comerciales válidas", () => {
-  assert.ok(migration.includes("for v_call_attempt in 1..6 loop"));
-  assert.ok(migration.includes("v_cursor := v_call_end + interval '1 second'"));
-  assert.ok(sellerCrm.includes("6 llamadas en las próximas 6 franjas comerciales disponibles"));
-  assert.doesNotMatch(sellerCrm, /seguimiento en \d+ días comerciales/);
+test("10. el protocolo CRM V2 cubre nueve franjas comerciales consecutivas", () => {
+  assert.ok(crmV2Migration.includes("for v_band_number in 1..9 loop"));
+  assert.ok(crmV2Migration.includes("private.next_protocol_call_window(v_cursor)"));
+  assert.ok(crmV2Migration.includes("v_cursor := v_call_end + interval '1 second'"));
+  assert.ok(crmV2Migration.includes("for v_band_attempt in 1..2 loop"));
+  assert.ok(sellerCrm.includes("18 llamadas en 9 franjas comerciales consecutivas · 2 por franja"));
 });
 
-test("11. el protocolo nuevo tiene exactamente 6 llamadas y 2 WhatsApp", () => {
-  assert.ok(migration.includes("for v_call_attempt in 1..6 loop"));
-  assert.ok(migration.includes("if v_call_attempt in (1, 4) then"));
-  assert.ok(sellerCrm.includes("6 franjas comerciales disponibles · 2 WhatsApp después de las llamadas 1 y 4"));
+test("11. el protocolo nuevo tiene exactamente 18 llamadas y conserva 2 WhatsApp", () => {
+  assert.ok(crmV2Migration.includes("v_call_attempt integer := 0"));
+  assert.ok(crmV2Migration.includes("for v_band_number in 1..9 loop"));
+  assert.ok(crmV2Migration.includes("for v_band_attempt in 1..2 loop"));
+  assert.ok(crmV2Migration.includes("if v_call_attempt in (1, 4) then"));
 });
 
-test("12. WhatsApp aparece solo después de las llamadas 1 y 4", () => {
-  assert.match(migration, /v_call_attempt in \(1, 4\)/);
-  assert.ok(!migration.includes("v_call_attempt in (2, 3, 5, 6)"));
+test("12. WhatsApp conserva la cadencia existente después de las llamadas 1 y 4", () => {
+  assert.match(crmV2Migration, /v_call_attempt in \(1, 4\)/);
+  assert.ok(!crmV2Migration.includes("v_call_attempt in (2, 3, 5, 6)"));
 });
 
 test("13. restart reemplaza toda la secuencia por una única secuencia canónica", () => {
@@ -130,17 +133,15 @@ test("15. una respuesta con próxima fecha deja source manual", () => {
 
 test("16. respuesta desde protocolo reutiliza el mismo comentario en historial y próxima acción", () => {
   const flow = sellerCrm.match(/async function saveAnsweredFollowUp\(\)[\s\S]*?^  }/m)?.[0] || "";
-  const rpc = migration.match(/create or replace function public\.complete_contact_task_with_follow_up[\s\S]*?grant execute on function public\.complete_contact_task_with_follow_up[\s\S]*?authenticated;/)?.[0] || "";
   assert.ok(sellerHtml.includes("Resultado / comentario"));
   assert.ok(sellerHtml.includes("Hablé con el cliente, me pide que lo llame a las 18hs cuando sale del trabajo"));
   assert.equal((sellerHtml.match(/id="crmAnsweredNote"/g) || []).length, 1);
-  assert.ok(flow.includes('p_outcome: "answered"'));
+  assert.ok(flow.includes('rpc("record_contact_answer_with_transition"'));
+  assert.ok(flow.includes('p_status: "en_proceso"'));
+  assert.ok(flow.includes('p_contact_outcome: "answered"'));
   assert.ok(flow.includes("p_note: note"));
   assert.ok(flow.includes("p_next_contact_note: note"));
   assert.ok(!flow.includes('p_note: "El cliente respondió"'));
-  assert.ok(rpc.includes("v_result := public.complete_contact_task(p_task_id, p_outcome, p_note)"));
-  assert.ok(rpc.includes("next_contact_note = v_next_note"));
-  assert.ok(rpc.includes("next_contact_source = 'manual'"));
   assert.ok(migration.includes("perform private.cancel_lead_contact_protocol(v_task.lead_id"));
 });
 
@@ -168,9 +169,16 @@ test("20. toda programación automática conserva Buenos Aires y evita el pasado
   assert.equal(model.TIME_ZONE, "America/Argentina/Buenos_Aires");
 });
 
-test("21. Supervisor y vendedor reservan la próxima acción para agenda manual", () => {
+// Persistence stays advisory-only (lead_crm.next_contact_* is never written
+// by the protocol). CRM V2 release hardening makes the canonical protocol
+// the state-defining operational date for Sin contacto (it must win over a
+// stale manual agenda, never the other way around); contacto_futuro/
+// en_proceso/cierre have no such protocol-owned date, so manual agenda
+// stays authoritative there.
+test("21. El protocolo no escribe lead_crm; Sin contacto prioriza el protocolo sobre la agenda manual", () => {
   assert.ok(sellerCrm.includes("next_contact_at, next_contact_note, next_contact_source"));
-  assert.ok(modelSource.includes("return manualAction(lead)"));
+  assert.ok(modelSource.includes('if (crm.status === "no_contesta") {'));
+  assert.ok(modelSource.includes("return protocolRecommendation(summary) || manualAction(lead);"));
   assert.ok(advisoryMigration.includes("pending protocol task independently from lead_crm"));
   const portfolioRpc = advisoryMigration.slice(advisoryMigration.indexOf("create or replace function public.get_supervisor_portfolio_followup"));
   assert.ok(!portfolioRpc.includes("task.due_start = crm.next_contact_at"));
