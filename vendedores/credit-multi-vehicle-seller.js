@@ -229,7 +229,7 @@
   offerType.addEventListener("change", async function (event) {
     if (!isBank()) return;
     event.stopImmediatePropagation();
-    try { await loadData(false); renderOffers(); } catch (error) { errorBox.textContent = error.message; }
+    try { await loadData(true); renderOffers(); } catch (error) { errorBox.textContent = error.message; }
   }, true);
 
   modelSelect.addEventListener("change", function (event) {
