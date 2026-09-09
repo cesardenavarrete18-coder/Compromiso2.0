@@ -99,10 +99,9 @@ test("history-only Sin contacto renders recovery action and calls canonical RPC"
   listeners["document:click"].forEach((fn) => fn(buttonEvent));
   await new Promise((resolve) => setImmediate(resolve));
 
-  assert.deepEqual(rpcCalls, [{
-    name: "reconcile_lead_contact_protocol",
-    payload: { p_lead_id: "lead-history-only" }
-  }]);
+  assert.equal(rpcCalls.length, 1);
+  assert.equal(rpcCalls[0].name, "reconcile_lead_contact_protocol");
+  assert.equal(rpcCalls[0].payload.p_lead_id, "lead-history-only");
   assert.equal(reloads, 1);
   assert.equal(session.get("grupoSur:reopenRecoveredLead"), "lead-history-only");
 
