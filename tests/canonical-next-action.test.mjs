@@ -169,9 +169,16 @@ test("20. toda programación automática conserva Buenos Aires y evita el pasado
   assert.equal(model.TIME_ZONE, "America/Argentina/Buenos_Aires");
 });
 
-test("21. Supervisor y vendedor reservan la próxima acción para agenda manual", () => {
+// Persistence stays advisory-only (lead_crm.next_contact_* is never written
+// by the protocol). CRM V2 release hardening makes the canonical protocol
+// the state-defining operational date for Sin contacto (it must win over a
+// stale manual agenda, never the other way around); contacto_futuro/
+// en_proceso/cierre have no such protocol-owned date, so manual agenda
+// stays authoritative there.
+test("21. El protocolo no escribe lead_crm; Sin contacto prioriza el protocolo sobre la agenda manual", () => {
   assert.ok(sellerCrm.includes("next_contact_at, next_contact_note, next_contact_source"));
-  assert.ok(modelSource.includes("return manualAction(lead)"));
+  assert.ok(modelSource.includes('if (crm.status === "no_contesta") {'));
+  assert.ok(modelSource.includes("return protocolRecommendation(summary) || manualAction(lead);"));
   assert.ok(advisoryMigration.includes("pending protocol task independently from lead_crm"));
   const portfolioRpc = advisoryMigration.slice(advisoryMigration.indexOf("create or replace function public.get_supervisor_portfolio_followup"));
   assert.ok(!portfolioRpc.includes("task.due_start = crm.next_contact_at"));
