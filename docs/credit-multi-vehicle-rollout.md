@@ -1,15 +1,13 @@
 # Créditos multi-modelo — rollout auditado sobre CRM V2
 
-## Estado auditado
+## Estado actual
 
-- Base actual: `main` en `4380f25a7f9761da6cc9214ca93bff28b9bd9270`.
-- Candidato: `integration/credit-multi-vehicle-v2-port`, 0 commits detrás de `main` al abrir PR #60.
-- CRM V2 ya está en `main` y aplicado en Supabase Production.
-- Última migración productiva observada: `20260910012455_crm_v2_recover_history_only_no_contact`.
-- Migración de esta feature: `20260910131500_bank_credit_multi_vehicle_applicability.sql`, posterior al estado productivo CRM V2.
-- Producción permanece sin esta migración: `bank_credit_offers.model_id` sigue `NOT NULL`, el RPC nuevo no existe y el trigger nuevo no existe.
-- Vercel Preview del candidato: success.
-- No hay GitHub Actions asociados al commit; Vercel no se considera sustituto de la suite de tests.
+- CRM V2 está en `main` y aplicado en Supabase Production.
+- PR #60 fue mergeado a `main` después de sincronizar los cambios recientes de AI V2/Filter.
+- Vercel Production del merge de PR #60: success.
+- Supabase Production registró la migración de créditos como `20260910134044_bank_credit_multi_vehicle_applicability`.
+- El repositorio debe conservar el mismo timestamp canónico en `20260910134044_bank_credit_multi_vehicle_applicability.sql`.
+- El filename pre-aplicación `20260910131500_bank_credit_multi_vehicle_applicability.sql` debe retirarse para evitar drift de migration history.
 
 ## Modelo de negocio implementado
 
@@ -18,66 +16,48 @@
 - Seleccionar “todo el modelo” guarda únicamente las versiones activas existentes al momento de guardar.
 - Una versión creada en el futuro no hereda automáticamente el crédito.
 - Presupuestos de vendedores sólo ofrecen créditos enlazados a versiones del modelo seleccionado.
-- Postgres valida la combinación crédito + modelo + versión al insertar o modificar los campos comerciales de un presupuesto.
+- Postgres valida la combinación crédito + modelo + versión y además exige que oferta, modelo y versión estén activos y que la oferta esté vigente.
 - La vigencia se evalúa con la fecha comercial de `America/Argentina/Buenos_Aires`, no con UTC.
-
-## Compatibilidad con CRM V2
-
-- `vendedores/admin/admin.js` y `vendedores/sales.js` mantienen el mismo contenido que la base sobre la que se desarrolló la feature.
-- CRM V2 modificó el workspace vendedor pero preservó los IDs del diálogo de Presupuestos requeridos por el adapter (`quoteForm`, `quoteModel`, `quoteOfferType`, `quoteOffer`, `quoteVersion`, `quoteSubmit`, etc.).
-- El Admin actual conserva los IDs del módulo de créditos (`creditForm`, `creditModel`, `creditVersionOptions`, `creditOfferList`, etc.).
-- La portación sobre `main` se realizó mediante una integración interna sin conflictos.
 
 ## Verificación de datos e histórico
 
-La auditoría actual verificó 14 presupuestos históricos con `offer_type = 'bank_credit'`:
+La auditoría post-migración verificó 14 presupuestos históricos con `offer_type = 'bank_credit'`:
 
-- 14/14 cumplen la relación crédito + modelo + versión que exigirá el nuevo trigger;
+- 14/14 cumplen la relación crédito + modelo + versión;
 - 0 incompatibles.
 
-No se debe borrar automáticamente el histórico. El panel aplica esta regla:
+No se borra automáticamente el histórico. El panel aplica esta regla:
 
 - crédito sin presupuestos históricos: se puede eliminar;
 - crédito con presupuestos históricos: se archiva (`active = false`) en vez de borrarse.
 
 Las versiones ya vinculadas a créditos también se archivan en vez de eliminarse, preservando las relaciones históricas.
 
-## Rehearsal de migración
+## Estado de Supabase Production
 
-El SQL completo fue ejecutado sobre el esquema CRM V2 actual de Supabase Production dentro de una transacción explícita con `ROLLBACK`.
+- `bank_credit_offers.model_id` es nullable.
+- RPC `admin_upsert_bank_credit_offer(...)` presente.
+- `authenticated` puede ejecutar el RPC; `anon` no.
+- Trigger de aplicabilidad presente sobre `sales_quotes`.
+- Security Advisors post-DDL no agregaron alertas nuevas atribuibles a la feature.
+- El contador preexistente de funciones `SECURITY DEFINER` ejecutables por authenticated se mantuvo sin aumento por esta migración.
 
-Dentro de la transacción se confirmó:
+## Siguiente validación operativa
 
-- `bank_credit_offers.model_id` nullable;
-- RPC `admin_upsert_bank_credit_offer(...)` creado;
-- función privada de validación creada;
-- trigger de aplicabilidad creado sobre `sales_quotes`.
+Con backend y frontend ya productivos corresponde smoke real:
 
-Después del `ROLLBACK` se confirmó nuevamente que los cuatro cambios no persistieron. Production quedó intacta.
-
-El proyecto QA disponible no contiene actualmente el módulo `sales_quotes`, por lo que no representa el esquema completo necesario para un E2E de esta feature. No se usa esa diferencia como evidencia negativa de la migración.
-
-## Orden recomendado de rollout
-
-1. Auditar PR #60 y confirmar que continúa 0 commits detrás de `main`.
-2. Confirmar Vercel Preview verde y revisar el diff final.
-3. Aplicar `20260910131500_bank_credit_multi_vehicle_applicability.sql` en Production sólo con autorización explícita.
-4. Confirmar migration history y advisors post-DDL.
-5. Cargar las nuevas condiciones multi-modelo desde Admin.
-6. Hacer smoke real con al menos:
-   - un crédito que aplique a 2+ modelos;
-   - un modelo completo y otro parcialmente seleccionado;
-   - creación y edición del crédito;
-   - presupuesto vendedor para versión permitida;
-   - comprobación de que una versión no permitida no aparece;
-   - intento directo inválido rechazado por la validación de Postgres.
-7. Archivar/eliminar las condiciones viejas según tengan o no historial.
-8. Sólo después promover definitivamente el cambio.
+1. crear un crédito que aplique a 2+ modelos;
+2. seleccionar todas las versiones de un modelo y sólo algunas de otro;
+3. editar la condición y verificar que el cambio sea atómico;
+4. desde vendedor, comprobar que sólo aparezcan modelos/versiones permitidos;
+5. generar un presupuesto válido;
+6. comprobar que una combinación no habilitada sea rechazada por Postgres;
+7. archivar/eliminar condiciones viejas según tengan o no historial.
 
 ## Salvaguardas relevantes
 
 - RPC con `SECURITY INVOKER` y control `private.current_user_is_admin()`.
 - RLS existente en `bank_credit_offers`, `bank_credit_offer_versions` y `sales_quotes`.
-- El selector legado `creditModel` queda deshabilitado y sin `required`, evitando que la validación nativa bloquee el formulario multi-modelo.
+- El selector legado `creditModel` queda deshabilitado y sin `required`.
 - El vendedor refresca líneas de crédito al entrar a la modalidad Crédito.
-- La UI y Postgres validan aplicabilidad, evitando depender sólo del frontend.
+- UI y Postgres validan aplicabilidad; no se depende sólo del frontend.
