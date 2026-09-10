@@ -13,7 +13,7 @@ vm.createContext(sandbox);
 vm.runInContext(coreSource, sandbox);
 const core = sandbox.globalThis.grupoSurCreditApplicability;
 const migrationPath = path.join(root, "supabase", "migrations", "20260910134044_bank_credit_multi_vehicle_applicability.sql");
-const legacyGuardsFixPath = path.join(root, "supabase", "migrations", "20260910155752_fix_bank_credit_multi_model_legacy_guards.sql");
+const legacyGuardsFixPath = path.join(root, "supabase", "migrations", "20260910160329_fix_bank_credit_multi_model_legacy_guards.sql");
 
 test("multi-model credit applies only through linked active versions", () => {
   const offer = {
@@ -110,6 +110,7 @@ test("admin separates active and archived credits while preserving history safet
 });
 
 test("legacy single-model database guards are retired without weakening savings-plan validation", () => {
+  assert.equal(fs.existsSync(path.join(root, "supabase", "migrations", "20260910155752_fix_bank_credit_multi_model_legacy_guards.sql")), false);
   assert.equal(fs.existsSync(legacyGuardsFixPath), true);
   const hotfix = fs.readFileSync(legacyGuardsFixPath, "utf8");
   assert.match(hotfix, /drop trigger if exists bank_credit_offer_versions_validate/i);
