@@ -13,6 +13,7 @@ vm.createContext(sandbox);
 vm.runInContext(coreSource, sandbox);
 const core = sandbox.globalThis.grupoSurCreditApplicability;
 const migrationPath = path.join(root, "supabase", "migrations", "20260910134044_bank_credit_multi_vehicle_applicability.sql");
+const legacyGuardsFixPath = path.join(root, "supabase", "migrations", "20260910160329_fix_bank_credit_multi_model_legacy_guards.sql");
 
 test("multi-model credit applies only through linked active versions", () => {
   const offer = {
@@ -106,4 +107,25 @@ test("admin separates active and archived credits while preserving history safet
   assert.match(ux, /deleteButton\.hidden = hasHistory/);
   assert.match(ux, /Borrar definitivamente/);
   assert.match(ux, /hasHistory \? \"Archivada\" : \"Pausada\"/);
+});
+
+test("legacy single-model database guards are retired without weakening savings-plan validation", () => {
+  assert.equal(fs.existsSync(path.join(root, "supabase", "migrations", "20260910155752_fix_bank_credit_multi_model_legacy_guards.sql")), false);
+  assert.equal(fs.existsSync(legacyGuardsFixPath), true);
+  const hotfix = fs.readFileSync(legacyGuardsFixPath, "utf8");
+  assert.match(hotfix, /drop trigger if exists bank_credit_offer_versions_validate/i);
+  assert.match(hotfix, /drop function if exists private\.validate_bank_credit_version_model\(\)/i);
+  assert.match(hotfix, /create or replace function private\.validate_sales_quote_offer\(\)/i);
+  assert.match(hotfix, /if new\.offer_type = 'savings_plan'/i);
+  assert.match(hotfix, /new\.sale_price := v_final_price/i);
+  assert.doesNotMatch(hotfix, /offer\.model_id = new\.model_id/i);
+  assert.doesNotMatch(hotfix, /version\.model_id = offer\.model_id/i);
+});
+
+test("multi-model admin submit suppresses the legacy creditForm submit handler", () => {
+  const adminAdapter = fs.readFileSync(path.join(root, "vendedores", "credit-multi-vehicle-admin.js"), "utf8");
+  const legacyAdmin = fs.readFileSync(path.join(root, "vendedores", "admin", "admin.js"), "utf8");
+  assert.match(adminAdapter, /form\.addEventListener\("submit", saveOffer, true\)/);
+  assert.match(adminAdapter, /event\.stopImmediatePropagation\(\)/);
+  assert.match(legacyAdmin, /getElementById\("creditForm"\)\.addEventListener\("submit"/);
 });
