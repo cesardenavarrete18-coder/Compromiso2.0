@@ -11,6 +11,7 @@
     var isAdminPortal = /^\/(?:administracion|vendedores\/admin)(?:\/|$)/.test(window.location.pathname);
     var isSupervisorPortal = /^\/(?:supervisores|vendedores\/supervisor)(?:\/|$)/.test(window.location.pathname);
     var isSalesAdminPortal = /^\/(?:admventas|vendedores\/admventas)(?:\/|$)/.test(window.location.pathname);
+    var isSellerPortal = /^\/vendedores(?:\/index\.html)?\/?$/.test(window.location.pathname);
     window.grupoSurSupabaseClient = window.supabase.createClient(config.url, config.publishableKey, {
       auth: {
         persistSession: true,
@@ -25,5 +26,29 @@
             : "grupo-sur-seller-auth-v1"
       }
     });
+
+    function loadCreditAdapter(src, done) {
+      var script = document.createElement("script");
+      script.src = src;
+      script.async = false;
+      if (done) script.addEventListener("load", done, { once: true });
+      document.head.appendChild(script);
+    }
+
+    window.addEventListener("load", function () {
+      if (!isAdminPortal && !isSellerPortal) return;
+      if (isAdminPortal) {
+        var legacyCreditModel = document.getElementById("creditModel");
+        if (legacyCreditModel) {
+          legacyCreditModel.required = false;
+          legacyCreditModel.disabled = true;
+        }
+      }
+      loadCreditAdapter("/vendedores/credit-applicability-core.js?v=20260909-1", function () {
+        loadCreditAdapter(isAdminPortal
+          ? "/vendedores/credit-multi-vehicle-admin.js?v=20260909-1"
+          : "/vendedores/credit-multi-vehicle-seller.js?v=20260909-1");
+      });
+    }, { once: true });
   }
 }());
