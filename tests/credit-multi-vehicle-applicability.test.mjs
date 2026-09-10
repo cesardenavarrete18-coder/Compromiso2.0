@@ -8,10 +8,11 @@ import { fileURLToPath } from "node:url";
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, "..");
 const coreSource = fs.readFileSync(path.join(root, "vendedores", "credit-applicability-core.js"), "utf8");
-const sandbox = { globalThis: {} };
+const sandbox = { globalThis: {}, Intl, Date, Set };
 vm.createContext(sandbox);
 vm.runInContext(coreSource, sandbox);
 const core = sandbox.globalThis.grupoSurCreditApplicability;
+const migrationPath = path.join(root, "supabase", "migrations", "20260910131500_bank_credit_multi_vehicle_applicability.sql");
 
 test("multi-model credit applies only through linked active versions", () => {
   const offer = {
@@ -43,8 +44,15 @@ test("model selection is a snapshot of current active versions", () => {
   assert.equal(groups[1].selectedCount, 0);
 });
 
-test("migration keeps legacy anchor nullable and RPC security-invoker", () => {
-  const migration = fs.readFileSync(path.join(root, "supabase", "migrations", "20260909130000_bank_credit_multi_vehicle_applicability.sql"), "utf8");
+test("credit validity uses Buenos Aires commercial date instead of UTC", () => {
+  assert.equal(core.argentinaDateKey(new Date("2026-09-10T01:30:00.000Z")), "2026-09-09");
+  assert.equal(core.argentinaDateKey(new Date("2026-09-10T03:30:00.000Z")), "2026-09-10");
+});
+
+test("migration is ordered after CRM V2 and keeps RPC security-invoker", () => {
+  assert.equal(fs.existsSync(path.join(root, "supabase", "migrations", "20260909130000_bank_credit_multi_vehicle_applicability.sql")), false);
+  assert.equal(fs.existsSync(migrationPath), true);
+  const migration = fs.readFileSync(migrationPath, "utf8");
   assert.match(migration, /alter column model_id drop not null/i);
   assert.match(migration, /security invoker/i);
   assert.match(migration, /private\.current_user_is_admin\(\)/i);
@@ -59,6 +67,7 @@ test("seller and admin adapters filter applicability by version model_id", () =>
   const admin = fs.readFileSync(path.join(root, "vendedores", "credit-multi-vehicle-admin.js"), "utf8");
   assert.match(seller, /offerAppliesToModel\(offer, modelId\)/);
   assert.match(seller, /model_id: model\.id/);
+  assert.match(seller, /core\.argentinaDateKey\(new Date\(\)\)/);
   assert.match(admin, /admin_upsert_bank_credit_offer/);
   assert.match(admin, /p_version_ids: Array\.from\(state\.selectedVersionIds\)/);
   assert.match(admin, /sales_quotes[\s\S]*bank_credit_offer_id/);
@@ -69,4 +78,5 @@ test("legacy single-model selector cannot block the multi-model form", () => {
   const loader = fs.readFileSync(path.join(root, "vendedores", "supabase-config.js"), "utf8");
   assert.match(loader, /legacyCreditModel\.required = false/);
   assert.match(loader, /legacyCreditModel\.disabled = true/);
+  assert.match(loader, /20260910-1/);
 });
