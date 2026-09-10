@@ -12,7 +12,7 @@ const sandbox = { globalThis: {}, Intl, Date, Set };
 vm.createContext(sandbox);
 vm.runInContext(coreSource, sandbox);
 const core = sandbox.globalThis.grupoSurCreditApplicability;
-const migrationPath = path.join(root, "supabase", "migrations", "20260910131500_bank_credit_multi_vehicle_applicability.sql");
+const migrationPath = path.join(root, "supabase", "migrations", "20260910134044_bank_credit_multi_vehicle_applicability.sql");
 
 test("multi-model credit applies only through linked active versions", () => {
   const offer = {
@@ -51,6 +51,7 @@ test("credit validity uses Buenos Aires commercial date instead of UTC", () => {
 
 test("migration is ordered after CRM V2 and keeps RPC security-invoker", () => {
   assert.equal(fs.existsSync(path.join(root, "supabase", "migrations", "20260909130000_bank_credit_multi_vehicle_applicability.sql")), false);
+  assert.equal(fs.existsSync(path.join(root, "supabase", "migrations", "20260910131500_bank_credit_multi_vehicle_applicability.sql")), false);
   assert.equal(fs.existsSync(migrationPath), true);
   const migration = fs.readFileSync(migrationPath, "utf8");
   assert.match(migration, /alter column model_id drop not null/i);
