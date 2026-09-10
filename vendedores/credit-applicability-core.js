@@ -46,11 +46,30 @@
     });
   }
 
+  function dateKeyForTimeZone(value, timeZone) {
+    var date = value instanceof Date ? value : new Date(value == null ? Date.now() : value);
+    var pieces = {};
+    new Intl.DateTimeFormat("en-US", {
+      timeZone: timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit"
+    }).formatToParts(date).forEach(function (part) {
+      if (part.type !== "literal") pieces[part.type] = part.value;
+    });
+    return pieces.year + "-" + pieces.month + "-" + pieces.day;
+  }
+
+  function argentinaDateKey(value) {
+    return dateKeyForTimeZone(value, "America/Argentina/Buenos_Aires");
+  }
+
   root.grupoSurCreditApplicability = Object.freeze({
     unwrapVersion: unwrapVersion,
     activeVersionsForModel: activeVersionsForModel,
     offerAppliesToModel: offerAppliesToModel,
     offerVersionIds: offerVersionIds,
-    groupSelectedVersions: groupSelectedVersions
+    groupSelectedVersions: groupSelectedVersions,
+    argentinaDateKey: argentinaDateKey
   });
 }(typeof window !== "undefined" ? window : globalThis));
