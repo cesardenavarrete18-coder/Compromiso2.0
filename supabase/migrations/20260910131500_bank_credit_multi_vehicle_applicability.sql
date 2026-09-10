@@ -52,10 +52,12 @@ begin
   into v_existing_count
   from unnest(p_version_ids) as requested(version_id)
   join public.model_versions mv on mv.id = requested.version_id
-  where mv.active = true;
+  join public.models model on model.id = mv.model_id
+  where mv.active = true
+    and model.active = true;
 
   if v_existing_count <> (select count(distinct version_id) from unnest(p_version_ids) as requested(version_id)) then
-    raise exception 'One or more selected vehicle versions do not exist or are inactive'
+    raise exception 'One or more selected vehicle versions do not exist, are inactive, or belong to an inactive model'
       using errcode = '22023';
   end if;
 
@@ -150,16 +152,25 @@ language plpgsql
 security invoker
 set search_path = ''
 as $$
+declare
+  v_today date := (now() at time zone 'America/Argentina/Buenos_Aires')::date;
 begin
   if new.offer_type = 'bank_credit' and not exists (
     select 1
     from public.bank_credit_offer_versions link
+    join public.bank_credit_offers offer on offer.id = link.offer_id
     join public.model_versions version on version.id = link.version_id
+    join public.models model on model.id = version.model_id
     where link.offer_id = new.bank_credit_offer_id
+      and offer.active = true
+      and (offer.valid_from is null or offer.valid_from <= v_today)
+      and (offer.valid_to is null or offer.valid_to >= v_today)
+      and version.active = true
+      and model.active = true
       and version.model_id = new.model_id
       and version.name = new.vehicle_version
   ) then
-    raise exception 'Selected bank credit does not apply to this model/version'
+    raise exception 'Selected bank credit is not active/current for this model/version'
       using errcode = '23514',
             constraint = 'sales_quotes_bank_credit_applicability';
   end if;
