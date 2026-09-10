@@ -93,3 +93,17 @@ test("legacy single-model selector cannot block the multi-model form", () => {
   assert.match(loader, /legacyCreditModel\.disabled = true/);
   assert.match(loader, /20260910-1/);
 });
+
+test("admin separates active and archived credits while preserving history safety", () => {
+  const ux = fs.readFileSync(path.join(root, "vendedores", "credit-admin-archive-ux.js"), "utf8");
+  const loader = fs.readFileSync(path.join(root, "vendedores", "supabase-config.js"), "utf8");
+  assert.match(loader, /credit-admin-archive-ux\.js/);
+  assert.match(ux, /data-credit-offer-view=\"active\"/);
+  assert.match(ux, /data-credit-offer-view=\"archived\"/);
+  assert.match(ux, /sales_quotes/);
+  assert.match(ux, /bank_credit_offer_id/);
+  assert.match(ux, /hasHistory \? \"Archivar\" : \"Pausar\"/);
+  assert.match(ux, /deleteButton\.hidden = hasHistory/);
+  assert.match(ux, /Borrar definitivamente/);
+  assert.match(ux, /hasHistory \? \"Archivada\" : \"Pausada\"/);
+});
