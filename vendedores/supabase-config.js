@@ -44,10 +44,10 @@
           legacyCreditModel.disabled = true;
         }
       }
-      loadCreditAdapter("/vendedores/credit-applicability-core.js?v=20260909-1", function () {
+      loadCreditAdapter("/vendedores/credit-applicability-core.js?v=20260910-1", function () {
         loadCreditAdapter(isAdminPortal
-          ? "/vendedores/credit-multi-vehicle-admin.js?v=20260909-1"
-          : "/vendedores/credit-multi-vehicle-seller.js?v=20260909-1");
+          ? "/vendedores/credit-multi-vehicle-admin.js?v=20260910-1"
+          : "/vendedores/credit-multi-vehicle-seller.js?v=20260910-1");
       });
     }, { once: true });
   }
