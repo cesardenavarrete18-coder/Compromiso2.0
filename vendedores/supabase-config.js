@@ -45,9 +45,13 @@
         }
       }
       loadCreditAdapter("/vendedores/credit-applicability-core.js?v=20260910-1", function () {
-        loadCreditAdapter(isAdminPortal
-          ? "/vendedores/credit-multi-vehicle-admin.js?v=20260910-1"
-          : "/vendedores/credit-multi-vehicle-seller.js?v=20260910-1");
+        if (isAdminPortal) {
+          loadCreditAdapter("/vendedores/credit-multi-vehicle-admin.js?v=20260910-1", function () {
+            loadCreditAdapter("/vendedores/credit-admin-archive-ux.js?v=20260910-1");
+          });
+          return;
+        }
+        loadCreditAdapter("/vendedores/credit-multi-vehicle-seller.js?v=20260910-1");
       });
     }, { once: true });
   }
