@@ -1,4 +1,4 @@
-# PR summary — Créditos multi-modelo
+# PR summary — Créditos multi-modelo sobre CRM V2
 
 ## Objetivo
 
@@ -15,18 +15,33 @@ Permitir que una única condición de crédito aplique a múltiples modelos y ve
 - Defensa en profundidad: trigger de Postgres rechaza combinación crédito/modelo/versión no habilitada.
 - Histórico: si un crédito tiene presupuestos, el Admin lo archiva en vez de borrarlo.
 - Compatibilidad: el selector legado queda deshabilitado para no interferir con la validación nativa del formulario.
+- Vigencia: fecha comercial calculada en `America/Argentina/Buenos_Aires`.
 
-## Auditoría previa al PR
+## Integración CRM V2
 
-- `main`: `ac7e91b1e0a8cb132e0d94d3cf709f96c4b5c79b`.
-- Producción Supabase sin la migración nueva.
-- `bank_credit_offers.model_id` sigue `NOT NULL` en producción.
-- RPC multi-crédito ausente en producción.
-- RLS activo en ofertas, vínculos y presupuestos.
-- Vercel build del head auditado: success.
-- GitHub Actions para el commit: no configuradas/no registradas.
-- Producción observada: 36 créditos, 35 activos, 14 presupuestos de crédito; 6 condiciones de crédito están referenciadas históricamente.
+- Base actual: `main @ 4380f25a7f9761da6cc9214ca93bff28b9bd9270`.
+- Candidato: `integration/credit-multi-vehicle-v2-port`.
+- PR final de auditoría: #60, Draft.
+- La portación de la feature original sobre CRM V2 fue mergeable y no presentó conflictos.
+- `admin.js` y `sales.js` no cambiaron respecto de la base funcional original de créditos.
+- El workspace CRM V2 mantiene el contrato DOM requerido por el adapter de presupuestos.
+
+## Migración
+
+- Archivo vigente: `20260910131500_bank_credit_multi_vehicle_applicability.sql`.
+- El archivo previo `20260909130000_bank_credit_multi_vehicle_applicability.sql` fue retirado del candidato para no quedar intercalado antes de las migraciones CRM V2 ya aplicadas.
+- Última migración Production observada antes de esta feature: `20260910012455_crm_v2_recover_history_only_no_contact`.
+
+## Auditoría
+
+- Producción todavía no tiene aplicada la migración de créditos multi-modelo.
+- Rehearsal SQL completo sobre Production CRM V2 dentro de `BEGIN/ROLLBACK`: aprobado.
+- Post-rollback: columna, RPC y trigger volvieron exactamente al estado previo.
+- 14/14 presupuestos históricos de crédito cumplen la nueva relación crédito/modelo/versión; 0 incompatibles.
+- Vercel Preview del candidato: success.
+- GitHub Actions asociados al commit: ninguno; no considerar Vercel equivalente a una suite CI completa.
+- Tests de la feature cubren aplicabilidad, snapshot de versiones, seguridad del RPC, archive guard, bloqueo del selector legado, orden de migración y borde horario Buenos Aires/UTC.
 
 ## Importante para rollout
 
-No mergear ni aplicar migración hasta hacer el smoke controlado indicado en `docs/credit-multi-vehicle-rollout.md`.
+PR #60 debe permanecer Draft hasta completar la auditoría final del diff y definir el smoke productivo. No aplicar la migración ni mergear a `main` sin autorización explícita.
