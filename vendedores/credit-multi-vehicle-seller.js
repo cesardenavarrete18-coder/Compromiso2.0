@@ -15,11 +15,11 @@
   var errorBox = document.getElementById("quoteError");
   var range = document.getElementById("quoteFinancedRange");
 
-  function escapeHtml(value) { return String(value == null ? "" : value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;"); }
+  function escapeHtml(value) { return String(value == null ? "" : value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\"/g, "&quot;").replace(/'/g, "&#039;"); }
   function money(value) { return value == null || value === "" ? "A confirmar" : "$" + new Intl.NumberFormat("es-AR", { maximumFractionDigits: 0 }).format(Number(value)); }
   function formatDate(value) { return value ? new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(value)) : "—"; }
   function isBank() { return offerType.value === "bank_credit"; }
-  function todayKey() { return new Date().toISOString().slice(0, 10); }
+  function todayKey() { return core.argentinaDateKey(new Date()); }
   function validOffer(item) { var today = todayKey(); return item.active !== false && (!item.valid_from || item.valid_from <= today) && (!item.valid_to || item.valid_to >= today); }
   function modelById(id) { return state.models.find(function (model) { return model.id === id; }) || null; }
   function selectedModel() { return modelById(modelSelect.value); }
