@@ -62,6 +62,18 @@ test("migration is ordered after CRM V2 and keeps RPC security-invoker", () => {
   assert.match(migration, /grant execute on function public\.admin_upsert_bank_credit_offer[\s\S]*to authenticated/i);
 });
 
+test("Postgres rejects inactive, expired or non-applicable bank credit quotes", () => {
+  const migration = fs.readFileSync(migrationPath, "utf8");
+  assert.match(migration, /join public\.bank_credit_offers offer on offer\.id = link\.offer_id/i);
+  assert.match(migration, /join public\.models model on model\.id = version\.model_id/i);
+  assert.match(migration, /offer\.active = true/i);
+  assert.match(migration, /version\.active = true/i);
+  assert.match(migration, /model\.active = true/i);
+  assert.match(migration, /America\/Argentina\/Buenos_Aires/i);
+  assert.match(migration, /offer\.valid_from is null or offer\.valid_from <= v_today/i);
+  assert.match(migration, /offer\.valid_to is null or offer\.valid_to >= v_today/i);
+});
+
 test("seller and admin adapters filter applicability by version model_id", () => {
   const seller = fs.readFileSync(path.join(root, "vendedores", "credit-multi-vehicle-seller.js"), "utf8");
   const admin = fs.readFileSync(path.join(root, "vendedores", "credit-multi-vehicle-admin.js"), "utf8");
