@@ -3,6 +3,12 @@ import { validateEvidence } from "./semantic-extraction-validator.mjs";
 
 const present = value => value !== null && value !== undefined && value !== false && (!Array.isArray(value) || value.length > 0);
 const fold = value => value.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
+// Family Q3: mileage_km is the only numeric field in trade_in_vehicle, and the provider has
+// been observed routing a monetary figure there ("valor 13.000.000") with no unit signal at
+// all. Require the field's own evidence to actually contain a km-shaped token before trusting
+// it - semantic/evidential, not a numeric-range heuristic (a used car's price and its mileage
+// can both plausibly land in the same order of magnitude).
+const MILEAGE_KEYWORD_PATTERN = /\bk\.?ms?\.?\b|\bkilometr\w*\b/;
 const signalGuards = {
   human_request: text => /\b(hablar|habla|pasame|pasar?me|necesito hablar|comunicarme)\b[^.?!]*(asesor|vendedor|persona|alguien)(\b|$)/.test(text) || /\b(llam(?:e|en|arme)|contact(?:e|en|arme))\b[^.?!]*(asesor|vendedor|persona|alguien)\b|\b(asesor|vendedor|persona|alguien)\b[^.?!]*\b(llam(?:e|en|arme)|contact(?:e|en|arme))\b/.test(text),
   strong_action: text => /\b(ir a verl[oa]|voy a ir|transferir|transfiero|senarl[oa]|senar|depositar|enviar? los papeles|papeles listos|quiero avanzar)\b/.test(text),
@@ -28,8 +34,18 @@ export function sanitizeSemanticEvidence(candidate, input) {
     extraction[key] = extraction[key].filter((item, index) => !present(item) || valid(item.evidence, `${key}.${index}`));
   for (const key of ["requested_action", "contact_preference_expression", "customer_name", "customer_location"])
     if (present(extraction[key]) && !valid(extraction[key].evidence, key)) extraction[key] = null;
-  for (const [key, item] of Object.entries(extraction.trade_in_vehicle ?? {}))
-    if (present(item) && !valid(item.evidence, `trade_in_vehicle.${key}`)) delete extraction.trade_in_vehicle[key];
+  for (const [key, item] of Object.entries(extraction.trade_in_vehicle ?? {})) {
+    if (!present(item)) continue;
+    if (!valid(item.evidence, `trade_in_vehicle.${key}`)) { delete extraction.trade_in_vehicle[key]; continue; }
+    if (key === "mileage_km" && item.status === "known") {
+      const evidenceList = Array.isArray(item.evidence) ? item.evidence : [item.evidence];
+      const evidenceText = fold(evidenceList.map(entry => entry.literal).join(" "));
+      if (!MILEAGE_KEYWORD_PATTERN.test(evidenceText)) {
+        delete extraction.trade_in_vehicle[key];
+        warnings.push({ code: "MILEAGE_WITHOUT_KM_EVIDENCE", field: `trade_in_vehicle.${key}` });
+      }
+    }
+  }
   const defaults = emptySemanticExtraction();
   const scalarSignals = {
     query_intent: extraction.query_intent !== "none",
