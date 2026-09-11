@@ -46,6 +46,43 @@
     });
   }
 
+  function greatestCommonDivisor(a, b) {
+    var left = Math.abs(Math.round(Number(a) || 0));
+    var right = Math.abs(Math.round(Number(b) || 0));
+    while (right) {
+      var remainder = left % right;
+      left = right;
+      right = remainder;
+    }
+    return left || 1;
+  }
+
+  function financedRangeStep(minimum, maximum, preferredStep) {
+    var min = Number(minimum);
+    var max = Number(maximum);
+    var preferred = Number(preferredStep == null ? 100000 : preferredStep);
+    if (!Number.isFinite(min) || !Number.isFinite(max) || !Number.isFinite(preferred) || preferred <= 0) return 1;
+    var cents = 100;
+    var distance = Math.abs(Math.round((max - min) * cents));
+    var preferredCents = Math.max(1, Math.round(preferred * cents));
+    if (!distance) return preferredCents / cents;
+    return greatestCommonDivisor(preferredCents, distance) / cents;
+  }
+
+  function snapFinancedAmount(value, minimum, maximum, step) {
+    var cents = 100;
+    var min = Math.round(Number(minimum) * cents);
+    var max = Math.round(Number(maximum) * cents);
+    var amount = Math.round(Number(value) * cents);
+    var increment = Math.max(1, Math.round(Number(step) * cents));
+    if (![min, max, amount, increment].every(Number.isFinite)) return Number(minimum) || 0;
+    if (max <= min) return min / cents;
+    amount = Math.min(max, Math.max(min, amount));
+    if (amount === min || amount === max) return amount / cents;
+    var snapped = min + Math.round((amount - min) / increment) * increment;
+    return Math.min(max, Math.max(min, snapped)) / cents;
+  }
+
   function dateKeyForTimeZone(value, timeZone) {
     var date = value instanceof Date ? value : new Date(value == null ? Date.now() : value);
     var pieces = {};
@@ -70,6 +107,8 @@
     offerAppliesToModel: offerAppliesToModel,
     offerVersionIds: offerVersionIds,
     groupSelectedVersions: groupSelectedVersions,
+    financedRangeStep: financedRangeStep,
+    snapFinancedAmount: snapFinancedAmount,
     argentinaDateKey: argentinaDateKey
   });
 }(typeof window !== "undefined" ? window : globalThis));
