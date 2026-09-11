@@ -51,7 +51,9 @@
           });
           return;
         }
-        loadCreditAdapter("/vendedores/credit-multi-vehicle-seller.js?v=20260911-1");
+        loadCreditAdapter("/vendedores/quote-print-fix.js?v=20260911-1", function () {
+          loadCreditAdapter("/vendedores/credit-multi-vehicle-seller.js?v=20260911-1");
+        });
       });
     }, { once: true });
   }
