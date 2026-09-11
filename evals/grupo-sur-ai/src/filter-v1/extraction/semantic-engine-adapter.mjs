@@ -14,6 +14,24 @@ function mentionMentionsUsedVehicle(vehicle) {
   return [vehicle?.literal, ...evidenceList.map(item => item?.literal)].some(text => USED_VEHICLE_PATTERN.test(foldText(text)));
 }
 
+// Family Q2: contextual mentions can legitimately be reconstructed from conversation
+// history (for example "Tiene 200.000 km" after the assistant asked about a Peugeot 307),
+// but a role-only fallback must never overwrite canonical trade-in identity when the
+// current customer message does not name that vehicle at all. This is what allowed
+// "Las cuotas?" to turn a stored 307 into the target Partner: the provider emitted a
+// contextual trade_in mention sourced from prior assistant text. Structured
+// extraction.trade_in_vehicle remains authoritative for history-backed attribute updates;
+// this guard applies only to the vehicle_mentions fallback.
+function tradeMentionAnchoredInCurrentMessage(vehicle, filterInput) {
+  const current = foldText(filterInput?.current_message?.text ?? "").trim();
+  if (!current) return true; // preserve offline/unit callers that do not provide turn context
+  const candidates = [vehicle?.model_text, vehicle?.literal]
+    .map(foldText)
+    .map(value => value.trim())
+    .filter(Boolean);
+  return candidates.some(value => current.includes(value));
+}
+
 export function semanticExtractionToEngine(extraction, filterInput = {}) {
   const extractedFields = {};
   if (["cash", "financed"].includes(extraction.purchase_mode_statement)) extractedFields.purchase_mode = extraction.purchase_mode_statement;
@@ -26,12 +44,16 @@ export function semanticExtractionToEngine(extraction, filterInput = {}) {
   else if (extraction.trade_in_intent === "no") extractedFields.has_trade_in = "no";
   const owned = extraction.vehicle_mentions.find(vehicle => vehicle.role === "owned_only");
   if (owned) extractedFields.owned_vehicle = { brand: owned.brand_text ?? null, model: owned.model_text ?? owned.literal, version: owned.version_text ?? null };
-  const trade = extraction.vehicle_mentions.find(vehicle => vehicle.role === "trade_in");
+  const trade = extraction.vehicle_mentions.find(vehicle => vehicle.role === "trade_in" && tradeMentionAnchoredInCurrentMessage(vehicle, filterInput));
   // brand_text/version_text are nullable per FILTER_V1_PROVIDER_SCHEMA (the provider can
   // report a trade-in vehicle without knowing its brand/version yet). An absent sub-field
   // must read as "missing" to the engine, not as a null "known" value - so omit it entirely
   // rather than passing the null through (Family O).
   if (trade) extractedFields.trade_in_vehicle = Object.fromEntries(Object.entries({ brand: trade.brand_text, model: trade.model_text, version: trade.version_text }).filter(([, value]) => value !== null && value !== undefined));
+  // Structured trade-in extraction can carry history-backed year/km/model attributes and
+  // therefore remains authoritative even when the current short answer does not repeat the
+  // vehicle name (for example "Tiene 200.000 km"). An explicit parent rejection is handled
+  // separately by has_trade_in=no and must not be converted back to yes here.
   if (extraction.trade_in_vehicle) extractedFields.trade_in_vehicle = Object.fromEntries(Object.entries(extraction.trade_in_vehicle).map(([key, value]) => [key === "mileage_km" ? "km" : key, value?.status === "explicitly_unknown" ? { semantic_status: "explicitly_unknown", evidence: value.evidence } : value?.value ?? value]));
   const targetMentions = extraction.vehicle_mentions.filter(vehicle => ["target", "target_candidate"].includes(vehicle.role));
   const targetModel = targetMentions.length === 1 && targetMentions[0].role === "target" ? targetMentions[0].model_text ?? targetMentions[0].literal : undefined;
