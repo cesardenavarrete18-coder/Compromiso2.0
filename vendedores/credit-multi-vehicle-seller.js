@@ -101,11 +101,12 @@
     var maximum = offer.max_financed_amount == null ? price : Number(offer.max_financed_amount);
     if (price > 0) maximum = Math.min(maximum || price, price);
     maximum = Math.max(minimum, maximum || minimum);
-    range.min = minimum; range.max = maximum; range.step = 100000;
+    var step = core.financedRangeStep(minimum, maximum, 100000);
+    range.min = minimum; range.max = maximum; range.step = step;
     var current = Number(form.elements.financedAmount.value || minimum);
-    current = Math.min(maximum, Math.max(minimum, current));
+    current = core.snapFinancedAmount(current, minimum, maximum, step);
     range.value = current;
-    form.elements.financedAmount.min = minimum; form.elements.financedAmount.max = maximum; form.elements.financedAmount.step = 100000; form.elements.financedAmount.value = current;
+    form.elements.financedAmount.min = minimum; form.elements.financedAmount.max = maximum; form.elements.financedAmount.step = step; form.elements.financedAmount.value = current;
     document.getElementById("quoteFinancedMin").textContent = money(minimum);
     document.getElementById("quoteFinancedMax").textContent = money(maximum);
   }
