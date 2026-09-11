@@ -275,3 +275,33 @@ test("Family Q3 - 20 (mileage value binding, unaffected): full-message evidence 
   const { extraction } = sanitizeMileage(text, text, { mileageValue: 130000 });
   assert.equal(extraction.trade_in_vehicle.mileage_km.value, 130000);
 });
+
+// --- 3rd audit round ---
+//
+// explicitTarget ("quiero", "busco", "comprar", ...) was still an exception that let a
+// multi-alternative answer skip disambiguation and fall through to trade_in_intent=yes: a
+// customer naming the TARGET vehicle while answering a different alternative ("Quiero
+// financiar el auto", "Quiero el 208 financiado", "Quiero comprarlo al contado") triggered
+// explicitTarget=true, which the previous condition treated as disqualifying the
+// neutralization branch. Naming the target can classify vehicle_mentions as "target", but it
+// is not evidence of trade_in=yes on its own. Separately, "auto|vehiculo|camioneta" alone
+// must not count as trade-in evidence inside a multi-alternative question either - those
+// words just as easily describe the target vehicle, as in all three cases below.
+
+test("Family Q3 - 21 (explicitTarget is not trade-in evidence): a provider-proposed yes for 'Quiero financiar el auto' must be neutralized", () => {
+  const { extraction } = normalize("yes", "Quiero financiar el auto", MULTI_ALT_QUESTION);
+  assert.equal(extraction.trade_in_intent, "not_present");
+  assert.equal(extraction.evidence.trade_in_intent, null);
+});
+
+test("Family Q3 - 22 (explicitTarget is not trade-in evidence): a provider-proposed yes for 'Quiero el 208 financiado' must be neutralized", () => {
+  const { extraction } = normalize("yes", "Quiero el 208 financiado", MULTI_ALT_QUESTION);
+  assert.equal(extraction.trade_in_intent, "not_present");
+  assert.equal(extraction.evidence.trade_in_intent, null);
+});
+
+test("Family Q3 - 23 (explicitTarget is not trade-in evidence): a provider-proposed yes for 'Quiero comprarlo al contado' must be neutralized", () => {
+  const { extraction } = normalize("yes", "Quiero comprarlo al contado", MULTI_ALT_QUESTION);
+  assert.equal(extraction.trade_in_intent, "not_present");
+  assert.equal(extraction.evidence.trade_in_intent, null);
+});
