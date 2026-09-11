@@ -58,7 +58,24 @@ function normalizeContextualSemantics(extraction, input) {
   const ownershipQuestion = /\b(tenes|posees|contas con)\b[^?]*\b(auto|vehiculo|camioneta|usado)\b/.test(previousText) && !tradeQuestion;
   const targetQuestion = /\b(que|cual)\b[^?]*\b(modelo|auto|vehiculo)\b[^?]*(buscas|queres|interesa)/.test(previousText);
   const shortAnswer = text.split(/\s+/).length <= 8;
+  // Family Q3: a question offering multiple commercial alternatives ("financiar, contado o
+  // entregar un usado") must not let a short answer default to trade-in=yes just because it
+  // was short. "Multiple alternatives" = the trade-in clause is joined to another option by
+  // " o " (or) in the assistant's question - a generic marker, not specific to any one
+  // alternative's wording, so this generalizes instead of pattern-matching "financiar" or
+  // "efectivo" by name. Scoped deliberately narrow: an EXCLUSIVE trade-in question (no " o "
+  // alternative - "¿Tenés un usado para entregar?") keeps its original behavior unchanged
+  // (any short answer resolves yes/no, including one that only affirms "sí" without
+  // repeating the vehicle - see "contextual trade-in answer is not a target" in
+  // filter-v1-final-closure.test.mjs). Only for a genuinely multi-alternative question does a
+  // short answer need to explicitly name the vehicle/delivery ("Corolla", "entregar",
+  // "usado", ...) or reject it outright before resolving trade-in either way; otherwise the
+  // answer most likely addressed a different alternative and trade_in_intent is left
+  // untouched rather than defaulted.
+  const isMultiAlternativeQuestion = tradeQuestion && / o /.test(previousText);
+  const currentNamesTradeIn = /\b(usado|auto|vehiculo|camioneta|permut\w*|entreg\w*|parte de pago)\b/.test(text);
   if (tradeQuestion && (shortAnswer || explicitTarget)) {
+    if (isMultiAlternativeQuestion && !currentNamesTradeIn && !explicitTarget && !explicitTradeNo) return;
     extraction.trade_in_intent = explicitTradeNo ? "no" : "yes";
     extraction.evidence.trade_in_intent = [evidenceFor(current), evidenceFor(previous)];
     for (const vehicle of extraction.vehicle_mentions) {
