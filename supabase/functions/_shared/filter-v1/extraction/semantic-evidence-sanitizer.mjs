@@ -5,10 +5,31 @@ const present = value => value !== null && value !== undefined && value !== fals
 const fold = value => value.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
 // Family Q3: mileage_km is the only numeric field in trade_in_vehicle, and the provider has
 // been observed routing a monetary figure there ("valor 13.000.000") with no unit signal at
-// all. Require the field's own evidence to actually contain a km-shaped token before trusting
-// it - semantic/evidential, not a numeric-range heuristic (a used car's price and its mileage
-// can both plausibly land in the same order of magnitude).
-const MILEAGE_KEYWORD_PATTERN = /\bk\.?ms?\.?\b|\bkilometr\w*\b/;
+// all. It is not enough to check that a km-shaped token exists SOMEWHERE in the evidence
+// (2nd audit round): when the evidence literal is the whole customer message - "Peugeot 408
+// 2013, 130.000 km, valor 13.000.000" - that message legitimately contains "km" even when
+// the value the provider proposes for mileage_km is actually the monetary figure. The guard
+// must instead confirm the claimed numeric value is the SAME number textually bound to a km
+// marker (immediately before "km"/"k.m", or right after "kilometraje" with only a short
+// connector word like "real(es)"), not merely that a km token is present anywhere.
+const parseArgentineInteger = raw => {
+  const digits = String(raw).replace(/[.,]/g, "");
+  return digits.length ? Number(digits) : null;
+};
+const KM_NUMBER_BEFORE = /(\d[\d.,]*)\s*(?:k\.?ms?\.?|kilometr\w*)\b/g;
+const KM_NUMBER_AFTER = /\b(?:k\.?ms?\.?|kilometr\w*)\b(?:\s+(?:real(?:es)?|aprox(?:imad[oa]s?)?|actual(?:es)?|recorrid[oa]s?))?\s+(\d[\d.,]*)/g;
+function kmBoundNumbers(text) {
+  const numbers = [];
+  for (const pattern of [KM_NUMBER_BEFORE, KM_NUMBER_AFTER]) {
+    pattern.lastIndex = 0;
+    let match;
+    while ((match = pattern.exec(text))) {
+      const parsed = parseArgentineInteger(match[1]);
+      if (parsed !== null) numbers.push(parsed);
+    }
+  }
+  return numbers;
+}
 const signalGuards = {
   human_request: text => /\b(hablar|habla|pasame|pasar?me|necesito hablar|comunicarme)\b[^.?!]*(asesor|vendedor|persona|alguien)(\b|$)/.test(text) || /\b(llam(?:e|en|arme)|contact(?:e|en|arme))\b[^.?!]*(asesor|vendedor|persona|alguien)\b|\b(asesor|vendedor|persona|alguien)\b[^.?!]*\b(llam(?:e|en|arme)|contact(?:e|en|arme))\b/.test(text),
   strong_action: text => /\b(ir a verl[oa]|voy a ir|transferir|transfiero|senarl[oa]|senar|depositar|enviar? los papeles|papeles listos|quiero avanzar)\b/.test(text),
@@ -40,7 +61,8 @@ export function sanitizeSemanticEvidence(candidate, input) {
     if (key === "mileage_km" && item.status === "known") {
       const evidenceList = Array.isArray(item.evidence) ? item.evidence : [item.evidence];
       const evidenceText = fold(evidenceList.map(entry => entry.literal).join(" "));
-      if (!MILEAGE_KEYWORD_PATTERN.test(evidenceText)) {
+      const boundToClaimedValue = kmBoundNumbers(evidenceText).includes(Number(item.value));
+      if (!boundToClaimedValue) {
         delete extraction.trade_in_vehicle[key];
         warnings.push({ code: "MILEAGE_WITHOUT_KM_EVIDENCE", field: `trade_in_vehicle.${key}` });
       }
