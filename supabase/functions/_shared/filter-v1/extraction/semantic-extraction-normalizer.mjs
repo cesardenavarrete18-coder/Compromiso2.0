@@ -54,28 +54,38 @@ function normalizeContextualSemantics(extraction, input) {
   const previousText = previous?.role === "assistant" ? fold(previous.text) : "";
   const explicitTarget = /\b(quiero|busco|comprar|es la que quiero|me decidi por)\b/.test(text);
   const explicitTradeNo = /\b(no|me la quedo|no la entrego)\b/.test(text);
-  const tradeQuestion = /\b(usado|auto|vehiculo|camioneta)\b[^?]*(entregar|parte de pago)|\b(entregar|parte de pago)\b/.test(previousText);
+  // entreg\w* (not the literal "entregar") so conjugations the customer/assistant actually
+  // use in traffic - "entregando", "entrego", "entregás" - are recognized too; the current
+  // message's own trade-in check below already used this broader stem.
+  const tradeQuestion = /\b(usado|auto|vehiculo|camioneta)\b[^?]*(entreg\w*|parte de pago)|\b(entreg\w*|parte de pago)\b/.test(previousText);
   const ownershipQuestion = /\b(tenes|posees|contas con)\b[^?]*\b(auto|vehiculo|camioneta|usado)\b/.test(previousText) && !tradeQuestion;
   const targetQuestion = /\b(que|cual)\b[^?]*\b(modelo|auto|vehiculo)\b[^?]*(buscas|queres|interesa)/.test(previousText);
   const shortAnswer = text.split(/\s+/).length <= 8;
-  // Family Q3: a question offering multiple commercial alternatives ("financiar, contado o
-  // entregar un usado") must not let a short answer default to trade-in=yes just because it
-  // was short. "Multiple alternatives" = the trade-in clause is joined to another option by
-  // " o " (or) in the assistant's question - a generic marker, not specific to any one
-  // alternative's wording, so this generalizes instead of pattern-matching "financiar" or
-  // "efectivo" by name. Scoped deliberately narrow: an EXCLUSIVE trade-in question (no " o "
-  // alternative - "¿Tenés un usado para entregar?") keeps its original behavior unchanged
-  // (any short answer resolves yes/no, including one that only affirms "sí" without
-  // repeating the vehicle - see "contextual trade-in answer is not a target" in
-  // filter-v1-final-closure.test.mjs). Only for a genuinely multi-alternative question does a
-  // short answer need to explicitly name the vehicle/delivery ("Corolla", "entregar",
-  // "usado", ...) or reject it outright before resolving trade-in either way; otherwise the
-  // answer most likely addressed a different alternative and trade_in_intent is left
-  // untouched rather than defaulted.
-  const isMultiAlternativeQuestion = tradeQuestion && / o /.test(previousText);
+  // Family Q3 (2nd audit round): "multiple alternatives" is judged by whether the SAME
+  // question also names a non-trade-in commercial path (financing, cash, a down payment)
+  // alongside its trade-in clause - not by which conjunction/punctuation joins the options.
+  // Detecting via " o " alone was wrong on both sides: it flagged "¿Tenés auto o camioneta
+  // para entregar?" as multi-alternative even though "auto"/"camioneta" are just two
+  // synonyms for the SAME trade-in offer (still an exclusive trade-in question - a bare "sí"
+  // must keep resolving yes, per "contextual trade-in answer is not a target" in
+  // filter-v1-final-closure.test.mjs); and it missed equivalent phrasings that list
+  // alternatives without " o " at all, e.g. a comma list or "financiación/contado/usado".
+  // Keying off the presence of an actual competing commercial-mode keyword fixes both.
+  const NON_TRADE_IN_ALTERNATIVE = /\b(financia\w*|contado|efectivo|anticipo|cuotas?)\b/;
+  const isMultiAlternativeQuestion = tradeQuestion && NON_TRADE_IN_ALTERNATIVE.test(previousText);
   const currentNamesTradeIn = /\b(usado|auto|vehiculo|camioneta|permut\w*|entreg\w*|parte de pago)\b/.test(text);
   if (tradeQuestion && (shortAnswer || explicitTarget)) {
-    if (isMultiAlternativeQuestion && !currentNamesTradeIn && !explicitTarget && !explicitTradeNo) return;
+    const answersADifferentAlternative = isMultiAlternativeQuestion && !currentNamesTradeIn && !explicitTarget && !explicitTradeNo;
+    if (answersADifferentAlternative) {
+      // The current turn most likely resolved a DIFFERENT alternative (financing, cash, an
+      // amount...), not trade-in. A provider that nonetheless proposed trade_in_intent=yes
+      // for this turn is a hallucination and must be corrected here - an early `return`
+      // that merely preserves whatever the provider proposed is not enough (Family Q3, 2nd
+      // audit round).
+      extraction.trade_in_intent = "not_present";
+      extraction.evidence.trade_in_intent = null;
+      return;
+    }
     extraction.trade_in_intent = explicitTradeNo ? "no" : "yes";
     extraction.evidence.trade_in_intent = [evidenceFor(current), evidenceFor(previous)];
     for (const vehicle of extraction.vehicle_mentions) {
