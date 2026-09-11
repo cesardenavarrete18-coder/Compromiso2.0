@@ -73,9 +73,18 @@ function normalizeContextualSemantics(extraction, input) {
   // Keying off the presence of an actual competing commercial-mode keyword fixes both.
   const NON_TRADE_IN_ALTERNATIVE = /\b(financia\w*|contado|efectivo|anticipo|cuotas?)\b/;
   const isMultiAlternativeQuestion = tradeQuestion && NON_TRADE_IN_ALTERNATIVE.test(previousText);
-  const currentNamesTradeIn = /\b(usado|auto|vehiculo|camioneta|permut\w*|entreg\w*|parte de pago)\b/.test(text);
+  // Family Q3 (3rd audit round): inside a multi-alternative question, "auto|vehiculo|
+  // camioneta" alone are not sufficient evidence of trade-in - they describe the TARGET
+  // vehicle just as easily ("quiero financiar el auto", "quiero el 208 financiado"). Only an
+  // unambiguous signal counts here: usado, permuta, parte de pago, or an entregar-family verb.
+  const currentHasUnambiguousTradeInSignal = /\b(usado|permut\w*|parte de pago|entreg\w*)\b/.test(text);
   if (tradeQuestion && (shortAnswer || explicitTarget)) {
-    const answersADifferentAlternative = isMultiAlternativeQuestion && !currentNamesTradeIn && !explicitTarget && !explicitTradeNo;
+    // explicitTarget must NOT exempt a multi-alternative answer from disambiguation:
+    // naming the target model can classify vehicle_mentions as "target" (below), but it is
+    // not evidence of trade_in=yes on its own (Family Q3, 3rd audit round) - so it is
+    // deliberately absent from this condition, unlike the vehicle-role assignment further
+    // down which still uses it.
+    const answersADifferentAlternative = isMultiAlternativeQuestion && !currentHasUnambiguousTradeInSignal && !explicitTradeNo;
     if (answersADifferentAlternative) {
       // The current turn most likely resolved a DIFFERENT alternative (financing, cash, an
       // amount...), not trade-in. A provider that nonetheless proposed trade_in_intent=yes
