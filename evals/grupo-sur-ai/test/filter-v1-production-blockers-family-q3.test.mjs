@@ -209,3 +209,69 @@ test("Family Q3 - 13 (end-to-end): after 'Financiarlo', the engine must not ask 
   assert.equal(result.next_state.has_trade_in.status, "missing", "must not fabricate has_trade_in=yes from an unrelated short answer");
   assert.ok(!String(result.response_plan?.next_filter_question ?? "").startsWith("trade_in_"));
 });
+
+// --- 2nd audit round ---
+//
+// (1) Critical: the previous suite only ever fed rawTradeInIntent="not_present" into the
+// multi-alternative cases, so it never proved the deterministic layer NEUTRALIZES a wrongly
+// proposed provider trade_in_intent="yes" - a plain early `return` in the normalizer would
+// silently preserve that wrong "yes" untouched, and still pass every test above.
+//
+// (2) Multi-alternative detection must be judged by whether the question also offers a
+// genuine non-trade-in commercial path (financing/cash/anticipo), not by the presence of the
+// " o " conjunction: "¿Tenés auto o camioneta para entregar?" is still an EXCLUSIVE trade-in
+// question (both nouns name the same trade-in offer), and a commercial alternative can be
+// listed with commas or "/" instead of " o ".
+//
+// (3) The mileage guard must confirm the claimed numeric value is textually bound to a km
+// marker, not merely that some km-shaped token exists anywhere in the evidence - otherwise
+// evidence that is the full customer message (which legitimately contains both a real
+// kilometraje figure and an unrelated monetary one) lets the wrong number through.
+
+test("Family Q3 - 14 (provider hallucination, critical): a provider-proposed trade_in_intent=yes for 'Financiarlo' must be neutralized, not preserved", () => {
+  const { extraction } = normalize("yes", "Financiarlo", MULTI_ALT_QUESTION);
+  assert.equal(extraction.trade_in_intent, "not_present");
+  assert.equal(extraction.evidence.trade_in_intent, null);
+});
+
+test("Family Q3 - 15 (provider hallucination, critical): a provider-proposed trade_in_intent=yes for 'Efectivo' must be neutralized", () => {
+  const { extraction } = normalize("yes", "Efectivo", MULTI_ALT_QUESTION);
+  assert.equal(extraction.trade_in_intent, "not_present");
+  assert.equal(extraction.evidence.trade_in_intent, null);
+});
+
+test("Family Q3 - 16 (provider hallucination, critical): a provider-proposed trade_in_intent=yes for 'Retirar con 5 millones' must be neutralized", () => {
+  const { extraction } = normalize("yes", "Retirar con 5 millones", "¿Con anticipo o entregando un usado?");
+  assert.equal(extraction.trade_in_intent, "not_present");
+  assert.equal(extraction.evidence.trade_in_intent, null);
+});
+
+test("Family Q3 - 17 (multi-alternative detection, false positive fixed): '¿Tenés auto o camioneta para entregar?' is still an exclusive trade-in question - bare 'Sí' resolves yes", () => {
+  const { extraction } = normalize("not_present", "Sí", "¿Tenés auto o camioneta para entregar?");
+  assert.equal(extraction.trade_in_intent, "yes");
+});
+
+test("Family Q3 - 18a (multi-alternative detection, comma-separated, no ' o '): a provider-proposed yes for 'Contado' must still be neutralized", () => {
+  const { extraction } = normalize("yes", "Contado", "¿Financiación, contado, entrega de un usado?");
+  assert.equal(extraction.trade_in_intent, "not_present");
+  assert.equal(extraction.evidence.trade_in_intent, null);
+});
+
+test("Family Q3 - 18b (multi-alternative detection, slash-separated): a provider-proposed yes for 'Financiación' must still be neutralized", () => {
+  const { extraction } = normalize("yes", "Financiación", "¿Financiación/Contado/Entrega de un usado?");
+  assert.equal(extraction.trade_in_intent, "not_present");
+  assert.equal(extraction.evidence.trade_in_intent, null);
+});
+
+test("Family Q3 - 19 (mileage value binding, critical): full-message evidence containing both '130.000 km' and 'valor 13.000.000' must reject a claimed mileage_km=13000000", () => {
+  const text = "Peugeot 408 2013, 130.000 km, valor 13.000.000";
+  const { extraction, warnings } = sanitizeMileage(text, text, { mileageValue: 13000000 });
+  assert.equal(extraction.trade_in_vehicle.mileage_km, undefined);
+  assert.ok(warnings.some(w => w.code === "MILEAGE_WITHOUT_KM_EVIDENCE"));
+});
+
+test("Family Q3 - 20 (mileage value binding, unaffected): full-message evidence with the CORRECT mileage_km=130000 still materializes it", () => {
+  const text = "Peugeot 408 2013, 130.000 km, valor 13.000.000";
+  const { extraction } = sanitizeMileage(text, text, { mileageValue: 130000 });
+  assert.equal(extraction.trade_in_vehicle.mileage_km.value, 130000);
+});
