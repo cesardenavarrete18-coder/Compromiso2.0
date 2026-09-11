@@ -54,11 +54,47 @@ function normalizeContextualSemantics(extraction, input) {
   const previousText = previous?.role === "assistant" ? fold(previous.text) : "";
   const explicitTarget = /\b(quiero|busco|comprar|es la que quiero|me decidi por)\b/.test(text);
   const explicitTradeNo = /\b(no|me la quedo|no la entrego)\b/.test(text);
-  const tradeQuestion = /\b(usado|auto|vehiculo|camioneta)\b[^?]*(entregar|parte de pago)|\b(entregar|parte de pago)\b/.test(previousText);
+  // entreg\w* (not the literal "entregar") so conjugations the customer/assistant actually
+  // use in traffic - "entregando", "entrego", "entregás" - are recognized too; the current
+  // message's own trade-in check below already used this broader stem.
+  const tradeQuestion = /\b(usado|auto|vehiculo|camioneta)\b[^?]*(entreg\w*|parte de pago)|\b(entreg\w*|parte de pago)\b/.test(previousText);
   const ownershipQuestion = /\b(tenes|posees|contas con)\b[^?]*\b(auto|vehiculo|camioneta|usado)\b/.test(previousText) && !tradeQuestion;
   const targetQuestion = /\b(que|cual)\b[^?]*\b(modelo|auto|vehiculo)\b[^?]*(buscas|queres|interesa)/.test(previousText);
   const shortAnswer = text.split(/\s+/).length <= 8;
+  // Family Q3 (2nd audit round): "multiple alternatives" is judged by whether the SAME
+  // question also names a non-trade-in commercial path (financing, cash, a down payment)
+  // alongside its trade-in clause - not by which conjunction/punctuation joins the options.
+  // Detecting via " o " alone was wrong on both sides: it flagged "¿Tenés auto o camioneta
+  // para entregar?" as multi-alternative even though "auto"/"camioneta" are just two
+  // synonyms for the SAME trade-in offer (still an exclusive trade-in question - a bare "sí"
+  // must keep resolving yes, per "contextual trade-in answer is not a target" in
+  // filter-v1-final-closure.test.mjs); and it missed equivalent phrasings that list
+  // alternatives without " o " at all, e.g. a comma list or "financiación/contado/usado".
+  // Keying off the presence of an actual competing commercial-mode keyword fixes both.
+  const NON_TRADE_IN_ALTERNATIVE = /\b(financia\w*|contado|efectivo|anticipo|cuotas?)\b/;
+  const isMultiAlternativeQuestion = tradeQuestion && NON_TRADE_IN_ALTERNATIVE.test(previousText);
+  // Family Q3 (3rd audit round): inside a multi-alternative question, "auto|vehiculo|
+  // camioneta" alone are not sufficient evidence of trade-in - they describe the TARGET
+  // vehicle just as easily ("quiero financiar el auto", "quiero el 208 financiado"). Only an
+  // unambiguous signal counts here: usado, permuta, parte de pago, or an entregar-family verb.
+  const currentHasUnambiguousTradeInSignal = /\b(usado|permut\w*|parte de pago|entreg\w*)\b/.test(text);
   if (tradeQuestion && (shortAnswer || explicitTarget)) {
+    // explicitTarget must NOT exempt a multi-alternative answer from disambiguation:
+    // naming the target model can classify vehicle_mentions as "target" (below), but it is
+    // not evidence of trade_in=yes on its own (Family Q3, 3rd audit round) - so it is
+    // deliberately absent from this condition, unlike the vehicle-role assignment further
+    // down which still uses it.
+    const answersADifferentAlternative = isMultiAlternativeQuestion && !currentHasUnambiguousTradeInSignal && !explicitTradeNo;
+    if (answersADifferentAlternative) {
+      // The current turn most likely resolved a DIFFERENT alternative (financing, cash, an
+      // amount...), not trade-in. A provider that nonetheless proposed trade_in_intent=yes
+      // for this turn is a hallucination and must be corrected here - an early `return`
+      // that merely preserves whatever the provider proposed is not enough (Family Q3, 2nd
+      // audit round).
+      extraction.trade_in_intent = "not_present";
+      extraction.evidence.trade_in_intent = null;
+      return;
+    }
     extraction.trade_in_intent = explicitTradeNo ? "no" : "yes";
     extraction.evidence.trade_in_intent = [evidenceFor(current), evidenceFor(previous)];
     for (const vehicle of extraction.vehicle_mentions) {
