@@ -87,8 +87,8 @@ begin
     coalesce(task_stats.call_completed, 0),
     coalesce(task_stats.call_completed_on_time, 0),
     coalesce(task_stats.call_overdue, 0),
-    current_task.call_attempt,
-    current_task.protocol_day,
+    current_task.call_attempt::integer,
+    current_task.protocol_day::integer,
     current_task.protocol_band,
     coalesce(sequence.status = 'completed', false)
   from public.get_supervisor_portfolio_followup() base
