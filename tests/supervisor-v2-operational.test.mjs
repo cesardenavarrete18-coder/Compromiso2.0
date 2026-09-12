@@ -30,8 +30,8 @@ test("protocol performance measures only call windows that actually became due",
 
 test("protocol performance numerators use the same due-call universe as the denominator", () => {
   const performanceSql = migration.split("create or replace function public.get_supervisor_protocol_performance")[1] || "";
-  const completedCalls = performanceSql.match(/count\(task\.id\) filter \([\s\S]*?\)::bigint as completed_calls/i)?.[0] || "";
-  const completedOnTime = performanceSql.match(/count\(task\.id\) filter \([\s\S]*?\)::bigint as completed_on_time/i)?.[0] || "";
+  const completedCalls = performanceSql.match(/as due_calls,\s*(count\(task\.id\) filter \([\s\S]*?\)::bigint as completed_calls)/i)?.[1] || "";
+  const completedOnTime = performanceSql.match(/as completed_calls,\s*(count\(task\.id\) filter \([\s\S]*?\)::bigint as completed_on_time)/i)?.[1] || "";
 
   [completedCalls, completedOnTime].forEach((block) => {
     assert.match(block, /task\.due_end <= now\(\)/i);
