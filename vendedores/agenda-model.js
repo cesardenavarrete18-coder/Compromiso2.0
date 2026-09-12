@@ -5,6 +5,10 @@
   var TERMINAL_STATUSES = ["venta", "desistir", "invalido"];
   var TASK_FIELDS = "id, sequence_id, lead_id, sequence_order, channel, call_attempt, message_step, protocol_day, protocol_band, band_attempt, due_start, due_end, status, outcome, note, performed_at, recorded_at, completed_at, updated_at, template:contact_message_templates(title,body)";
   var LEGACY_TASK_FIELDS = "id, sequence_id, lead_id, sequence_order, channel, call_attempt, message_step, due_start, due_end, status, outcome, note, completed_at, updated_at, template:contact_message_templates(title,body)";
+  var ACTIVE_TASK_STATUSES = ["pending", "scheduled"];
+  var HISTORY_TASK_STATUSES = ["completed", "skipped", "cancelled"];
+  var TASK_PAGE_SIZE = 1000;
+  var ACTIVE_SEQUENCE_CHUNK = 40;
 
   function crmOf(lead) {
     if (!lead || !lead.crm) return { status: "nuevo" };
@@ -86,6 +90,11 @@
     return Boolean(error && /performed_at|recorded_at|protocol_day|protocol_band|band_attempt|interview_mode|interview_operational_status|interview_objective|final_objection|deposit_validation|post_deposit_action|previous_status|terminal_at/i.test(message) && (["42703", "PGRST204"].includes(error.code) || /does not exist|schema cache|could not find/i.test(message)));
   }
 
+  function missingRefreshRpc(error) {
+    var message = String(error && error.message || "");
+    return Boolean(error && (error.code === "PGRST202" || /refresh_due_contact_protocols|could not find the function|schema cache/i.test(message)));
+  }
+
   function normalizeTasks(tasks, schema) {
     return (tasks || []).map(function (task) {
       if (schema === "v2") return task;
@@ -133,14 +142,104 @@
     return ordered.every(function (task, index) { return index === 0 || new Date(ordered[index - 1].due_start) <= new Date(task.due_start); });
   }
 
+  function dedupeTasks(rows) {
+    var byId = new Map();
+    (rows || []).forEach(function (task) {
+      if (task && task.id) byId.set(task.id, task);
+    });
+    return Array.from(byId.values()).sort(function (a, b) {
+      return new Date(a.due_start || 0) - new Date(b.due_start || 0)
+        || (Number(a.sequence_order || 0) - Number(b.sequence_order || 0));
+    });
+  }
+
+  async function refreshProtocolClock(client) {
+    try {
+      var result = await client.rpc("refresh_due_contact_protocols");
+      if (result.error && !missingRefreshRpc(result.error)) return result.error;
+      return null;
+    } catch (error) {
+      return missingRefreshRpc(error) ? null : error;
+    }
+  }
+
+  async function loadUnfinishedTasks(client, fields) {
+    var rows = [];
+    var offset = 0;
+    for (var page = 0; page < 20; page += 1) {
+      var result = await client.from("lead_contact_tasks")
+        .select(fields)
+        .in("status", ACTIVE_TASK_STATUSES)
+        .order("due_start", { ascending: true })
+        .range(offset, offset + TASK_PAGE_SIZE - 1);
+      if (result.error) return { data: [], error: result.error };
+      var pageRows = result.data || [];
+      rows = rows.concat(pageRows);
+      if (pageRows.length < TASK_PAGE_SIZE) break;
+      offset += TASK_PAGE_SIZE;
+    }
+    return { data: rows, error: null };
+  }
+
+  function chunkValues(values, size) {
+    var result = [];
+    for (var index = 0; index < values.length; index += size) result.push(values.slice(index, index + size));
+    return result;
+  }
+
+  async function loadActiveSequenceContext(client, fields, unfinished) {
+    var sequenceIds = Array.from(new Set((unfinished || []).map(function (task) { return task.sequence_id; }).filter(Boolean)));
+    if (!sequenceIds.length) return { data: [], error: null };
+    var chunks = chunkValues(sequenceIds, ACTIVE_SEQUENCE_CHUNK);
+    var responses = await Promise.all(chunks.map(function (chunk) {
+      return client.from("lead_contact_tasks")
+        .select(fields)
+        .in("sequence_id", chunk)
+        .order("due_start", { ascending: true })
+        .limit(1000);
+    }));
+    var failed = responses.find(function (item) { return item.error; });
+    if (failed) return { data: [], error: failed.error };
+    return {
+      data: responses.reduce(function (rows, item) { return rows.concat(item.data || []); }, []),
+      error: null
+    };
+  }
+
+  async function loadRecentTaskHistory(client, fields) {
+    var result = await client.from("lead_contact_tasks")
+      .select(fields)
+      .in("status", HISTORY_TASK_STATUSES)
+      .order("updated_at", { ascending: false })
+      .limit(1000);
+    return { data: result.data || [], error: result.error || null };
+  }
+
+  async function loadTaskSchema(client, fields, schema) {
+    var unfinished = await loadUnfinishedTasks(client, fields);
+    if (unfinished.error) return { tasks: [], schema: "unavailable", error: unfinished.error };
+    var context = await loadActiveSequenceContext(client, fields, unfinished.data);
+    if (context.error) return { tasks: [], schema: "unavailable", error: context.error };
+    var history = await loadRecentTaskHistory(client, fields);
+    if (history.error) return { tasks: [], schema: "unavailable", error: history.error };
+    return {
+      tasks: normalizeTasks(dedupeTasks([].concat(unfinished.data, context.data, history.data)), schema),
+      schema: schema,
+      error: null
+    };
+  }
+
   async function loadContactTasks(client) {
     try {
-      var v2 = await client.from("lead_contact_tasks").select(TASK_FIELDS).order("due_start", { ascending: true }).limit(3500);
-      if (!v2.error) return { tasks: normalizeTasks(v2.data, "v2"), schema: "v2", error: null };
-      if (!missingTaskAuditColumns(v2.error)) return { tasks: [], schema: "unavailable", error: v2.error };
-      var legacy = await client.from("lead_contact_tasks").select(LEGACY_TASK_FIELDS).order("due_start", { ascending: true }).limit(3500);
-      if (legacy.error) return { tasks: [], schema: "unavailable", error: legacy.error };
-      return { tasks: normalizeTasks(legacy.data, "legacy"), schema: "legacy", error: null };
+      var refreshError = await refreshProtocolClock(client);
+      if (refreshError) return { tasks: [], schema: "unavailable", error: refreshError };
+
+      var v2 = await loadTaskSchema(client, TASK_FIELDS, "v2");
+      if (!v2.error) return v2;
+      if (!missingTaskAuditColumns(v2.error)) return v2;
+
+      var legacy = await loadTaskSchema(client, LEGACY_TASK_FIELDS, "legacy");
+      return legacy;
     } catch (error) {
       return { tasks: [], schema: "unavailable", error: error };
     }
