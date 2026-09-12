@@ -217,11 +217,21 @@ begin
       count(task.id) filter (
         where task.channel = 'call'
           and task.due_end >= v_from and task.due_end < v_to
+          and task.due_end <= now()
+          and (
+            sequence.status = 'active'
+            or task.due_end <= sequence.terminal_at
+          )
           and task.status = 'completed'
       )::bigint as completed_calls,
       count(task.id) filter (
         where task.channel = 'call'
           and task.due_end >= v_from and task.due_end < v_to
+          and task.due_end <= now()
+          and (
+            sequence.status = 'active'
+            or task.due_end <= sequence.terminal_at
+          )
           and task.status = 'completed'
           and task.completed_at is not null
           and task.completed_at <= task.due_end
