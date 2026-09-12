@@ -109,9 +109,10 @@ begin
       count(*) filter (where task.channel = 'call')::bigint as call_total,
       count(*) filter (
         where task.channel = 'call'
+          and task.due_end <= now()
           and (
-            task.status = 'completed'
-            or task.due_end <= coalesce(sequence.completed_at, sequence.updated_at, now())
+            sequence.status = 'active'
+            or task.due_end <= coalesce(sequence.completed_at, sequence.updated_at)
           )
       )::bigint as call_due,
       count(*) filter (
@@ -206,20 +207,21 @@ begin
       )::bigint as protocols_exhausted,
       count(task.id) filter (
         where task.channel = 'call'
-          and task.due_start >= v_from and task.due_start < v_to
+          and task.due_end >= v_from and task.due_end < v_to
+          and task.due_end <= now()
           and (
-            task.status = 'completed'
-            or task.due_end <= least(sequence.terminal_at, now())
+            sequence.status = 'active'
+            or task.due_end <= sequence.terminal_at
           )
       )::bigint as due_calls,
       count(task.id) filter (
         where task.channel = 'call'
-          and task.due_start >= v_from and task.due_start < v_to
+          and task.due_end >= v_from and task.due_end < v_to
           and task.status = 'completed'
       )::bigint as completed_calls,
       count(task.id) filter (
         where task.channel = 'call'
-          and task.due_start >= v_from and task.due_start < v_to
+          and task.due_end >= v_from and task.due_end < v_to
           and task.status = 'completed'
           and task.completed_at is not null
           and task.completed_at <= task.due_end
