@@ -13,13 +13,16 @@ test("Supervisor V2 adds an additive portfolio read model without replacing the 
   assert.match(migration, /protocol_sequence_id uuid/i);
   assert.match(migration, /next_task_due_end timestamptz/i);
   assert.match(migration, /protocol_current_call_attempt integer/i);
+  assert.match(migration, /current_task\.call_attempt::integer/i);
+  assert.match(migration, /current_task\.protocol_day::integer/i);
   assert.match(migration, /protocol_exhausted boolean/i);
 });
 
-test("protocol performance measures seller calls that actually became due", () => {
+test("protocol performance measures only call windows that actually became due", () => {
   assert.match(migration, /create or replace function public\.get_supervisor_protocol_performance/i);
   assert.match(migration, /task\.channel = 'call'/i);
-  assert.match(migration, /task\.due_end <= least\(sequence\.terminal_at, now\(\)\)/i);
+  assert.match(migration, /task\.due_end <= now\(\)/i);
+  assert.match(migration, /task\.due_end <= sequence\.terminal_at/i);
   assert.match(migration, /task\.completed_at <= task\.due_end/i);
   assert.match(migration, /compliance_pct numeric/i);
   assert.match(migration, /on_time_pct numeric/i);
