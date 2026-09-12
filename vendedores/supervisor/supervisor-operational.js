@@ -45,6 +45,10 @@
     );
   }
 
+  function isOperationallyExhausted(row) {
+    return Boolean(row && row.protocol_exhausted === true && ["nuevo", "no_contesta"].includes(row.operational_status));
+  }
+
   function managementActionAt(row) {
     if (!row || isProtocolActive(row)) return null;
     if (row.operational_status === "entrevista") return row.interview_at || null;
@@ -59,10 +63,11 @@
 
   function protocolLabel(row) {
     if (!row) return "";
-    if (row.protocol_status === "completed") return "PROTOCOLO AGOTADO";
+    if (isOperationallyExhausted(row)) return "PROTOCOLO AGOTADO";
     if (row.protocol_status !== "active") return "";
-    var parts = ["EN PROTOCOLO"];
-    if (row.protocol_current_call_attempt) parts.push("llamada " + row.protocol_current_call_attempt + "/" + (row.protocol_call_total || 18));
+    var total = Number(row.protocol_call_total || 18);
+    var attempt = Number(row.protocol_current_call_attempt || Math.min(total, Number(row.protocol_call_completed || 0) + 1));
+    var parts = ["EN PROTOCOLO", "llamada " + attempt + "/" + total];
     if (row.protocol_current_day) parts.push("día " + row.protocol_current_day);
     if (row.protocol_current_band) parts.push(row.protocol_current_band);
     return parts.join(" · ");
@@ -103,19 +108,20 @@
       article.dataset.operationalStat = key;
       container.appendChild(article);
     }
-    article.className = "portfolio-stat" + (attention ? " attention" : "");
-    article.innerHTML = "<span>" + escapeHtml(label) + "</span><strong>" + Number(value || 0) + "</strong>";
+    var desiredClass = "portfolio-stat" + (attention ? " attention" : "");
+    var desiredHtml = "<span>" + escapeHtml(label) + "</span><strong>" + Number(value || 0) + "</strong>";
+    if (article.className !== desiredClass) article.className = desiredClass;
+    if (article.innerHTML !== desiredHtml) article.innerHTML = desiredHtml;
   }
 
   function replaceLegacyOverdueStat(container, value) {
     Array.prototype.forEach.call(container.querySelectorAll("article"), function (article) {
       var label = article.querySelector("span");
       var number = article.querySelector("strong");
-      if (label && label.textContent.trim() === "Vencidas" && number) {
-        label.textContent = "Gestión vencida";
-        number.textContent = String(value);
-        article.classList.toggle("attention", value > 0);
-      }
+      if (!label || !number || !["Vencidas", "Gestión vencida"].includes(label.textContent.trim())) return;
+      if (label.textContent !== "Gestión vencida") label.textContent = "Gestión vencida";
+      if (number.textContent !== String(value)) number.textContent = String(value);
+      article.classList.toggle("attention", value > 0);
     });
   }
 
@@ -126,7 +132,7 @@
     var now = Date.now();
     var inProtocol = rows.filter(isProtocolActive).length;
     var protocolOverdue = rows.filter(function (row) { return isProtocolOverdue(row, now); }).length;
-    var exhausted = rows.filter(function (row) { return row.protocol_exhausted === true && ["nuevo", "no_contesta"].includes(row.operational_status); }).length;
+    var exhausted = rows.filter(isOperationallyExhausted).length;
     var managementOverdue = rows.filter(function (row) { return isManagementOverdue(row, now); }).length;
 
     replaceLegacyOverdueStat(container, managementOverdue);
@@ -136,10 +142,10 @@
   }
 
   function augmentSellerCards() {
+    var leadRows = Object.keys(state.protocolByLead).map(function (id) { return state.protocolByLead[id]; });
     document.querySelectorAll("[data-portfolio-seller]").forEach(function (card) {
       var sellerId = card.dataset.portfolioSeller;
       var perf = state.performanceBySeller[sellerId];
-      var leadRows = Object.keys(state.protocolByLead).map(function (id) { return state.protocolByLead[id]; });
       var activeCount = leadRows.filter(function (row) {
         return row.protocol_status === "active" && row.seller_user_id === sellerId;
       }).length;
@@ -151,7 +157,8 @@
       }
       var compliance = perf && perf.compliance_pct != null ? Number(perf.compliance_pct).toFixed(1).replace(".0", "") + "%" : "—";
       var onTime = perf && perf.on_time_pct != null ? Number(perf.on_time_pct).toFixed(1).replace(".0", "") + "%" : "—";
-      summary.textContent = activeCount + " en protocolo · cumplimiento " + compliance + " · en horario " + onTime;
+      var desired = activeCount + " en protocolo · cumplimiento " + compliance + " · en horario " + onTime;
+      if (summary.textContent !== desired) summary.textContent = desired;
     });
   }
 
@@ -159,7 +166,8 @@
     document.querySelectorAll("[data-portfolio-lead]").forEach(function (rowElement) {
       var row = state.protocolByLead[rowElement.dataset.portfolioLead];
       var existing = rowElement.querySelector("[data-protocol-progress]");
-      if (!row || !["active", "completed"].includes(row.protocol_status)) {
+      var shouldShow = Boolean(row && (row.protocol_status === "active" || isOperationallyExhausted(row)));
+      if (!shouldShow) {
         if (existing) existing.remove();
         return;
       }
@@ -170,9 +178,10 @@
         var targetCell = rowElement.children[5] || rowElement.children[6];
         if (targetCell) targetCell.appendChild(existing);
       }
-      existing.textContent = protocolLabel(row);
+      var desired = protocolLabel(row);
+      if (existing.textContent !== desired) existing.textContent = desired;
       existing.classList.toggle("is-overdue", isProtocolOverdue(row));
-      existing.classList.toggle("is-exhausted", row.protocol_status === "completed");
+      existing.classList.toggle("is-exhausted", isOperationallyExhausted(row));
     });
   }
 
@@ -183,7 +192,7 @@
       var visible = true;
       if (state.operationalFilter === "protocol") visible = isProtocolActive(row);
       if (state.operationalFilter === "protocol_overdue") visible = isProtocolOverdue(row);
-      if (state.operationalFilter === "protocol_exhausted") visible = Boolean(row && row.protocol_exhausted === true);
+      if (state.operationalFilter === "protocol_exhausted") visible = isOperationallyExhausted(row);
       rowElement.hidden = !visible;
     });
   }
@@ -258,7 +267,7 @@
       var priorityBadge = card.querySelector(".badge.high, .badge.normal, .badge.low");
       var qualification = qualificationBadge ? ["qualified", "follow_up", "unqualified"].find(function (key) { return qualificationBadge.classList.contains(key); }) || "" : "";
       var priority = priorityBadge ? ["high", "normal", "low"].find(function (key) { return priorityBadge.classList.contains(key); }) || "" : "";
-      if (priorityBadge && priority === "low") priorityBadge.textContent = "Prioridad baja";
+      if (priorityBadge && priority === "low" && priorityBadge.textContent !== "Prioridad baja") priorityBadge.textContent = "Prioridad baja";
       var visible = (!state.qualification || qualification === state.qualification) && (!state.priority || priority === state.priority);
       card.hidden = !visible;
     });
@@ -284,16 +293,14 @@
   }
 
   function installObservers() {
-    var portfolioStats = document.getElementById("portfolioStats");
-    var sellerSummary = document.getElementById("portfolioSellerSummary");
     var portfolioRows = document.getElementById("portfolioRows");
     var leadList = document.getElementById("leadList");
     var observer = new MutationObserver(function () {
       augmentPortfolio();
       applyLeadFilters();
     });
-    [portfolioStats, sellerSummary, portfolioRows, leadList].filter(Boolean).forEach(function (node) {
-      observer.observe(node, { childList: true, subtree: true });
+    [portfolioRows, leadList].filter(Boolean).forEach(function (node) {
+      observer.observe(node, { childList: true, subtree: false });
     });
   }
 
