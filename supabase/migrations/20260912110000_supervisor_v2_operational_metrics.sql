@@ -5,6 +5,7 @@
 create or replace function public.get_supervisor_portfolio_followup_v2()
 returns table (
   lead_id uuid,
+  seller_user_id uuid,
   management_count bigint,
   first_management_at timestamptz,
   first_effective_contact_at timestamptz,
@@ -54,6 +55,7 @@ begin
   return query
   select
     base.lead_id,
+    lead.assigned_seller_user_id,
     base.management_count,
     base.first_management_at,
     base.first_effective_contact_at,
