@@ -28,6 +28,17 @@ test("protocol performance measures only call windows that actually became due",
   assert.match(migration, /on_time_pct numeric/i);
 });
 
+test("protocol performance numerators use the same due-call universe as the denominator", () => {
+  const performanceSql = migration.split("create or replace function public.get_supervisor_protocol_performance")[1] || "";
+  const completedCalls = performanceSql.match(/count\(task\.id\) filter \([\s\S]*?\)::bigint as completed_calls/i)?.[0] || "";
+  const completedOnTime = performanceSql.match(/count\(task\.id\) filter \([\s\S]*?\)::bigint as completed_on_time/i)?.[0] || "";
+
+  [completedCalls, completedOnTime].forEach((block) => {
+    assert.match(block, /task\.due_end <= now\(\)/i);
+    assert.match(block, /sequence\.status = 'active'[\s\S]*?task\.due_end <= sequence\.terminal_at/i);
+  });
+});
+
 test("both operational RPCs are restricted to management and authenticated execution", () => {
   assert.equal((migration.match(/private\.current_user_is_management\(\)/g) || []).length, 2);
   assert.match(migration, /revoke all on function public\.get_supervisor_portfolio_followup_v2\(\) from public, anon/i);
