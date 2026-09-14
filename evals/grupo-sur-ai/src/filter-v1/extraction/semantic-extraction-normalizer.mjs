@@ -206,7 +206,18 @@ function normalizeArgentineAmount(amount) {
 const FINANCED_DECLARATION = /\b(?:lo voy a financiar|voy a financiarlo|lo quiero financiar|quiero financiarlo|lo financio|voy con financiacion)\b/;
 const CASH_DECLARATION = /\b(?:lo pago al contado|lo compro al contado|voy de contado|pago en efectivo|voy al contado)\b/;
 const PURCHASE_MODE_QUESTION = /\b(?:contado|efectivo)\b[^?]*\bfinanciad[oa]\b|\bfinanciad[oa]\b[^?]*\b(?:contado|efectivo)\b/;
-const INDECISION_MARKER = /\b(?:no se|tal vez|quizas|capaz)\b/;
+const INDECISION_MARKER = /\b(?:no se|tal vez|quizas|capaz|estoy entre)\b/;
+// "Interest in information" is not a decision: "Me interesa saber la financiación" and "Quiero
+// saber qué financiación tienen" are about the grammatical object of "saber" (finding out), never
+// "financiar"/"pagar" (doing). This is deliberately narrow to that verb framing, not a broader
+// financing-topic keyword match, so it does not swallow a real declaration that happens to share
+// vocabulary with an information request.
+const INFORMATIONAL_INTEREST = /\b(?:me interesa saber|quiero saber|quisiera saber|necesito saber)\b/;
+// Loose (non-declaration-grade) signals used ONLY to detect that BOTH commercial paths were named
+// in the same turn - "conflicting" needs a coarser net than a firm declaration does, since the
+// customer is naming two options, not committing to either with the same verb-phrase precision.
+const CASH_SIGNAL = /\b(?:contado|efectivo|cash)\b/;
+const FINANCED_SIGNAL = /\b(?:financ\w+|credito|plan)\b/;
 
 // Isolates declarative wording from interrogative wording within the same message ("Lo voy a
 // financiar, ¿qué anticipo necesito?" must not be discarded just because the SAME turn also
@@ -223,15 +234,54 @@ function declarativeClauses(text) {
   return declarativeOnly.split(/[.!]+/).map(part => part.trim()).filter(Boolean).filter(clause => !/^si\b/.test(clause));
 }
 
-// Family S2 (post-merge audit fix): the deterministic decision must carry its own evidence -
-// validateSemanticExtraction requires evidence.purchase_mode_statement for any statement other
-// than "not_present", and nothing else in the pipeline populates it once this function starts
-// overriding the raw provider value. Returning the evidence alongside the mode (rather than
-// leaving the caller to guess it) keeps the declaration and its supporting message(s) from ever
-// drifting apart. An explicit declarative clause is evidenced by the current message alone; a
-// bare contextual short answer ("Financiado"/"Contado") is evidenced by the current message
-// together with the assistant question it answers, mirroring the current+previous evidence
-// pattern normalizeContextualSemantics already uses for the trade-in contextual answer.
+// Real customer traffic drops the "?" entirely on a colloquial question ("qué planes ofrecen",
+// FVS-028) at least as often as it uses one - WH_QUESTION_LEAD catches those the same way
+// normalizeQueryIntent's own technicalQuestion check already leans on a leading question word
+// (que|cual|es|tiene|trae) as a query signal independent of punctuation.
+const WH_QUESTION_LEAD = /^(?:que|cual|como|cuanto|cuando|donde|quien|hay)\b/;
+
+// A message counts as "explicit_negative" - never a decision, regardless of what the provider
+// proposes - when it is fundamentally a question (any "?" at all, or a colloquial question with
+// no "?" at all - a pure query about financing terms/price is not a commitment, even one sharing
+// a turn-less message with no declarative clause of its own), an unambiguous expression of
+// indecision, a request for information rather than a decision, or a message whose only
+// non-question content is a hypothetical "si..." clause.
+function isPurchaseModeExplicitNegative(text) {
+  if (/\?/.test(text)) return true;
+  if (WH_QUESTION_LEAD.test(text.trim())) return true;
+  if (INDECISION_MARKER.test(text)) return true;
+  if (INFORMATIONAL_INTEREST.test(text)) return true;
+  const declarativeOnly = text.replace(/¿[^?]*\?/g, " ").replace(/[^.!,¿]*\?/g, " ");
+  const rawClauses = declarativeOnly.split(/[.!]+/).map(part => part.trim()).filter(Boolean);
+  return rawClauses.length > 0 && rawClauses.every(clause => /^si\b/.test(clause));
+}
+
+// Family S2 (2nd post-merge audit round): the Golden Dataset (filter-v1-semantic-online-v0.2.jsonl,
+// FVS-022..030) already commits to phrasings this function's narrow declaration regexes were never
+// meant to enumerate ("Quiero hacerlo por crédito.", "Quiero entrar en un plan.", "La quiero pagar
+// cash.") plus a fourth, previously nonexistent outcome ("conflicting", when a turn names BOTH
+// paths - "Lo quiero al contado pero también podría financiarlo."). Forcing every unrecognized
+// message to "not_present" - which is what turning this function into the sole source of truth
+// (S2, 1st round) did - silently discarded a provider value that was already correct and already
+// evidence-validated by sanitizeSemanticEvidence, a real regression the 1st round's tests never
+// caught (they only ever exercised messages this function already had an opinion about).
+//
+// The fix is not a bigger phrase list - it is a fourth possible answer. This function now
+// resolves each message into exactly one of four outcomes:
+//   - EXPLICIT (return {mode, evidence}): an unambiguous first-person commitment verb-phrase, or
+//     a short contextual answer to a payment-mode question. Always overrides the provider.
+//   - CONFLICTING (return {mode:"conflicting", evidence}): both commercial paths are named in the
+//     same non-query turn (a coarser, signal-level check - see CASH_SIGNAL/FINANCED_SIGNAL).
+//     Always overrides the provider; the caller also records needs_clarification.
+//   - EXPLICIT_NEGATIVE (return {mode:"not_present", evidence:null}): a pure query, a hypothetical,
+//     stated indecision, or a request for information - never a decision, so any provider
+//     proposal here is a hallucination and is neutralized, evidence included.
+//   - INCONCLUSIVE (return null): this deterministic layer has no textual basis to decide either
+//     way. The caller leaves the candidate's own (already sanitizer-evidence-validated) value
+//     untouched instead of defaulting it to "not_present" - sanitizeSemanticEvidence already
+//     reset any material scalar signal with invalid/missing evidence to "not_present" before this
+//     function ever runs, so trusting what survives that gate here does not reopen the
+//     hallucination hole S2 was written to close.
 function detectPurchaseModeDeclaration(input) {
   const current = input?.current_message;
   if (!current) return null;
@@ -250,6 +300,8 @@ function detectPurchaseModeDeclaration(input) {
     if (/\bfinanciad[oa]\b/.test(text)) return { mode: "financed", evidence: [evidenceFor(current), evidenceFor(previous)] };
     if (/\b(?:contado|efectivo)\b/.test(text)) return { mode: "cash", evidence: [evidenceFor(current), evidenceFor(previous)] };
   }
+  if (isPurchaseModeExplicitNegative(text)) return { mode: "not_present", evidence: null };
+  if (CASH_SIGNAL.test(text) && FINANCED_SIGNAL.test(text)) return { mode: "conflicting", evidence: [evidenceFor(current)] };
   return null;
 }
 
@@ -263,15 +315,22 @@ export function normalizeSemanticExtraction(candidate, input = null) {
   normalizeQueryIntent(normalized, input);
   // Family S2: only a message with real current-turn context is re-classified here - no
   // current_message at all (offline/unit callers) preserves whatever the candidate proposed,
-  // matching every other contextual normalizer function in this file. The declaration's own
-  // evidence is materialized (or cleared) in lockstep with the statement itself: a stale
-  // evidence.purchase_mode_statement left over from a raw provider proposal that just got
-  // neutralized to "not_present" is never allowed to survive, and a statement synthesized here
-  // from the current message always carries real, validator-satisfying evidence for it.
+  // matching every other contextual normalizer function in this file. A null result
+  // (inconclusive) means this deterministic layer has no basis to decide either way - the
+  // candidate's own already-evidence-validated value (and its evidence) is left exactly as
+  // sanitizeSemanticEvidence produced it, never forced to "not_present". Every other outcome
+  // (explicit, conflicting, explicit_negative) overrides the candidate and carries its own
+  // evidence in lockstep with the statement, so a stale evidence.purchase_mode_statement from a
+  // just-neutralized provider proposal never survives, and a statement synthesized here always
+  // carries real, validator-satisfying evidence.
   if (input?.current_message) {
     const declaration = detectPurchaseModeDeclaration(input);
-    normalized.purchase_mode_statement = declaration?.mode ?? "not_present";
-    normalized.evidence.purchase_mode_statement = declaration?.evidence ?? null;
+    if (declaration) {
+      normalized.purchase_mode_statement = declaration.mode;
+      normalized.evidence.purchase_mode_statement = declaration.evidence;
+      if (declaration.mode === "conflicting" && !normalized.needs_clarification.some(item => item.code === "conflicting_purchase_mode"))
+        normalized.needs_clarification.push({ code: "conflicting_purchase_mode", evidence: declaration.evidence });
+    }
   }
   normalized.vehicle_mentions.forEach(normalizeVehicle);
   normalizeContextualSemantics(normalized, input);
