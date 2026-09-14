@@ -11,12 +11,13 @@ import { createFilterState, field } from "../../../supabase/functions/_shared/fi
 // baseline 2026-09-11T19:46:45.173Z): four blockers found in the 32-lead / 72-run sample.
 
 const catalog = {
-  brands: [{ id: "b-peugeot", name: "Peugeot" }, { id: "b-gilera", name: "Gilera" }],
+  brands: [{ id: "b-peugeot", name: "Peugeot" }, { id: "b-gilera", name: "Gilera" }, { id: "b-toyota", name: "Toyota" }],
   models: [
     { id: "m-208", name: "208", brand_id: "b-peugeot" },
     { id: "m-408", name: "408", brand_id: "b-peugeot" },
     { id: "m-partner", name: "Partner", brand_id: "b-peugeot" },
     { id: "m-smash", name: "Smash 125", brand_id: "b-gilera" },
+    { id: "m-corolla", name: "Corolla", brand_id: "b-toyota" },
   ],
   model_versions: [],
 };
@@ -380,4 +381,68 @@ test("Family R4 - 21 (adapter unit level): a sole trade_in-role mention this tur
   const engineExtraction = semanticExtractionToEngine(raw, { current_message: customerTurn(text) });
   assert.equal(engineExtraction.used_vehicle_subject, true);
   assert.equal(engineExtraction.turn_subject_model, "208");
+});
+
+// --- R4, 2nd audit round: SAME turn names both a target-ish and a trade-in/owned vehicle ---
+//
+// The round-1 fix only handled the case where the current turn's ONLY vehicle mention was
+// the trade-in/owned one (subjectMentions.length === 0). When the SAME message names both a
+// target and a trade-in/owned vehicle, subjectMentions.length === 1 (the target) unconditionally
+// won, regardless of which one the question's own evidence was actually about - so "Quiero una
+// Partner 0km y tengo un Peugeot 208 2019 para entregar. ¿En cuanto me toman el 208?" resolved
+// the Partner (or worse, nothing useful) instead of correctly abstaining on the 208 trade-in.
+
+test("Family R4 - 22 (critical, both mentions same turn): 'Quiero una Partner 0km y tengo un Peugeot 208 2019 para entregar. ¿En cuanto me toman el 208?' must resolve the 208 trade-in as subject, never a campaign price", () => {
+  const text = "Quiero una Partner 0km y tengo un Peugeot 208 2019 para entregar. En cuanto me toman el 208";
+  const raw = { ...emptySemanticExtraction(), query_intent: "model_value", trade_in_intent: "yes", vehicle_mentions: [
+    { literal: "una Partner 0km", brand_text: "Peugeot", model_text: "Partner", version_text: null, role: "target", certainty: "explicit", evidence: [{ source_message_id: "m-current", literal: "Quiero una Partner 0km" }] },
+    { literal: "un Peugeot 208 2019", brand_text: "Peugeot", model_text: "208", version_text: null, role: "trade_in", certainty: "explicit", evidence: [{ source_message_id: "m-current", literal: "En cuanto me toman el 208" }] },
+  ] };
+  const engineExtraction = semanticExtractionToEngine(raw, { current_message: customerTurn(text) });
+  assert.equal(engineExtraction.turn_subject_model, "208");
+  assert.equal(engineExtraction.used_vehicle_subject, true);
+  const result = runTurn(priorTarget("m-partner", "Partner"), engineExtraction, campaignsPartner208);
+  assert.equal(result.response_plan.answer_fact.status, "not_materialized");
+  assert.equal(result.response_plan.answer_fact.value, null);
+});
+
+test("Family R4 - 23 (regression, both mentions same turn): 'Quiero un 208 0km y tengo un Corolla usado. ¿Cuanto sale el 208?' still resolves the target's own campaign", () => {
+  const text = "Quiero un 208 0km y tengo un Corolla usado. Cuanto sale el 208";
+  const raw = { ...emptySemanticExtraction(), query_intent: "model_value", trade_in_intent: "yes", vehicle_mentions: [
+    { literal: "un 208 0km", brand_text: "Peugeot", model_text: "208", version_text: null, role: "target", certainty: "explicit", evidence: [{ source_message_id: "m-current", literal: "Cuanto sale el 208" }] },
+    { literal: "un Corolla usado", brand_text: "Toyota", model_text: "Corolla", version_text: null, role: "trade_in", certainty: "explicit", evidence: [{ source_message_id: "m-current", literal: "tengo un Corolla usado" }] },
+  ] };
+  const engineExtraction = semanticExtractionToEngine(raw, { current_message: customerTurn(text) });
+  assert.equal(engineExtraction.turn_subject_model, "208");
+  assert.equal(engineExtraction.used_vehicle_subject, false);
+  const result = runTurn(undefined, engineExtraction, campaigns208);
+  assert.equal(result.response_plan.answer_fact.status, "resolved");
+  assert.equal(result.response_plan.answer_fact.value, 43080000);
+});
+
+test("Family R4 - 24 (critical, both mentions same turn): 'Quiero un 208 0km y tengo un Corolla usado. ¿En cuanto toman el Corolla?' must resolve the Corolla as subject, never any 0km campaign", () => {
+  const text = "Quiero un 208 0km y tengo un Corolla usado. En cuanto toman el Corolla";
+  const raw = { ...emptySemanticExtraction(), query_intent: "model_value", trade_in_intent: "yes", vehicle_mentions: [
+    { literal: "un 208 0km", brand_text: "Peugeot", model_text: "208", version_text: null, role: "target", certainty: "explicit", evidence: [{ source_message_id: "m-current", literal: "Quiero un 208 0km" }] },
+    { literal: "un Corolla usado", brand_text: "Toyota", model_text: "Corolla", version_text: null, role: "trade_in", certainty: "explicit", evidence: [{ source_message_id: "m-current", literal: "En cuanto toman el Corolla" }] },
+  ] };
+  const engineExtraction = semanticExtractionToEngine(raw, { current_message: customerTurn(text) });
+  assert.equal(engineExtraction.turn_subject_model, "Corolla");
+  assert.equal(engineExtraction.used_vehicle_subject, true);
+  const result = runTurn(undefined, engineExtraction, campaigns208);
+  assert.equal(result.response_plan.answer_fact.status, "not_materialized");
+  assert.equal(result.response_plan.answer_fact.value, null);
+});
+
+test("Family R4 - 25 (critical, coinciding model, both mentions same turn): 'Quiero comprar un Peugeot 208 0km y tengo un Peugeot 208 2019 para entregar. ¿En cuanto toman el mio?' must resolve the trade-in as subject, never by model match", () => {
+  const text = "Quiero comprar un Peugeot 208 0km y tengo un Peugeot 208 2019 para entregar. En cuanto toman el mio";
+  const raw = { ...emptySemanticExtraction(), query_intent: "model_value", trade_in_intent: "yes", vehicle_mentions: [
+    { literal: "un Peugeot 208 0km", brand_text: "Peugeot", model_text: "208", version_text: null, role: "target", certainty: "explicit", evidence: [{ source_message_id: "m-current", literal: "Quiero comprar un Peugeot 208 0km" }] },
+    { literal: "mi Peugeot 208 2019", brand_text: "Peugeot", model_text: "208", version_text: null, role: "trade_in", certainty: "explicit", evidence: [{ source_message_id: "m-current", literal: "En cuanto toman el mio" }] },
+  ] };
+  const engineExtraction = semanticExtractionToEngine(raw, { current_message: customerTurn(text) });
+  assert.equal(engineExtraction.used_vehicle_subject, true, "the mention answered by the question ('en cuanto toman el mio') is the trade-in, regardless of both sharing model_id 208");
+  const result = runTurn(priorTarget("m-208", "208"), engineExtraction, campaigns208);
+  assert.equal(result.response_plan.answer_fact.status, "not_materialized");
+  assert.equal(result.response_plan.answer_fact.value, null);
 });
