@@ -43,12 +43,17 @@ function candidateNamedInClause(candidate, clause) {
 // about, using the CURRENT MESSAGE's own clauses - never role priority, model-id matching,
 // or per-mention evidence (which the provider may legally duplicate across mentions). No
 // current-turn message text at all (offline/unit callers - every pre-existing Family Q
-// adapter-level test) preserves the original target-preferring default. A genuine
-// price-question clause that names neither candidate, with both a target-ish and a
-// used-vehicle-ish candidate competing, must never default to the target - it resolves to
-// the used-vehicle candidate so resolvePlanFact's existing guard abstains instead of risking
-// a leaked 0km campaign price.
-function resolveAmbiguousSubject(candidates, filterInput) {
+// adapter-level test) preserves the original target-preferring default.
+//
+// Family R4 (4th audit round): PRICE_QUESTION_ANCHOR is a fixed word list ("cuanto", "vale",
+// ...) and real phrasings routinely miss it entirely - "¿Que me ofrecen por el 208?", "¿Me lo
+// cotizan?". The provider has typically already classified the turn as query_intent
+// "model_value" regardless of exact wording, so when that classification holds AND both a
+// target-ish and a used-vehicle-ish candidate compete, an absent anchor is not license to
+// fall back to the target - every clause (not just anchor-matching ones) is searched for a
+// named candidate, and if none names one uniquely, it resolves to the used-vehicle candidate
+// so resolvePlanFact's existing guard abstains, never growing the anchor list itself.
+function resolveAmbiguousSubject(candidates, filterInput, queryIntent) {
   const preferTargetLike = () => {
     const targetLike = candidates.filter(candidate => !candidate.usedVehicle);
     return targetLike.length === 1 ? targetLike[0] : undefined;
@@ -57,8 +62,12 @@ function resolveAmbiguousSubject(candidates, filterInput) {
   if (!currentText) return preferTargetLike();
   const clauses = messageClauses(currentText);
   const anchorClauses = clauses.filter(clause => PRICE_QUESTION_ANCHOR.test(clause));
-  if (!anchorClauses.length) return preferTargetLike();
-  for (const clause of anchorClauses) {
+  const valueQuestionWithCompetingSubjects = queryIntent === "model_value"
+    && candidates.some(candidate => candidate.usedVehicle)
+    && candidates.some(candidate => !candidate.usedVehicle);
+  if (!anchorClauses.length && !valueQuestionWithCompetingSubjects) return preferTargetLike();
+  const searchClauses = anchorClauses.length ? anchorClauses : clauses;
+  for (const clause of searchClauses) {
     const named = candidates.filter(candidate => candidateNamedInClause(candidate, clause));
     if (named.length === 1) return named[0];
   }
@@ -129,7 +138,7 @@ export function semanticExtractionToEngine(extraction, filterInput = {}) {
     ...subjectMentions.map(vehicle => ({ vehicle, usedVehicle: false })),
     ...usedVehicleRoleMentions.map(vehicle => ({ vehicle, usedVehicle: true })),
   ];
-  const resolvedSubject = subjectCandidates.length <= 1 ? subjectCandidates[0] : resolveAmbiguousSubject(subjectCandidates, filterInput);
+  const resolvedSubject = subjectCandidates.length <= 1 ? subjectCandidates[0] : resolveAmbiguousSubject(subjectCandidates, filterInput, extraction.query_intent);
   const subjectModel = resolvedSubject ? resolvedSubject.vehicle.model_text ?? resolvedSubject.vehicle.literal : undefined;
   // Family R4 (3rd audit round): once multiple candidates were in play, "is this a used
   // vehicle" is already fully decided by WHICH candidate won (role-based) - re-testing the
