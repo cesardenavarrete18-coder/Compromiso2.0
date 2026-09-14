@@ -244,37 +244,55 @@ function declarativeClauses(text) {
 // (que|cual|es|tiene|trae) as a query signal independent of punctuation.
 const WH_QUESTION_LEAD = /^(?:que|cual|como|cuanto|cuando|donde|quien|hay)\b/;
 
-// Family S2 (3rd post-merge audit round): a "?" anywhere in the message used to neutralize the
-// WHOLE message, including a real declaration sharing the turn with an unrelated question ("Quiero
-// hacerlo por crédito. ¿Qué cuota me queda?" was forced to not_present, discarding an
-// already-correct, already-evidence-validated provider value - the exact class of bug Family S was
-// written to close). A "?" is scoped evidence that PART of the turn is a query; it must never
-// invalidate a DIFFERENT, non-interrogative clause's own declarative content. This function now
-// resolves each message into exactly one of four outcomes, checked in order:
+// A clause only counts as being ABOUT purchase mode - for indecision or informational-interest
+// purposes - when it also carries a loose cash/financed signal. "No sé qué versión es" and "No
+// sé si viene automática" both match INDECISION_MARKER's "no se", but neither is doubt about HOW
+// to pay; only "no se si contado o financiado" is. Same for INFORMATIONAL_INTEREST: "Quiero saber
+// qué motor trae" is not a financing question, "Quiero saber qué financiación tienen" is.
+function clauseHasModeSignal(clause) {
+  return CASH_SIGNAL.test(clause) || FINANCED_SIGNAL.test(clause);
+}
+
+// Family S2 (4th post-merge audit round): INDECISION_MARKER/INFORMATIONAL_INTEREST were tested
+// against the WHOLE message, so doubt or curiosity about a DIFFERENT attribute in one clause
+// ("No sé qué versión es.", "Quiero saber qué motor trae.") neutralized a real purchase_mode
+// signal sitting in a completely separate clause ("Quiero entrar en un plan.") - the same
+// whole-message-scope bug the 3rd round already fixed for "?", now recurring for these two
+// markers. Both are now scoped per-clause via clauseHasModeSignal, and only an
+// indecision/informational clause that is ALSO the sole source of purchase-mode content
+// (no other clause independently carries a signal) is allowed to neutralize.
+//
+// This function resolves each message into exactly one of four outcomes, checked in order:
 //   1. EXPLICIT (return {mode, evidence}): an unambiguous first-person commitment verb-phrase in a
 //      non-interrogative, non-hypothetical clause, or (2) a short contextual answer to a
 //      payment-mode question. Always overrides the provider.
-//   3. Unambiguous indecision, an information request, or a wholly hypothetical declarative
-//      remainder (declarativeClausesRaw found clauses but declarativeClauses filtered all of them
-//      out as "si...") -> EXPLICIT_NEGATIVE, checked before the query-only step 5 so it applies
-//      even without a "?" anywhere ("Estoy entre contado y financiacion" has none).
-//   4. CONFLICTING (return {mode:"conflicting", evidence}): the message's non-interrogative
-//      clauses alone (never the interrogative ones - a question mentioning "financiar" is not a
-//      declaration) name BOTH commercial paths (a coarser, signal-level check - see
-//      CASH_SIGNAL/FINANCED_SIGNAL). Checked before query-only so a conflicting declaration
-//      sharing a turn with a question still resolves conflicting, not not_present.
-//   5. EXPLICIT_NEGATIVE (return {mode:"not_present", evidence:null}): the message is fundamentally
-//      a question (a "?" anywhere, or a colloquial WH-question lead with none) AND its
-//      non-interrogative clauses carry no purchase-mode signal at all - never a decision, so any
-//      provider proposal here is a hallucination and is neutralized, evidence included.
-//   6. INCONCLUSIVE (return null): this deterministic layer has no textual basis to decide either
-//      way - a non-interrogative clause exists (or there is no question in the first place) but
-//      carries a signal too loose to classify outright, e.g. "Quiero entrar en un plan." on its
-//      own, or shares a turn with an unrelated question, e.g. "...¿Cuánto necesito de anticipo?".
-//      The caller leaves the candidate's own value untouched instead of defaulting it to
-//      "not_present" - sanitizeSemanticEvidence already reset any material scalar signal with
-//      invalid or missing evidence to "not_present" before this function ever runs, so trusting
-//      what survives that gate here does not reopen the hallucination hole S2 was written to close.
+//   3. A wholly hypothetical declarative remainder (declarativeClausesRaw found clauses but
+//      declarativeClauses filtered all of them out as "si..."), or a clause expressing genuine
+//      indecision ABOUT purchase mode specifically (INDECISION_MARKER + clauseHasModeSignal, e.g.
+//      "no se si contado o financiado") -> EXPLICIT_NEGATIVE. Checked unconditionally, even
+//      without a "?" anywhere ("Estoy entre contado y financiacion" has none).
+//   4. CONFLICTING (return {mode:"conflicting", evidence}): the message's PLAIN non-interrogative
+//      clauses (every non-interrogative clause except one that is itself informational-interest-
+//      about-mode - see step 5) together name BOTH commercial paths (a coarser, signal-level
+//      check - see CASH_SIGNAL/FINANCED_SIGNAL). Checked before step 5 so a conflicting
+//      declaration sharing a turn with a question, or with an informational clause, still
+//      resolves conflicting.
+//   5. EXPLICIT_NEGATIVE (return {mode:"not_present", evidence:null}): the plain clauses carry no
+//      purchase-mode signal at all, AND EITHER an informational-interest-about-mode clause was
+//      the only mode-related content in the turn ("Quiero saber qué financiación tienen.",
+//      regardless of punctuation), OR the message is fundamentally a question (a "?" anywhere, or
+//      a colloquial WH-lead with none) with nothing else to go on. Never a decision, so any
+//      provider proposal here is a hallucination and is neutralized, evidence included. An
+//      informational clause sharing the turn with a DIFFERENT, signal-bearing plain clause
+//      ("Quiero entrar en un plan. Quiero saber qué financiación tienen.") does not reach this
+//      step at all - the plain clause's signal already carries the message to step 6.
+//   6. INCONCLUSIVE (return null): the plain clauses carry a purchase-mode signal too loose to
+//      classify outright, e.g. "Quiero entrar en un plan." on its own, or sharing a turn with an
+//      unrelated question or an informational clause about the SAME topic. The caller leaves the
+//      candidate's own value untouched instead of defaulting it to "not_present" -
+//      sanitizeSemanticEvidence already reset any material scalar signal with invalid or missing
+//      evidence to "not_present" before this function ever runs, so trusting what survives that
+//      gate here does not reopen the hallucination hole S2 was written to close.
 function detectPurchaseModeDeclaration(input) {
   const current = input?.current_message;
   if (!current) return null;
@@ -297,15 +315,20 @@ function detectPurchaseModeDeclaration(input) {
     if (/\b(?:contado|efectivo)\b/.test(text)) return { mode: "cash", evidence: [evidenceFor(current), evidenceFor(previous)] };
   }
 
-  if (INDECISION_MARKER.test(text) || INFORMATIONAL_INTEREST.test(text)) return { mode: "not_present", evidence: null };
   if (rawClauses.length > 0 && clauses.length === 0) return { mode: "not_present", evidence: null }; // every declarative clause was hypothetical
+  if (clauses.some(clause => INDECISION_MARKER.test(clause) && clauseHasModeSignal(clause))) return { mode: "not_present", evidence: null };
 
-  const declarativeText = clauses.join(" ");
-  if (CASH_SIGNAL.test(declarativeText) && FINANCED_SIGNAL.test(declarativeText)) return { mode: "conflicting", evidence: [evidenceFor(current)] };
+  const informationalClauses = clauses.filter(clause => INFORMATIONAL_INTEREST.test(clause) && clauseHasModeSignal(clause));
+  const plainClauses = clauses.filter(clause => !informationalClauses.includes(clause));
+  const plainText = plainClauses.join(" ");
 
-  const isQuery = /\?/.test(text) || WH_QUESTION_LEAD.test(text.trim());
-  const declarativeHasSignal = CASH_SIGNAL.test(declarativeText) || FINANCED_SIGNAL.test(declarativeText);
-  if (isQuery && !declarativeHasSignal) return { mode: "not_present", evidence: null };
+  if (CASH_SIGNAL.test(plainText) && FINANCED_SIGNAL.test(plainText)) return { mode: "conflicting", evidence: [evidenceFor(current)] };
+
+  if (!clauseHasModeSignal(plainText)) {
+    if (informationalClauses.length > 0) return { mode: "not_present", evidence: null };
+    const isQuery = /\?/.test(text) || WH_QUESTION_LEAD.test(text.trim());
+    if (isQuery) return { mode: "not_present", evidence: null };
+  }
 
   return null;
 }
