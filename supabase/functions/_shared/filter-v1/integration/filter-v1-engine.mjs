@@ -1,4 +1,4 @@
-import { createFilterState, deriveCommercialProfile, field, registerOwnedVehicle } from "../contracts.mjs";
+import { createFilterState, deriveCommercialProfile, field, missingField, registerOwnedVehicle } from "../contracts.mjs";
 import { resolvePlanFact } from "../plan-fact-resolver.mjs";
 import { buildCommercialResponsePlan } from "../commercial-response-policy.mjs";
 import { contactPriority } from "../contact-priority.mjs";
@@ -32,12 +32,34 @@ function chooseNextQuestion(profile) {
   return order.find(key => key in profile.components && !["known", "explicitly_unknown"].includes(profile.components[key])) ?? "contact_preference";
 }
 
+const foldIdentity = value => String(value ?? "").normalize("NFD").replace(/\p{Diacritic}/gu, "").trim().toLowerCase();
+
+// Family R3: brand/model are the vehicle's canonical identity. When either is restated this
+// turn with a value that differs from what is already known, the customer switched which
+// used vehicle they are offering - any OTHER attribute (variant/version, year, km) carried
+// over from the previous vehicle is now stale and must not survive onto the new one. A key
+// simply absent from this turn's extraction is not a claim about identity at all (it is not
+// evidence of a change), so this only compares brand/model that were actually restated.
+function tradeInIdentityChanged(state, extractedTradeInVehicle) {
+  for (const key of ["brand", "model"]) {
+    const incoming = extractedTradeInVehicle[key];
+    if (typeof incoming !== "string" || !incoming) continue;
+    const stored = state.trade_in_vehicle[key];
+    if (stored?.status !== "known") continue;
+    if (foldIdentity(stored.value) !== foldIdentity(incoming)) return true;
+  }
+  return false;
+}
+
 function applyExtractedFields(state, extracted = {}) {
   const source = provenance("customer_message");
   for (const key of ["purchase_mode", "down_payment_amount", "monthly_installment_capacity", "has_trade_in"]) {
     if (extracted[key] !== undefined) state[key] = field(extracted[key], "known", source);
   }
   if (extracted.trade_in_vehicle) {
+    if (tradeInIdentityChanged(state, extracted.trade_in_vehicle)) {
+      for (const key of Object.keys(state.trade_in_vehicle)) state.trade_in_vehicle[key] = missingField();
+    }
     for (const [key, value] of Object.entries(extracted.trade_in_vehicle)) {
       if (value?.semantic_status === "explicitly_unknown") state.trade_in_vehicle[key] = field(null, "explicitly_unknown", { ...source, evidence: value.evidence ?? null });
       // Family O: a null/undefined value is never "known" - field() would throw
