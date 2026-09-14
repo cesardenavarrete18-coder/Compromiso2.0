@@ -53,7 +53,20 @@ function normalizeContextualSemantics(extraction, input) {
   const text = fold(current.text);
   const previousText = previous?.role === "assistant" ? fold(previous.text) : "";
   const explicitTarget = /\b(quiero|busco|comprar|es la que quiero|me decidi por)\b/.test(text);
-  const explicitTradeNo = /\b(no|me la quedo|no la entrego)\b/.test(text);
+  // Family R2: a bare "no" is not by itself evidence of trade-in rejection - "No lo se
+  // todavia", "No se", "No recuerdo", "No gracias", "No, es muy caro" and "No tengo decidido
+  // todavia" all contain "no" yet none of them reject the trade-in offer; the old
+  // `/\b(no|me la quedo|no la entrego)\b/` pattern treated the bare word as sufficient and
+  // wrongly resolved trade_in=no for all of them. Rejection now requires either (a) a phrase
+  // unambiguously scoped to the trade-in concept itself (mirrors safety-firewall.mjs's
+  // parentNegative, which already gets this right for the negation-scope firewall), or (b) a
+  // bare "no" combined with the customer naming what they want INSTEAD (explicitTarget) -
+  // needed because "No, la Amarok es la que quiero comprar." answering an exclusive
+  // trade-in question is a real, already-tested rejection-by-substitution (see
+  // "explicit current target overrides prior trade-in question" in
+  // filter-v1-final-closure.test.mjs) that carries no scoped rejection phrase of its own.
+  const explicitTradeRejectionPhrase = /\b(?:no tengo (?:un )?(?:usado|auto|vehiculo|camioneta)|no (?:lo |la )?voy a entregar|no (?:lo |la )?entrego(?: (?:el|mi) (?:auto|usado|vehiculo|camioneta))?|(?:el|mi) (?:auto|usado|vehiculo|camioneta) no\b|sin (?:entregar )?(?:usado|auto|vehiculo|camioneta)|me (?:lo|la) quedo|me quedo con (?:el|mi) (?:auto|usado|vehiculo|camioneta))\b/.test(text);
+  const explicitTradeNo = explicitTradeRejectionPhrase || (/\bno\b/.test(text) && explicitTarget);
   // entreg\w* (not the literal "entregar") so conjugations the customer/assistant actually
   // use in traffic - "entregando", "entrego", "entregás" - are recognized too; the current
   // message's own trade-in check below already used this broader stem.
