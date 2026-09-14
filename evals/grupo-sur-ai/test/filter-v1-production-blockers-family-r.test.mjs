@@ -96,14 +96,14 @@ test("Family R1 - 2: trade_in_vehicle.version with no information at all never m
   assert.notEqual(result.next_state.trade_in_vehicle.version?.status, "known");
 });
 
-test("Family R1 - 3: 'No sé qué versión es' still materializes version as explicitly_unknown", () => {
+test("Family R1 - 3: 'No sé qué versión es' still materializes as explicitly_unknown (Family S1: under the canonical 'variant' key, not the provider's 'version' name)", () => {
   const text = "Peugeot 408 2013, no se que version es";
   const raw = tradeInVehicleRaw({
     version: { value: null, status: "explicitly_unknown", evidence: [{ source_message_id: "m-current", literal: "no se que version es" }] },
   });
   const engineExtraction = semanticExtractionToEngine(raw, { current_message: customerTurn(text) });
   const result = runTurn(undefined, engineExtraction);
-  assert.equal(result.next_state.trade_in_vehicle.version.status, "explicitly_unknown");
+  assert.equal(result.next_state.trade_in_vehicle.variant.status, "explicitly_unknown");
 });
 
 test("Family R1 - 4 (regression control): valid brand/model/year/km must not degrade because of the known/null fix", () => {
@@ -251,18 +251,18 @@ test("Family R3 - 11 (critical): switching Gilera Smash 125 -> Peugeot 408 disca
   assert.equal(turn2.next_state.trade_in_vehicle.km.status, "missing", "the Gilera's 3000 km must not survive the identity change");
 });
 
-test("Family R3 - 12 (critical): the old vehicle's version is also discarded on identity change", () => {
+test("Family R3 - 12 (critical): the old vehicle's version is also discarded on identity change (Family S1: under the canonical 'variant' key)", () => {
   const turn1 = runTurn(undefined, tradeInTurn({
     brand: known("Gilera", "Gilera"), model: known("Smash 125", "Smash 125"),
     version: known("Base", "Base"), year: known("2024", "2024"),
   }, "Gilera Smash 125 Base 2024"));
-  assert.equal(turn1.next_state.trade_in_vehicle.version.value, "Base");
+  assert.equal(turn1.next_state.trade_in_vehicle.variant.value, "Base");
 
   const turn2 = runTurn(turn1, tradeInTurn({
     brand: known("Peugeot", "Peugeot"), model: known("408", "408"),
   }, "En realidad tengo un Peugeot 408 para entregar"));
   assert.equal(turn2.next_state.trade_in_vehicle.model.value, "408");
-  assert.equal(turn2.next_state.trade_in_vehicle.version.status, "missing", "the Gilera's version must not survive the identity change");
+  assert.equal(turn2.next_state.trade_in_vehicle.variant.status, "missing", "the Gilera's variant must not survive the identity change");
 });
 
 test("Family R3 - 13: a later turn 'Tiene 130.000 km' correctly completes the NEW vehicle (408) after the reset", () => {
