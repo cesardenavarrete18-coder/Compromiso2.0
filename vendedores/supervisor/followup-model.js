@@ -210,15 +210,30 @@
   };
 }(typeof window === "undefined" ? globalThis : window));
 
-// Supervisor V2 operational enhancements are isolated in their own module.
+// Supervisor V2 operational enhancements are isolated in their own modules.
 // Load only in the browser; Node-based model tests remain side-effect free.
 if (typeof window !== "undefined" && typeof document !== "undefined") {
-  (function loadSupervisorOperationalModule() {
-    if (document.querySelector('script[data-supervisor-operational]')) return;
+  (function loadSupervisorOperationalModules() {
+    function loadStrictProtocolModule() {
+      if (document.querySelector('script[data-supervisor-protocol-strict]')) return;
+      var strictScript = document.createElement("script");
+      strictScript.src = "/vendedores/supervisor/supervisor-protocol-strict.js?v=20260914-1";
+      strictScript.defer = true;
+      strictScript.dataset.supervisorProtocolStrict = "true";
+      document.head.appendChild(strictScript);
+    }
+
+    var existing = document.querySelector('script[data-supervisor-operational]');
+    if (existing) {
+      loadStrictProtocolModule();
+      return;
+    }
+
     var script = document.createElement("script");
-    script.src = "/vendedores/supervisor/supervisor-operational.js?v=20260912-1";
+    script.src = "/vendedores/supervisor/supervisor-operational.js?v=20260914-2";
     script.defer = true;
     script.dataset.supervisorOperational = "true";
+    script.addEventListener("load", loadStrictProtocolModule, { once: true });
     document.head.appendChild(script);
   }());
 }
