@@ -190,6 +190,56 @@ function normalizeArgentineAmount(amount) {
   }
 }
 
+// Family S2: purchase_mode_literal is a raw provider field (string|null, never validated
+// against evidence anywhere in the pipeline) whose ONLY consumer in the whole codebase was
+// this downgrade condition. Gating survival of a genuine declaration on it being non-null
+// meant a real, unambiguous statement ("Lo voy a financiar. ¿Cuánto me queda la cuota?")
+// was silently erased whenever the provider left the literal null in the same turn as a
+// price/installment query - purchase_mode_literal was never a reliable signal to begin
+// with. Replaced entirely by a deterministic check directly on the CURRENT MESSAGE (and,
+// for a short contextual answer, the immediately preceding assistant question): only an
+// unambiguous first-person declaration verb phrase counts, scoped to declarative clauses
+// (a question clause is never itself a declaration, regardless of which words it contains).
+// This also neutralizes a provider hallucination with no textual support - "¿Qué cuota
+// tiene?" proposing financed, "¿Cuánto sale de contado?" proposing cash - the same way
+// Family Q3 already neutralizes an unsupported trade_in_intent proposal.
+const FINANCED_DECLARATION = /\b(?:lo voy a financiar|voy a financiarlo|lo quiero financiar|quiero financiarlo|lo financio|voy con financiacion)\b/;
+const CASH_DECLARATION = /\b(?:lo pago al contado|lo compro al contado|voy de contado|pago en efectivo|voy al contado)\b/;
+const PURCHASE_MODE_QUESTION = /\b(?:contado|efectivo)\b[^?]*\bfinanciad[oa]\b|\bfinanciad[oa]\b[^?]*\b(?:contado|efectivo)\b/;
+const INDECISION_MARKER = /\b(?:no se|tal vez|quizas|capaz)\b/;
+
+// Isolates declarative wording from interrogative wording within the same message ("Lo voy a
+// financiar, ¿qué anticipo necesito?" must not be discarded just because the SAME turn also
+// asks a question) - a proper ¿...? pair is stripped first, then any remaining informal
+// ...? span without a leading ¿. What is left is split into clauses on . and ! only, and a
+// clause opening with "si" (a conditional/hypothetical marker - "Si lo financiara...") is
+// excluded, since a hypothetical is never a real decision.
+function declarativeClauses(text) {
+  const declarativeOnly = text.replace(/¿[^?]*\?/g, " ").replace(/[^.!¿]*\?/g, " ");
+  return declarativeOnly.split(/[.!]+/).map(part => part.trim()).filter(Boolean).filter(clause => !/^si\b/.test(clause));
+}
+
+function detectPurchaseModeDeclaration(input) {
+  const current = input?.current_message;
+  if (!current) return null;
+  const text = fold(current.text);
+  for (const clause of declarativeClauses(text)) {
+    if (FINANCED_DECLARATION.test(clause)) return "financed";
+    if (CASH_DECLARATION.test(clause)) return "cash";
+  }
+  // A bare "Financiado"/"Contado" only counts as a declaration when it directly answers a
+  // question whose sole topic was the payment mode itself - mirrors the same contextual
+  // short-answer pattern already used for trade-in questions in normalizeContextualSemantics.
+  const previous = input?.recent_conversation?.[0];
+  const previousText = previous?.role === "assistant" ? fold(previous.text) : "";
+  const shortAnswer = text.trim().split(/\s+/).length <= 4;
+  if (PURCHASE_MODE_QUESTION.test(previousText) && shortAnswer && !INDECISION_MARKER.test(text)) {
+    if (/\bfinanciad[oa]\b/.test(text)) return "financed";
+    if (/\b(?:contado|efectivo)\b/.test(text)) return "cash";
+  }
+  return null;
+}
+
 export function normalizeSemanticExtraction(candidate, input = null) {
   const normalized = emptySemanticExtraction();
   for (const key of allowed) if (Object.prototype.hasOwnProperty.call(candidate, key)) normalized[key] = structuredClone(candidate[key]);
@@ -198,7 +248,10 @@ export function normalizeSemanticExtraction(candidate, input = null) {
 
   // Queries are not purchase declarations, regardless of a provider proposal.
   normalizeQueryIntent(normalized, input);
-  if (["installment_offer", "model_value", "delivery_advance", "ambiguous_initial_amount", "technical_question"].includes(normalized.query_intent) && normalized.purchase_mode_literal == null) normalized.purchase_mode_statement = "not_present";
+  // Family S2: only a message with real current-turn context is re-classified here - no
+  // current_message at all (offline/unit callers) preserves whatever the candidate proposed,
+  // matching every other contextual normalizer function in this file.
+  if (input?.current_message) normalized.purchase_mode_statement = detectPurchaseModeDeclaration(input) ?? "not_present";
   normalized.vehicle_mentions.forEach(normalizeVehicle);
   normalizeContextualSemantics(normalized, input);
   normalizeAlternatives(normalized, input);
