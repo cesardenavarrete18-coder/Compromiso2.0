@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { readFile } from "node:fs/promises";
 import { normalizeSemanticExtraction } from "../../../supabase/functions/_shared/filter-v1/extraction/semantic-extraction-normalizer.mjs";
 import { semanticExtractionToEngine } from "../../../supabase/functions/_shared/filter-v1/extraction/semantic-engine-adapter.mjs";
 import { emptySemanticExtraction } from "../../../supabase/functions/_shared/filter-v1/extraction/semantic-extraction-contract.mjs";
@@ -303,6 +304,99 @@ test("Family S2.21 (GAP, informal '?' with no inverted '¿'): 'Lo compro al cont
   const result = await extractEndToEnd({ purchase_mode_statement: "not_present" }, "Lo compro al contado, cuanto sale?", null);
   assert.equal(result.status, "ok");
   assert.equal(result.extraction.purchase_mode_statement, "cash");
+});
+
+// =====================================================================================
+// S2, Golden Dataset regression (post-merge audit round 2): the 1st audit round's fix made
+// detectPurchaseModeDeclaration the SOLE source of truth - anything its regexes didn't
+// recognize was forced to "not_present", discarding an already-correct, already-evidence-
+// validated provider value. This is a real regression against filter-v1-semantic-online-v0.2's
+// own established purchase_mode contract (FVS-022..030), which the original Family S suite
+// never caught because it only ever exercised phrasings the function already had an opinion
+// about. Introduces a 4th outcome - "inconclusive" (detectPurchaseModeDeclaration returns null)
+// - that leaves the candidate's own value untouched instead of defaulting it.
+// =====================================================================================
+
+function withValidEvidence(statement, text) {
+  return { purchase_mode_statement: statement, evidence: { purchase_mode_statement: [{ source_message_id: "m-current", literal: text }] } };
+}
+
+test("Family S2.22 (Golden, inconclusive passthrough): provider financed with valid evidence survives for 'Quiero hacerlo por crédito.' (a phrasing outside the strict declaration regexes)", async () => {
+  const text = "Quiero hacerlo por crédito.";
+  const result = await extractEndToEnd(withValidEvidence("financed", text), text, null);
+  assert.equal(result.status, "ok");
+  assert.equal(result.extraction.purchase_mode_statement, "financed");
+});
+
+test("Family S2.23 (Golden, inconclusive passthrough): provider financed with valid evidence survives for 'Quiero entrar en un plan.'", async () => {
+  const text = "Quiero entrar en un plan.";
+  const result = await extractEndToEnd(withValidEvidence("financed", text), text, null);
+  assert.equal(result.status, "ok");
+  assert.equal(result.extraction.purchase_mode_statement, "financed");
+});
+
+test("Family S2.24 (Golden, inconclusive passthrough): provider cash with valid evidence survives for 'La quiero pagar cash.'", async () => {
+  const text = "La quiero pagar cash.";
+  const result = await extractEndToEnd(withValidEvidence("cash", text), text, null);
+  assert.equal(result.status, "ok");
+  assert.equal(result.extraction.purchase_mode_statement, "cash");
+});
+
+test("Family S2.25 (Golden, conflicting passthrough): provider conflicting with valid evidence and clarification survives for 'Lo quiero al contado pero también podría financiarlo.'", async () => {
+  const text = "Lo quiero al contado pero también podría financiarlo.";
+  const raw = { ...emptySemanticExtraction(), purchase_mode_statement: "conflicting", needs_clarification: [{ code: "conflicting_purchase_mode", evidence: [{ source_message_id: "m-current", literal: text }] }] };
+  const input = { current_message: customerTurn(text, "m-current"), recent_conversation: [], previous_filter_state: null, acquisition_context: null, known_catalog_context: null };
+  const result = await extractSemanticMessage({ client: async () => structuredClone(raw), ...input });
+  assert.equal(result.status, "ok");
+  assert.equal(result.extraction.purchase_mode_statement, "conflicting");
+  assert.ok(result.extraction.needs_clarification.some(item => item.code === "conflicting_purchase_mode"));
+});
+
+test("Family S2.26 (Golden, deterministic conflict recognition): the deterministic layer resolves conflicting even when the provider proposes only 'financed' for 'Lo quiero al contado pero también podría financiarlo.'", async () => {
+  const result = await extractEndToEnd({ purchase_mode_statement: "financed" }, "Lo quiero al contado pero también podría financiarlo.", null);
+  assert.equal(result.status, "ok");
+  assert.equal(result.extraction.purchase_mode_statement, "conflicting");
+  assert.ok(result.extraction.needs_clarification.some(item => item.code === "conflicting_purchase_mode"));
+});
+
+test("Family S2.27 (Golden, negative control, hallucination): '¿Qué financiación tienen?' stays not_present even if the provider proposes financed", async () => {
+  const result = await extractEndToEnd({ purchase_mode_statement: "financed" }, "¿Qué financiación tienen?", null);
+  assert.equal(result.status, "ok");
+  assert.equal(result.extraction.purchase_mode_statement, "not_present");
+});
+
+test("Family S2.28 (Golden, negative control, no punctuation, hallucination): 'qué planes ofrecen' stays not_present even if the provider proposes financed", async () => {
+  const result = await extractEndToEnd({ purchase_mode_statement: "financed" }, "qué planes ofrecen", null);
+  assert.equal(result.status, "ok");
+  assert.equal(result.extraction.purchase_mode_statement, "not_present");
+});
+
+test("Family S2.29 (Golden, negative control, informal '?', hallucination): 'hay financiación?' stays not_present even if the provider proposes financed", async () => {
+  const result = await extractEndToEnd({ purchase_mode_statement: "financed" }, "hay financiación?", null);
+  assert.equal(result.status, "ok");
+  assert.equal(result.extraction.purchase_mode_statement, "not_present");
+});
+
+test("Family S2.30 (Golden Dataset compatibility, offline, FVS-022..030): every purchase_mode golden case survives the full pipeline unchanged when the provider already gets it right", async () => {
+  const datasetText = await readFile(new URL("../datasets/filter-v1-semantic-online-v0.2.jsonl", import.meta.url), "utf8");
+  const rows = datasetText.trim().split("\n").map(row => JSON.parse(row)).filter(row => row.category === "purchase_mode");
+  assert.equal(rows.length, 9, "expected exactly the 9 FVS-022..030 purchase_mode golden cases");
+  for (const row of rows) {
+    const expectedStatement = row.expected_extraction.purchase_mode_statement;
+    const currentMessage = row.input.current_message;
+    const evidence = [{ source_message_id: currentMessage.id, literal: currentMessage.text }];
+    const raw = {
+      ...emptySemanticExtraction(),
+      purchase_mode_statement: expectedStatement,
+      evidence: { purchase_mode_statement: evidence },
+      ...(expectedStatement === "conflicting" ? { needs_clarification: [{ code: "conflicting_purchase_mode", evidence }] } : {}),
+    };
+    const result = await extractSemanticMessage({ client: async () => structuredClone(raw), ...row.input });
+    assert.equal(result.status, "ok", `${row.case_id} ('${currentMessage.text}') must extract ok`);
+    assert.equal(result.extraction.purchase_mode_statement, expectedStatement, `${row.case_id} ('${currentMessage.text}') expected ${expectedStatement}`);
+    const expectedClarificationCode = row.expected_extraction["needs_clarification.code"];
+    if (expectedClarificationCode) assert.ok(result.extraction.needs_clarification.some(item => item.code === expectedClarificationCode), `${row.case_id} must carry needs_clarification.code=${expectedClarificationCode}`);
+  }
 });
 
 // =====================================================================================
