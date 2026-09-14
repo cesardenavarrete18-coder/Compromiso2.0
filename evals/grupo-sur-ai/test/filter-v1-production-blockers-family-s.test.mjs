@@ -463,6 +463,66 @@ test("Family S2.37 (mixed, critical, indecision control): 'No sé si contado o f
 });
 
 // =====================================================================================
+// S2, indecision/informational-interest scoped to the wrong clause (post-merge audit round 4):
+// INDECISION_MARKER and INFORMATIONAL_INTEREST were tested against the WHOLE message, so doubt
+// or curiosity about a DIFFERENT attribute ("No sé qué versión es.", "Quiero saber qué motor
+// trae.") neutralized a real purchase_mode signal sitting in a completely separate clause
+// ("Quiero entrar en un plan.") - the same whole-message-scope bug the round-3 fix already
+// closed for "?", recurring for these two markers. Both are now scoped per-clause via
+// clauseHasModeSignal, so only a clause whose OWN uncertainty/interest is about purchase mode
+// itself can neutralize it.
+// =====================================================================================
+
+test("Family S2.38 (scope, critical): 'Quiero entrar en un plan. No sé qué versión es.' preserves financed - the doubt is about the vehicle's versión, not purchase_mode", async () => {
+  const text = "Quiero entrar en un plan. No sé qué versión es.";
+  const result = await extractEndToEnd(withValidEvidence("financed", text), text, null);
+  assert.equal(result.status, "ok");
+  assert.equal(result.extraction.purchase_mode_statement, "financed");
+});
+
+test("Family S2.39 (scope, critical): 'Quiero hacerlo por crédito. Quiero saber qué motor trae.' preserves financed - 'quiero saber' refers to the motor, not financing", async () => {
+  const text = "Quiero hacerlo por crédito. Quiero saber qué motor trae.";
+  const result = await extractEndToEnd(withValidEvidence("financed", text), text, null);
+  assert.equal(result.status, "ok");
+  assert.equal(result.extraction.purchase_mode_statement, "financed");
+});
+
+test("Family S2.40 (scope, critical): 'La quiero pagar cash. No sé si viene automática.' preserves cash - the doubt is about the transmission, not purchase_mode", async () => {
+  const text = "La quiero pagar cash. No sé si viene automática.";
+  const result = await extractEndToEnd(withValidEvidence("cash", text), text, null);
+  assert.equal(result.status, "ok");
+  assert.equal(result.extraction.purchase_mode_statement, "cash");
+});
+
+test("Family S2.41 (scope, critical): 'Quiero entrar en un plan. No sé cuánto anticipo necesito.' preserves financed - the uncertainty is about the down-payment amount, not the choice to finance", async () => {
+  const text = "Quiero entrar en un plan. No sé cuánto anticipo necesito.";
+  const result = await extractEndToEnd(withValidEvidence("financed", text), text, null);
+  assert.equal(result.status, "ok");
+  assert.equal(result.extraction.purchase_mode_statement, "financed");
+});
+
+test("Family S2.42 (scope, critical, true purchase_mode indecision control): 'No sé si hacerlo al contado o financiado.' stays not_present even if the provider proposes financed", async () => {
+  const text = "No sé si hacerlo al contado o financiado.";
+  const result = await extractEndToEnd(withValidEvidence("financed", text), text, null);
+  assert.equal(result.status, "ok");
+  assert.equal(result.extraction.purchase_mode_statement, "not_present");
+});
+
+test("Family S2.43 (scope, critical, informational-interest control): 'Quiero saber qué financiación tienen.' stays not_present even if the provider proposes financed", async () => {
+  const text = "Quiero saber qué financiación tienen.";
+  const result = await extractEndToEnd(withValidEvidence("financed", text), text, null);
+  assert.equal(result.status, "ok");
+  assert.equal(result.extraction.purchase_mode_statement, "not_present");
+});
+
+test("Family S2.44 (scope, critical, mixed control): 'Quiero entrar en un plan. Quiero saber qué financiación tienen.' resolves financed - the first clause already declares a choice, the second only asks about its details", async () => {
+  const text = "Quiero entrar en un plan. Quiero saber qué financiación tienen.";
+  const result = await extractEndToEnd(withValidEvidence("financed", text), text, null);
+  assert.equal(result.status, "ok");
+  assert.equal(result.extraction.purchase_mode_statement, "financed");
+});
+
+// =====================================================================================
 // Family S integrated — end-to-end reachability of commercial_profile.complete
 // =====================================================================================
 
