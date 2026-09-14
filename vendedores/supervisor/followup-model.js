@@ -3,6 +3,7 @@
 
   var TIME_ZONE = "America/Argentina/Buenos_Aires";
   var TERMINAL_STATUSES = ["venta", "desistir", "invalido"];
+  var PROTOCOL_WINDOW_MS = 2 * 60 * 60 * 1000;
 
   function crmOf(lead) {
     if (!lead || !lead.crm) return { status: "nuevo", priority: lead && lead.priority || "normal" };
@@ -37,6 +38,12 @@
       source: "protocol_recommendation",
       sourceLabel: "RECOMENDADO"
     };
+  }
+
+  function protocolWindowEnd(summary, action) {
+    if (!action || action.source !== "protocol_recommendation") return null;
+    if (summary && summary.next_task_due_end) return summary.next_task_due_end;
+    return new Date(new Date(action.at).getTime() + PROTOCOL_WINDOW_MS).toISOString();
   }
 
   function manualAction(lead) {
@@ -85,10 +92,13 @@
     var withoutFirstContact = Boolean(active && summary.without_first_contact === true);
     var action = active ? nextAction(lead, summary) : null;
     var recommendation = active ? protocolRecommendation(summary) : null;
+    var overdueAt = action && action.source === "protocol_recommendation"
+      ? protocolWindowEnd(summary, action)
+      : action && action.at;
     var key = "completed";
 
     if (withoutManagement) key = "unmanaged";
-    else if (action && new Date(action.at).getTime() < now.getTime()) key = "overdue";
+    else if (action && overdueAt && new Date(overdueAt).getTime() < now.getTime()) key = "overdue";
     else if (action && dateKey(action.at) === dateKey(now)) key = "today";
     else if (action && new Date(action.at).getTime() > now.getTime()) key = "upcoming";
     else if (active) key = "unscheduled";
@@ -109,6 +119,7 @@
       completedToday: Boolean(summary.completed_today),
       managementCount: managementCount,
       nextAction: action,
+      overdueAt: overdueAt,
       protocolRecommendation: recommendation
     };
   }
