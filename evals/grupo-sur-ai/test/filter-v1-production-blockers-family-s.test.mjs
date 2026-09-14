@@ -400,6 +400,69 @@ test("Family S2.30 (Golden Dataset compatibility, offline, FVS-022..030): every 
 });
 
 // =====================================================================================
+// S2, mixed declaration+question messages (post-merge audit round 3): the previous round's
+// "is this message fundamentally a question" check operated on the WHOLE message text, so a "?"
+// anywhere neutralized a real declaration sharing the turn with an unrelated question -
+// "Quiero hacerlo por crédito. ¿Qué cuota me queda?" was forced to not_present, discarding an
+// already-correct, already-evidence-validated provider value. Exactly the class of bug Family S
+// was written to close. detectPurchaseModeDeclaration now scopes signal detection (steps 3-5) to
+// the message's non-interrogative clauses only, via declarativeClauses/declarativeClausesRaw - a
+// "?" in one clause never invalidates a different, non-interrogative clause's own content.
+// =====================================================================================
+
+test("Family S2.31 (mixed, critical): 'Quiero hacerlo por crédito. ¿Qué cuota me queda?' preserves the provider's financed, not neutralized by the trailing question", async () => {
+  const text = "Quiero hacerlo por crédito. ¿Qué cuota me queda?";
+  const result = await extractEndToEnd(withValidEvidence("financed", text), text, null);
+  assert.equal(result.status, "ok");
+  assert.equal(result.extraction.purchase_mode_statement, "financed");
+});
+
+test("Family S2.32 (mixed, critical): 'Quiero entrar en un plan. ¿Cuánto necesito de anticipo?' preserves the provider's financed", async () => {
+  const text = "Quiero entrar en un plan. ¿Cuánto necesito de anticipo?";
+  const result = await extractEndToEnd(withValidEvidence("financed", text), text, null);
+  assert.equal(result.status, "ok");
+  assert.equal(result.extraction.purchase_mode_statement, "financed");
+});
+
+test("Family S2.33 (mixed, critical): 'La quiero pagar cash. ¿Cuánto sale?' preserves the provider's cash", async () => {
+  const text = "La quiero pagar cash. ¿Cuánto sale?";
+  const result = await extractEndToEnd(withValidEvidence("cash", text), text, null);
+  assert.equal(result.status, "ok");
+  assert.equal(result.extraction.purchase_mode_statement, "cash");
+});
+
+test("Family S2.34 (mixed, critical, deterministic conflict): 'Lo quiero al contado pero también podría financiarlo. ¿Qué me conviene?' resolves conflicting with clarification regardless of what the provider proposes", async () => {
+  const text = "Lo quiero al contado pero también podría financiarlo. ¿Qué me conviene?";
+  for (const providerStatement of ["conflicting", "cash", "financed"]) {
+    const result = await extractEndToEnd(withValidEvidence(providerStatement, text), text, null);
+    assert.equal(result.status, "ok", `provider=${providerStatement}`);
+    assert.equal(result.extraction.purchase_mode_statement, "conflicting", `provider=${providerStatement}`);
+    assert.ok(result.extraction.needs_clarification.some(item => item.code === "conflicting_purchase_mode"), `provider=${providerStatement}`);
+  }
+});
+
+test("Family S2.35 (mixed, critical, pure hallucination control): 'Tengo un 208. ¿Qué cuota tiene?' stays not_present - an unrelated declarative clause must not preserve a hallucinated financed", async () => {
+  const text = "Tengo un 208. ¿Qué cuota tiene?";
+  const result = await extractEndToEnd(withValidEvidence("financed", text), text, null);
+  assert.equal(result.status, "ok");
+  assert.equal(result.extraction.purchase_mode_statement, "not_present");
+});
+
+test("Family S2.36 (mixed, critical, commercial-query control): 'Me interesa el 208. ¿Se puede financiar?' stays not_present despite a hallucinated financed", async () => {
+  const text = "Me interesa el 208. ¿Se puede financiar?";
+  const result = await extractEndToEnd(withValidEvidence("financed", text), text, null);
+  assert.equal(result.status, "ok");
+  assert.equal(result.extraction.purchase_mode_statement, "not_present");
+});
+
+test("Family S2.37 (mixed, critical, indecision control): 'No sé si contado o financiado. ¿Qué me conviene?' stays not_present, no purchase_mode known", async () => {
+  const text = "No sé si contado o financiado. ¿Qué me conviene?";
+  const result = await extractEndToEnd(withValidEvidence("financed", text), text, null);
+  assert.equal(result.status, "ok");
+  assert.equal(result.extraction.purchase_mode_statement, "not_present");
+});
+
+// =====================================================================================
 // Family S integrated — end-to-end reachability of commercial_profile.complete
 // =====================================================================================
 
