@@ -27,8 +27,20 @@
 
   function manualAction(lead) {
     var crm = crmOf(lead);
+    if (crm.status === "entrevista") {
+      if (!crm.interview_at || ["no_show", "completed"].includes(crm.interview_operational_status)) return null;
+      return {
+        at: crm.interview_at,
+        note: crm.interview_objective || "Entrevista comercial acordada",
+        source: "interview"
+      };
+    }
     if (crm.next_contact_source !== "manual" || !crm.next_contact_at) return null;
-    return { at: crm.next_contact_at, note: crm.next_contact_note || "Próximo contacto acordado" };
+    return {
+      at: crm.next_contact_at,
+      note: crm.next_contact_note || "Próximo contacto acordado",
+      source: "manual"
+    };
   }
 
   function protocolRecommendation(lead, pendingTask, nowValue) {
