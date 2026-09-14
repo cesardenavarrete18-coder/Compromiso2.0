@@ -54,12 +54,31 @@ export function semanticExtractionToEngine(extraction, filterInput = {}) {
   // therefore remains authoritative even when the current short answer does not repeat the
   // vehicle name (for example "Tiene 200.000 km"). An explicit parent rejection is handled
   // separately by has_trade_in=no and must not be converted back to yes here.
-  if (extraction.trade_in_vehicle) extractedFields.trade_in_vehicle = Object.fromEntries(Object.entries(extraction.trade_in_vehicle).map(([key, value]) => [key === "mileage_km" ? "km" : key, value?.status === "explicitly_unknown" ? { semantic_status: "explicitly_unknown", evidence: value.evidence } : value?.value ?? value]));
+  // Family R1: `value?.value ?? value` fell back to the WHOLE {value,status,evidence} shape
+  // whenever .value was null/undefined - which includes a malformed known/null sub-field
+  // AND every ordinary missing one (missingField()'s own .value is null). applyExtractedFields
+  // then wrapped that nested object in ANOTHER field(), persisting a "known" field whose
+  // value was itself a known/null-shaped object. Only ever pass through a scalar (or the
+  // explicitly_unknown marker); omit the entry otherwise so it reads as missing downstream.
+  if (extraction.trade_in_vehicle) extractedFields.trade_in_vehicle = Object.fromEntries(Object.entries(extraction.trade_in_vehicle).map(([key, value]) => [key === "mileage_km" ? "km" : key, value?.status === "explicitly_unknown" ? { semantic_status: "explicitly_unknown", evidence: value.evidence } : value?.value]).filter(([, value]) => value !== null && value !== undefined));
   const targetMentions = extraction.vehicle_mentions.filter(vehicle => ["target", "target_candidate"].includes(vehicle.role));
   const targetModel = targetMentions.length === 1 && targetMentions[0].role === "target" ? targetMentions[0].model_text ?? targetMentions[0].literal : undefined;
   const subjectMentions = extraction.vehicle_mentions.filter(vehicle => ["target", "target_candidate", "comparison"].includes(vehicle.role));
-  const subjectModel = subjectMentions.length === 1 ? subjectMentions[0].model_text ?? subjectMentions[0].literal : undefined;
-  const usedVehicleSubject = subjectMentions.length === 1 && mentionMentionsUsedVehicle(subjectMentions[0]);
+  // Family R4: a price/value question whose ONLY vehicle mention this turn is the
+  // customer's own trade-in/owned vehicle (no competing target-ish mention) must still
+  // resolve a subject - otherwise the engine falls back to the persisted commercial target
+  // ("¿En cuanto me lo toman?" about an owned 208 silently priced the unrelated 0km 208
+  // target). Anchored the same way as the structured trade-in fallback above, so a stale
+  // contextually-reconstructed mention never becomes today's price-question subject either.
+  const usedVehicleRoleMentions = extraction.vehicle_mentions.filter(vehicle => ["trade_in", "owned_only"].includes(vehicle.role) && tradeMentionAnchoredInCurrentMessage(vehicle, filterInput));
+  const subjectModel = subjectMentions.length === 1
+    ? subjectMentions[0].model_text ?? subjectMentions[0].literal
+    : subjectMentions.length === 0 && usedVehicleRoleMentions.length === 1
+      ? usedVehicleRoleMentions[0].model_text ?? usedVehicleRoleMentions[0].literal
+      : undefined;
+  const usedVehicleSubject = subjectMentions.length === 1
+    ? mentionMentionsUsedVehicle(subjectMentions[0])
+    : subjectMentions.length === 0 && usedVehicleRoleMentions.length === 1;
   const correction = extraction.customer_corrections.find(item => item.field === "target_model");
   return {
     query_intent: extraction.query_intent,
