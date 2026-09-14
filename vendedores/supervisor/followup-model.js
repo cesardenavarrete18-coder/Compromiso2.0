@@ -198,3 +198,16 @@
     assignmentAttention: assignmentAttention
   };
 }(typeof window === "undefined" ? globalThis : window));
+
+// Supervisor V2 operational enhancements are isolated in their own module.
+// Load only in the browser; Node-based model tests remain side-effect free.
+if (typeof window !== "undefined" && typeof document !== "undefined") {
+  (function loadSupervisorOperationalModule() {
+    if (document.querySelector('script[data-supervisor-operational]')) return;
+    var script = document.createElement("script");
+    script.src = "/vendedores/supervisor/supervisor-operational.js?v=20260912-1";
+    script.defer = true;
+    script.dataset.supervisorOperational = "true";
+    document.head.appendChild(script);
+  }());
+}
