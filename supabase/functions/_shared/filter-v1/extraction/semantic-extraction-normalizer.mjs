@@ -211,21 +211,34 @@ const INDECISION_MARKER = /\b(?:no se|tal vez|quizas|capaz)\b/;
 // Isolates declarative wording from interrogative wording within the same message ("Lo voy a
 // financiar, ¿qué anticipo necesito?" must not be discarded just because the SAME turn also
 // asks a question) - a proper ¿...? pair is stripped first, then any remaining informal
-// ...? span without a leading ¿. What is left is split into clauses on . and ! only, and a
-// clause opening with "si" (a conditional/hypothetical marker - "Si lo financiara...") is
-// excluded, since a hypothetical is never a real decision.
+// ...? span without a leading ¿. The informal-span match itself stops at a comma (not just at
+// . and !): "Lo voy a financiar, que anticipo necesito?" has no ¿ and no ./!, so without the
+// comma boundary the informal-question match would run from the very start of the string and
+// swallow the declaration along with the question it shares a clause with. What is left is
+// split into clauses on . and ! only, and a clause opening with "si" (a conditional/
+// hypothetical marker - "Si lo financiara...") is excluded, since a hypothetical is never a
+// real decision.
 function declarativeClauses(text) {
-  const declarativeOnly = text.replace(/¿[^?]*\?/g, " ").replace(/[^.!¿]*\?/g, " ");
+  const declarativeOnly = text.replace(/¿[^?]*\?/g, " ").replace(/[^.!,¿]*\?/g, " ");
   return declarativeOnly.split(/[.!]+/).map(part => part.trim()).filter(Boolean).filter(clause => !/^si\b/.test(clause));
 }
 
+// Family S2 (post-merge audit fix): the deterministic decision must carry its own evidence -
+// validateSemanticExtraction requires evidence.purchase_mode_statement for any statement other
+// than "not_present", and nothing else in the pipeline populates it once this function starts
+// overriding the raw provider value. Returning the evidence alongside the mode (rather than
+// leaving the caller to guess it) keeps the declaration and its supporting message(s) from ever
+// drifting apart. An explicit declarative clause is evidenced by the current message alone; a
+// bare contextual short answer ("Financiado"/"Contado") is evidenced by the current message
+// together with the assistant question it answers, mirroring the current+previous evidence
+// pattern normalizeContextualSemantics already uses for the trade-in contextual answer.
 function detectPurchaseModeDeclaration(input) {
   const current = input?.current_message;
   if (!current) return null;
   const text = fold(current.text);
   for (const clause of declarativeClauses(text)) {
-    if (FINANCED_DECLARATION.test(clause)) return "financed";
-    if (CASH_DECLARATION.test(clause)) return "cash";
+    if (FINANCED_DECLARATION.test(clause)) return { mode: "financed", evidence: [evidenceFor(current)] };
+    if (CASH_DECLARATION.test(clause)) return { mode: "cash", evidence: [evidenceFor(current)] };
   }
   // A bare "Financiado"/"Contado" only counts as a declaration when it directly answers a
   // question whose sole topic was the payment mode itself - mirrors the same contextual
@@ -234,8 +247,8 @@ function detectPurchaseModeDeclaration(input) {
   const previousText = previous?.role === "assistant" ? fold(previous.text) : "";
   const shortAnswer = text.trim().split(/\s+/).length <= 4;
   if (PURCHASE_MODE_QUESTION.test(previousText) && shortAnswer && !INDECISION_MARKER.test(text)) {
-    if (/\bfinanciad[oa]\b/.test(text)) return "financed";
-    if (/\b(?:contado|efectivo)\b/.test(text)) return "cash";
+    if (/\bfinanciad[oa]\b/.test(text)) return { mode: "financed", evidence: [evidenceFor(current), evidenceFor(previous)] };
+    if (/\b(?:contado|efectivo)\b/.test(text)) return { mode: "cash", evidence: [evidenceFor(current), evidenceFor(previous)] };
   }
   return null;
 }
@@ -250,8 +263,16 @@ export function normalizeSemanticExtraction(candidate, input = null) {
   normalizeQueryIntent(normalized, input);
   // Family S2: only a message with real current-turn context is re-classified here - no
   // current_message at all (offline/unit callers) preserves whatever the candidate proposed,
-  // matching every other contextual normalizer function in this file.
-  if (input?.current_message) normalized.purchase_mode_statement = detectPurchaseModeDeclaration(input) ?? "not_present";
+  // matching every other contextual normalizer function in this file. The declaration's own
+  // evidence is materialized (or cleared) in lockstep with the statement itself: a stale
+  // evidence.purchase_mode_statement left over from a raw provider proposal that just got
+  // neutralized to "not_present" is never allowed to survive, and a statement synthesized here
+  // from the current message always carries real, validator-satisfying evidence for it.
+  if (input?.current_message) {
+    const declaration = detectPurchaseModeDeclaration(input);
+    normalized.purchase_mode_statement = declaration?.mode ?? "not_present";
+    normalized.evidence.purchase_mode_statement = declaration?.evidence ?? null;
+  }
   normalized.vehicle_mentions.forEach(normalizeVehicle);
   normalizeContextualSemantics(normalized, input);
   normalizeAlternatives(normalized, input);
