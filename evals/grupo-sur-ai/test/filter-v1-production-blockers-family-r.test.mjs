@@ -446,3 +446,63 @@ test("Family R4 - 25 (critical, coinciding model, both mentions same turn): 'Qui
   assert.equal(result.response_plan.answer_fact.status, "not_materialized");
   assert.equal(result.response_plan.answer_fact.value, null);
 });
+
+// --- R4, 3rd audit round: evidence.literal is legally allowed to be the FULL message on
+// BOTH mentions (the extractor contract only requires an exact literal copy, not the
+// minimal span for that entity) - so mentionAnsweredByQuestion's per-mention evidence check
+// from the 2nd round can see the SAME anchor word on both candidates and fall back to the
+// target incorrectly. The fix must read the actual current_message text/clauses directly
+// instead of trusting each mention's (possibly duplicated) evidence for disambiguation.
+
+test("Family R4 - 26 (critical, Case A - duplicated full-message evidence on both mentions): must still resolve the 208 trade-in as subject", () => {
+  const text = "Quiero una Partner 0km y tengo un Peugeot 208 2019 para entregar. En cuanto me toman el 208";
+  const raw = { ...emptySemanticExtraction(), query_intent: "model_value", trade_in_intent: "yes", vehicle_mentions: [
+    { literal: "una Partner 0km", brand_text: "Peugeot", model_text: "Partner", version_text: null, role: "target", certainty: "explicit", evidence: [{ source_message_id: "m-current", literal: text }] },
+    { literal: "un Peugeot 208 2019", brand_text: "Peugeot", model_text: "208", version_text: null, role: "trade_in", certainty: "explicit", evidence: [{ source_message_id: "m-current", literal: text }] },
+  ] };
+  const engineExtraction = semanticExtractionToEngine(raw, { current_message: customerTurn(text) });
+  assert.equal(engineExtraction.turn_subject_model, "208");
+  assert.equal(engineExtraction.used_vehicle_subject, true);
+  const result = runTurn(priorTarget("m-partner", "Partner"), engineExtraction, campaignsPartner208);
+  assert.equal(result.response_plan.answer_fact.status, "not_materialized");
+  assert.equal(result.response_plan.answer_fact.value, null);
+});
+
+test("Family R4 - 27 (critical, Case B - coinciding model, duplicated full-message evidence): must resolve the trade-in as subject", () => {
+  const text = "Quiero comprar un Peugeot 208 0km y tengo un Peugeot 208 2019 para entregar. En cuanto toman el mio";
+  const raw = { ...emptySemanticExtraction(), query_intent: "model_value", trade_in_intent: "yes", vehicle_mentions: [
+    { literal: "un Peugeot 208 0km", brand_text: "Peugeot", model_text: "208", version_text: null, role: "target", certainty: "explicit", evidence: [{ source_message_id: "m-current", literal: text }] },
+    { literal: "mi Peugeot 208 2019", brand_text: "Peugeot", model_text: "208", version_text: null, role: "trade_in", certainty: "explicit", evidence: [{ source_message_id: "m-current", literal: text }] },
+  ] };
+  const engineExtraction = semanticExtractionToEngine(raw, { current_message: customerTurn(text) });
+  assert.equal(engineExtraction.used_vehicle_subject, true);
+  const result = runTurn(priorTarget("m-208", "208"), engineExtraction, campaigns208);
+  assert.equal(result.response_plan.answer_fact.status, "not_materialized");
+  assert.equal(result.response_plan.answer_fact.value, null);
+});
+
+test("Family R4 - 28 (regression, Case C - duplicated full-message evidence, question really about target): must still resolve the target's own campaign", () => {
+  const text = "Quiero un 208 0km y tengo un Corolla usado. Cuanto sale el 208";
+  const raw = { ...emptySemanticExtraction(), query_intent: "model_value", trade_in_intent: "yes", vehicle_mentions: [
+    { literal: "un 208 0km", brand_text: "Peugeot", model_text: "208", version_text: null, role: "target", certainty: "explicit", evidence: [{ source_message_id: "m-current", literal: text }] },
+    { literal: "un Corolla usado", brand_text: "Toyota", model_text: "Corolla", version_text: null, role: "trade_in", certainty: "explicit", evidence: [{ source_message_id: "m-current", literal: text }] },
+  ] };
+  const engineExtraction = semanticExtractionToEngine(raw, { current_message: customerTurn(text) });
+  assert.equal(engineExtraction.turn_subject_model, "208");
+  assert.equal(engineExtraction.used_vehicle_subject, false);
+  const result = runTurn(undefined, engineExtraction, campaigns208);
+  assert.equal(result.response_plan.answer_fact.status, "resolved");
+  assert.equal(result.response_plan.answer_fact.value, 43080000);
+});
+
+test("Family R4 - 29 (critical, Case D - genuine ambiguity): 'Quiero un 208 0km y tengo un Corolla usado. Cuanto vale?' must never resolve a price, target's or otherwise", () => {
+  const text = "Quiero un 208 0km y tengo un Corolla usado. Cuanto vale?";
+  const raw = { ...emptySemanticExtraction(), query_intent: "model_value", trade_in_intent: "yes", vehicle_mentions: [
+    { literal: "un 208 0km", brand_text: "Peugeot", model_text: "208", version_text: null, role: "target", certainty: "explicit", evidence: [{ source_message_id: "m-current", literal: text }] },
+    { literal: "un Corolla usado", brand_text: "Toyota", model_text: "Corolla", version_text: null, role: "trade_in", certainty: "explicit", evidence: [{ source_message_id: "m-current", literal: text }] },
+  ] };
+  const engineExtraction = semanticExtractionToEngine(raw, { current_message: customerTurn(text) });
+  const result = runTurn(undefined, engineExtraction, campaigns208);
+  assert.notEqual(result.response_plan.answer_fact?.status, "resolved", "a genuinely ambiguous subject must never resolve ANY price, target's included");
+  assert.notEqual(result.response_plan.answer_fact?.value, 43080000);
+});
