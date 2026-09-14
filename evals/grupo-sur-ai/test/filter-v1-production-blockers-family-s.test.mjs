@@ -3,6 +3,7 @@ import test from "node:test";
 import { normalizeSemanticExtraction } from "../../../supabase/functions/_shared/filter-v1/extraction/semantic-extraction-normalizer.mjs";
 import { semanticExtractionToEngine } from "../../../supabase/functions/_shared/filter-v1/extraction/semantic-engine-adapter.mjs";
 import { emptySemanticExtraction } from "../../../supabase/functions/_shared/filter-v1/extraction/semantic-extraction-contract.mjs";
+import { extractSemanticMessage } from "../../../supabase/functions/_shared/filter-v1/extraction/semantic-extractor.mjs";
 import { runFilterV1Integration } from "../../../supabase/functions/_shared/filter-v1/integration/filter-v1-engine.mjs";
 import { createFilterState, deriveCommercialProfile, field } from "../../../supabase/functions/_shared/filter-v1/contracts.mjs";
 
@@ -235,6 +236,73 @@ test("Family S2.13 (interest is not a decision): 'Me interesa saber la financiac
 test("Family S2.14 (interest is not a decision): 'Quiero saber que financiacion tienen' must NOT resolve as financed", () => {
   const { extraction } = normalizePurchaseMode("financed", "Quiero saber que financiacion tienen", null, "installment_offer");
   assert.equal(extraction.purchase_mode_statement, "not_present");
+});
+
+// =====================================================================================
+// S2 end-to-end evidence (post-merge audit fix): normalizeSemanticExtraction alone hid a real
+// pipeline break — extractSemanticMessage re-validates AFTER normalization, and
+// validateSemanticExtraction requires evidence.purchase_mode_statement for any statement other
+// than "not_present". A statement synthesized by detectPurchaseModeDeclaration with no matching
+// evidence entry failed that re-validation with INVALID_OR_MISSING_EVIDENCE, turning a correctly
+// classified declaration into extraction_failed. These tests exercise the full pipeline (a fake
+// client, not a hand-built candidate) so a regression here fails loudly again.
+// =====================================================================================
+
+async function extractEndToEnd(rawOverrides, currentText, previousText) {
+  const raw = { ...emptySemanticExtraction(), ...rawOverrides };
+  const input = {
+    current_message: customerTurn(currentText, "m-current"),
+    recent_conversation: previousText ? [assistantQuestion(previousText, "m-prev")] : [],
+    previous_filter_state: null, acquisition_context: null, known_catalog_context: null,
+  };
+  return extractSemanticMessage({ client: async () => structuredClone(raw), ...input });
+}
+
+test("Family S2.15 (end-to-end, critical): raw not_present + contextual 'Financiado' -> ok/financed with valid evidence", async () => {
+  const result = await extractEndToEnd({ purchase_mode_statement: "not_present" }, "Financiado", "Lo vas a hacer de contado o financiado?");
+  assert.equal(result.status, "ok");
+  assert.equal(result.extraction.purchase_mode_statement, "financed");
+  assert.ok(Array.isArray(result.extraction.evidence.purchase_mode_statement) && result.extraction.evidence.purchase_mode_statement.length > 0);
+});
+
+test("Family S2.16 (end-to-end, critical): raw not_present + contextual 'Contado' -> ok/cash with valid evidence", async () => {
+  const result = await extractEndToEnd({ purchase_mode_statement: "not_present" }, "Contado", "Lo vas a hacer de contado o financiado?");
+  assert.equal(result.status, "ok");
+  assert.equal(result.extraction.purchase_mode_statement, "cash");
+  assert.ok(Array.isArray(result.extraction.evidence.purchase_mode_statement) && result.extraction.evidence.purchase_mode_statement.length > 0);
+});
+
+test("Family S2.17 (end-to-end, critical, design decision: the deterministic layer recovers a declaration the provider omitted): raw not_present + explicit 'Lo voy a financiar' -> ok/financed with valid evidence", async () => {
+  const result = await extractEndToEnd({ purchase_mode_statement: "not_present" }, "Lo voy a financiar", null);
+  assert.equal(result.status, "ok");
+  assert.equal(result.extraction.purchase_mode_statement, "financed");
+  assert.ok(Array.isArray(result.extraction.evidence.purchase_mode_statement) && result.extraction.evidence.purchase_mode_statement.length > 0);
+});
+
+test("Family S2.18 (end-to-end, critical): raw 'financed' hallucination on a pure query -> ok/not_present, stale evidence cleared", async () => {
+  const result = await extractEndToEnd({ purchase_mode_statement: "financed", evidence: { purchase_mode_statement: [{ source_message_id: "m-current", literal: "Que cuota tiene?" }] } }, "Que cuota tiene?", null);
+  assert.equal(result.status, "ok");
+  assert.equal(result.extraction.purchase_mode_statement, "not_present");
+  assert.equal(result.extraction.evidence.purchase_mode_statement, null);
+});
+
+test("Family S2.19 (end-to-end, critical): raw 'cash' hallucination on a pure query -> ok/not_present, stale evidence cleared", async () => {
+  const result = await extractEndToEnd({ purchase_mode_statement: "cash", evidence: { purchase_mode_statement: [{ source_message_id: "m-current", literal: "Cuanto sale de contado?" }] } }, "Cuanto sale de contado?", null);
+  assert.equal(result.status, "ok");
+  assert.equal(result.extraction.purchase_mode_statement, "not_present");
+  assert.equal(result.extraction.evidence.purchase_mode_statement, null);
+});
+
+test("Family S2.20 (GAP, informal '?' with no inverted '¿'): 'Lo voy a financiar, que anticipo necesito?' -> financed end-to-end", async () => {
+  const result = await extractEndToEnd({ purchase_mode_statement: "not_present" }, "Lo voy a financiar, que anticipo necesito?", null);
+  assert.equal(result.status, "ok");
+  assert.equal(result.extraction.purchase_mode_statement, "financed");
+});
+
+test("Family S2.21 (GAP, informal '?' with no inverted '¿'): 'Lo compro al contado, cuanto sale?' -> cash end-to-end", async () => {
+  const result = await extractEndToEnd({ purchase_mode_statement: "not_present" }, "Lo compro al contado, cuanto sale?", null);
+  assert.equal(result.status, "ok");
+  assert.equal(result.extraction.purchase_mode_statement, "cash");
 });
 
 // =====================================================================================
