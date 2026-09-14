@@ -74,6 +74,17 @@ test("lead inbox gets explicit qualification and priority filters without invent
   assert.doesNotMatch(operational, /commercial_temperature\s*=/);
 });
 
+test("administration gets an independent finalized-sales history by month", () => {
+  assert.match(operational, /Histórico de ventas finalizadas/);
+  assert.match(operational, /adminSalesHistoryMonth/);
+  assert.match(operational, /adminSalesHistorySeller/);
+  assert.match(operational, /adminSalesHistoryStatus/);
+  assert.match(operational, /\.not\("finalized_at", "is", null\)/);
+  assert.match(operational, /\.gte\("finalized_at", bounds\.from\)/);
+  assert.match(operational, /\.lt\("finalized_at", bounds\.to\)/);
+  assert.doesNotMatch(operational, /installmentMonth/);
+});
+
 test("manual lead copy reflects the current 18-call, 9-band protocol", () => {
   assert.match(operational, /18 llamadas en 9 franjas comerciales/);
   assert.match(operational, /lunes a sábado/);
