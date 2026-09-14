@@ -9,7 +9,12 @@
     performanceBySeller: {},
     qualification: "",
     priority: "",
-    operationalFilter: ""
+    operationalFilter: "",
+    adminHistoryRows: [],
+    adminHistoryMonth: "",
+    adminHistorySeller: "",
+    adminHistoryStatus: "",
+    adminHistoryLoading: false
   };
   var loading = false;
 
@@ -31,6 +36,58 @@
   function monthStartKey() {
     var today = localDateKey(new Date());
     return today.slice(0, 7) + "-01";
+  }
+
+  function currentMonthKey() {
+    return localDateKey(new Date()).slice(0, 7);
+  }
+
+  function nextMonthKey(month) {
+    var match = String(month || "").match(/^(\d{4})-(\d{2})$/);
+    if (!match) return "";
+    var year = Number(match[1]);
+    var monthNumber = Number(match[2]);
+    if (monthNumber < 1 || monthNumber > 12) return "";
+    if (monthNumber === 12) return String(year + 1) + "-01";
+    return String(year) + "-" + String(monthNumber + 1).padStart(2, "0");
+  }
+
+  function monthBounds(month) {
+    var next = nextMonthKey(month);
+    if (!next) return null;
+    return {
+      from: month + "-01T00:00:00-03:00",
+      to: next + "-01T00:00:00-03:00"
+    };
+  }
+
+  function formatDateTime(value) {
+    if (!value) return "Fecha no informada";
+    return new Intl.DateTimeFormat("es-AR", {
+      timeZone: "America/Argentina/Buenos_Aires",
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
+    }).format(new Date(value));
+  }
+
+  function money(value) {
+    if (value == null || value === "") return "Importe no informado";
+    return "$" + new Intl.NumberFormat("es-AR", { maximumFractionDigits: 0 }).format(Number(value));
+  }
+
+  function administrativeStatusLabel(value) {
+    return {
+      minute_pending: "Minuta pendiente",
+      dealer_scoring: "Scoring concesionario",
+      contract_signature: "Firma de contrato",
+      quality_control: "Control de calidad",
+      formation_group: "Formación de grupo",
+      grouped: "Agrupada",
+      cancelled: "Baja"
+    }[value] || value || "Sin estado";
   }
 
   function isProtocolActive(row) {
@@ -276,6 +333,129 @@
     if (empty && cards.length) empty.hidden = visibleCount > 0;
   }
 
+  function ensureAdministrativeHistory() {
+    var anchor = document.querySelector('.admin-sales-panel[data-supervisor-panel="administration"]');
+    if (!anchor || document.getElementById("adminSalesHistoryPanel")) return;
+
+    var panel = document.createElement("section");
+    panel.id = "adminSalesHistoryPanel";
+    panel.className = "admin-sales-history-panel";
+    panel.dataset.supervisorPanel = "administration";
+    panel.hidden = true;
+    panel.innerHTML =
+      '<div class="section-head admin-sales-history-heading"><div><h2>Histórico de ventas finalizadas</h2><p>Consultá las operaciones por el mes en que fueron finalizadas. Este período es independiente del cumplimiento de cuotas.</p></div><span id="adminSalesHistoryCount">0 ventas</span></div>' +
+      '<div class="admin-sales-history-filters">' +
+        '<label>Mes<input id="adminSalesHistoryMonth" type="month"></label>' +
+        '<label>Vendedor<select id="adminSalesHistorySeller"><option value="">Todos</option></select></label>' +
+        '<label>Estado actual<select id="adminSalesHistoryStatus"><option value="">Todos</option></select></label>' +
+      '</div>' +
+      '<p class="message" id="adminSalesHistoryMessage" role="status"></p>' +
+      '<div class="admin-sales-history-list" id="adminSalesHistoryList"></div>';
+    anchor.insertAdjacentElement("afterend", panel);
+
+    state.adminHistoryMonth = currentMonthKey();
+    document.getElementById("adminSalesHistoryMonth").value = state.adminHistoryMonth;
+    document.getElementById("adminSalesHistoryMonth").addEventListener("change", function (event) {
+      state.adminHistoryMonth = event.target.value;
+      loadAdministrativeHistory();
+    });
+    document.getElementById("adminSalesHistorySeller").addEventListener("change", function (event) {
+      state.adminHistorySeller = event.target.value;
+      renderAdministrativeHistory();
+    });
+    document.getElementById("adminSalesHistoryStatus").addEventListener("change", function (event) {
+      state.adminHistoryStatus = event.target.value;
+      renderAdministrativeHistory();
+    });
+  }
+
+  function populateAdministrativeHistoryFilters() {
+    var sellerSelect = document.getElementById("adminSalesHistorySeller");
+    var statusSelect = document.getElementById("adminSalesHistoryStatus");
+    if (!sellerSelect || !statusSelect) return;
+
+    var sellers = {};
+    var statuses = {};
+    state.adminHistoryRows.forEach(function (sale) {
+      var seller = Array.isArray(sale.seller) ? sale.seller[0] : sale.seller;
+      if (sale.seller_user_id) sellers[sale.seller_user_id] = seller && seller.full_name || "Vendedor";
+      if (sale.status) statuses[sale.status] = administrativeStatusLabel(sale.status);
+    });
+
+    sellerSelect.innerHTML = '<option value="">Todos</option>' + Object.keys(sellers).sort(function (a, b) {
+      return sellers[a].localeCompare(sellers[b], "es-AR");
+    }).map(function (sellerId) {
+      return '<option value="' + escapeHtml(sellerId) + '">' + escapeHtml(sellers[sellerId]) + '</option>';
+    }).join("");
+    if (sellers[state.adminHistorySeller]) sellerSelect.value = state.adminHistorySeller;
+    else state.adminHistorySeller = "";
+
+    statusSelect.innerHTML = '<option value="">Todos</option>' + Object.keys(statuses).sort(function (a, b) {
+      return statuses[a].localeCompare(statuses[b], "es-AR");
+    }).map(function (status) {
+      return '<option value="' + escapeHtml(status) + '">' + escapeHtml(statuses[status]) + '</option>';
+    }).join("");
+    if (statuses[state.adminHistoryStatus]) statusSelect.value = state.adminHistoryStatus;
+    else state.adminHistoryStatus = "";
+  }
+
+  function renderAdministrativeHistory() {
+    var list = document.getElementById("adminSalesHistoryList");
+    var count = document.getElementById("adminSalesHistoryCount");
+    if (!list || !count) return;
+
+    var rows = state.adminHistoryRows.filter(function (sale) {
+      return (!state.adminHistorySeller || sale.seller_user_id === state.adminHistorySeller) &&
+        (!state.adminHistoryStatus || sale.status === state.adminHistoryStatus);
+    });
+    count.textContent = rows.length === 1 ? "1 venta" : rows.length + " ventas";
+    list.innerHTML = rows.length ? rows.map(function (sale) {
+      var seller = Array.isArray(sale.seller) ? sale.seller[0] : sale.seller;
+      var lead = Array.isArray(sale.lead) ? sale.lead[0] : sale.lead;
+      return '<article class="admin-sales-history-card">' +
+        '<div><span class="case-code">' + escapeHtml(sale.case_code) + '</span><strong>' + escapeHtml(lead && lead.customer_name || "Cliente") + '</strong><small>' + escapeHtml(seller && seller.full_name || "Vendedor") + ' · ' + escapeHtml(sale.vehicle || "Vehículo no informado") + '</small></div>' +
+        '<div class="admin-sales-history-result"><strong>' + escapeHtml(money(sale.sale_amount)) + '</strong><span>' + escapeHtml(administrativeStatusLabel(sale.status)) + '</span><small>Finalizada ' + escapeHtml(formatDateTime(sale.finalized_at)) + '</small></div>' +
+      '</article>';
+    }).join("") : '<div class="sales-empty">No hay ventas finalizadas que coincidan con este mes y los filtros seleccionados.</div>';
+  }
+
+  async function loadAdministrativeHistory() {
+    ensureAdministrativeHistory();
+    if (state.adminHistoryLoading) return;
+    var appView = document.getElementById("appView");
+    var message = document.getElementById("adminSalesHistoryMessage");
+    if (!appView || appView.hidden || !message) return;
+
+    var monthInput = document.getElementById("adminSalesHistoryMonth");
+    var month = monthInput && monthInput.value || state.adminHistoryMonth || currentMonthKey();
+    var bounds = monthBounds(month);
+    if (!bounds) return;
+    state.adminHistoryMonth = month;
+    state.adminHistoryLoading = true;
+    message.textContent = "Cargando histórico…";
+    try {
+      var result = await supabaseClient
+        .from("sales_cases")
+        .select("id, case_code, seller_user_id, vehicle, status, sale_amount, finalized_at, seller:profiles!sales_cases_seller_user_id_fkey(full_name, seller_code), lead:leads!sales_cases_lead_id_fkey(customer_name)")
+        .not("finalized_at", "is", null)
+        .gte("finalized_at", bounds.from)
+        .lt("finalized_at", bounds.to)
+        .order("finalized_at", { ascending: false });
+      if (result.error) throw result.error;
+      state.adminHistoryRows = result.data || [];
+      populateAdministrativeHistoryFilters();
+      renderAdministrativeHistory();
+      message.textContent = "";
+    } catch (error) {
+      state.adminHistoryRows = [];
+      populateAdministrativeHistoryFilters();
+      renderAdministrativeHistory();
+      message.textContent = "No se pudo cargar el histórico de ventas: " + (error && error.message || "error desconocido");
+    } finally {
+      state.adminHistoryLoading = false;
+    }
+  }
+
   function fixLegacyCopy() {
     var consent = document.querySelector("#manualLeadForm .consent-check span");
     if (consent && consent.textContent.indexOf("siete intentos") !== -1) {
@@ -288,7 +468,7 @@
     var style = document.createElement("style");
     style.id = "supervisorOperationalStyles";
     style.textContent =
-      ".protocol-progress-label{display:block;margin-top:6px;font-size:10px;font-weight:800;color:#1769aa}.protocol-progress-label.is-overdue,.protocol-progress-label.is-exhausted{color:#c43b24}.lead-operational-filters{display:flex;gap:12px;flex-wrap:wrap;margin:12px 0 18px}.lead-operational-filters label{display:grid;gap:6px;font-size:11px;font-weight:800;text-transform:uppercase;color:#52657a}.lead-operational-filters select{min-width:190px;padding:11px 12px;border:1px solid #d6e1ed;border-radius:12px;background:#fff;font:inherit;text-transform:none}.temperature-preview{opacity:.65}";
+      ".protocol-progress-label{display:block;margin-top:6px;font-size:10px;font-weight:800;color:#1769aa}.protocol-progress-label.is-overdue,.protocol-progress-label.is-exhausted{color:#c43b24}.lead-operational-filters{display:flex;gap:12px;flex-wrap:wrap;margin:12px 0 18px}.lead-operational-filters label{display:grid;gap:6px;font-size:11px;font-weight:800;text-transform:uppercase;color:#52657a}.lead-operational-filters select{min-width:190px;padding:11px 12px;border:1px solid #d6e1ed;border-radius:12px;background:#fff;font:inherit;text-transform:none}.temperature-preview{opacity:.65}.admin-sales-history-panel{margin-top:24px}.admin-sales-history-heading{align-items:flex-end}.admin-sales-history-filters{display:flex;gap:12px;flex-wrap:wrap;margin:12px 0 18px}.admin-sales-history-filters label{display:grid;gap:6px;font-size:11px;font-weight:800;text-transform:uppercase;color:#52657a}.admin-sales-history-filters input,.admin-sales-history-filters select{min-width:190px;padding:11px 12px;border:1px solid #d6e1ed;border-radius:12px;background:#fff;font:inherit;text-transform:none}.admin-sales-history-list{display:grid;gap:10px}.admin-sales-history-card{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px;align-items:center;padding:16px 18px;border:1px solid #dce6f0;border-radius:14px;background:#fff}.admin-sales-history-card>div{display:grid;gap:4px}.admin-sales-history-card strong{font-size:14px}.admin-sales-history-card small,.admin-sales-history-card span{font-size:12px}.admin-sales-history-result{text-align:right}.admin-sales-history-result span{font-weight:800}@media(max-width:760px){.admin-sales-history-card{grid-template-columns:1fr}.admin-sales-history-result{text-align:left}}";
     document.head.appendChild(style);
   }
 
@@ -308,6 +488,7 @@
     installStyles();
     ensureLeadFilters();
     ensureOperationalQuickFilters();
+    ensureAdministrativeHistory();
     fixLegacyCopy();
     installObservers();
     applyLeadFilters();
@@ -315,15 +496,25 @@
     var appView = document.getElementById("appView");
     if (appView) {
       new MutationObserver(function () {
-        if (!appView.hidden) loadOperationalData();
+        if (!appView.hidden) {
+          loadOperationalData();
+          loadAdministrativeHistory();
+        }
       }).observe(appView, { attributes: true, attributeFilter: ["hidden"] });
     }
     var refresh = document.getElementById("refreshButton");
-    if (refresh) refresh.addEventListener("click", function () { window.setTimeout(loadOperationalData, 250); });
+    if (refresh) refresh.addEventListener("click", function () {
+      window.setTimeout(loadOperationalData, 250);
+      window.setTimeout(loadAdministrativeHistory, 250);
+    });
     document.querySelectorAll('[data-supervisor-view="portfolio"]').forEach(function (button) {
       button.addEventListener("click", function () { window.setTimeout(loadOperationalData, 100); });
     });
+    document.querySelectorAll('[data-supervisor-view="administration"]').forEach(function (button) {
+      button.addEventListener("click", function () { window.setTimeout(loadAdministrativeHistory, 100); });
+    });
     window.setTimeout(loadOperationalData, 300);
+    window.setTimeout(loadAdministrativeHistory, 300);
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
