@@ -17,14 +17,52 @@ function mentionMentionsUsedVehicle(vehicle) {
 // Family R4 (2nd audit round): when the SAME turn names both a target-ish vehicle and a
 // trade-in/owned one, which is being asked about cannot come from role priority or model
 // matching alone - a 0km target and a used unit of the SAME model line ("Peugeot 208 0km"
-// target + "Peugeot 208 2019" trade-in) must still be told apart correctly. A mention's own
-// evidence is scoped to that specific mention (Family Q's own doctrine, see
-// mentionMentionsUsedVehicle above), so the mention whose evidence contains the actual
-// price/value-question wording is the one being asked about.
+// target + "Peugeot 208 2019" trade-in) must still be told apart correctly.
+//
+// Family R4 (3rd audit round): a vehicle_mention's evidence is only required to be an exact
+// literal copy of the message, never the minimal span for that entity - so the provider may
+// legally attach the ENTIRE message as evidence to BOTH mentions. Disambiguating by each
+// mention's own evidence (the 2nd round's approach) breaks the moment that happens: both
+// candidates then "answer" the same anchor word. The current message's own text/clauses are
+// the only reliable signal here, not per-mention evidence.
 const PRICE_QUESTION_ANCHOR = /\b(cuanto|toman|tomas|toma|vale|sale|cuesta|precio|valor)\b/;
-function mentionAnsweredByQuestion(vehicle) {
-  const evidenceList = Array.isArray(vehicle?.evidence) ? vehicle.evidence : vehicle?.evidence ? [vehicle.evidence] : [];
-  return [vehicle?.literal, ...evidenceList.map(item => item?.literal)].some(text => PRICE_QUESTION_ANCHOR.test(foldText(text)));
+const POSSESSIVE_OWN_VEHICLE = /\b(el mio|la mia|los mios|las mias|mi auto|mi vehiculo|mi usado|mi camioneta|lo mio)\b/;
+
+function messageClauses(text) {
+  return String(text ?? "").split(/[.?!¿¡]+/).map(part => part.trim()).filter(Boolean);
+}
+function candidateIdentityTokens(vehicle) {
+  return [vehicle?.model_text, vehicle?.brand_text, vehicle?.literal].map(foldText).map(value => value.trim()).filter(Boolean);
+}
+function candidateNamedInClause(candidate, clause) {
+  if (candidateIdentityTokens(candidate.vehicle).some(token => clause.includes(token))) return true;
+  return candidate.usedVehicle && POSSESSIVE_OWN_VEHICLE.test(clause);
+}
+
+// Resolves which of several same-turn subject candidates a price/value question is actually
+// about, using the CURRENT MESSAGE's own clauses - never role priority, model-id matching,
+// or per-mention evidence (which the provider may legally duplicate across mentions). No
+// current-turn message text at all (offline/unit callers - every pre-existing Family Q
+// adapter-level test) preserves the original target-preferring default. A genuine
+// price-question clause that names neither candidate, with both a target-ish and a
+// used-vehicle-ish candidate competing, must never default to the target - it resolves to
+// the used-vehicle candidate so resolvePlanFact's existing guard abstains instead of risking
+// a leaked 0km campaign price.
+function resolveAmbiguousSubject(candidates, filterInput) {
+  const preferTargetLike = () => {
+    const targetLike = candidates.filter(candidate => !candidate.usedVehicle);
+    return targetLike.length === 1 ? targetLike[0] : undefined;
+  };
+  const currentText = foldText(filterInput?.current_message?.text ?? "").trim();
+  if (!currentText) return preferTargetLike();
+  const clauses = messageClauses(currentText);
+  const anchorClauses = clauses.filter(clause => PRICE_QUESTION_ANCHOR.test(clause));
+  if (!anchorClauses.length) return preferTargetLike();
+  for (const clause of anchorClauses) {
+    const named = candidates.filter(candidate => candidateNamedInClause(candidate, clause));
+    if (named.length === 1) return named[0];
+  }
+  return candidates.find(candidate => candidate.usedVehicle) ?? preferTargetLike();
 }
 
 // Family Q2: contextual mentions can legitimately be reconstructed from conversation
@@ -84,25 +122,26 @@ export function semanticExtractionToEngine(extraction, filterInput = {}) {
   // target). Anchored the same way as the structured trade-in fallback above, so a stale
   // contextually-reconstructed mention never becomes today's price-question subject either.
   const usedVehicleRoleMentions = extraction.vehicle_mentions.filter(vehicle => ["trade_in", "owned_only"].includes(vehicle.role) && tradeMentionAnchoredInCurrentMessage(vehicle, filterInput));
-  // Family R4 (2nd audit round): a single subject-ish OR a single used-vehicle-ish mention
-  // resolves directly, same as before. When BOTH kinds are present in the same turn, prefer
-  // whichever one the question's own evidence answers (mentionAnsweredByQuestion); if that is
-  // ambiguous (zero or more than one match), fall back to the target-ish mention, matching
-  // Family Q's original behavior for a turn with no clear question anchor on either side.
+  // A single subject-ish OR a single used-vehicle-ish mention resolves directly. When BOTH
+  // kinds are present in the same turn, resolveAmbiguousSubject (Family R4, 3rd audit round)
+  // decides from the current message's own clauses.
   const subjectCandidates = [
     ...subjectMentions.map(vehicle => ({ vehicle, usedVehicle: false })),
     ...usedVehicleRoleMentions.map(vehicle => ({ vehicle, usedVehicle: true })),
   ];
-  const resolvedSubject = subjectCandidates.length <= 1
-    ? subjectCandidates[0]
-    : (() => {
-        const answered = subjectCandidates.filter(candidate => mentionAnsweredByQuestion(candidate.vehicle));
-        if (answered.length === 1) return answered[0];
-        const targetLike = subjectCandidates.filter(candidate => !candidate.usedVehicle);
-        return targetLike.length === 1 ? targetLike[0] : undefined;
-      })();
+  const resolvedSubject = subjectCandidates.length <= 1 ? subjectCandidates[0] : resolveAmbiguousSubject(subjectCandidates, filterInput);
   const subjectModel = resolvedSubject ? resolvedSubject.vehicle.model_text ?? resolvedSubject.vehicle.literal : undefined;
-  const usedVehicleSubject = resolvedSubject ? resolvedSubject.usedVehicle || mentionMentionsUsedVehicle(resolvedSubject.vehicle) : false;
+  // Family R4 (3rd audit round): once multiple candidates were in play, "is this a used
+  // vehicle" is already fully decided by WHICH candidate won (role-based) - re-testing the
+  // winner's own evidence for "usado" is exactly what let a genuinely unrelated mention's
+  // "usado" wording (duplicated onto every mention's evidence) taint an unrelated target.
+  // The single-candidate path is unaffected and still needs the text check (Family Q's "mi
+  // 208 usado" as the sole mention, with no separate trade-in mention to carry that signal).
+  const usedVehicleSubject = !resolvedSubject
+    ? false
+    : subjectCandidates.length <= 1
+      ? resolvedSubject.usedVehicle || mentionMentionsUsedVehicle(resolvedSubject.vehicle)
+      : resolvedSubject.usedVehicle;
   const correction = extraction.customer_corrections.find(item => item.field === "target_model");
   return {
     query_intent: extraction.query_intent,
