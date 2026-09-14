@@ -506,3 +506,73 @@ test("Family R4 - 29 (critical, Case D - genuine ambiguity): 'Quiero un 208 0km 
   assert.notEqual(result.response_plan.answer_fact?.status, "resolved", "a genuinely ambiguous subject must never resolve ANY price, target's included");
   assert.notEqual(result.response_plan.answer_fact?.value, 43080000);
 });
+
+// --- R4, 4th audit round: query_intent already says "model_value", but the customer's
+// exact phrasing ("¿Que me ofrecen por el 208?", "¿Me lo cotizan?") never contains any of
+// PRICE_QUESTION_ANCHOR's fixed words. Falling back to the target-ish candidate purely
+// because no anchor matched is unsafe whenever a used/trade-in candidate also competes -
+// the safety signal must come from query_intent + candidate shape, not from growing the
+// anchor word list indefinitely.
+
+test("Family R4 - 30 (critical, no anchor word at all): 'Quiero una Partner 0km y tengo un Peugeot 208 2019 para entregar. Que me ofrecen por el 208?' must resolve the 208 trade-in, never a campaign price", () => {
+  const text = "Quiero una Partner 0km y tengo un Peugeot 208 2019 para entregar. Que me ofrecen por el 208?";
+  const raw = { ...emptySemanticExtraction(), query_intent: "model_value", trade_in_intent: "yes", vehicle_mentions: [
+    { literal: "una Partner 0km", brand_text: "Peugeot", model_text: "Partner", version_text: null, role: "target", certainty: "explicit", evidence: [{ source_message_id: "m-current", literal: text }] },
+    { literal: "un Peugeot 208 2019", brand_text: "Peugeot", model_text: "208", version_text: null, role: "trade_in", certainty: "explicit", evidence: [{ source_message_id: "m-current", literal: text }] },
+  ] };
+  const engineExtraction = semanticExtractionToEngine(raw, { current_message: customerTurn(text) });
+  assert.equal(engineExtraction.used_vehicle_subject, true);
+  const result = runTurn(priorTarget("m-partner", "Partner"), engineExtraction, campaignsPartner208);
+  assert.equal(result.response_plan.answer_fact.status, "not_materialized");
+  assert.equal(result.response_plan.answer_fact.value, null);
+});
+
+test("Family R4 - 31 (critical, no anchor word at all): 'Quiero un 208 0km y tengo un Corolla usado. Que me dan por el Corolla?' must resolve the Corolla, never a campaign price", () => {
+  const text = "Quiero un 208 0km y tengo un Corolla usado. Que me dan por el Corolla?";
+  const raw = { ...emptySemanticExtraction(), query_intent: "model_value", trade_in_intent: "yes", vehicle_mentions: [
+    { literal: "un 208 0km", brand_text: "Peugeot", model_text: "208", version_text: null, role: "target", certainty: "explicit", evidence: [{ source_message_id: "m-current", literal: text }] },
+    { literal: "un Corolla usado", brand_text: "Toyota", model_text: "Corolla", version_text: null, role: "trade_in", certainty: "explicit", evidence: [{ source_message_id: "m-current", literal: text }] },
+  ] };
+  const engineExtraction = semanticExtractionToEngine(raw, { current_message: customerTurn(text) });
+  assert.equal(engineExtraction.used_vehicle_subject, true);
+  const result = runTurn(undefined, engineExtraction, campaigns208);
+  assert.equal(result.response_plan.answer_fact.status, "not_materialized");
+  assert.equal(result.response_plan.answer_fact.value, null);
+});
+
+test("Family R4 - 32 (critical, genuinely ambiguous, no anchor, no name at all): 'Quiero un 208 0km y tengo un Corolla usado. Que me ofrecen?' must never resolve a price", () => {
+  const text = "Quiero un 208 0km y tengo un Corolla usado. Que me ofrecen?";
+  const raw = { ...emptySemanticExtraction(), query_intent: "model_value", trade_in_intent: "yes", vehicle_mentions: [
+    { literal: "un 208 0km", brand_text: "Peugeot", model_text: "208", version_text: null, role: "target", certainty: "explicit", evidence: [{ source_message_id: "m-current", literal: text }] },
+    { literal: "un Corolla usado", brand_text: "Toyota", model_text: "Corolla", version_text: null, role: "trade_in", certainty: "explicit", evidence: [{ source_message_id: "m-current", literal: text }] },
+  ] };
+  const engineExtraction = semanticExtractionToEngine(raw, { current_message: customerTurn(text) });
+  const result = runTurn(undefined, engineExtraction, campaigns208);
+  assert.notEqual(result.response_plan.answer_fact?.status, "resolved");
+  assert.notEqual(result.response_plan.answer_fact?.value, 43080000);
+});
+
+test("Family R4 - 33 (regression control, anchor word present): 'Quiero un 208 0km y tengo un Corolla usado. Que precio tiene el 208?' still resolves the target's own campaign", () => {
+  const text = "Quiero un 208 0km y tengo un Corolla usado. Que precio tiene el 208?";
+  const raw = { ...emptySemanticExtraction(), query_intent: "model_value", trade_in_intent: "yes", vehicle_mentions: [
+    { literal: "un 208 0km", brand_text: "Peugeot", model_text: "208", version_text: null, role: "target", certainty: "explicit", evidence: [{ source_message_id: "m-current", literal: text }] },
+    { literal: "un Corolla usado", brand_text: "Toyota", model_text: "Corolla", version_text: null, role: "trade_in", certainty: "explicit", evidence: [{ source_message_id: "m-current", literal: text }] },
+  ] };
+  const engineExtraction = semanticExtractionToEngine(raw, { current_message: customerTurn(text) });
+  assert.equal(engineExtraction.used_vehicle_subject, false);
+  const result = runTurn(undefined, engineExtraction, campaigns208);
+  assert.equal(result.response_plan.answer_fact.status, "resolved");
+  assert.equal(result.response_plan.answer_fact.value, 43080000);
+});
+
+test("Family R4 - 34 (regression control, single target candidate): only target 208, 'Me pasas el valor?' preserves existing behavior", () => {
+  const text = "Me pasas el valor?";
+  const raw = { ...emptySemanticExtraction(), query_intent: "model_value", vehicle_mentions: [
+    { literal: "el 208", brand_text: "Peugeot", model_text: "208", version_text: null, role: "target", certainty: "explicit", evidence: [{ source_message_id: "m-current", literal: text }] },
+  ] };
+  const engineExtraction = semanticExtractionToEngine(raw, { current_message: customerTurn(text) });
+  assert.equal(engineExtraction.used_vehicle_subject, false);
+  const result = runTurn(priorTarget("m-208", "208"), engineExtraction, campaigns208);
+  assert.equal(result.response_plan.answer_fact.status, "resolved");
+  assert.equal(result.response_plan.answer_fact.value, 43080000);
+});
