@@ -341,3 +341,68 @@ test("Family T fix 3 (RED case) - contact_preference fallback must not loop fore
   record = await turn({ state: record.next_state, extraction: {}, message: "todavía nada" }); // exhausted fallback again, already asked_once
   assert.equal(record.response_plan.next_filter_question, null, "must NOT repeat contact_preference a 2nd time via this fallback - go silent instead");
 });
+
+// ---------------------------------------------------------------------------
+// Second-round review corrections (post-245d1f3): 2 concrete, bounded gaps.
+// ---------------------------------------------------------------------------
+
+// Fix A: a field going unresolved -> resolved is not the ONLY way a commercial
+// fact can be new - a customer correcting an already-known field's value is
+// just as real, even though the field's status stays "known" both turns.
+
+test("Family T review fix A (RED case) - trade-in model correction (Fox -> Gol, still 'known' both turns) counts as a new fact and avoids repeating purchase_mode", async () => {
+  let record = await turn({ state: baseState(), extraction: { extracted_fields: { has_trade_in: "yes", trade_in_vehicle: { brand: "Volkswagen", model: "Fox" } } }, message: "Tengo un Volkswagen Fox para entregar" });
+  assert.equal(record.response_plan.next_filter_question, "purchase_mode", "sanity: purchase_mode is asked first");
+
+  record = await turn({ state: record.next_state, extraction: { extracted_fields: { trade_in_vehicle: { model: "Gol" } } }, message: "Perdón, es un Gol, no un Fox" });
+  assert.notEqual(record.response_plan.next_filter_question, "purchase_mode", "a material correction to an already-known field is a new fact - must not be met with an immediate repeat of the unanswered question");
+  assert.equal(record.next_state.trade_in_vehicle.model.value, "Gol");
+});
+
+test("Family T review fix A - repeating the exact same already-known value does NOT count as a new fact", async () => {
+  let record = await turn({ state: baseState(), extraction: { extracted_fields: { has_trade_in: "yes", trade_in_vehicle: { brand: "Volkswagen", model: "Fox" } } }, message: "Tengo un Volkswagen Fox para entregar" });
+  assert.equal(record.response_plan.next_filter_question, "purchase_mode");
+
+  record = await turn({ state: record.next_state, extraction: { extracted_fields: { trade_in_vehicle: { model: "Fox" } } }, message: "Sí, el Fox" });
+  assert.equal(record.response_plan.next_filter_question, "purchase_mode", "restating the identical value is not a new fact - the 2nd identical ask (still <MAX_IDENTICAL_ASKS) remains allowed");
+});
+
+// Fix B: when avoidField is the ONLY eligible field, it must genuinely be
+// avoided this turn - never silently re-selected just because nothing else
+// was left to fall back to.
+
+function onlyPurchaseModeEligibleState() {
+  const state = baseState();
+  state.has_trade_in = field("no", "known", customerProv); // no trade_in_* sub-components activate
+  return state;
+}
+
+test("Family T review fix B (RED case) - avoidField as the ONLY eligible field must not be re-selected immediately", async () => {
+  let record = await turn({ state: onlyPurchaseModeEligibleState(), extraction: {}, message: "hola" });
+  assert.equal(record.response_plan.next_filter_question, "purchase_mode", "sanity: purchase_mode is the only eligible field");
+
+  // A new commercial fact (down_payment_amount) arrives - it does NOT resolve
+  // purchase_mode and does NOT open any new eligible field (down_payment_amount
+  // only gates into profile.components once purchase_mode="financed").
+  record = await turn({ state: record.next_state, extraction: { extracted_fields: { down_payment_amount: 5000000 } }, message: "Tengo 5 millones de anticipo" });
+  assert.notEqual(record.response_plan.next_filter_question, "purchase_mode", "avoidField was the only eligible field - it must still not be re-offered immediately");
+  assert.equal(record.next_state.down_payment_amount.value, 5000000);
+});
+
+test("Family T review fix B - avoidField único eligible + contact_preference not yet asked -> contact_preference", async () => {
+  let record = await turn({ state: onlyPurchaseModeEligibleState(), extraction: {}, message: "hola" });
+  record = await turn({ state: record.next_state, extraction: { extracted_fields: { down_payment_amount: 5000000 } }, message: "Tengo 5 millones de anticipo" });
+  assert.equal(record.response_plan.next_filter_question, "contact_preference");
+  assert.equal(record.next_state.contact_preference.asked_once, true);
+});
+
+test("Family T review fix B - avoidField único eligible + contact_preference already asked_once -> null", async () => {
+  let record = await turn({ state: onlyPurchaseModeEligibleState(), extraction: {}, message: "hola" });
+  record = await turn({ state: record.next_state, extraction: { extracted_fields: { down_payment_amount: 5000000 } }, message: "Tengo 5 millones de anticipo" }); // -> contact_preference, asked_once becomes true
+  assert.equal(record.response_plan.next_filter_question, "contact_preference");
+
+  // Another new fact arrives (still not resolving purchase_mode), triggering the
+  // same avoid-scenario again - contact_preference is already asked_once now.
+  record = await turn({ state: record.next_state, extraction: { extracted_fields: { monthly_installment_capacity: 300000 } }, message: "Y puedo pagar 300 mil por mes" });
+  assert.equal(record.response_plan.next_filter_question, null, "must not repeat contact_preference a 2nd time via this path either - go silent");
+});

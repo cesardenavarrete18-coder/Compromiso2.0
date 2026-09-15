@@ -49,46 +49,79 @@ function chooseNextQuestion(profile, attempts = {}, { avoidField = null, contact
   // Family T (review fix 2): a brand-new commercial fact arriving unanswered is
   // reason enough to avoid the exact field that just went unanswered, even
   // before it is formally exhausted (MAX_IDENTICAL_ASKS stays as the hard
-  // safety net for "no new fact ever arrives"). Per-turn only: if avoiding it
-  // leaves nothing eligible, it is still the real remaining question and must
-  // not be silently dropped.
-  const notAvoided = avoidField ? eligible.filter(key => key !== avoidField) : eligible;
-  const candidates = notAvoided.length ? notAvoided : eligible;
+  // safety net for "no new fact ever arrives").
+  const candidates = avoidField ? eligible.filter(key => key !== avoidField) : eligible;
+  // Family T (review fix B): if avoidField was the ONLY eligible field, that is
+  // NOT a reason to silently fall back to `eligible` and re-offer it anyway -
+  // doing so would defeat the entire invariant (new fact + unanswered question
+  // => never repeat it immediately). It falls through to the exact same
+  // asked_once-gated contact_preference/null behavior used when every field is
+  // exhausted below - a genuinely single, currently-unaskable eligible field is
+  // not meaningfully different from "nothing safe to ask this turn".
   const notExhausted = candidates.find(key => (attempts[key] ?? 0) < MAX_IDENTICAL_ASKS);
   if (notExhausted) return notExhausted;
-  // Family T (review fix 3): every eligible field is exhausted but the profile
-  // is NOT complete - a different situation from the eligible.length===0 branch
-  // above, and it must obey the SAME asked_once discipline Family L already
-  // uses for contact_preference (reusing that one flag, not a second counter
-  // for the same question): ask it once, then go silent (null) rather than
-  // loop it forever. buildCommercialResponsePlan already treats null as "no
-  // question this turn" - no new sentinel needed.
+  // Family T (review fix 3): every remaining candidate is exhausted (or there
+  // were none to begin with, per fix B) but the profile is NOT complete - a
+  // different situation from the eligible.length===0 branch above, and it must
+  // obey the SAME asked_once discipline Family L already uses for
+  // contact_preference (reusing that one flag, not a second counter for the
+  // same question): ask it once, then go silent (null) rather than loop it
+  // forever. buildCommercialResponsePlan already treats null as "no question
+  // this turn" - no new sentinel needed.
   return contactPreferenceAskedOnce ? null : "contact_preference";
 }
 
 const RESOLVED_STATUSES = new Set(["known", "explicitly_unknown"]);
 
-// Family T (review fix 2): the fixed set of commercial fields chooseNextQuestion
-// ever cares about (plus target_model, whose resolution is also a genuine new
-// fact even though it is never itself asked about via this mechanism). Used to
-// detect "did any of these newly resolve this turn", regardless of whether the
-// field happens to be gated into profile.components right now - the real
-// blocker (monthly_installment_capacity resolving while purchase_mode still
-// gates it out of profile.components) is exactly a fact that must count here
-// even though chooseNextQuestion itself never offers a question about it.
-function resolvedCommercialFieldKeys(state) {
-  const keys = new Set();
-  const consider = (key, value) => { if (RESOLVED_STATUSES.has(value?.status)) keys.add(key); };
+const foldIdentity = value => String(value ?? "").normalize("NFD").replace(/\p{Diacritic}/gu, "").trim().toLowerCase();
+
+// Family T (review fix A): a field going unresolved -> resolved is only ONE way
+// a commercial fact can be new. A customer correcting an already-known field
+// ("es un Gol, no un Fox") is just as real a new fact and must not be missed
+// just because the field's status stayed "known" both turns - so the snapshot
+// below carries a normalized MATERIAL value per field, not just its status.
+// Reuses foldIdentity (already used by tradeInIdentityChanged) for strings, so
+// case/accent-only differences are never mistaken for a real correction.
+function materialFieldValue(key, value) {
+  const raw = value?.value;
+  if (key === "target_model") return raw?.model_id ?? `${foldIdentity(raw?.brand)}|${foldIdentity(raw?.model)}`;
+  return typeof raw === "string" ? foldIdentity(raw) : raw;
+}
+
+// Family T (review fix 2 + A): the fixed set of commercial fields chooseNextQuestion
+// ever cares about (plus target_model, whose resolution/correction is also a
+// genuine new fact even though it is never itself asked about via this
+// mechanism). Snapshotting {status, material} - not just presence - lets a later
+// comparison detect BOTH "newly resolved this turn" and "already known but its
+// value materially changed this turn", regardless of whether the field happens
+// to be gated into profile.components right now - the real blocker
+// (monthly_installment_capacity resolving while purchase_mode still gates it
+// out of profile.components) is exactly a fact that must count here even though
+// chooseNextQuestion itself never offers a question about it.
+function commercialFieldSnapshot(state) {
+  const snapshot = new Map();
+  const consider = (key, value) => { if (RESOLVED_STATUSES.has(value?.status)) snapshot.set(key, { status: value.status, material: materialFieldValue(key, value) }); };
   consider("target_model", state.target_model);
   consider("purchase_mode", state.purchase_mode);
   consider("down_payment_amount", state.down_payment_amount);
   consider("monthly_installment_capacity", state.monthly_installment_capacity);
   consider("has_trade_in", state.has_trade_in);
   for (const [key, value] of Object.entries(state.trade_in_vehicle ?? {})) consider(`trade_in_${key}`, value);
-  return keys;
+  return snapshot;
 }
 
-const foldIdentity = value => String(value ?? "").normalize("NFD").replace(/\p{Diacritic}/gu, "").trim().toLowerCase();
+// A field counts as a new/changed commercial fact this turn when it (A) went
+// from unresolved to resolved, or (B) was already resolved but its material
+// value differs from before - never merely because the exact same value was
+// repeated, or because provenance/evidence refreshed with no semantic change
+// (provenance is not part of the snapshot at all, so it can never trigger this).
+function hasNewOrChangedCommercialFact(before, after) {
+  for (const [key, afterEntry] of after) {
+    const beforeEntry = before.get(key);
+    if (!beforeEntry || beforeEntry.material !== afterEntry.material) return true;
+  }
+  return false;
+}
 
 // Family S1: the semantic provider schema names this sub-field "version" (see
 // FILTER_V1_PROVIDER_SCHEMA / vehicle_mentions.version_text), but createFilterState()'s
@@ -197,10 +230,10 @@ export function runFilterV1Integration(input) {
     return Object.freeze({ status: "closed", next_state: state, response_plan: responsePlan, handoff_decision: handoff, resolved_facts: [], warnings, decision_trace: decisionTrace });
   }
 
-  // Family T (review fix 2): snapshot BEFORE this turn's target resolution and
-  // applyExtractedFields mutate state, so it can be compared against the same
-  // snapshot taken again afterward.
-  const resolvedBeforeThisTurn = resolvedCommercialFieldKeys(state);
+  // Family T (review fix 2 + A): snapshot BEFORE this turn's target resolution
+  // and applyExtractedFields mutate state, so it can be compared against the
+  // same snapshot taken again afterward.
+  const commercialFactsBeforeThisTurn = commercialFieldSnapshot(state);
 
   const correctionResolution = resolveModelCandidates(catalog, extraction.customer_corrections?.target_model ? [extraction.customer_corrections.target_model] : []);
   const directMentions = extraction.target_model ? [extraction.target_model] : [];
@@ -275,12 +308,13 @@ export function runFilterV1Integration(input) {
     resolvedFacts.push(answerFact);
   }
 
-  // Family T (review fix 2): a fact that newly resolved THIS turn (comparing the
-  // before/after snapshots, not merely "extraction repeated an already-known
-  // value") is reason enough to avoid immediately re-offering the exact field
-  // that was asked last turn and went unanswered.
-  const resolvedAfterThisTurn = resolvedCommercialFieldKeys(state);
-  const newFactThisTurn = [...resolvedAfterThisTurn].some(key => !resolvedBeforeThisTurn.has(key));
+  // Family T (review fix 2 + A): a fact that newly resolved OR materially
+  // changed THIS turn (comparing the before/after snapshots, not merely
+  // "extraction repeated an already-known value") is reason enough to avoid
+  // immediately re-offering the exact field that was asked last turn and went
+  // unanswered.
+  const commercialFactsAfterThisTurn = commercialFieldSnapshot(state);
+  const newFactThisTurn = hasNewOrChangedCommercialFact(commercialFactsBeforeThisTurn, commercialFactsAfterThisTurn);
   const avoidField = newFactThisTurn ? state.last_asked_field ?? null : null;
 
   const priorAttempts = state.question_attempts ?? {};
