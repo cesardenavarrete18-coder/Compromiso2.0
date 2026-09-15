@@ -3,6 +3,7 @@ import { resolvePlanFact } from "../plan-fact-resolver.mjs";
 import { buildCommercialResponsePlan } from "../commercial-response-policy.mjs";
 import { contactPriority } from "../contact-priority.mjs";
 import { decideHandoff } from "../handoff-policy.mjs";
+import { commerciallyActionable } from "../commercial-actionability.mjs";
 import { adaptCampaignRows } from "./campaign-adapter.mjs";
 import { adaptCatalogRows, resolveModel, resolveModelCandidates } from "./catalog-adapter.mjs";
 import { adaptAcquisitionContext } from "./acquisition-context-adapter.mjs";
@@ -20,7 +21,17 @@ function previousState(input, leadContext) {
   return loaded.status === "loaded" ? loaded : { state: createFilterState(), state_version: 0 };
 }
 
-function chooseNextQuestion(profile) {
+// Family T: the real Shadow Candidate blocker was a field asked with the identical
+// literal 9 times in 11 turns while the customer kept volunteering unrelated facts.
+// 2 is the smallest attempt budget that still lets a genuinely distracted customer
+// ("¿eh? repetime") get the question again once, while guaranteeing the SAME field
+// can never be offered a 3rd time - the observed case never resolved it in 9 tries,
+// so a 3rd identical ask has no empirical support as useful and only degrades the
+// experience. Once exhausted the field is skipped (not cleared) in favor of the next
+// eligible one, so the literal text necessarily changes without inventing new copy.
+const MAX_IDENTICAL_ASKS = 2;
+
+function chooseNextQuestion(profile, attempts = {}) {
   const order = ["model", "purchase_mode", "down_payment_amount", "monthly_installment_capacity", "has_trade_in", "trade_in_brand", "trade_in_model", "trade_in_variant", "trade_in_year", "trade_in_km"];
   // Family L: down_payment_amount/monthly_installment_capacity (gated on
   // purchase_mode="financed") and trade_in_* (gated on has_trade_in="yes") are
@@ -29,7 +40,17 @@ function chooseNextQuestion(profile) {
   // profile.components` distinguishes "not applicable" from "applicable but
   // unresolved" (missing components would otherwise read as `undefined`,
   // which also fails the known/explicitly_unknown check).
-  return order.find(key => key in profile.components && !["known", "explicitly_unknown"].includes(profile.components[key])) ?? "contact_preference";
+  const eligible = order.filter(key => key in profile.components && !["known", "explicitly_unknown"].includes(profile.components[key]));
+  const notExhausted = eligible.find(key => (attempts[key] ?? 0) < MAX_IDENTICAL_ASKS);
+  if (notExhausted) return notExhausted;
+  // Family T: every eligible field has already been asked twice with no answer.
+  // Rather than loop the same literal a 3rd+ time (the observed bug) or go
+  // silent, fall back to the same "nothing left to formally resolve" sentinel
+  // chooseNextQuestion already used when the profile is genuinely complete -
+  // deferring to contact_preference lets a human follow up on their own terms
+  // instead of the filter blocking on one persistently-unanswered field.
+  // (eligible[0] would just be the exhausted field again - never return it here.)
+  return "contact_preference";
 }
 
 const foldIdentity = value => String(value ?? "").normalize("NFD").replace(/\p{Diacritic}/gu, "").trim().toLowerCase();
@@ -176,13 +197,19 @@ export function runFilterV1Integration(input) {
     state.contact_preference = { ...state.contact_preference, ...extraction.contact_preference, timing };
   }
 
-  const handoff = decideHandoff({ humanOwned: false, doNotContact: lead.do_not_contact, noncommercial: extraction.noncommercial === true, explicitHumanRequest: extraction.human_request === true, strongAction: extraction.strong_action === true, profileComplete: profile.complete, contactTiming: timing });
+  // Family T: computed from state AFTER applyExtractedFields so this turn's facts
+  // already count, and deliberately independent of `profile`/`profile.complete` —
+  // see commercial-actionability.mjs for why target_model is never consulted here
+  // (River Plate sentinel) and why only customer_message-provenanced facts count.
+  const actionable = commerciallyActionable(state, { explicitHumanRequest: extraction.human_request === true, strongAction: extraction.strong_action === true });
+  const handoff = decideHandoff({ humanOwned: false, doNotContact: lead.do_not_contact, noncommercial: extraction.noncommercial === true, explicitHumanRequest: extraction.human_request === true, strongAction: extraction.strong_action === true, profileComplete: profile.complete, commerciallyActionable: actionable, contactTiming: timing });
   state.qualification_status = handoff.qualification_status;
   state.handoff_status = handoff.handoff_status;
   state.next_action = handoff.next_action;
   if (handoff.contact_priority) state.contact_priority = handoff.contact_priority;
   decisionTrace.push({ decision: "commercial_profile", result: profile.complete, component_score: profile.component_score });
-  decisionTrace.push({ decision: "handoff", result: handoff.handoff_status, source: extraction.human_request ? "human_request" : extraction.strong_action ? "strong_action" : "profile" });
+  decisionTrace.push({ decision: "commercially_actionable", result: actionable });
+  decisionTrace.push({ decision: "handoff", result: handoff.handoff_status, source: extraction.human_request ? "human_request" : extraction.strong_action ? "strong_action" : actionable ? "commercially_actionable" : "profile" });
 
   // Family L: a complete profile with unknown contact timing is exactly the case
   // decideHandoff marks stop_questions=true (next_action="complete_filter") —
@@ -208,10 +235,21 @@ export function runFilterV1Integration(input) {
     resolvedFacts.push(answerFact);
   }
 
-  const nextQuestion = intent === "ambiguous_initial_amount" ? "clarify_initial_amount_intent" : chooseNextQuestion(profile);
+  const priorAttempts = state.question_attempts ?? {};
+  const nextQuestion = intent === "ambiguous_initial_amount" ? "clarify_initial_amount_intent" : chooseNextQuestion(profile, priorAttempts);
   const responsePlan = (handoff.stop_questions && !askContactPreferenceNow)
     ? buildCommercialResponsePlan({ intent, handoff: handoff.handoff_status })
     : buildCommercialResponsePlan({ intent, answerFact, facts: resolvedFacts, nextFilterQuestion: nextQuestion });
   warnings.push(...responsePlan.warnings);
+  // Family T: only count an attempt when the question is actually the one placed
+  // on the response plan (never for one computed then suppressed by stop_questions
+  // above) - see contracts.mjs's question_attempts doc-comment. Scoped to the
+  // chooseNextQuestion field set only: contact_preference already has its own,
+  // separate asked_once mechanism (Family L), and clarify_initial_amount_intent is
+  // a distinct per-turn clarification, not a persistently-stuck missing field.
+  const askedField = responsePlan.next_filter_question;
+  if (askedField && askedField !== "contact_preference" && askedField !== "clarify_initial_amount_intent") {
+    state.question_attempts = { ...priorAttempts, [askedField]: (priorAttempts[askedField] ?? 0) + 1 };
+  }
   return Object.freeze({ status: "ok", next_state: state, turn_subject_model: factSubject?.model ?? null, response_plan: responsePlan, handoff_decision: handoff, resolved_facts: resolvedFacts, warnings: [...new Set(warnings)], decision_trace: decisionTrace, state_version: version });
 }

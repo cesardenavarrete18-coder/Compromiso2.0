@@ -27,6 +27,13 @@ export function createFilterState({ targetModel = null, targetProvenance = null 
     requested_action: null,
     dnc_acknowledged: false,
     do_not_contact: false,
+    // Family T: minimal per-field attempt count so chooseNextQuestion can stop
+    // repeating the identical question forever (see filter-v1-engine.mjs).
+    // Keyed by the same field names chooseNextQuestion cycles through; a field
+    // absent here has never been asked. Incremented only when a question is
+    // actually the one placed on response_plan.next_filter_question - never for
+    // a question that gets suppressed (stop_questions) before composition.
+    question_attempts: {},
   };
 }
 
