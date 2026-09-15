@@ -33,11 +33,18 @@ export function handoffReply(modelInterest: string) {
 }
 
 export function shouldForceHandoff(priorAssistantReplies: number, qualificationStatus: string) {
-  return priorAssistantReplies >= 4 && qualificationStatus !== "unqualified";
+  // Safety valve only: do not interrupt exploratory/follow-up conversations.
+  // V1 may force a handoff only after a genuinely qualified conversation has
+  // already become unusually long.
+  return priorAssistantReplies >= 7 && qualificationStatus === "qualified";
 }
 
-export function hasKnownCommercialOperation(conversation: string) {
-  return /\b(contado|financiaci[oó]n|financiar|financiado|plan(?:\s+de\s+ahorro)?|anticipo|entrego?\s+(?:un\s+)?usado|tengo\s+(?:un\s+)?usado|cr[eé]dito)\b/i.test(String(conversation || ""));
+export function hasKnownCommercialOperation(_conversation: string) {
+  // TEMP V1 hotfix: the mere presence of contado/financiación/anticipo/usado
+  // must not automatically convert the lead to qualified or strip the model's
+  // next question. Qualification is now governed by the model plus the admin
+  // rules, so direct customer questions can be answered before handoff.
+  return false;
 }
 
 export function qualifyAndHandoffReply(reply: string, modelInterest: string) {
