@@ -257,3 +257,87 @@ test("Family T - real case regression (anonymized): initial interest -> trade-in
   assert.equal(record.response_plan.next_filter_question, null, "must stop asking once actionable");
   assert.equal(record.next_state.commercial_profile.complete, false, "profile stays formally incomplete - purchase_mode was never declared, and must never be inferred");
 });
+
+// ---------------------------------------------------------------------------
+// Independent review corrections (post-01833e9): 3 concrete fixes, RED-first.
+// ---------------------------------------------------------------------------
+
+// Fix 1: contact_priority must stay decoupled from commercial actionability -
+// contactPriority() already owns temporal urgency (now/same_day/unknown/future
+// -> hot/warm/cold), and decideHandoff's commerciallyActionable branch must
+// never redefine it as a hardcoded "warm".
+
+test("Family T fix 1 - actionable + timing unknown preserves 'cold' from contactPriority(), not a hardcoded urgency", () => {
+  const result = runTurn({
+    state: (() => { const s = baseState(); s.has_trade_in = field("yes", "known", customerProv); s.trade_in_vehicle.brand = field("Volkswagen", "known", customerProv); s.trade_in_vehicle.model = field("Fox", "known", customerProv); s.monthly_installment_capacity = field(300000, "known", customerProv); return s; })(),
+    extraction: {},
+  });
+  assert.equal(result.handoff_decision.handoff_status, "ready");
+  assert.equal(result.handoff_decision.contact_priority, null, "decideHandoff must not assert a priority here - the engine's own contactPriority() computation must survive");
+  assert.equal(result.next_state.contact_priority, "cold", "unknown timing must stay cold even though the lead is actionable");
+});
+
+test("Family T fix 1 - actionable + timing 'now' preserves 'hot' from contactPriority()", () => {
+  const state = (() => { const s = baseState(); s.has_trade_in = field("yes", "known", customerProv); s.trade_in_vehicle.brand = field("Volkswagen", "known", customerProv); s.trade_in_vehicle.model = field("Fox", "known", customerProv); s.monthly_installment_capacity = field(300000, "known", customerProv); return s; })();
+  const result = runFilterV1Integration({
+    lead: {}, conversation_control: { mode: "ai" }, catalog, campaigns: [], bank_offers: [],
+    previous_filter_state: state, expected_state_version: state.state_version ?? 0,
+    current_extraction: { contact_preference: { timing: "now", literal: "ahora", callback_at: null } },
+    event_at: "2026-01-05T15:00:00Z",
+  });
+  assert.equal(result.handoff_decision.handoff_status, "ready");
+  assert.equal(result.next_state.contact_priority, "hot");
+});
+
+test("Family T fix 1 - actionable + timing 'same_day' preserves 'warm' from contactPriority() (not a coincidental hardcode)", () => {
+  const state = (() => { const s = baseState(); s.has_trade_in = field("yes", "known", customerProv); s.trade_in_vehicle.brand = field("Volkswagen", "known", customerProv); s.trade_in_vehicle.model = field("Fox", "known", customerProv); s.monthly_installment_capacity = field(300000, "known", customerProv); return s; })();
+  const result = runFilterV1Integration({
+    lead: {}, conversation_control: { mode: "ai" }, catalog, campaigns: [], bank_offers: [],
+    previous_filter_state: state, expected_state_version: state.state_version ?? 0,
+    current_extraction: { contact_preference: { timing: "same_day", literal: "hoy a la tarde", callback_at: null } },
+    event_at: "2026-01-05T15:00:00Z",
+  });
+  assert.equal(result.handoff_decision.handoff_status, "ready");
+  assert.equal(result.next_state.contact_priority, "warm");
+});
+
+// Fix 2: a new commercial fact this turn must not be met with an immediate
+// repeat of the exact question that went unanswered, even before
+// MAX_IDENTICAL_ASKS(=2) is reached.
+
+test("Family T fix 2 (RED case) - T1 asks purchase_mode; T2 customer doesn't answer it but declares has_trade_in=yes -> must NOT immediately re-ask purchase_mode", async () => {
+  let record = await turn({ state: baseState(), extraction: {}, message: "hola" });
+  assert.equal(record.response_plan.next_filter_question, "purchase_mode", "sanity: T1 asks purchase_mode");
+
+  record = await turn({ state: record.next_state, extraction: { extracted_fields: { has_trade_in: "yes" } }, message: "Tengo un usado para entregar" });
+  assert.notEqual(record.response_plan.next_filter_question, "purchase_mode", "a brand-new fact this turn must not be met with the identical unanswered question again - not even on the 2nd attempt");
+});
+
+test("Family T fix 2 - repeating with NO new fact is still allowed up to MAX_IDENTICAL_ASKS (safety net unchanged)", async () => {
+  let record = await turn({ state: baseState(), extraction: {}, message: "hola" });
+  assert.equal(record.response_plan.next_filter_question, "purchase_mode");
+  record = await turn({ state: record.next_state, extraction: {}, message: "no sé todavía" });
+  assert.equal(record.response_plan.next_filter_question, "purchase_mode", "no new fact arrived - the 2nd identical ask is still allowed");
+});
+
+// Fix 3: contact_preference used as the exhausted-fields fallback must obey
+// the SAME asked_once discipline as Family L's own contact-preference ask -
+// reusing the flag, not a new counter.
+
+test("Family T fix 3 (RED case) - contact_preference fallback must not loop forever once already asked_once", async () => {
+  // Force a profile where purchase_mode is the ONLY eligible field (model known,
+  // has_trade_in explicitly "no" so no trade_in_* sub-components activate).
+  const state = baseState();
+  state.has_trade_in = field("no", "known", customerProv);
+
+  let record = await turn({ state, extraction: {}, message: "hola" }); // attempt 1
+  assert.equal(record.response_plan.next_filter_question, "purchase_mode");
+  record = await turn({ state: record.next_state, extraction: {}, message: "no sé" }); // attempt 2 (exhausted after this)
+  assert.equal(record.response_plan.next_filter_question, "purchase_mode");
+  record = await turn({ state: record.next_state, extraction: {}, message: "mmm" }); // exhausted fallback -> contact_preference, 1st time
+  assert.equal(record.response_plan.next_filter_question, "contact_preference");
+  assert.equal(record.next_state.contact_preference.asked_once, true, "the fallback ask must mark the SAME asked_once flag Family L uses");
+
+  record = await turn({ state: record.next_state, extraction: {}, message: "todavía nada" }); // exhausted fallback again, already asked_once
+  assert.equal(record.response_plan.next_filter_question, null, "must NOT repeat contact_preference a 2nd time via this fallback - go silent instead");
+});

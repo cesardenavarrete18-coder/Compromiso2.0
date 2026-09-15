@@ -31,7 +31,7 @@ function previousState(input, leadContext) {
 // eligible one, so the literal text necessarily changes without inventing new copy.
 const MAX_IDENTICAL_ASKS = 2;
 
-function chooseNextQuestion(profile, attempts = {}) {
+function chooseNextQuestion(profile, attempts = {}, { avoidField = null, contactPreferenceAskedOnce = false } = {}) {
   const order = ["model", "purchase_mode", "down_payment_amount", "monthly_installment_capacity", "has_trade_in", "trade_in_brand", "trade_in_model", "trade_in_variant", "trade_in_year", "trade_in_km"];
   // Family L: down_payment_amount/monthly_installment_capacity (gated on
   // purchase_mode="financed") and trade_in_* (gated on has_trade_in="yes") are
@@ -41,16 +41,51 @@ function chooseNextQuestion(profile, attempts = {}) {
   // unresolved" (missing components would otherwise read as `undefined`,
   // which also fails the known/explicitly_unknown check).
   const eligible = order.filter(key => key in profile.components && !["known", "explicitly_unknown"].includes(profile.components[key]));
-  const notExhausted = eligible.find(key => (attempts[key] ?? 0) < MAX_IDENTICAL_ASKS);
+  // Family L (unchanged): a genuinely complete profile has no eligible field left
+  // at all - the engine's own askContactPreferenceNow/stop_questions machinery
+  // already governs asked_once for this exact case, so this branch must not
+  // change: it still unconditionally hands back "contact_preference" here.
+  if (eligible.length === 0) return "contact_preference";
+  // Family T (review fix 2): a brand-new commercial fact arriving unanswered is
+  // reason enough to avoid the exact field that just went unanswered, even
+  // before it is formally exhausted (MAX_IDENTICAL_ASKS stays as the hard
+  // safety net for "no new fact ever arrives"). Per-turn only: if avoiding it
+  // leaves nothing eligible, it is still the real remaining question and must
+  // not be silently dropped.
+  const notAvoided = avoidField ? eligible.filter(key => key !== avoidField) : eligible;
+  const candidates = notAvoided.length ? notAvoided : eligible;
+  const notExhausted = candidates.find(key => (attempts[key] ?? 0) < MAX_IDENTICAL_ASKS);
   if (notExhausted) return notExhausted;
-  // Family T: every eligible field has already been asked twice with no answer.
-  // Rather than loop the same literal a 3rd+ time (the observed bug) or go
-  // silent, fall back to the same "nothing left to formally resolve" sentinel
-  // chooseNextQuestion already used when the profile is genuinely complete -
-  // deferring to contact_preference lets a human follow up on their own terms
-  // instead of the filter blocking on one persistently-unanswered field.
-  // (eligible[0] would just be the exhausted field again - never return it here.)
-  return "contact_preference";
+  // Family T (review fix 3): every eligible field is exhausted but the profile
+  // is NOT complete - a different situation from the eligible.length===0 branch
+  // above, and it must obey the SAME asked_once discipline Family L already
+  // uses for contact_preference (reusing that one flag, not a second counter
+  // for the same question): ask it once, then go silent (null) rather than
+  // loop it forever. buildCommercialResponsePlan already treats null as "no
+  // question this turn" - no new sentinel needed.
+  return contactPreferenceAskedOnce ? null : "contact_preference";
+}
+
+const RESOLVED_STATUSES = new Set(["known", "explicitly_unknown"]);
+
+// Family T (review fix 2): the fixed set of commercial fields chooseNextQuestion
+// ever cares about (plus target_model, whose resolution is also a genuine new
+// fact even though it is never itself asked about via this mechanism). Used to
+// detect "did any of these newly resolve this turn", regardless of whether the
+// field happens to be gated into profile.components right now - the real
+// blocker (monthly_installment_capacity resolving while purchase_mode still
+// gates it out of profile.components) is exactly a fact that must count here
+// even though chooseNextQuestion itself never offers a question about it.
+function resolvedCommercialFieldKeys(state) {
+  const keys = new Set();
+  const consider = (key, value) => { if (RESOLVED_STATUSES.has(value?.status)) keys.add(key); };
+  consider("target_model", state.target_model);
+  consider("purchase_mode", state.purchase_mode);
+  consider("down_payment_amount", state.down_payment_amount);
+  consider("monthly_installment_capacity", state.monthly_installment_capacity);
+  consider("has_trade_in", state.has_trade_in);
+  for (const [key, value] of Object.entries(state.trade_in_vehicle ?? {})) consider(`trade_in_${key}`, value);
+  return keys;
 }
 
 const foldIdentity = value => String(value ?? "").normalize("NFD").replace(/\p{Diacritic}/gu, "").trim().toLowerCase();
@@ -162,6 +197,11 @@ export function runFilterV1Integration(input) {
     return Object.freeze({ status: "closed", next_state: state, response_plan: responsePlan, handoff_decision: handoff, resolved_facts: [], warnings, decision_trace: decisionTrace });
   }
 
+  // Family T (review fix 2): snapshot BEFORE this turn's target resolution and
+  // applyExtractedFields mutate state, so it can be compared against the same
+  // snapshot taken again afterward.
+  const resolvedBeforeThisTurn = resolvedCommercialFieldKeys(state);
+
   const correctionResolution = resolveModelCandidates(catalog, extraction.customer_corrections?.target_model ? [extraction.customer_corrections.target_model] : []);
   const directMentions = extraction.target_model ? [extraction.target_model] : [];
   const customerResolution = resolveModelCandidates(catalog, directMentions);
@@ -235,21 +275,40 @@ export function runFilterV1Integration(input) {
     resolvedFacts.push(answerFact);
   }
 
+  // Family T (review fix 2): a fact that newly resolved THIS turn (comparing the
+  // before/after snapshots, not merely "extraction repeated an already-known
+  // value") is reason enough to avoid immediately re-offering the exact field
+  // that was asked last turn and went unanswered.
+  const resolvedAfterThisTurn = resolvedCommercialFieldKeys(state);
+  const newFactThisTurn = [...resolvedAfterThisTurn].some(key => !resolvedBeforeThisTurn.has(key));
+  const avoidField = newFactThisTurn ? state.last_asked_field ?? null : null;
+
   const priorAttempts = state.question_attempts ?? {};
-  const nextQuestion = intent === "ambiguous_initial_amount" ? "clarify_initial_amount_intent" : chooseNextQuestion(profile, priorAttempts);
+  const contactPreferenceAskedOnce = Boolean(state.contact_preference?.asked_once);
+  const nextQuestion = intent === "ambiguous_initial_amount" ? "clarify_initial_amount_intent" : chooseNextQuestion(profile, priorAttempts, { avoidField, contactPreferenceAskedOnce });
   const responsePlan = (handoff.stop_questions && !askContactPreferenceNow)
     ? buildCommercialResponsePlan({ intent, handoff: handoff.handoff_status })
     : buildCommercialResponsePlan({ intent, answerFact, facts: resolvedFacts, nextFilterQuestion: nextQuestion });
   warnings.push(...responsePlan.warnings);
-  // Family T: only count an attempt when the question is actually the one placed
-  // on the response plan (never for one computed then suppressed by stop_questions
-  // above) - see contracts.mjs's question_attempts doc-comment. Scoped to the
-  // chooseNextQuestion field set only: contact_preference already has its own,
-  // separate asked_once mechanism (Family L), and clarify_initial_amount_intent is
-  // a distinct per-turn clarification, not a persistently-stuck missing field.
+  // Family T: only count an attempt / record last_asked_field when the question
+  // is actually the one placed on the response plan (never for one computed
+  // then suppressed by stop_questions above) - see contracts.mjs's doc-comments.
+  // Scoped to the chooseNextQuestion field set only: contact_preference has its
+  // own, separate asked_once mechanism (Family L, extended below), and
+  // clarify_initial_amount_intent is a per-turn clarification, not a
+  // persistently-stuck missing field.
   const askedField = responsePlan.next_filter_question;
   if (askedField && askedField !== "contact_preference" && askedField !== "clarify_initial_amount_intent") {
     state.question_attempts = { ...priorAttempts, [askedField]: (priorAttempts[askedField] ?? 0) + 1 };
+    state.last_asked_field = askedField;
+  }
+  // Family T (review fix 3): the exhausted-fields fallback (chooseNextQuestion's
+  // last branch) reuses contact_preference's own asked_once flag rather than a
+  // second counter for the same question - mark it here, the one place that
+  // fires only once the question is truly the one emitted. A no-op when
+  // askContactPreferenceNow already set it above for the complete-profile case.
+  if (askedField === "contact_preference" && !state.contact_preference?.asked_once) {
+    state.contact_preference = { ...state.contact_preference, asked_once: true };
   }
   return Object.freeze({ status: "ok", next_state: state, turn_subject_model: factSubject?.model ?? null, response_plan: responsePlan, handoff_decision: handoff, resolved_facts: resolvedFacts, warnings: [...new Set(warnings)], decision_trace: decisionTrace, state_version: version });
 }

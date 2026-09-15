@@ -8,6 +8,12 @@ export function decideHandoff({ humanOwned = false, doNotContact = false, noncom
   // "qualified" (interest + partial disclosure is not a confirmed purchase decision -
   // the qualification-semantics axiom from the P0 diagnostic still holds), only that
   // there is enough real, customer-declared signal to stop asking and hand off.
-  if (commerciallyActionable) return Object.freeze({ handoff_status: "ready", next_action: "handoff", qualification_status: "follow_up", contact_priority: "warm", stop_questions: true });
+  // contact_priority is deliberately left null (not asserted here): it already has
+  // its own, independent temporal-urgency semantics owned by contactPriority()
+  // (now/same_day/next_business_day/unknown/future -> hot/warm/cold), computed by
+  // the engine before decideHandoff runs and only overwritten when this object's
+  // contact_priority is truthy - commercial actionability must never redefine
+  // urgency on its own.
+  if (commerciallyActionable) return Object.freeze({ handoff_status: "ready", next_action: "handoff", qualification_status: "follow_up", contact_priority: null, stop_questions: true });
   return Object.freeze({ handoff_status: "not_ready", next_action: "ask_next_missing_component", qualification_status: "follow_up", contact_priority: null, stop_questions: false });
 }

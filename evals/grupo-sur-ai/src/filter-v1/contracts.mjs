@@ -34,6 +34,11 @@ export function createFilterState({ targetModel = null, targetProvenance = null 
     // actually the one placed on response_plan.next_filter_question - never for
     // a question that gets suppressed (stop_questions) before composition.
     question_attempts: {},
+    // Family T (review fix 2): the single most recent chooseNextQuestion field
+    // actually asked, so a brand-new commercial fact arriving unanswered can be
+    // recognized as a reason to avoid repeating THAT exact field immediately -
+    // a softer, per-turn signal than question_attempts' hard 2-strikes cutoff.
+    last_asked_field: null,
   };
 }
 
