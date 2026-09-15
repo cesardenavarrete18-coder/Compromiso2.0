@@ -34,6 +34,21 @@ function chooseNextQuestion(profile) {
 
 const foldIdentity = value => String(value ?? "").normalize("NFD").replace(/\p{Diacritic}/gu, "").trim().toLowerCase();
 
+// Family S1: the semantic provider schema names this sub-field "version" (see
+// FILTER_V1_PROVIDER_SCHEMA / vehicle_mentions.version_text), but createFilterState()'s
+// canonical trade_in_vehicle - and deriveCommercialProfile's derived trade_in_variant
+// component - only ever declared "variant". semantic-engine-adapter.mjs passed "version"
+// through unrenamed, so it was added to state ad hoc as a SECOND, parallel key: "variant"
+// stayed permanently missing (never fed by anything) while "version" silently carried the
+// real data, making trade_in_variant an unreachable required component whenever
+// has_trade_in="yes". Renamed here, at the semantic-extraction -> state boundary, rather
+// than inside the adapter itself, so the adapter's own output keeps using "version" (Family
+// O's adapter-level tests assert that key by name) and only ONE canonical key ("variant")
+// ever reaches state - never both.
+function canonicalizeTradeInVehicleKeys(extractedTradeInVehicle) {
+  return Object.fromEntries(Object.entries(extractedTradeInVehicle).map(([key, value]) => [key === "version" ? "variant" : key, value]));
+}
+
 // Family R3: brand/model are the vehicle's canonical identity. When either is restated this
 // turn with a value that differs from what is already known, the customer switched which
 // used vehicle they are offering - any OTHER attribute (variant/version, year, km) carried
@@ -57,10 +72,11 @@ function applyExtractedFields(state, extracted = {}) {
     if (extracted[key] !== undefined) state[key] = field(extracted[key], "known", source);
   }
   if (extracted.trade_in_vehicle) {
-    if (tradeInIdentityChanged(state, extracted.trade_in_vehicle)) {
+    const tradeInVehicle = canonicalizeTradeInVehicleKeys(extracted.trade_in_vehicle);
+    if (tradeInIdentityChanged(state, tradeInVehicle)) {
       for (const key of Object.keys(state.trade_in_vehicle)) state.trade_in_vehicle[key] = missingField();
     }
-    for (const [key, value] of Object.entries(extracted.trade_in_vehicle)) {
+    for (const [key, value] of Object.entries(tradeInVehicle)) {
       if (value?.semantic_status === "explicitly_unknown") state.trade_in_vehicle[key] = field(null, "explicitly_unknown", { ...source, evidence: value.evidence ?? null });
       // Family O: a null/undefined value is never "known" - field() would throw
       // KNOWN_FIELD_REQUIRES_VALUE. Leave the sub-field untouched (still missing) rather
