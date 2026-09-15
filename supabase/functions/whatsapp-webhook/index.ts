@@ -467,6 +467,11 @@ Deno.serve(async (request) => {
                 OPENAI_FILTER_MODEL: Deno.env.get("OPENAI_FILTER_MODEL") ?? "",
                 OPENAI_V2_RESPONSE_MODEL: Deno.env.get("OPENAI_V2_RESPONSE_MODEL") ?? "",
                 OPENAI_API_KEY: Deno.env.get("OPENAI_API_KEY") ?? "",
+                // V2 Shadow Production Candidate: identifies exactly which commit of
+                // filter-v1/ai-v2-shadow produced this run, so distinct deploys can never share
+                // a runtime_fingerprint silently. Set at deploy time alongside the wrapper's own
+                // pinned GitHub import - never derived or guessed here.
+                AI_V2_CANDIDATE_COMMIT: Deno.env.get("AI_V2_CANDIDATE_COMMIT") ?? "",
               },
               lead: existing || { id: leadId, metadata: {} },
               inboundMessage: { id: inboundResult.data.id, body, created_at: inboundResult.data.created_at },
