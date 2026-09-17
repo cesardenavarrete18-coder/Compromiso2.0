@@ -119,13 +119,21 @@ export function generateCandidateReply(input) {
   const resolvedFact = renderAnswerFact(plan.answer_fact);
   if (resolvedFact) return finalize(questionCopy ? `${resolvedFact} ${questionCopy}` : resolvedFact);
 
-  // Legacy fallback: only when the engine did not resolve any plan.answer_fact
-  // for this turn (e.g. a standalone unit test exercising the shadow's own
-  // multi-campaign structured facts directly, without a full engine response
-  // plan). Never overrides a real plan.answer_fact — that check already
-  // returned above.
+  // Legacy fallback (Blocker 1, pre-canary fix): only when the caller supplied
+  // no response_plan at all — a genuinely legacy/offline caller that never had
+  // an engine turn to consult (e.g. a standalone unit test exercising the
+  // shadow's own multi-campaign structured facts directly). In production the
+  // real engine always produces a response_plan, so this path never runs
+  // there. It must never re-infer commercial intent from raw currentMessage
+  // over a REAL response_plan, even when that plan decided to answer nothing
+  // this turn (answer_fact=null) — that is still the engine's decision, not an
+  // absence of one. Real incident: engine produced answer_fact=null,
+  // next_filter_question="contact_preference" for a message that happened to
+  // contain "cuotas"; the Composer answered a price anyway, contradicting the
+  // engine.
+  const hasResponsePlan = input.responsePlan != null;
   const legacyFacts = input.allowedFacts?.commercial_facts;
-  if (legacyFacts && /precio|cuanto (?:sale|cuesta|vale)|cuotas?/.test(fold(message))) {
+  if (!hasResponsePlan && legacyFacts && /precio|cuanto (?:sale|cuesta|vale)|cuotas?/.test(fold(message))) {
     if (legacyFacts.status === "single") {
       const offer = legacyFacts.alternatives[0];
       return finalize(offer.final_price ? `El precio informado es ${money(offer.final_price)}.` : offer.installment ? `La cuota informada es ${money(offer.installment)}.` : "No tengo un valor estructurado vigente para confirmarte.");

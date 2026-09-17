@@ -12,7 +12,15 @@ import { decideShadowScheduling } from "../../../supabase/functions/_shared/ai-v
 // already suppresses correctly on controlAfterAnalysis), only shadow's own record.
 
 const targetState = () => ({ target_model: { status: "known", value: { model_id: "208", model: "Peugeot 208", brand: "Peugeot" } }, has_trade_in: { status: "unknown", value: null } });
-const fakeEngine = input => ({ status: input.conversation_control?.mode === "human" ? "suppressed" : "ok", next_state: input.previous_filter_state ?? targetState(), response_plan: { prompt: "¿Cómo pensás comprarlo?" }, handoff_decision: {}, resolved_facts: [], warnings: [] });
+// response_plan uses the real contract field (next_filter_question), not a
+// stray "prompt" key - that key was never read by response-generator.mjs, so
+// this mock's "produces a candidate" sanity checks were unknowingly relying on
+// the legacy commercial_facts regex fallback (matching "cuánto sale" in the
+// inbound body below) rather than a well-formed response plan. Blocker 1's
+// fix (legacy fallback only runs when no response_plan is supplied at all)
+// correctly disables that accidental path once a real response_plan object is
+// present, so this mock must supply one that actually asks something.
+const fakeEngine = input => ({ status: input.conversation_control?.mode === "human" ? "suppressed" : "ok", next_state: input.previous_filter_state ?? targetState(), response_plan: { next_filter_question: "purchase_mode" }, handoff_decision: {}, resolved_facts: [], warnings: [] });
 const fakeSemantic = async () => ({ extraction: { trade_in_intent: "not_present", evidence: {} } });
 function memoryRepo() {
   const runs = new Map();
