@@ -30,7 +30,10 @@ MIGRATIONS = (
 REPO = pathlib.Path(__file__).resolve().parents[3]
 SOURCE_TESTS = REPO / "tests/m1"
 BOOTSTRAP_ONLY_SUITES = {"installation.integration.test.mjs", "schema-baseline-b.integration.test.mjs"}
-SCHEMA_BOOTSTRAPS = {"schema-baseline-b.integration.test.mjs": "fixtures/schema-baseline-b/bootstrap.sql"}
+SCHEMA_BOOTSTRAPS = {
+    "schema-baseline-b.integration.test.mjs": "fixtures/schema-baseline-b/bootstrap.sql",
+    "assignment-boundary.integration.test.mjs": "fixtures/schema-baseline-b/bootstrap.sql",
+}
 SOURCE_MANIFEST = REPO / "m1-validation-source-manifest.json"
 
 
@@ -159,6 +162,7 @@ def main():
     if len(test_files) > 1:
         return run_independent_suites(args, test_files, node)
     suite_name = test_files[0].name
+    boundary_diagnostic = suite_name == "assignment-boundary.integration.test.mjs"
     bootstrap_only = suite_name in BOOTSTRAP_ONLY_SUITES
     bootstrap_user = "supabase_admin" if suite_name in SCHEMA_BOOTSTRAPS else "m1_test_admin"
     bootstrap_relative = SCHEMA_BOOTSTRAPS.get(suite_name, "fixtures/bootstrap.sql")
@@ -173,7 +177,8 @@ def main():
     report = {
         "harness": "crm-m1-unix-seccomp/2", "run_id": str(uuid.uuid4()), "suite": suite_name,
         "source_manifest": source_manifest,
-        "fixture_layer": "schema_only_baseline_b" if suite_name in SCHEMA_BOOTSTRAPS else "minimal_synthetic_auth_crm",
+        "fixture_layer": ("B_plus_synthetic_boundary_data" if boundary_diagnostic else
+                          "schema_only_baseline_b" if suite_name in SCHEMA_BOOTSTRAPS else "minimal_synthetic_auth_crm"),
         "bootstrap_source": f"tests/m1/{bootstrap_relative}", "bootstrap_sha256": digest(bootstrap_source), "cluster_per_suite": True,
         "bootstrap_user": bootstrap_user,
         "migration_installation": "suite_controlled_verbatim" if bootstrap_only else "runner_installs_all_three",
@@ -188,7 +193,9 @@ def main():
         "guard_precompiled": bool(args.guard_binary),
         "suite_sha256": {str(p.relative_to(REPO)): digest(p) for p in test_files},
         "limits": [
-            ("Schema-only baseline B: coverage is limited to its explicit manifest; no production rows or Supabase REST gateway."
+            ("Schema B plus synthetic boundary diagnostic data; not M1-04A acceptance, no production rows or Supabase REST gateway."
+             if boundary_diagnostic else
+             "Schema-only baseline B: coverage is limited to its explicit manifest; no production rows or Supabase REST gateway."
              if suite_name in SCHEMA_BOOTSTRAPS else "Synthetic auth/profiles/leads fixture; not a full production schema or Supabase REST gateway."),
             "No legacy handler, trigger, frontend or external sender is changed or certified.",
             "Database effects occur only in the disposable local cluster.",

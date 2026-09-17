@@ -1,0 +1,32 @@
+{
+  "classification": "DIAGNOSTIC_ONLY_NOT_M104A_ACCEPTANCE",
+  "base_fixture": "schema-baseline-b (unchanged)",
+  "project_ref": "cdtvuovsqwwopktdahgj",
+  "captured_at": [
+    "2026-09-17T19:43:33.749586+00:00",
+    "2026-09-17T19:44:18.7468+00:00"
+  ],
+  "source_sha256": "7a77d5f8f3859613131bf87244d3c7fb7e0dfce9c0cb5d56f54db1869a6e4240",
+  "overlay_sha256": "54516871fa828fe83a7ca28f4790999a576195c1abaccc26544b178d60e5e17a",
+  "included": [
+    "private.current_user_can_manage_whatsapp(uuid)",
+    "public.whatsapp_conversation_controls: columns, constraints, indexes, triggers, RLS and observed ACL",
+    "private.cancel_whatsapp_follow_up_on_takeover() (body and ACL preserved)"
+  ],
+  "inherited_from_b": [
+    "profiles",
+    "leads",
+    "auth.uid()",
+    "private.set_updated_at()",
+    "legacy assignment-to-cycle trigger chain"
+  ],
+  "not_exercised": [
+    "human-mode trigger branch and whatsapp_follow_up_reminders dependency",
+    "mode-changing RPC",
+    "events table",
+    "human-message Edge Function",
+    "any provider or external network call",
+    "AssignLead / TransferLead handlers (not implemented)"
+  ],
+  "method": "Two privileged local owner UPDATE observations with all captured leads triggers enabled; authenticated seller capability and SELECT checked before/after; actual private conversation row compared byte-for-byte as jsonb."
+}

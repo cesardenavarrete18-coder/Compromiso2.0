@@ -1,0 +1,197 @@
+{
+  "schema": "crm.m104a.assignment-boundary/1",
+  "head_initial": "292e1f8a435a07d104e990b129707fbfffc1a795",
+  "branch": "feat/m1-runtime-foundation",
+  "user_certified_foundation": true,
+  "authorization_file": "Pasted markdown(20260917-193622).md",
+  "authorization_sha256": "54bff44adb2957fbb3e3abc488dc5461f64843232493551452663c9b40353197",
+  "m104a_status": "BLOCKED_SCOPE_NOT_IMPLEMENTED",
+  "m104a_candidate_migration": null,
+  "m104a_commands_implemented": [],
+  "m104a_acceptance_cases": {
+    "passed": 0,
+    "blocked_or_pending": 27,
+    "primary_blocker": 19
+  },
+  "postgres_version": "17.6",
+  "isolated_execution_status": "PASS",
+  "foundation_regression_subtests": 54,
+  "diagnostic_subtests_observed_conflict": 6,
+  "sql_subtests_total": 60,
+  "tap_entries_including_5_parents": 65,
+  "suites": [
+    {
+      "suite": "assignment-boundary.integration.test.mjs",
+      "subtests": 6,
+      "status": "PASS",
+      "purpose": "OBSERVED_CONFLICT_NOT_M104A_ACCEPTANCE",
+      "counts_including_parent": {
+        "tests": 7,
+        "pass": 7,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "run_id": "cd17e8b5-63fa-42aa-b435-6ec3e89bcffe"
+    },
+    {
+      "suite": "foundation.integration.test.mjs",
+      "subtests": 26,
+      "status": "PASS",
+      "purpose": "CERTIFIED_FOUNDATION_REGRESSION",
+      "counts_including_parent": {
+        "tests": 27,
+        "pass": 27,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "run_id": "7b41c669-ba2e-4f53-a526-da35afb5af65"
+    },
+    {
+      "suite": "installation.integration.test.mjs",
+      "subtests": 9,
+      "status": "PASS",
+      "purpose": "CERTIFIED_FOUNDATION_REGRESSION",
+      "counts_including_parent": {
+        "tests": 10,
+        "pass": 10,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "run_id": "39f8344a-8195-4e78-9e15-f5cfd4666897"
+    },
+    {
+      "suite": "schema-baseline-b.integration.test.mjs",
+      "subtests": 9,
+      "status": "PASS",
+      "purpose": "CERTIFIED_FOUNDATION_REGRESSION",
+      "counts_including_parent": {
+        "tests": 10,
+        "pass": 10,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "run_id": "eee0c25b-63f4-44c0-8237-9228de36dd8b"
+    },
+    {
+      "suite": "security.integration.test.mjs",
+      "subtests": 10,
+      "status": "PASS",
+      "purpose": "CERTIFIED_FOUNDATION_REGRESSION",
+      "counts_including_parent": {
+        "tests": 11,
+        "pass": 11,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "run_id": "cbec8779-b280-42f7-b440-b247d1fd5b0e"
+    }
+  ],
+  "observations": [
+    {
+      "classification": "PASS_DIAGNOSTIC_OBSERVED_CONFLICT",
+      "operation": "privileged_local_owner_update_A_to_B_NOT_TransferLead",
+      "before": {
+        "owner": "a1040000-0000-4000-8000-000000000001",
+        "seller_b": {
+          "lead_count": 0,
+          "control_count": 0,
+          "can_manage_whatsapp": false
+        },
+        "channel": {
+          "authority_epoch": 17,
+          "dialogue_policy": "paused",
+          "channel_authority": "disabled"
+        }
+      },
+      "after": {
+        "owner": "a1040000-0000-4000-8000-000000000002",
+        "seller_b": {
+          "lead_count": 1,
+          "control_count": 1,
+          "can_manage_whatsapp": true
+        },
+        "channel": {
+          "authority_epoch": 17,
+          "dialogue_policy": "paused",
+          "channel_authority": "disabled"
+        }
+      },
+      "actual_channel_row_unchanged": true,
+      "mode_rpc_called": false,
+      "provider_called": false
+    },
+    {
+      "classification": "PASS_DIAGNOSTIC_OBSERVED_CONFLICT",
+      "operation": "privileged_local_owner_update_null_to_B_NOT_AssignLead",
+      "before": {
+        "owner": null,
+        "seller_b": {
+          "lead_count": 0,
+          "control_count": 0,
+          "can_manage_whatsapp": false
+        },
+        "channel": {
+          "authority_epoch": 23,
+          "dialogue_policy": "paused",
+          "channel_authority": "disabled"
+        }
+      },
+      "after": {
+        "owner": "a1040000-0000-4000-8000-000000000002",
+        "seller_b": {
+          "lead_count": 1,
+          "control_count": 1,
+          "can_manage_whatsapp": true
+        },
+        "channel": {
+          "authority_epoch": 23,
+          "dialogue_policy": "paused",
+          "channel_authority": "disabled"
+        }
+      },
+      "actual_channel_row_unchanged": true,
+      "mode_rpc_called": false,
+      "provider_called": false
+    }
+  ],
+  "pure": {
+    "foundation": "23/23 PASS",
+    "legacy_regression": "131/131 PASS",
+    "evidence": [
+      "evidence/foundation-pure.json",
+      "evidence/legacy-regression.json"
+    ]
+  },
+  "fixture_error_corrected": {
+    "run": "run01-fixture-failure",
+    "sqlstate": "23514",
+    "constraint": "leads_assignment_complete",
+    "cause": "Synthetic owned lead lacked assigned_at",
+    "fix": "Supply assigned_at for owned initial fixture and null->B observation; preserve timestamp for A->B",
+    "product_changes": false
+  },
+  "remaining_blockers": {
+    "BL-01": "OPEN",
+    "BL-02": "OPEN",
+    "BL-03": "OPEN",
+    "BL-04": "OPEN",
+    "BL-05": "OPEN",
+    "BL-06": "OPEN_P0",
+    "BL-07": "OPEN",
+    "BL-08": "OPEN"
+  },
+  "production_changes": false,
+  "legacy_files_modified": [],
+  "push_pr_merge_deploy": false,
+  "scope_exception_proposed": "Restrictive channel-permission guard for runtime-assignment cohort only; pre-cutover unchanged, no implicit re-enable on pause, management unchanged. Requires explicit user authorization."
+}

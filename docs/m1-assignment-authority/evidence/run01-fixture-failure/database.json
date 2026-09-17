@@ -1,0 +1,627 @@
+{
+  "harness": "crm-m1-unix-seccomp/2",
+  "status": "FAIL",
+  "cluster_per_suite": true,
+  "fixture_layers": [
+    "B_plus_synthetic_boundary_data",
+    "minimal_synthetic_auth_crm",
+    "schema_only_baseline_b"
+  ],
+  "remote_database": false,
+  "timeout_scale": 3.0,
+  "suites": [
+    {
+      "harness": "crm-m1-unix-seccomp/2",
+      "run_id": "8354cf69-51bb-48d0-9282-5dbc3872e19f",
+      "suite": "assignment-boundary.integration.test.mjs",
+      "source_manifest": {
+        "sha256": "850b3299f6f5db7f7eabef8e9914dfe93ad5a362ea7769d8c854b1bf2272c936",
+        "git_base_revision": "292e1f8a435a07d104e990b129707fbfffc1a795",
+        "source_has_uncommitted_changes": true
+      },
+      "fixture_layer": "B_plus_synthetic_boundary_data",
+      "bootstrap_source": "tests/m1/fixtures/schema-baseline-b/bootstrap.sql",
+      "bootstrap_sha256": "8ea22a1e8b4cd6559732331ca66ac2728d90f58e11ada4f344c398040608c5e6",
+      "cluster_per_suite": true,
+      "bootstrap_user": "supabase_admin",
+      "migration_installation": "runner_installs_all_three",
+      "timeout_scale": 3.0,
+      "status": "FAIL",
+      "remote_database": false,
+      "external_egress": false,
+      "requested_database_major": 17,
+      "requested_uid": 65534,
+      "database_started": true,
+      "migrations_applied": [
+        "20260917154844_m1_runtime_authority_foundation.sql",
+        "20260917154854_m1_private_capabilities.sql",
+        "20260917154905_m1_command_receipts_events.sql"
+      ],
+      "integration_tests_executed": true,
+      "migration_sha256": {
+        "20260917154844_m1_runtime_authority_foundation.sql": "6dbb4e1c6a0c8da22de49424fdf965f46e74e85dad0e822a6201b2ec31f09d49",
+        "20260917154854_m1_private_capabilities.sql": "6154b2dd302d1f5793ea5c9b4151a1423f4f5b956e688ae7089bf8f00b80cd60",
+        "20260917154905_m1_command_receipts_events.sql": "433615402b82cbc5b85cd4f168c0b96ff48658de84cfdadad56b02616f7bf9e7"
+      },
+      "postgres_binary_sha256": "23cd174849b273064c47d581b55be596be2f5cf0ee5d3e76c0146e2464bf873a",
+      "guard_source_sha256": "589dc0aece8cee8e104a7c3a8c27d6e13ca858518bdf74d0454e67c90cb53fd9",
+      "guard_binary_sha256": "d48cf6d387092c71323d7e6a24af26c582d7bc0103545cd3614641e9608183f7",
+      "guard_precompiled": true,
+      "suite_sha256": {
+        "tests/m1/assignment-boundary.integration.test.mjs": "949b42dd89d01aab7085474b56349bfd424d39c895f6967513e77c3c4f13c9a6"
+      },
+      "limits": [
+        "Schema B plus synthetic boundary diagnostic data; not M1-04A acceptance, no production rows or Supabase REST gateway.",
+        "No legacy handler, trigger, frontend or external sender is changed or certified.",
+        "Database effects occur only in the disposable local cluster."
+      ],
+      "postgres_version": "postgres (PostgreSQL) 17.6",
+      "unix_socket_available": true,
+      "uid_map": [
+        [
+          0,
+          0,
+          4294967295
+        ]
+      ],
+      "gid_map": [
+        [
+          0,
+          0,
+          4294967295
+        ]
+      ],
+      "environment_keys": [
+        "LANG",
+        "LC_ALL",
+        "LD_LIBRARY_PATH",
+        "M1_LIBPQ_PATH",
+        "M1_PYTHON_BIN",
+        "M1_TEST_BOOTSTRAP_USER",
+        "M1_TEST_DATABASE",
+        "M1_TEST_FIXTURE_DIR",
+        "M1_TEST_ISOLATED",
+        "M1_TEST_MIGRATION_DIR",
+        "M1_TEST_PORT",
+        "M1_TEST_RUN_ID",
+        "M1_TEST_SOCKET_DIR",
+        "M1_TEST_TIMEOUT_SCALE",
+        "PATH",
+        "PGPASSFILE",
+        "PGSERVICEFILE",
+        "PYTHONNOUSERSITE",
+        "TZ"
+      ],
+      "isolation": {
+        "ok": true,
+        "columns": [
+          "listen_addresses",
+          "marker",
+          "unix_socket"
+        ],
+        "rows": [
+          [
+            "",
+            "8354cf69-51bb-48d0-9282-5dbc3872e19f",
+            "t"
+          ]
+        ],
+        "affected": "1",
+        "id": 1
+      },
+      "migration_role": {
+        "ok": true,
+        "columns": [
+          "rolname",
+          "rolsuper",
+          "rolcreaterole",
+          "rolbypassrls"
+        ],
+        "rows": [
+          [
+            "postgres",
+            "f",
+            "t",
+            "t"
+          ]
+        ],
+        "affected": "1",
+        "id": 1
+      },
+      "test_exit_code": 1,
+      "tap": "TAP version 13\n# Subtest: DIAGNOSTIC: assignment grants existing WhatsApp capability despite unchanged disabled runtime channel (NOT M1-04A acceptance)\n    # Subtest: D00: captured helper, controls structure/ACL/RLS/triggers and real B identity are reproduced\n    ok 1 - D00: captured helper, controls structure/ACL/RLS/triggers and real B identity are reproduced\n      ---\n      duration_ms: 1165.78813\n      type: 'test'\n      ...\n    # Subtest: D01: synthetic invitations/users/leads and two actual disabled conversation rows are installed with legacy triggers enabled\n    not ok 2 - D01: synthetic invitations/users/leads and two actual disabled conversation rows are installed with legacy triggers enabled\n      ---\n      duration_ms: 197.73939\n      type: 'test'\n      location: '/tmp/crm-m1-sk4fof25/tests/m1/assignment-boundary.integration.test.mjs:88:13'\n      failureType: 'testCodeFailure'\n      error: |-\n        23514: ERROR:  new row for relation \"leads\" violates check constraint \"leads_assignment_complete\"\n        DETAIL:  Failing row contains (b1040000-0000-4000-8000-000000000001, 000000104001, Synthetic transfer lead, whatsapp, null, null, follow_up, normal, , null, null, pending_supervisor, general_inbox, a1040000-0000-4000-8000-000000000001, null, null, 2026-09-17 19:49:07.922833+00, null, {}, 2026-09-17 19:49:07.922833+00, 2026-09-17 19:49:07.922833+00, 9829164c-d103-4c6b-b75f-2b1134b440a7, null, , f, null, , f, null, ).\n        \n      code: 'ERR_TEST_FAILURE'\n      stack: |-\n        file:///tmp/crm-m1-sk4fof25/tests/m1/harness/pg-session.mjs:62:44\n        process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n        async TestContext.<anonymous> (file:///tmp/crm-m1-sk4fof25/tests/m1/assignment-boundary.integration.test.mjs:89:7)\n        async Test.run (node:internal/test_runner/test:1389:7)\n        async TestContext.<anonymous> (file:///tmp/crm-m1-sk4fof25/tests/m1/assignment-boundary.integration.test.mjs:88:5)\n        async Test.run (node:internal/test_runner/test:1389:7)\n        async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)\n      ...\n    # Subtest: D02: before owner change, target B has neither WhatsApp capability nor lead/control visibility\n    not ok 3 - D02: before owner change, target B has neither WhatsApp capability nor lead/control visibility\n      ---\n      duration_ms: 191.39225\n      type: 'test'\n      location: '/tmp/crm-m1-sk4fof25/tests/m1/assignment-boundary.integration.test.mjs:115:13'\n      failureType: 'testCodeFailure'\n      error: |-\n        Expected values to be strictly equal:\n        + actual - expected\n        \n        + null\n        - 'a1040000-0000-4000-8000-000000000001'\n        \n      code: 'ERR_ASSERTION'\n      name: 'AssertionError'\n      expected: 'a1040000-0000-4000-8000-000000000001'\n      actual: ~\n      operator: 'strictEqual'\n      stack: |-\n        TestContext.<anonymous> (file:///tmp/crm-m1-sk4fof25/tests/m1/assignment-boundary.integration.test.mjs:118:14)\n        process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n        async Test.run (node:internal/test_runner/test:1389:7)\n        async TestContext.<anonymous> (file:///tmp/crm-m1-sk4fof25/tests/m1/assignment-boundary.integration.test.mjs:115:5)\n        async Test.run (node:internal/test_runner/test:1389:7)\n        async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)\n      ...\n    # Subtest: D03: PASS_DIAGNOSTIC_OBSERVED_CONFLICT \u2014 A\u2192B owner UPDATE grants B capability while actual channel row/epoch stay identical\n    not ok 4 - D03: PASS_DIAGNOSTIC_OBSERVED_CONFLICT \u2014 A\u2192B owner UPDATE grants B capability while actual channel row/epoch stay identical\n      ---\n      duration_ms: 110.04968\n      type: 'test'\n      location: '/tmp/crm-m1-sk4fof25/tests/m1/assignment-boundary.integration.test.mjs:128:13'\n      failureType: 'testCodeFailure'\n      error: |-\n        Expected values to be strictly equal:\n        + actual - expected\n        \n        + null\n        - 'a1040000-0000-4000-8000-000000000002'\n        \n      code: 'ERR_ASSERTION'\n      name: 'AssertionError'\n      expected: 'a1040000-0000-4000-8000-000000000002'\n      actual: ~\n      operator: 'strictEqual'\n      stack: |-\n        TestContext.<anonymous> (file:///tmp/crm-m1-sk4fof25/tests/m1/assignment-boundary.integration.test.mjs:136:14)\n        process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n        async Test.run (node:internal/test_runner/test:1389:7)\n        async TestContext.<anonymous> (file:///tmp/crm-m1-sk4fof25/tests/m1/assignment-boundary.integration.test.mjs:128:5)\n        async Test.run (node:internal/test_runner/test:1389:7)\n        async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)\n      ...\n    # Subtest: D04: PASS_DIAGNOSTIC_OBSERVED_CONFLICT \u2014 null\u2192B initial owner UPDATE has the same independent channel-permission coupling\n    not ok 5 - D04: PASS_DIAGNOSTIC_OBSERVED_CONFLICT \u2014 null\u2192B initial owner UPDATE has the same independent channel-permission coupling\n      ---\n      duration_ms: 83.93197\n      type: 'test'\n      location: '/tmp/crm-m1-sk4fof25/tests/m1/assignment-boundary.integration.test.mjs:144:13'\n      failureType: 'testCodeFailure'\n      error: |-\n        Expected values to be strictly equal:\n        + actual - expected\n        \n        + null\n        - 'a1040000-0000-4000-8000-000000000002'\n        \n      code: 'ERR_ASSERTION'\n      name: 'AssertionError'\n      expected: 'a1040000-0000-4000-8000-000000000002'\n      actual: ~\n      operator: 'strictEqual'\n      stack: |-\n        TestContext.<anonymous> (file:///tmp/crm-m1-sk4fof25/tests/m1/assignment-boundary.integration.test.mjs:150:14)\n        process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n        async Test.run (node:internal/test_runner/test:1389:7)\n        async TestContext.<anonymous> (file:///tmp/crm-m1-sk4fof25/tests/m1/assignment-boundary.integration.test.mjs:144:5)\n        async Test.run (node:internal/test_runner/test:1389:7)\n        async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)\n      ...\n    # Subtest: D05: real authenticated role remains unable to access private runtime or activate the installed gateway\n    not ok 6 - D05: real authenticated role remains unable to access private runtime or activate the installed gateway\n      ---\n      duration_ms: 141.32544\n      type: 'test'\n      location: '/tmp/crm-m1-sk4fof25/tests/m1/assignment-boundary.integration.test.mjs:157:13'\n      failureType: 'testCodeFailure'\n      error: |-\n        Expected values to be strictly deep-equal:\n        + actual - expected\n        \n        + {\n        +   legacy_control: null,\n        +   private_state: null\n        + }\n        - undefined\n        \n      code: 'ERR_ASSERTION'\n      name: 'AssertionError'\n      actual:\n        private_state: ~\n        legacy_control: ~\n      operator: 'deepStrictEqual'\n      stack: |-\n        TestContext.<anonymous> (file:///tmp/crm-m1-sk4fof25/tests/m1/assignment-boundary.integration.test.mjs:168:14)\n        process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n        async Test.run (node:internal/test_runner/test:1389:7)\n        async TestContext.<anonymous> (file:///tmp/crm-m1-sk4fof25/tests/m1/assignment-boundary.integration.test.mjs:157:5)\n        async Test.run (node:internal/test_runner/test:1389:7)\n        async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)\n      ...\n    1..6\nnot ok 1 - DIAGNOSTIC: assignment grants existing WhatsApp capability despite unchanged disabled runtime channel (NOT M1-04A acceptance)\n  ---\n  duration_ms: 2069.36882\n  type: 'test'\n  location: '/tmp/crm-m1-sk4fof25/tests/m1/assignment-boundary.integration.test.mjs:60:1'\n  failureType: 'subtestsFailed'\n  error: '5 subtests failed'\n  code: 'ERR_TEST_FAILURE'\n  ...\n1..1\n# tests 7\n# suites 0\n# pass 1\n# fail 6\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 3379.44702\n",
+      "stderr": "",
+      "duration_seconds": 22.836,
+      "temporary_cluster_retained": null
+    },
+    {
+      "harness": "crm-m1-unix-seccomp/2",
+      "run_id": "1a719a3c-2868-495d-85d0-d389994c173b",
+      "suite": "foundation.integration.test.mjs",
+      "source_manifest": {
+        "sha256": "850b3299f6f5db7f7eabef8e9914dfe93ad5a362ea7769d8c854b1bf2272c936",
+        "git_base_revision": "292e1f8a435a07d104e990b129707fbfffc1a795",
+        "source_has_uncommitted_changes": true
+      },
+      "fixture_layer": "minimal_synthetic_auth_crm",
+      "bootstrap_source": "tests/m1/fixtures/bootstrap.sql",
+      "bootstrap_sha256": "9b907e47b5de7aee4b80947ec19aef34440a128cfd86a8b0b7077eadcac7caae",
+      "cluster_per_suite": true,
+      "bootstrap_user": "m1_test_admin",
+      "migration_installation": "runner_installs_all_three",
+      "timeout_scale": 3.0,
+      "status": "PASS",
+      "remote_database": false,
+      "external_egress": false,
+      "requested_database_major": 17,
+      "requested_uid": 65534,
+      "database_started": true,
+      "migrations_applied": [
+        "20260917154844_m1_runtime_authority_foundation.sql",
+        "20260917154854_m1_private_capabilities.sql",
+        "20260917154905_m1_command_receipts_events.sql"
+      ],
+      "integration_tests_executed": true,
+      "migration_sha256": {
+        "20260917154844_m1_runtime_authority_foundation.sql": "6dbb4e1c6a0c8da22de49424fdf965f46e74e85dad0e822a6201b2ec31f09d49",
+        "20260917154854_m1_private_capabilities.sql": "6154b2dd302d1f5793ea5c9b4151a1423f4f5b956e688ae7089bf8f00b80cd60",
+        "20260917154905_m1_command_receipts_events.sql": "433615402b82cbc5b85cd4f168c0b96ff48658de84cfdadad56b02616f7bf9e7"
+      },
+      "postgres_binary_sha256": "23cd174849b273064c47d581b55be596be2f5cf0ee5d3e76c0146e2464bf873a",
+      "guard_source_sha256": "589dc0aece8cee8e104a7c3a8c27d6e13ca858518bdf74d0454e67c90cb53fd9",
+      "guard_binary_sha256": "d48cf6d387092c71323d7e6a24af26c582d7bc0103545cd3614641e9608183f7",
+      "guard_precompiled": true,
+      "suite_sha256": {
+        "tests/m1/foundation.integration.test.mjs": "0ae08b7e9d6dd05fe377442a5de5ad26fff5296753484307eb5d05561446dd84"
+      },
+      "limits": [
+        "Synthetic auth/profiles/leads fixture; not a full production schema or Supabase REST gateway.",
+        "No legacy handler, trigger, frontend or external sender is changed or certified.",
+        "Database effects occur only in the disposable local cluster."
+      ],
+      "postgres_version": "postgres (PostgreSQL) 17.6",
+      "unix_socket_available": true,
+      "uid_map": [
+        [
+          0,
+          0,
+          4294967295
+        ]
+      ],
+      "gid_map": [
+        [
+          0,
+          0,
+          4294967295
+        ]
+      ],
+      "environment_keys": [
+        "LANG",
+        "LC_ALL",
+        "LD_LIBRARY_PATH",
+        "M1_LIBPQ_PATH",
+        "M1_PYTHON_BIN",
+        "M1_TEST_BOOTSTRAP_USER",
+        "M1_TEST_DATABASE",
+        "M1_TEST_FIXTURE_DIR",
+        "M1_TEST_ISOLATED",
+        "M1_TEST_MIGRATION_DIR",
+        "M1_TEST_PORT",
+        "M1_TEST_RUN_ID",
+        "M1_TEST_SOCKET_DIR",
+        "M1_TEST_TIMEOUT_SCALE",
+        "PATH",
+        "PGPASSFILE",
+        "PGSERVICEFILE",
+        "PYTHONNOUSERSITE",
+        "TZ"
+      ],
+      "isolation": {
+        "ok": true,
+        "columns": [
+          "listen_addresses",
+          "marker",
+          "unix_socket"
+        ],
+        "rows": [
+          [
+            "",
+            "1a719a3c-2868-495d-85d0-d389994c173b",
+            "t"
+          ]
+        ],
+        "affected": "1",
+        "id": 1
+      },
+      "migration_role": {
+        "ok": true,
+        "columns": [
+          "rolname",
+          "rolsuper",
+          "rolcreaterole",
+          "rolbypassrls"
+        ],
+        "rows": [
+          [
+            "postgres",
+            "f",
+            "t",
+            "t"
+          ]
+        ],
+        "affected": "1",
+        "id": 1
+      },
+      "test_exit_code": 0,
+      "tap": "TAP version 13\n# Subtest: M1-01/02/03: isolated PostgreSQL foundation\n    # Subtest: ISOLATION: PostgreSQL17, Unix socket, restricted migrator and six private tables\n    ok 1 - ISOLATION: PostgreSQL17, Unix socket, restricted migrator and six private tables\n      ---\n      duration_ms: 1644.14576\n      type: 'test'\n      ...\n    # Subtest: M14: no API role can directly read/write new tables or execute the installed gateway\n    ok 2 - M14: no API role can directly read/write new tables or execute the installed gateway\n      ---\n      duration_ms: 236.16751\n      type: 'test'\n      ...\n    # Subtest: M12: default gates observe; no authoritative/quiescing state can be installed\n    ok 3 - M12: default gates observe; no authoritative/quiescing state can be installed\n      ---\n      duration_ms: 95.02637\n      type: 'test'\n      ...\n    # Subtest: M13: future recovery/internal send purposes cannot become ready or authoritative\n    ok 4 - M13: future recovery/internal send purposes cannot become ready or authoritative\n      ---\n      duration_ms: 95.21355\n      type: 'test'\n      ...\n    # Subtest: M15: new conversation structure stays disabled/paused; seller cannot acquire channel authority\n    ok 5 - M15: new conversation structure stays disabled/paused; seller cannot acquire channel authority\n      ---\n      duration_ms: 82.88417\n      type: 'test'\n      ...\n    # Subtest: STOCK-HOOK: even fixture-ready gates cannot activate the installed handler\n    ok 6 - STOCK-HOOK: even fixture-ready gates cannot activate the installed handler\n      ---\n      duration_ms: 335.07699\n      type: 'test'\n      ...\n    # Subtest: M01: same command_id and same intent have one logical result\n    ok 7 - M01: same command_id and same intent have one logical result\n      ---\n      duration_ms: 197.92226\n      type: 'test'\n      ...\n    # Subtest: M02: same idempotency key/hash with a new command UUID replays the original\n    ok 8 - M02: same idempotency key/hash with a new command UUID replays the original\n      ---\n      duration_ms: 179.5173\n      type: 'test'\n      ...\n    # Subtest: M03: a changed payload under the same key conflicts without another effect\n    ok 9 - M03: a changed payload under the same key conflicts without another effect\n      ---\n      duration_ms: 168.09236\n      type: 'test'\n      ...\n    # Subtest: M04: stale aggregate/assignment versions reject before applying\n    ok 10 - M04: stale aggregate/assignment versions reject before applying\n      ---\n      duration_ms: 192.18963\n      type: 'test'\n      ...\n    # Subtest: M05: caller actor/role cannot be supplied in envelope or payload\n    ok 11 - M05: caller actor/role cannot be supplied in envelope or payload\n      ---\n      duration_ms: 160.36098\n      type: 'test'\n      ...\n    # Subtest: M06: inactive user cannot apply a command or recover an old replay\n    ok 12 - M06: inactive user cannot apply a command or recover an old replay\n      ---\n      duration_ms: 255.65941\n      type: 'test'\n      ...\n    # Subtest: M07: foreign, unassigned and formerly owned scopes are denied without receipt disclosure\n    ok 13 - M07: foreign, unassigned and formerly owned scopes are denied without receipt disclosure\n      ---\n      duration_ms: 347.43351\n      type: 'test'\n      ...\n    # Subtest: M08: effect/event/receipt/version commit atomically and SQL hash matches the actual JS contract\n    ok 14 - M08: effect/event/receipt/version commit atomically and SQL hash matches the actual JS contract\n      ---\n      duration_ms: 235.56645\n      type: 'test'\n      ...\n    # Subtest: M09: backend crash before COMMIT leaves no partial receipt/event/effect\n    ok 15 - M09: backend crash before COMMIT leaves no partial receipt/event/effect\n      ---\n      duration_ms: 979.95\n      type: 'test'\n      ...\n    # Subtest: M10: retry after COMMIT from a fresh connection returns the committed result\n    ok 16 - M10: retry after COMMIT from a fresh connection returns the committed result\n      ---\n      duration_ms: 829.5314\n      type: 'test'\n      ...\n    # Subtest: M11: two real sessions race on one command; observed lock wait, exactly one application\n    ok 17 - M11: two real sessions race on one command; observed lock wait, exactly one application\n      ---\n      duration_ms: 1144.90507\n      type: 'test'\n      ...\n    # Subtest: FAILPOINT: exception after synthetic DML rolls back every command effect\n    ok 18 - FAILPOINT: exception after synthetic DML rolls back every command effect\n      ---\n      duration_ms: 99.96436\n      type: 'test'\n      ...\n    # Subtest: GATE-VECTOR: changing one domain epoch does not borrow authority from the other\n    ok 19 - GATE-VECTOR: changing one domain epoch does not borrow authority from the other\n      ---\n      duration_ms: 126.58789\n      type: 'test'\n      ...\n    # Subtest: VERSION-EXHAUSTED: safe integer ceiling cannot overflow into an imprecise JS version\n    ok 20 - VERSION-EXHAUSTED: safe integer ceiling cannot overflow into an imprecise JS version\n      ---\n      duration_ms: 99.33857\n      type: 'test'\n      ...\n    # Subtest: BUSINESS-DEDUPE: different keys cannot duplicate the synthetic operation identity\n    ok 21 - BUSINESS-DEDUPE: different keys cannot duplicate the synthetic operation identity\n      ---\n      duration_ms: 141.40937\n      type: 'test'\n      ...\n    # Subtest: DEFERRED-GUARD: evaluating receipts cannot commit\n    ok 22 - DEFERRED-GUARD: evaluating receipts cannot commit\n      ---\n      duration_ms: 145.01343\n      type: 'test'\n      ...\n    # Subtest: APPEND-ONLY: terminal receipts/events/policy reject mutation and TRUNCATE\n    ok 23 - APPEND-ONLY: terminal receipts/events/policy reject mutation and TRUNCATE\n      ---\n      duration_ms: 122.82991\n      type: 'test'\n      ...\n    # Subtest: DEFERRED-EVENT: an event cannot later attach to a rejected receipt\n    ok 24 - DEFERRED-EVENT: an event cannot later attach to a rejected receipt\n      ---\n      duration_ms: 214.90905\n      type: 'test'\n      ...\n    # Subtest: CONCURRENT-CAS: distinct intents at one version produce one effect and one conflict\n    ok 25 - CONCURRENT-CAS: distinct intents at one version produce one effect and one conflict\n      ---\n      duration_ms: 1212.5691\n      type: 'test'\n      ...\n    # Subtest: FINAL-INVARIANTS: no evaluating receipt/orphan event; new channel authority remains closed\n    ok 26 - FINAL-INVARIANTS: no evaluating receipt/orphan event; new channel authority remains closed\n      ---\n      duration_ms: 39.44128\n      type: 'test'\n      ...\n    1..26\nok 1 - M1-01/02/03: isolated PostgreSQL foundation\n  ---\n  duration_ms: 9822.8628\n  type: 'test'\n  ...\n1..1\n# tests 27\n# suites 0\n# pass 27\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 12594.97638\n",
+      "stderr": "",
+      "duration_seconds": 30.577,
+      "temporary_cluster_retained": null
+    },
+    {
+      "harness": "crm-m1-unix-seccomp/2",
+      "run_id": "21dda9b2-a7ce-4d0f-b06f-dea9efc73698",
+      "suite": "installation.integration.test.mjs",
+      "source_manifest": {
+        "sha256": "850b3299f6f5db7f7eabef8e9914dfe93ad5a362ea7769d8c854b1bf2272c936",
+        "git_base_revision": "292e1f8a435a07d104e990b129707fbfffc1a795",
+        "source_has_uncommitted_changes": true
+      },
+      "fixture_layer": "minimal_synthetic_auth_crm",
+      "bootstrap_source": "tests/m1/fixtures/bootstrap.sql",
+      "bootstrap_sha256": "9b907e47b5de7aee4b80947ec19aef34440a128cfd86a8b0b7077eadcac7caae",
+      "cluster_per_suite": true,
+      "bootstrap_user": "m1_test_admin",
+      "migration_installation": "suite_controlled_verbatim",
+      "timeout_scale": 3.0,
+      "status": "PASS",
+      "remote_database": false,
+      "external_egress": false,
+      "requested_database_major": 17,
+      "requested_uid": 65534,
+      "database_started": true,
+      "migrations_applied": [],
+      "integration_tests_executed": true,
+      "migration_sha256": {
+        "20260917154844_m1_runtime_authority_foundation.sql": "6dbb4e1c6a0c8da22de49424fdf965f46e74e85dad0e822a6201b2ec31f09d49",
+        "20260917154854_m1_private_capabilities.sql": "6154b2dd302d1f5793ea5c9b4151a1423f4f5b956e688ae7089bf8f00b80cd60",
+        "20260917154905_m1_command_receipts_events.sql": "433615402b82cbc5b85cd4f168c0b96ff48658de84cfdadad56b02616f7bf9e7"
+      },
+      "postgres_binary_sha256": "23cd174849b273064c47d581b55be596be2f5cf0ee5d3e76c0146e2464bf873a",
+      "guard_source_sha256": "589dc0aece8cee8e104a7c3a8c27d6e13ca858518bdf74d0454e67c90cb53fd9",
+      "guard_binary_sha256": "d48cf6d387092c71323d7e6a24af26c582d7bc0103545cd3614641e9608183f7",
+      "guard_precompiled": true,
+      "suite_sha256": {
+        "tests/m1/installation.integration.test.mjs": "98358e5b31408b8f30b5eb50a70f5f3a1ce7c71fcfa3156374250a7cead284c0"
+      },
+      "limits": [
+        "Synthetic auth/profiles/leads fixture; not a full production schema or Supabase REST gateway.",
+        "No legacy handler, trigger, frontend or external sender is changed or certified.",
+        "Database effects occur only in the disposable local cluster."
+      ],
+      "postgres_version": "postgres (PostgreSQL) 17.6",
+      "unix_socket_available": true,
+      "uid_map": [
+        [
+          0,
+          0,
+          4294967295
+        ]
+      ],
+      "gid_map": [
+        [
+          0,
+          0,
+          4294967295
+        ]
+      ],
+      "environment_keys": [
+        "LANG",
+        "LC_ALL",
+        "LD_LIBRARY_PATH",
+        "M1_LIBPQ_PATH",
+        "M1_PYTHON_BIN",
+        "M1_TEST_BOOTSTRAP_USER",
+        "M1_TEST_DATABASE",
+        "M1_TEST_FIXTURE_DIR",
+        "M1_TEST_ISOLATED",
+        "M1_TEST_MIGRATION_DIR",
+        "M1_TEST_PORT",
+        "M1_TEST_RUN_ID",
+        "M1_TEST_SOCKET_DIR",
+        "M1_TEST_TIMEOUT_SCALE",
+        "PATH",
+        "PGPASSFILE",
+        "PGSERVICEFILE",
+        "PYTHONNOUSERSITE",
+        "TZ"
+      ],
+      "isolation": {
+        "ok": true,
+        "columns": [
+          "listen_addresses",
+          "marker",
+          "unix_socket"
+        ],
+        "rows": [
+          [
+            "",
+            "21dda9b2-a7ce-4d0f-b06f-dea9efc73698",
+            "t"
+          ]
+        ],
+        "affected": "1",
+        "id": 1
+      },
+      "migration_role": {
+        "ok": true,
+        "columns": [
+          "rolname",
+          "rolsuper",
+          "rolcreaterole",
+          "rolbypassrls"
+        ],
+        "rows": [
+          [
+            "postgres",
+            "f",
+            "t",
+            "t"
+          ]
+        ],
+        "affected": "1",
+        "id": 1
+      },
+      "test_exit_code": 0,
+      "tap": "TAP version 13\n# Subtest: M1 installation: exact files, clean failures and closed partial states\n    # Subtest: I00: fresh relevant schema only, with no M1 role, gateway or tables\n    ok 1 - I00: fresh relevant schema only, with no M1 role, gateway or tables\n      ---\n      duration_ms: 76.50907\n      type: 'test'\n      ...\n    # Subtest: I01: 02 and 03 without predecessors fail and leave no role, schema grant or object\n    ok 2 - I01: 02 and 03 without predecessors fail and leave no role, schema grant or object\n      ---\n      duration_ms: 220.72714\n      type: 'test'\n      ...\n    # Subtest: I02: 01 preflight rejects an absent required legacy relation before creating anything\n    ok 3 - I02: 01 preflight rejects an absent required legacy relation before creating anything\n      ---\n      duration_ms: 171.07539\n      type: 'test'\n      ...\n    # Subtest: I03: 01 alone commits four empty tables, FORCE RLS and no API permission\n    ok 4 - I03: 01 alone commits four empty tables, FORCE RLS and no API permission\n      ---\n      duration_ms: 627.95527\n      type: 'test'\n      ...\n    # Subtest: I04: 03 after only 01 fails without making the partial installation usable\n    ok 5 - I04: 03 after only 01 fails without making the partial installation usable\n      ---\n      duration_ms: 302.70452\n      type: 'test'\n      ...\n    # Subtest: I05: 02 transfers only new ownership and removes temporary CREATE/SET/INHERIT\n    ok 6 - I05: 02 transfers only new ownership and removes temporary CREATE/SET/INHERIT\n      ---\n      duration_ms: 465.26043\n      type: 'test'\n      ...\n    # Subtest: I06: a dependency failure in 03 rolls back its temporary membership and schema grants\n    ok 7 - I06: a dependency failure in 03 rolls back its temporary membership and schema grants\n      ---\n      duration_ms: 399.48155\n      type: 'test'\n      ...\n    # Subtest: I07: 01->02->03 commits six closed tables with validated constraints/indexes and expected trigger graph\n    ok 8 - I07: 01->02->03 commits six closed tables with validated constraints/indexes and expected trigger graph\n      ---\n      duration_ms: 822.83054\n      type: 'test'\n      ...\n    # Subtest: I08: accidentally applying 03 twice fails transactionally, without changing the installed state\n    ok 9 - I08: accidentally applying 03 twice fails transactionally, without changing the installed state\n      ---\n      duration_ms: 483.61103\n      type: 'test'\n      ...\n    1..9\nok 1 - M1 installation: exact files, clean failures and closed partial states\n  ---\n  duration_ms: 4437.03979\n  type: 'test'\n  ...\n1..1\n# tests 10\n# suites 0\n# pass 10\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 5547.17703\n",
+      "stderr": "",
+      "duration_seconds": 23.837,
+      "temporary_cluster_retained": null
+    },
+    {
+      "harness": "crm-m1-unix-seccomp/2",
+      "run_id": "43f57b82-9e34-4c34-8e2b-72b6e2b2c132",
+      "suite": "schema-baseline-b.integration.test.mjs",
+      "source_manifest": {
+        "sha256": "850b3299f6f5db7f7eabef8e9914dfe93ad5a362ea7769d8c854b1bf2272c936",
+        "git_base_revision": "292e1f8a435a07d104e990b129707fbfffc1a795",
+        "source_has_uncommitted_changes": true
+      },
+      "fixture_layer": "schema_only_baseline_b",
+      "bootstrap_source": "tests/m1/fixtures/schema-baseline-b/bootstrap.sql",
+      "bootstrap_sha256": "8ea22a1e8b4cd6559732331ca66ac2728d90f58e11ada4f344c398040608c5e6",
+      "cluster_per_suite": true,
+      "bootstrap_user": "supabase_admin",
+      "migration_installation": "suite_controlled_verbatim",
+      "timeout_scale": 3.0,
+      "status": "PASS",
+      "remote_database": false,
+      "external_egress": false,
+      "requested_database_major": 17,
+      "requested_uid": 65534,
+      "database_started": true,
+      "migrations_applied": [],
+      "integration_tests_executed": true,
+      "migration_sha256": {
+        "20260917154844_m1_runtime_authority_foundation.sql": "6dbb4e1c6a0c8da22de49424fdf965f46e74e85dad0e822a6201b2ec31f09d49",
+        "20260917154854_m1_private_capabilities.sql": "6154b2dd302d1f5793ea5c9b4151a1423f4f5b956e688ae7089bf8f00b80cd60",
+        "20260917154905_m1_command_receipts_events.sql": "433615402b82cbc5b85cd4f168c0b96ff48658de84cfdadad56b02616f7bf9e7"
+      },
+      "postgres_binary_sha256": "23cd174849b273064c47d581b55be596be2f5cf0ee5d3e76c0146e2464bf873a",
+      "guard_source_sha256": "589dc0aece8cee8e104a7c3a8c27d6e13ca858518bdf74d0454e67c90cb53fd9",
+      "guard_binary_sha256": "d48cf6d387092c71323d7e6a24af26c582d7bc0103545cd3614641e9608183f7",
+      "guard_precompiled": true,
+      "suite_sha256": {
+        "tests/m1/schema-baseline-b.integration.test.mjs": "9d329069fc08242962363af5a77edccb7eea25983a511ccaef93a8746e03590d"
+      },
+      "limits": [
+        "Schema-only baseline B: coverage is limited to its explicit manifest; no production rows or Supabase REST gateway.",
+        "No legacy handler, trigger, frontend or external sender is changed or certified.",
+        "Database effects occur only in the disposable local cluster."
+      ],
+      "postgres_version": "postgres (PostgreSQL) 17.6",
+      "unix_socket_available": true,
+      "uid_map": [
+        [
+          0,
+          0,
+          4294967295
+        ]
+      ],
+      "gid_map": [
+        [
+          0,
+          0,
+          4294967295
+        ]
+      ],
+      "environment_keys": [
+        "LANG",
+        "LC_ALL",
+        "LD_LIBRARY_PATH",
+        "M1_LIBPQ_PATH",
+        "M1_PYTHON_BIN",
+        "M1_TEST_BOOTSTRAP_USER",
+        "M1_TEST_DATABASE",
+        "M1_TEST_FIXTURE_DIR",
+        "M1_TEST_ISOLATED",
+        "M1_TEST_MIGRATION_DIR",
+        "M1_TEST_PORT",
+        "M1_TEST_RUN_ID",
+        "M1_TEST_SOCKET_DIR",
+        "M1_TEST_TIMEOUT_SCALE",
+        "PATH",
+        "PGPASSFILE",
+        "PGSERVICEFILE",
+        "PYTHONNOUSERSITE",
+        "TZ"
+      ],
+      "isolation": {
+        "ok": true,
+        "columns": [
+          "listen_addresses",
+          "marker",
+          "unix_socket"
+        ],
+        "rows": [
+          [
+            "",
+            "43f57b82-9e34-4c34-8e2b-72b6e2b2c132",
+            "t"
+          ]
+        ],
+        "affected": "1",
+        "id": 1
+      },
+      "migration_role": {
+        "ok": true,
+        "columns": [
+          "rolname",
+          "rolsuper",
+          "rolcreaterole",
+          "rolbypassrls"
+        ],
+        "rows": [
+          [
+            "postgres",
+            "f",
+            "t",
+            "t"
+          ]
+        ],
+        "affected": "1",
+        "id": 1
+      },
+      "test_exit_code": 0,
+      "tap": "TAP version 13\n# Subtest: B: observed relevant schema, exact M1 DDL, unchanged legacy catalogs and closed authority\n    # Subtest: B00: source integrity and real bootstrap identity are prerequisites\n    ok 1 - B00: source integrity and real bootstrap identity are prerequisites\n      ---\n      duration_ms: 688.20285\n      type: 'test'\n      ...\n    # Subtest: B01: observed tables, columns, constraints, indexes, triggers, policies, functions, sequences and enum match\n    ok 2 - B01: observed tables, columns, constraints, indexes, triggers, policies, functions, sequences and enum match\n      ---\n      duration_ms: 2883.2691\n      type: 'test'\n      ...\n    # Subtest: B02: selected roles, membership grantors, schemas and default ACLs match\n    ok 3 - B02: selected roles, membership grantors, schemas and default ACLs match\n      ---\n      duration_ms: 110.74258\n      type: 'test'\n      ...\n    # Subtest: B03: captured auth.uid implementation honors real JWT claims precedence and malformed claims\n    ok 4 - B03: captured auth.uid implementation honors real JWT claims precedence and malformed claims\n      ---\n      duration_ms: 90.97685\n      type: 'test'\n      ...\n    # Subtest: B4: 20260917154844_m1_runtime_authority_foundation.sql applies verbatim as postgres NOSUPERUSER and preserves observed objects\n    ok 5 - B4: 20260917154844_m1_runtime_authority_foundation.sql applies verbatim as postgres NOSUPERUSER and preserves observed objects\n      ---\n      duration_ms: 2226.12617\n      type: 'test'\n      ...\n    # Subtest: B5: 20260917154854_m1_private_capabilities.sql applies verbatim as postgres NOSUPERUSER and preserves observed objects\n    ok 6 - B5: 20260917154854_m1_private_capabilities.sql applies verbatim as postgres NOSUPERUSER and preserves observed objects\n      ---\n      duration_ms: 1051.97656\n      type: 'test'\n      ...\n    # Subtest: B6: 20260917154905_m1_command_receipts_events.sql applies verbatim as postgres NOSUPERUSER and preserves observed objects\n    ok 7 - B6: 20260917154905_m1_command_receipts_events.sql applies verbatim as postgres NOSUPERUSER and preserves observed objects\n      ---\n      duration_ms: 1484.2418\n      type: 'test'\n      ...\n    # Subtest: B07: six empty runtime tables are closed despite broad observed public-schema default grants\n    ok 8 - B07: six empty runtime tables are closed despite broad observed public-schema default grants\n      ---\n      duration_ms: 363.70461\n      type: 'test'\n      ...\n    # Subtest: B08: installed handler remains closed and no legacy capabilities leak to the runtime owner\n    ok 9 - B08: installed handler remains closed and no legacy capabilities leak to the runtime owner\n      ---\n      duration_ms: 1125.85432\n      type: 'test'\n      ...\n    1..9\nok 1 - B: observed relevant schema, exact M1 DDL, unchanged legacy catalogs and closed authority\n  ---\n  duration_ms: 10235.84743\n  type: 'test'\n  ...\n1..1\n# tests 10\n# suites 0\n# pass 10\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 11458.73054\n",
+      "stderr": "",
+      "duration_seconds": 33.039,
+      "temporary_cluster_retained": null
+    },
+    {
+      "harness": "crm-m1-unix-seccomp/2",
+      "run_id": "352b4178-4519-4882-be49-fa36099fd142",
+      "suite": "security.integration.test.mjs",
+      "source_manifest": {
+        "sha256": "850b3299f6f5db7f7eabef8e9914dfe93ad5a362ea7769d8c854b1bf2272c936",
+        "git_base_revision": "292e1f8a435a07d104e990b129707fbfffc1a795",
+        "source_has_uncommitted_changes": true
+      },
+      "fixture_layer": "minimal_synthetic_auth_crm",
+      "bootstrap_source": "tests/m1/fixtures/bootstrap.sql",
+      "bootstrap_sha256": "9b907e47b5de7aee4b80947ec19aef34440a128cfd86a8b0b7077eadcac7caae",
+      "cluster_per_suite": true,
+      "bootstrap_user": "m1_test_admin",
+      "migration_installation": "runner_installs_all_three",
+      "timeout_scale": 3.0,
+      "status": "PASS",
+      "remote_database": false,
+      "external_egress": false,
+      "requested_database_major": 17,
+      "requested_uid": 65534,
+      "database_started": true,
+      "migrations_applied": [
+        "20260917154844_m1_runtime_authority_foundation.sql",
+        "20260917154854_m1_private_capabilities.sql",
+        "20260917154905_m1_command_receipts_events.sql"
+      ],
+      "integration_tests_executed": true,
+      "migration_sha256": {
+        "20260917154844_m1_runtime_authority_foundation.sql": "6dbb4e1c6a0c8da22de49424fdf965f46e74e85dad0e822a6201b2ec31f09d49",
+        "20260917154854_m1_private_capabilities.sql": "6154b2dd302d1f5793ea5c9b4151a1423f4f5b956e688ae7089bf8f00b80cd60",
+        "20260917154905_m1_command_receipts_events.sql": "433615402b82cbc5b85cd4f168c0b96ff48658de84cfdadad56b02616f7bf9e7"
+      },
+      "postgres_binary_sha256": "23cd174849b273064c47d581b55be596be2f5cf0ee5d3e76c0146e2464bf873a",
+      "guard_source_sha256": "589dc0aece8cee8e104a7c3a8c27d6e13ca858518bdf74d0454e67c90cb53fd9",
+      "guard_binary_sha256": "d48cf6d387092c71323d7e6a24af26c582d7bc0103545cd3614641e9608183f7",
+      "guard_precompiled": true,
+      "suite_sha256": {
+        "tests/m1/security.integration.test.mjs": "9aa66d3e7eac29e6edf3ba23782fa18768b33840831ec3a1ca7cf8b0b9689614"
+      },
+      "limits": [
+        "Synthetic auth/profiles/leads fixture; not a full production schema or Supabase REST gateway.",
+        "No legacy handler, trigger, frontend or external sender is changed or certified.",
+        "Database effects occur only in the disposable local cluster."
+      ],
+      "postgres_version": "postgres (PostgreSQL) 17.6",
+      "unix_socket_available": true,
+      "uid_map": [
+        [
+          0,
+          0,
+          4294967295
+        ]
+      ],
+      "gid_map": [
+        [
+          0,
+          0,
+          4294967295
+        ]
+      ],
+      "environment_keys": [
+        "LANG",
+        "LC_ALL",
+        "LD_LIBRARY_PATH",
+        "M1_LIBPQ_PATH",
+        "M1_PYTHON_BIN",
+        "M1_TEST_BOOTSTRAP_USER",
+        "M1_TEST_DATABASE",
+        "M1_TEST_FIXTURE_DIR",
+        "M1_TEST_ISOLATED",
+        "M1_TEST_MIGRATION_DIR",
+        "M1_TEST_PORT",
+        "M1_TEST_RUN_ID",
+        "M1_TEST_SOCKET_DIR",
+        "M1_TEST_TIMEOUT_SCALE",
+        "PATH",
+        "PGPASSFILE",
+        "PGSERVICEFILE",
+        "PYTHONNOUSERSITE",
+        "TZ"
+      ],
+      "isolation": {
+        "ok": true,
+        "columns": [
+          "listen_addresses",
+          "marker",
+          "unix_socket"
+        ],
+        "rows": [
+          [
+            "",
+            "352b4178-4519-4882-be49-fa36099fd142",
+            "t"
+          ]
+        ],
+        "affected": "1",
+        "id": 1
+      },
+      "migration_role": {
+        "ok": true,
+        "columns": [
+          "rolname",
+          "rolsuper",
+          "rolcreaterole",
+          "rolbypassrls"
+        ],
+        "rows": [
+          [
+            "postgres",
+            "f",
+            "t",
+            "t"
+          ]
+        ],
+        "affected": "1",
+        "id": 1
+      },
+      "test_exit_code": 0,
+      "tap": "TAP version 13\n# Subtest: M1 security: real roles, forced RLS and transactional locks\n    # Subtest: S16/S19: installed owners, membership options and real API denials\n    ok 1 - S16/S19: installed owners, membership options and real API denials\n      ---\n      duration_ms: 965.50441\n      type: 'test'\n      ...\n    # Subtest: S18: definer/invoker ownership and private helper EXECUTE are explicit\n    ok 2 - S18: definer/invoker ownership and private helper EXECUTE are explicit\n      ---\n      duration_ms: 125.6167\n      type: 'test'\n      ...\n    # Subtest: S18/S26: installed probe derives actor through read/lock helpers and cannot mutate legacy\n    ok 3 - S18/S26: installed probe derives actor through read/lock helpers and cannot mutate legacy\n      ---\n      duration_ms: 484.90673\n      type: 'test'\n      ...\n    # Subtest: S20/S21/S22: UPDATE, DELETE and TRUNCATE cannot rewrite or remove committed history\n    ok 4 - S20/S21/S22: UPDATE, DELETE and TRUNCATE cannot rewrite or remove committed history\n      ---\n      duration_ms: 258.91008\n      type: 'test'\n      ...\n    # Subtest: S17: FORCE RLS filters the NOLOGIN table owner; disabling FORCE changes the result\n    ok 5 - S17: FORCE RLS filters the NOLOGIN table owner; disabling FORCE changes the result\n      ---\n      duration_ms: 418.3768\n      type: 'test'\n      ...\n    # Subtest: S16/S17: RLS still denies an ordinary role with fixture SELECT; BYPASSRLS is not falsely certified\n    ok 6 - S16/S17: RLS still denies an ordinary role with fixture SELECT; BYPASSRLS is not falsely certified\n      ---\n      duration_ms: 69.34215\n      type: 'test'\n      ...\n    # Subtest: S18/S25: spoofed auxiliary claims do not replace the active profile or current owner\n    ok 7 - S18/S25: spoofed auxiliary claims do not replace the active profile or current owner\n      ---\n      duration_ms: 198.52651\n      type: 'test'\n      ...\n    # Subtest: S23-GATE: an in-flight gate change is awaited and rechecked before any effect\n    ok 8 - S23-GATE: an in-flight gate change is awaited and rechecked before any effect\n      ---\n      duration_ms: 1151.47909\n      type: 'test'\n      ...\n    # Subtest: S23-LEAD/S25: current ownership is read under a real lead lock after waiting\n    ok 9 - S23-LEAD/S25: current ownership is read under a real lead lock after waiting\n      ---\n      duration_ms: 967.75608\n      type: 'test'\n      ...\n    # Subtest: S24: a real PostgreSQL deadlock and full transaction retry cannot duplicate an intent\n    ok 10 - S24: a real PostgreSQL deadlock and full transaction retry cannot duplicate an intent\n      ---\n      duration_ms: 1144.16435\n      type: 'test'\n      ...\n    1..10\nok 1 - M1 security: real roles, forced RLS and transactional locks\n  ---\n  duration_ms: 6153.51128\n  type: 'test'\n  ...\n1..1\n# tests 11\n# suites 0\n# pass 11\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 7211.69426\n",
+      "stderr": "",
+      "duration_seconds": 25.352,
+      "temporary_cluster_retained": null
+    }
+  ],
+  "integration_tests_executed": true
+}

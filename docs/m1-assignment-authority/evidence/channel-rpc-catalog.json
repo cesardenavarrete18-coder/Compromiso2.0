@@ -1,0 +1,35 @@
+{
+  "project_ref": "cdtvuovsqwwopktdahgj",
+  "read_only": true,
+  "query": "SELECT now() AS captured_at, n.nspname AS schema_name, p.proname AS function_name, pg_get_function_identity_arguments(p.oid) AS arguments, pg_get_userbyid(p.proowner) AS owner, p.prosecdef AS security_definer, p.proconfig AS config, p.proacl::text AS acl, has_function_privilege('authenticated', p.oid, 'EXECUTE') AS authenticated_execute, pg_get_functiondef(p.oid) AS definition FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE (n.nspname='public' AND p.proname='set_whatsapp_conversation_mode') OR (n.nspname='private' AND p.proname='current_user_can_manage_whatsapp') ORDER BY n.nspname,p.proname",
+  "rows": [
+    {
+      "captured_at": "2026-09-17 19:46:48.867897+00",
+      "schema_name": "private",
+      "function_name": "current_user_can_manage_whatsapp",
+      "arguments": "p_lead_id uuid",
+      "owner": "postgres",
+      "security_definer": true,
+      "config": [
+        "search_path=\"\""
+      ],
+      "acl": "{postgres=X/postgres,authenticated=X/postgres}",
+      "authenticated_execute": true,
+      "definition": "CREATE OR REPLACE FUNCTION private.current_user_can_manage_whatsapp(p_lead_id uuid)\n RETURNS boolean\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO ''\nAS $function$\n  select exists (\n    select 1\n    from public.profiles p\n    left join public.leads l on l.id = p_lead_id\n    where p.user_id = (select auth.uid())\n      and p.active = true\n      and (\n        p.role::text in ('admin', 'supervisor')\n        or (p.role::text = 'seller' and l.assigned_seller_user_id = p.user_id)\n      )\n  );\n$function$\n"
+    },
+    {
+      "captured_at": "2026-09-17 19:46:48.867897+00",
+      "schema_name": "public",
+      "function_name": "set_whatsapp_conversation_mode",
+      "arguments": "p_lead_id uuid, p_mode text",
+      "owner": "postgres",
+      "security_definer": true,
+      "config": [
+        "search_path=\"\""
+      ],
+      "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+      "authenticated_execute": true,
+      "definition": "CREATE OR REPLACE FUNCTION public.set_whatsapp_conversation_mode(p_lead_id uuid, p_mode text)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\ndeclare\n  v_user_id uuid := (select auth.uid());\n  v_control public.whatsapp_conversation_controls%rowtype;\nbegin\n  if v_user_id is null or not private.current_user_can_manage_whatsapp(p_lead_id) then\n    raise exception 'No tenés permiso para intervenir esta conversación';\n  end if;\n  if p_mode not in ('ai', 'human') then\n    raise exception 'El modo de conversación no es válido';\n  end if;\n\n  insert into public.whatsapp_conversation_controls (\n    lead_id,\n    mode,\n    taken_by_user_id,\n    taken_at,\n    released_by_user_id,\n    released_at\n  ) values (\n    p_lead_id,\n    p_mode,\n    case when p_mode = 'human' then v_user_id else null end,\n    case when p_mode = 'human' then now() else null end,\n    case when p_mode = 'ai' then v_user_id else null end,\n    case when p_mode = 'ai' then now() else null end\n  )\n  on conflict (lead_id) do update set\n    mode = excluded.mode,\n    taken_by_user_id = excluded.taken_by_user_id,\n    taken_at = excluded.taken_at,\n    released_by_user_id = excluded.released_by_user_id,\n    released_at = excluded.released_at\n  returning * into v_control;\n\n  insert into public.whatsapp_conversation_events (lead_id, actor_user_id, event_type)\n  values (p_lead_id, v_user_id, case when p_mode = 'human' then 'taken' else 'released' end);\n\n  return jsonb_build_object(\n    'lead_id', v_control.lead_id,\n    'mode', v_control.mode,\n    'taken_by_user_id', v_control.taken_by_user_id,\n    'taken_at', v_control.taken_at,\n    'released_at', v_control.released_at,\n    'updated_at', v_control.updated_at\n  );\nend;\n$function$\n"
+    }
+  ]
+}

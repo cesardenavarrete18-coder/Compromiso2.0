@@ -1,0 +1,346 @@
+{
+  "project_ref": "cdtvuovsqwwopktdahgj",
+  "classification": "schema_only_no_business_rows",
+  "query": "SELECT jsonb_build_object(\n 'captured_at',clock_timestamp(),\n 'functions',(SELECT jsonb_agg(jsonb_build_object('schema',n.nspname,'name',p.proname,'arguments',pg_get_function_identity_arguments(p.oid),'definition',pg_get_functiondef(p.oid),'sha256',encode(sha256(convert_to(pg_get_functiondef(p.oid),'UTF8')),'hex'),'owner',pg_get_userbyid(p.proowner),'acl',p.proacl::text,'security_definer',p.prosecdef,'config',p.proconfig) ORDER BY p.proname) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='private' AND p.proname='current_user_can_manage_whatsapp'),\n 'table',(SELECT jsonb_build_object('schema','public','name',c.relname,'owner',pg_get_userbyid(c.relowner),'acl',c.relacl::text,'rls_enabled',c.relrowsecurity,'rls_forced',c.relforcerowsecurity) FROM pg_class c WHERE c.oid='public.whatsapp_conversation_controls'::regclass),\n 'columns',(SELECT jsonb_agg(jsonb_build_object('name',a.attname,'position',a.attnum,'type',format_type(a.atttypid,a.atttypmod),'not_null',a.attnotnull,'default',pg_get_expr(d.adbin,d.adrelid)) ORDER BY a.attnum) FROM pg_attribute a LEFT JOIN pg_attrdef d ON d.adrelid=a.attrelid AND d.adnum=a.attnum WHERE a.attrelid='public.whatsapp_conversation_controls'::regclass AND a.attnum>0 AND NOT a.attisdropped),\n 'constraints',(SELECT jsonb_agg(jsonb_build_object('name',c.conname,'definition',pg_get_constraintdef(c.oid)) ORDER BY c.conname) FROM pg_constraint c WHERE c.conrelid='public.whatsapp_conversation_controls'::regclass),\n 'indexes',(SELECT jsonb_agg(jsonb_build_object('name',indexname,'definition',indexdef) ORDER BY indexname) FROM pg_indexes WHERE schemaname='public' AND tablename='whatsapp_conversation_controls'),\n 'triggers',(SELECT jsonb_agg(jsonb_build_object('name',t.tgname,'definition',pg_get_triggerdef(t.oid),'enabled',t.tgenabled) ORDER BY t.tgname) FROM pg_trigger t WHERE t.tgrelid='public.whatsapp_conversation_controls'::regclass AND NOT t.tgisinternal),\n 'policies',(SELECT jsonb_agg(to_jsonb(p) ORDER BY p.policyname) FROM pg_policies p WHERE p.schemaname='public' AND p.tablename='whatsapp_conversation_controls'),\n 'grants',(SELECT jsonb_agg(jsonb_build_object('grantor',pg_get_userbyid(x.grantor),'grantee',CASE WHEN x.grantee=0 THEN 'PUBLIC' ELSE pg_get_userbyid(x.grantee) END,'privilege',x.privilege_type,'grantable',x.is_grantable) ORDER BY x.grantee,x.privilege_type) FROM pg_class c CROSS JOIN LATERAL aclexplode(c.relacl) x WHERE c.oid='public.whatsapp_conversation_controls'::regclass)\n) AS snapshot",
+  "snapshot": {
+    "table": {
+      "acl": "{postgres=arwdDxtm/postgres,authenticated=arwdDxtm/postgres,service_role=arwdDxtm/postgres}",
+      "name": "whatsapp_conversation_controls",
+      "owner": "postgres",
+      "schema": "public",
+      "rls_forced": false,
+      "rls_enabled": true
+    },
+    "grants": [
+      {
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "DELETE"
+      },
+      {
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "INSERT"
+      },
+      {
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "MAINTAIN"
+      },
+      {
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "REFERENCES"
+      },
+      {
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "SELECT"
+      },
+      {
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "TRIGGER"
+      },
+      {
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "TRUNCATE"
+      },
+      {
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "UPDATE"
+      },
+      {
+        "grantee": "authenticated",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "DELETE"
+      },
+      {
+        "grantee": "authenticated",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "INSERT"
+      },
+      {
+        "grantee": "authenticated",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "MAINTAIN"
+      },
+      {
+        "grantee": "authenticated",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "REFERENCES"
+      },
+      {
+        "grantee": "authenticated",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "SELECT"
+      },
+      {
+        "grantee": "authenticated",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "TRIGGER"
+      },
+      {
+        "grantee": "authenticated",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "TRUNCATE"
+      },
+      {
+        "grantee": "authenticated",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "UPDATE"
+      },
+      {
+        "grantee": "service_role",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "DELETE"
+      },
+      {
+        "grantee": "service_role",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "INSERT"
+      },
+      {
+        "grantee": "service_role",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "MAINTAIN"
+      },
+      {
+        "grantee": "service_role",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "REFERENCES"
+      },
+      {
+        "grantee": "service_role",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "SELECT"
+      },
+      {
+        "grantee": "service_role",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "TRIGGER"
+      },
+      {
+        "grantee": "service_role",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "TRUNCATE"
+      },
+      {
+        "grantee": "service_role",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "UPDATE"
+      }
+    ],
+    "columns": [
+      {
+        "name": "lead_id",
+        "type": "uuid",
+        "default": null,
+        "not_null": true,
+        "position": 1
+      },
+      {
+        "name": "mode",
+        "type": "text",
+        "default": "'ai'::text",
+        "not_null": true,
+        "position": 2
+      },
+      {
+        "name": "taken_by_user_id",
+        "type": "uuid",
+        "default": null,
+        "not_null": false,
+        "position": 3
+      },
+      {
+        "name": "taken_at",
+        "type": "timestamp with time zone",
+        "default": null,
+        "not_null": false,
+        "position": 4
+      },
+      {
+        "name": "released_by_user_id",
+        "type": "uuid",
+        "default": null,
+        "not_null": false,
+        "position": 5
+      },
+      {
+        "name": "released_at",
+        "type": "timestamp with time zone",
+        "default": null,
+        "not_null": false,
+        "position": 6
+      },
+      {
+        "name": "last_human_message_at",
+        "type": "timestamp with time zone",
+        "default": null,
+        "not_null": false,
+        "position": 7
+      },
+      {
+        "name": "created_at",
+        "type": "timestamp with time zone",
+        "default": "now()",
+        "not_null": true,
+        "position": 8
+      },
+      {
+        "name": "updated_at",
+        "type": "timestamp with time zone",
+        "default": "now()",
+        "not_null": true,
+        "position": 9
+      }
+    ],
+    "indexes": [
+      {
+        "name": "whatsapp_conversation_controls_mode_updated_idx",
+        "definition": "CREATE INDEX whatsapp_conversation_controls_mode_updated_idx ON public.whatsapp_conversation_controls USING btree (mode, updated_at DESC)"
+      },
+      {
+        "name": "whatsapp_conversation_controls_pkey",
+        "definition": "CREATE UNIQUE INDEX whatsapp_conversation_controls_pkey ON public.whatsapp_conversation_controls USING btree (lead_id)"
+      },
+      {
+        "name": "whatsapp_conversation_controls_released_by_idx",
+        "definition": "CREATE INDEX whatsapp_conversation_controls_released_by_idx ON public.whatsapp_conversation_controls USING btree (released_by_user_id) WHERE (released_by_user_id IS NOT NULL)"
+      },
+      {
+        "name": "whatsapp_conversation_controls_taken_by_idx",
+        "definition": "CREATE INDEX whatsapp_conversation_controls_taken_by_idx ON public.whatsapp_conversation_controls USING btree (taken_by_user_id) WHERE (taken_by_user_id IS NOT NULL)"
+      }
+    ],
+    "policies": [
+      {
+        "cmd": "SELECT",
+        "qual": "private.current_user_can_manage_whatsapp(lead_id)",
+        "roles": [
+          "authenticated"
+        ],
+        "tablename": "whatsapp_conversation_controls",
+        "permissive": "PERMISSIVE",
+        "policyname": "whatsapp_conversation_controls_read_authorized",
+        "schemaname": "public",
+        "with_check": null
+      }
+    ],
+    "triggers": [
+      {
+        "name": "whatsapp_control_cancel_automatic_follow_up",
+        "enabled": "O",
+        "definition": "CREATE TRIGGER whatsapp_control_cancel_automatic_follow_up AFTER INSERT OR UPDATE OF mode ON public.whatsapp_conversation_controls FOR EACH ROW EXECUTE FUNCTION private.cancel_whatsapp_follow_up_on_takeover()"
+      },
+      {
+        "name": "whatsapp_conversation_controls_set_updated_at",
+        "enabled": "O",
+        "definition": "CREATE TRIGGER whatsapp_conversation_controls_set_updated_at BEFORE UPDATE ON public.whatsapp_conversation_controls FOR EACH ROW EXECUTE FUNCTION private.set_updated_at()"
+      }
+    ],
+    "functions": [
+      {
+        "acl": "{postgres=X/postgres,authenticated=X/postgres}",
+        "name": "current_user_can_manage_whatsapp",
+        "owner": "postgres",
+        "config": [
+          "search_path=\"\""
+        ],
+        "schema": "private",
+        "sha256": "8d9b07f881593a1919c0d2d7e99d089b294e59e0a5cfa9d74313d4b68960c221",
+        "arguments": "p_lead_id uuid",
+        "definition": "CREATE OR REPLACE FUNCTION private.current_user_can_manage_whatsapp(p_lead_id uuid)\n RETURNS boolean\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO ''\nAS $function$\n  select exists (\n    select 1\n    from public.profiles p\n    left join public.leads l on l.id = p_lead_id\n    where p.user_id = (select auth.uid())\n      and p.active = true\n      and (\n        p.role::text in ('admin', 'supervisor')\n        or (p.role::text = 'seller' and l.assigned_seller_user_id = p.user_id)\n      )\n  );\n$function$\n",
+        "security_definer": true
+      }
+    ],
+    "captured_at": "2026-09-17T19:43:33.749586+00:00",
+    "constraints": [
+      {
+        "name": "whatsapp_conversation_controls_human_owner",
+        "definition": "CHECK (((mode = 'ai'::text) OR ((taken_by_user_id IS NOT NULL) AND (taken_at IS NOT NULL))))"
+      },
+      {
+        "name": "whatsapp_conversation_controls_lead_id_fkey",
+        "definition": "FOREIGN KEY (lead_id) REFERENCES leads(id) ON DELETE CASCADE"
+      },
+      {
+        "name": "whatsapp_conversation_controls_mode",
+        "definition": "CHECK ((mode = ANY (ARRAY['ai'::text, 'human'::text])))"
+      },
+      {
+        "name": "whatsapp_conversation_controls_pkey",
+        "definition": "PRIMARY KEY (lead_id)"
+      },
+      {
+        "name": "whatsapp_conversation_controls_released_by_user_id_fkey",
+        "definition": "FOREIGN KEY (released_by_user_id) REFERENCES profiles(user_id) ON DELETE SET NULL"
+      },
+      {
+        "name": "whatsapp_conversation_controls_taken_by_user_id_fkey",
+        "definition": "FOREIGN KEY (taken_by_user_id) REFERENCES profiles(user_id) ON DELETE SET NULL"
+      }
+    ]
+  },
+  "dependencies": {
+    "query": "SELECT jsonb_build_object('captured_at',clock_timestamp(),'functions',(SELECT jsonb_agg(jsonb_build_object('schema',n.nspname,'name',p.proname,'arguments',pg_get_function_identity_arguments(p.oid),'definition',pg_get_functiondef(p.oid),'sha256',encode(sha256(convert_to(pg_get_functiondef(p.oid),'UTF8')),'hex'),'owner',pg_get_userbyid(p.proowner),'acl',p.proacl::text,'security_definer',p.prosecdef,'config',p.proconfig) ORDER BY p.proname) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='private' AND p.proname IN ('cancel_whatsapp_follow_up_on_takeover','set_updated_at'))) AS snapshot",
+    "snapshot": {
+      "functions": [
+        {
+          "acl": "{postgres=X/postgres}",
+          "name": "cancel_whatsapp_follow_up_on_takeover",
+          "owner": "postgres",
+          "config": [
+            "search_path=\"\""
+          ],
+          "schema": "private",
+          "sha256": "161c0fa7e254ef5b571e69dbce0655b14f309acbfdd74a28081bbc1e65be9d6c",
+          "arguments": "",
+          "definition": "CREATE OR REPLACE FUNCTION private.cancel_whatsapp_follow_up_on_takeover()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\nbegin\n  if new.mode = 'human' then\n    update public.whatsapp_follow_up_reminders\n    set status = 'cancelled', last_error = 'Conversación tomada por una persona'\n    where lead_id = new.lead_id and status in ('pending', 'processing');\n  end if;\n  return new;\nend;\n$function$\n",
+          "security_definer": true
+        },
+        {
+          "acl": null,
+          "name": "set_updated_at",
+          "owner": "postgres",
+          "config": [
+            "search_path=\"\""
+          ],
+          "schema": "private",
+          "sha256": "28c9d300e064d5bcdb66c2cfbcc14546a29d5ff973a2e017ed837b55cbce6a7b",
+          "arguments": "",
+          "definition": "CREATE OR REPLACE FUNCTION private.set_updated_at()\n RETURNS trigger\n LANGUAGE plpgsql\n SET search_path TO ''\nAS $function$\nbegin\n  new.updated_at = now();\n  return new;\nend;\n$function$\n",
+          "security_definer": false
+        }
+      ],
+      "captured_at": "2026-09-17T19:44:18.7468+00:00"
+    }
+  }
+}
