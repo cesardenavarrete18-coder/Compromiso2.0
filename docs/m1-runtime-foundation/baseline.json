@@ -1,0 +1,238 @@
+{
+  "schema": "crm.m1.foundation-baseline/1",
+  "manifest_id": "m103-foundation-baseline-20260917",
+  "completeness": "PARTIAL_NO_CUTOVER",
+  "m0_complete": false,
+  "scope": [
+    "M1-01",
+    "M1-02",
+    "M1-03"
+  ],
+  "authorization": "User authorized local inactive foundations only; M0 remains open; no production apply, PR, merge or M1-04.",
+  "repository": {
+    "name": "cesardenavarrete18-coder/Compromiso2.0",
+    "verified_main_sha": "e3675903ade49080a575f5d19f61b243ad2aa948",
+    "verification": [
+      "GitHub git ref read",
+      "git fetch origin main"
+    ],
+    "branch": "feat/m1-runtime-foundation",
+    "remote_publication": "not performed; effective Vercel preview behavior unverified"
+  },
+  "observed_database": {
+    "project_ref": "cdtvuovsqwwopktdahgj",
+    "postgres_version": "17.6.1.155",
+    "required_columns": [
+      {
+        "column_default": "gen_random_uuid()",
+        "column_name": "id",
+        "data_type": "uuid",
+        "is_identity": "NO",
+        "is_nullable": "NO",
+        "ordinal_position": 1,
+        "table_name": "leads",
+        "table_schema": "public",
+        "udt_name": "uuid",
+        "udt_schema": "pg_catalog"
+      },
+      {
+        "column_default": null,
+        "column_name": "assigned_seller_user_id",
+        "data_type": "uuid",
+        "is_identity": "NO",
+        "is_nullable": "YES",
+        "ordinal_position": 14,
+        "table_name": "leads",
+        "table_schema": "public",
+        "udt_name": "uuid",
+        "udt_schema": "pg_catalog"
+      },
+      {
+        "column_default": null,
+        "column_name": "user_id",
+        "data_type": "uuid",
+        "is_identity": "NO",
+        "is_nullable": "NO",
+        "ordinal_position": 1,
+        "table_name": "profiles",
+        "table_schema": "public",
+        "udt_name": "uuid",
+        "udt_schema": "pg_catalog"
+      },
+      {
+        "column_default": null,
+        "column_name": "role",
+        "data_type": "USER-DEFINED",
+        "is_identity": "NO",
+        "is_nullable": "NO",
+        "ordinal_position": 3,
+        "table_name": "profiles",
+        "table_schema": "public",
+        "udt_name": "app_role",
+        "udt_schema": "public"
+      },
+      {
+        "column_default": "true",
+        "column_name": "active",
+        "data_type": "boolean",
+        "is_identity": "NO",
+        "is_nullable": "NO",
+        "ordinal_position": 7,
+        "table_name": "profiles",
+        "table_schema": "public",
+        "udt_name": "bool",
+        "udt_schema": "pg_catalog"
+      }
+    ],
+    "required_enum": [
+      {
+        "enumlabel": "admin",
+        "enumsortorder": 1,
+        "name": "app_role",
+        "schema": "public"
+      },
+      {
+        "enumlabel": "seller",
+        "enumsortorder": 2,
+        "name": "app_role",
+        "schema": "public"
+      },
+      {
+        "enumlabel": "supervisor",
+        "enumsortorder": 3,
+        "name": "app_role",
+        "schema": "public"
+      },
+      {
+        "enumlabel": "admventas",
+        "enumsortorder": 4,
+        "name": "app_role",
+        "schema": "public"
+      }
+    ],
+    "required_unique_constraints": [
+      {
+        "condeferrable": false,
+        "condeferred": false,
+        "contype": "p",
+        "convalidated": true,
+        "definition": "PRIMARY KEY (id)",
+        "definition_sha256": "8c8464f42472e42ee190fc91ca8db79b5351d3a4609040516578d229c56f6fa5",
+        "name": "leads_pkey",
+        "schema": "public",
+        "table_name": "leads"
+      },
+      {
+        "condeferrable": false,
+        "condeferred": false,
+        "contype": "p",
+        "convalidated": true,
+        "definition": "PRIMARY KEY (user_id)",
+        "definition_sha256": "44756d887704fc88d8d0adc5c0c431103c555b4f8e6a4ddef6f7a7f6b4110606",
+        "name": "profiles_pkey",
+        "schema": "public",
+        "table_name": "profiles"
+      }
+    ],
+    "fixture_limit": "Minimal auth.uid/auth users/profiles/leads, not full production clone."
+  },
+  "evidence_references": [
+    {
+      "filename": "Plan_ejecutable_M0-M1_Grupo_Sur_CDN_v1_2026-09-17.md",
+      "sha256": "a593c10df798d781fe29ece9f81d2b14d79c3c9c3e9b1047c1e08a0acb9aa742",
+      "bytes": 327702
+    },
+    {
+      "filename": "Diseno_dominio_CRM_Grupo_Sur_A-K_v2_2026-09-17.md",
+      "sha256": "f270e6bc5c38e3367cb14e97df0c43ced1551a395dc6bb79c8c859a0cd0b169f",
+      "bytes": 326832
+    },
+    {
+      "filename": "m01-db-baseline.json",
+      "sha256": "11b49868c9d4a8f37a2a628d50bf25205a857f48710beb09586abccf424298ec",
+      "bytes": 1477420
+    },
+    {
+      "filename": "m01-edge-baseline.json",
+      "sha256": "621cc201b1b8a5b9e3a7f2950791b431b3a7264a684c4354198a0d5fc4a80a4d",
+      "bytes": 56533
+    },
+    {
+      "filename": "m01-release-baseline.json",
+      "sha256": "811ccce26104b1c651ff3b1b5f9d679a9e5e4b457cec9170ba11cb8d763e9c81",
+      "bytes": 102013
+    },
+    {
+      "filename": "m103-m0-external.json",
+      "sha256": "56b489e3af1d54618a0c80d3d70144a4325c709a7cde3547c947972954fb1f78",
+      "bytes": 24724
+    },
+    {
+      "filename": "m103-m0-runtime.json",
+      "sha256": "e160521627a9514724672a487a6cbaa448351012076296c5a57b2c3f85be9887",
+      "bytes": 30891
+    }
+  ],
+  "unchanged_legacy_source_sha256": {
+    "supabase/config.toml": "1555a9ad2f1395321a1833ed89cbf0df6452b553958272f2cbca724b8e1d6fa0",
+    "lead-capture-config.js": "9634b063be7f7b450d299f05548da299c9900359fa0c82e40cf8f7414aec9f2b",
+    "lead-capture.js": "60eb6348795f69af9b5993209d4b04cff6059d1479370aaccf412567dfde5797",
+    "script.js": "dce13ce17c9735642da1f0e8a9926ba80fa26aa776540f82fe2a3effed37fd12",
+    "vendedores/supervisor/supervisor.js": "fc8b309363263c70efe5d0400eb584f2dafc908e8c027fe7c4e3cdb76f6482ef",
+    "supabase/functions/whatsapp-human-message/index.ts": "0216bc64c5873f7ca65bed99289fa7da4207d069a906e3a554efc57dd9fc95d5",
+    "supabase/functions/whatsapp-webhook/index.ts": "61faaf5f695a5b111bfeaf50cd163a071c394523285fc33adce5b8d3936f69a5",
+    "supabase/functions/whatsapp-follow-up-reminders/index.ts": "b7a2c58a2bb1d682fa355ea0ef41d7b1ba877f5567ef6f01e76c99854b3367fb"
+  },
+  "blockers": {
+    "BL-01": {
+      "state": "OPEN",
+      "detail": "Effective Vercel alias/build/config inaccessible (403)."
+    },
+    "BL-02": {
+      "state": "OPEN",
+      "detail": "Apps Script revision/triggers/Sheets/destinations/custodian unknown."
+    },
+    "BL-03": {
+      "state": "OPEN",
+      "detail": "Privileged external consumer inventory incomplete."
+    },
+    "BL-04": {
+      "state": "OPEN",
+      "detail": "Effective secret/principal/producer/dispatcher boundary unproven."
+    },
+    "BL-05": {
+      "state": "OPEN",
+      "detail": "Legacy cron/pending work remains; no proof of HTTP drain."
+    },
+    "BL-06": {
+      "state": "OPEN",
+      "detail": "Historical human use exists; seller backend capability remains P0."
+    },
+    "BL-07": {
+      "state": "OPEN",
+      "detail": "Effective env/model/flags/provider config not exposed."
+    },
+    "BL-08": {
+      "state": "OPEN",
+      "detail": "Remote QA/frontend egress isolation unproven. Local PostgreSQL integration blocked before initdb: namespace maps only UID/GID0 and runtime forbids AF_UNIX sockets."
+    }
+  },
+  "unknown_configuration": [
+    "deployed_frontend_alias",
+    "apps_script_revision_and_destinations",
+    "secret_bindings_by_runtime",
+    "all_external_privileged_consumers",
+    "edge_instances_in_flight",
+    "effective_model_meta_api_flags",
+    "remote_qa_isolation"
+  ],
+  "not_authorized": [
+    "production_DDL_or_DML",
+    "legacy_permissions_or_trigger_changes",
+    "M1-04_or_later",
+    "customer_egress",
+    "PR_or_merge",
+    "cutover"
+  ],
+  "target_manifest_contract": "crm.m0.manifest/1 (not yet complete or certified)"
+}

@@ -1,0 +1,820 @@
+{
+  "catalog": [
+    {
+      "column_name": "jobid",
+      "data_type": "bigint",
+      "observed_at": "2026-09-17 15:43:04.113617+00",
+      "relation_name": "job",
+      "schema_name": "cron"
+    },
+    {
+      "column_name": "schedule",
+      "data_type": "text",
+      "observed_at": "2026-09-17 15:43:04.11363+00",
+      "relation_name": "job",
+      "schema_name": "cron"
+    },
+    {
+      "column_name": "command",
+      "data_type": "text",
+      "observed_at": "2026-09-17 15:43:04.113631+00",
+      "relation_name": "job",
+      "schema_name": "cron"
+    },
+    {
+      "column_name": "nodename",
+      "data_type": "text",
+      "observed_at": "2026-09-17 15:43:04.113632+00",
+      "relation_name": "job",
+      "schema_name": "cron"
+    },
+    {
+      "column_name": "nodeport",
+      "data_type": "integer",
+      "observed_at": "2026-09-17 15:43:04.113633+00",
+      "relation_name": "job",
+      "schema_name": "cron"
+    },
+    {
+      "column_name": "database",
+      "data_type": "text",
+      "observed_at": "2026-09-17 15:43:04.113634+00",
+      "relation_name": "job",
+      "schema_name": "cron"
+    },
+    {
+      "column_name": "username",
+      "data_type": "text",
+      "observed_at": "2026-09-17 15:43:04.113635+00",
+      "relation_name": "job",
+      "schema_name": "cron"
+    },
+    {
+      "column_name": "active",
+      "data_type": "boolean",
+      "observed_at": "2026-09-17 15:43:04.113636+00",
+      "relation_name": "job",
+      "schema_name": "cron"
+    },
+    {
+      "column_name": "jobname",
+      "data_type": "text",
+      "observed_at": "2026-09-17 15:43:04.113637+00",
+      "relation_name": "job",
+      "schema_name": "cron"
+    },
+    {
+      "column_name": "jobid",
+      "data_type": "bigint",
+      "observed_at": "2026-09-17 15:43:04.113637+00",
+      "relation_name": "job_run_details",
+      "schema_name": "cron"
+    },
+    {
+      "column_name": "runid",
+      "data_type": "bigint",
+      "observed_at": "2026-09-17 15:43:04.113638+00",
+      "relation_name": "job_run_details",
+      "schema_name": "cron"
+    },
+    {
+      "column_name": "job_pid",
+      "data_type": "integer",
+      "observed_at": "2026-09-17 15:43:04.113639+00",
+      "relation_name": "job_run_details",
+      "schema_name": "cron"
+    },
+    {
+      "column_name": "database",
+      "data_type": "text",
+      "observed_at": "2026-09-17 15:43:04.11364+00",
+      "relation_name": "job_run_details",
+      "schema_name": "cron"
+    },
+    {
+      "column_name": "username",
+      "data_type": "text",
+      "observed_at": "2026-09-17 15:43:04.11364+00",
+      "relation_name": "job_run_details",
+      "schema_name": "cron"
+    },
+    {
+      "column_name": "command",
+      "data_type": "text",
+      "observed_at": "2026-09-17 15:43:04.113641+00",
+      "relation_name": "job_run_details",
+      "schema_name": "cron"
+    },
+    {
+      "column_name": "status",
+      "data_type": "text",
+      "observed_at": "2026-09-17 15:43:04.113642+00",
+      "relation_name": "job_run_details",
+      "schema_name": "cron"
+    },
+    {
+      "column_name": "return_message",
+      "data_type": "text",
+      "observed_at": "2026-09-17 15:43:04.113643+00",
+      "relation_name": "job_run_details",
+      "schema_name": "cron"
+    },
+    {
+      "column_name": "start_time",
+      "data_type": "timestamp with time zone",
+      "observed_at": "2026-09-17 15:43:04.113643+00",
+      "relation_name": "job_run_details",
+      "schema_name": "cron"
+    },
+    {
+      "column_name": "end_time",
+      "data_type": "timestamp with time zone",
+      "observed_at": "2026-09-17 15:43:04.113644+00",
+      "relation_name": "job_run_details",
+      "schema_name": "cron"
+    },
+    {
+      "column_name": "id",
+      "data_type": "bigint",
+      "observed_at": "2026-09-17 15:43:04.113645+00",
+      "relation_name": "_http_response",
+      "schema_name": "net"
+    },
+    {
+      "column_name": "status_code",
+      "data_type": "integer",
+      "observed_at": "2026-09-17 15:43:04.113646+00",
+      "relation_name": "_http_response",
+      "schema_name": "net"
+    },
+    {
+      "column_name": "content_type",
+      "data_type": "text",
+      "observed_at": "2026-09-17 15:43:04.113646+00",
+      "relation_name": "_http_response",
+      "schema_name": "net"
+    },
+    {
+      "column_name": "headers",
+      "data_type": "jsonb",
+      "observed_at": "2026-09-17 15:43:04.113647+00",
+      "relation_name": "_http_response",
+      "schema_name": "net"
+    },
+    {
+      "column_name": "content",
+      "data_type": "text",
+      "observed_at": "2026-09-17 15:43:04.113648+00",
+      "relation_name": "_http_response",
+      "schema_name": "net"
+    },
+    {
+      "column_name": "timed_out",
+      "data_type": "boolean",
+      "observed_at": "2026-09-17 15:43:04.113649+00",
+      "relation_name": "_http_response",
+      "schema_name": "net"
+    },
+    {
+      "column_name": "error_msg",
+      "data_type": "text",
+      "observed_at": "2026-09-17 15:43:04.113649+00",
+      "relation_name": "_http_response",
+      "schema_name": "net"
+    },
+    {
+      "column_name": "created",
+      "data_type": "timestamp with time zone",
+      "observed_at": "2026-09-17 15:43:04.11365+00",
+      "relation_name": "_http_response",
+      "schema_name": "net"
+    },
+    {
+      "column_name": "id",
+      "data_type": "bigint",
+      "observed_at": "2026-09-17 15:43:04.113651+00",
+      "relation_name": "http_request_queue",
+      "schema_name": "net"
+    },
+    {
+      "column_name": "method",
+      "data_type": "net.http_method",
+      "observed_at": "2026-09-17 15:43:04.113652+00",
+      "relation_name": "http_request_queue",
+      "schema_name": "net"
+    },
+    {
+      "column_name": "url",
+      "data_type": "text",
+      "observed_at": "2026-09-17 15:43:04.113653+00",
+      "relation_name": "http_request_queue",
+      "schema_name": "net"
+    },
+    {
+      "column_name": "headers",
+      "data_type": "jsonb",
+      "observed_at": "2026-09-17 15:43:04.113653+00",
+      "relation_name": "http_request_queue",
+      "schema_name": "net"
+    },
+    {
+      "column_name": "body",
+      "data_type": "bytea",
+      "observed_at": "2026-09-17 15:43:04.113654+00",
+      "relation_name": "http_request_queue",
+      "schema_name": "net"
+    },
+    {
+      "column_name": "timeout_milliseconds",
+      "data_type": "integer",
+      "observed_at": "2026-09-17 15:43:04.113655+00",
+      "relation_name": "http_request_queue",
+      "schema_name": "net"
+    },
+    {
+      "column_name": "id",
+      "data_type": "boolean",
+      "observed_at": "2026-09-17 15:43:04.113656+00",
+      "relation_name": "ai_assistant_settings",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "qualification_rules",
+      "data_type": "text",
+      "observed_at": "2026-09-17 15:43:04.113656+00",
+      "relation_name": "ai_assistant_settings",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "vector_store_id",
+      "data_type": "text",
+      "observed_at": "2026-09-17 15:43:04.113657+00",
+      "relation_name": "ai_assistant_settings",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "updated_by",
+      "data_type": "uuid",
+      "observed_at": "2026-09-17 15:43:04.113658+00",
+      "relation_name": "ai_assistant_settings",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "observed_at": "2026-09-17 15:43:04.113659+00",
+      "relation_name": "ai_assistant_settings",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "observed_at": "2026-09-17 15:43:04.113666+00",
+      "relation_name": "ai_assistant_settings",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "conversation_style",
+      "data_type": "text",
+      "observed_at": "2026-09-17 15:43:04.113667+00",
+      "relation_name": "ai_assistant_settings",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "id",
+      "data_type": "uuid",
+      "observed_at": "2026-09-17 15:43:04.113668+00",
+      "relation_name": "whatsapp_follow_up_reminders",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "lead_id",
+      "data_type": "uuid",
+      "observed_at": "2026-09-17 15:43:04.113669+00",
+      "relation_name": "whatsapp_follow_up_reminders",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "first_inbound_message_id",
+      "data_type": "uuid",
+      "observed_at": "2026-09-17 15:43:04.11367+00",
+      "relation_name": "whatsapp_follow_up_reminders",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "due_at",
+      "data_type": "timestamp with time zone",
+      "observed_at": "2026-09-17 15:43:04.11367+00",
+      "relation_name": "whatsapp_follow_up_reminders",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "status",
+      "data_type": "text",
+      "observed_at": "2026-09-17 15:43:04.113671+00",
+      "relation_name": "whatsapp_follow_up_reminders",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "attempts",
+      "data_type": "smallint",
+      "observed_at": "2026-09-17 15:43:04.113672+00",
+      "relation_name": "whatsapp_follow_up_reminders",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "claimed_at",
+      "data_type": "timestamp with time zone",
+      "observed_at": "2026-09-17 15:43:04.113673+00",
+      "relation_name": "whatsapp_follow_up_reminders",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "sent_at",
+      "data_type": "timestamp with time zone",
+      "observed_at": "2026-09-17 15:43:04.113673+00",
+      "relation_name": "whatsapp_follow_up_reminders",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "whatsapp_message_id",
+      "data_type": "text",
+      "observed_at": "2026-09-17 15:43:04.113674+00",
+      "relation_name": "whatsapp_follow_up_reminders",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "last_error",
+      "data_type": "text",
+      "observed_at": "2026-09-17 15:43:04.113675+00",
+      "relation_name": "whatsapp_follow_up_reminders",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "observed_at": "2026-09-17 15:43:04.113676+00",
+      "relation_name": "whatsapp_follow_up_reminders",
+      "schema_name": "public"
+    },
+    {
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "observed_at": "2026-09-17 15:43:04.113676+00",
+      "relation_name": "whatsapp_follow_up_reminders",
+      "schema_name": "public"
+    }
+  ],
+  "edge_list": [
+    {
+      "created_at": 1786407045964,
+      "entrypoint_path": "file:///tmp/user_fn_cdtvuovsqwwopktdahgj_b3d10e37-cab1-4e55-8302-fccc8728c756_12/source/index.ts",
+      "ezbr_sha256": "585094e3c926d1177d9b3ab198f86c60c6a95ae5e4fee732caea0354c521286a",
+      "id": "b3d10e37-cab1-4e55-8302-fccc8728c756",
+      "import_map": true,
+      "import_map_path": "file:///tmp/user_fn_cdtvuovsqwwopktdahgj_b3d10e37-cab1-4e55-8302-fccc8728c756_12/source/deno.json",
+      "name": "manage-users",
+      "slug": "manage-users",
+      "status": "ACTIVE",
+      "updated_at": 1787339117578,
+      "verify_jwt": true,
+      "version": 19
+    },
+    {
+      "created_at": 1786723750082,
+      "entrypoint_path": "file:///tmp/user_fn_cdtvuovsqwwopktdahgj_bdc817de-0629-4abb-8644-c2a0810a9375_40/source/index.ts",
+      "ezbr_sha256": "ab557f7aacf720539d59244996182fccedc4a68c96324593e62925523e20e0a7",
+      "id": "bdc817de-0629-4abb-8644-c2a0810a9375",
+      "import_map": true,
+      "import_map_path": "file:///tmp/user_fn_cdtvuovsqwwopktdahgj_bdc817de-0629-4abb-8644-c2a0810a9375_40/source/deno.json",
+      "name": "whatsapp-webhook",
+      "slug": "whatsapp-webhook",
+      "status": "ACTIVE",
+      "updated_at": 1789578474560,
+      "verify_jwt": false,
+      "version": 41
+    },
+    {
+      "created_at": 1786737331329,
+      "entrypoint_path": "file:///tmp/user_fn_cdtvuovsqwwopktdahgj_97c62532-27d1-4ae1-b72f-f753cd16d327_2/source/index.ts",
+      "ezbr_sha256": "df0a09678cd2e8ce1f7bb2e066f7f2c86b70048e45aa35da4c8bb51a2292b8c7",
+      "id": "97c62532-27d1-4ae1-b72f-f753cd16d327",
+      "import_map": true,
+      "import_map_path": "file:///tmp/user_fn_cdtvuovsqwwopktdahgj_97c62532-27d1-4ae1-b72f-f753cd16d327_2/source/deno.json",
+      "name": "privacy-policy",
+      "slug": "privacy-policy",
+      "status": "ACTIVE",
+      "updated_at": 1786737416786,
+      "verify_jwt": false,
+      "version": 12
+    },
+    {
+      "created_at": 1786744899458,
+      "entrypoint_path": "file:///tmp/user_fn_cdtvuovsqwwopktdahgj_965d711a-4595-4903-bd87-8999391906f1_2/source/index.ts",
+      "ezbr_sha256": "df4afd66855c02d709c805a612cd702e6ceb4453ac52b3769b7033437f850bc8",
+      "id": "965d711a-4595-4903-bd87-8999391906f1",
+      "import_map": true,
+      "import_map_path": "file:///tmp/user_fn_cdtvuovsqwwopktdahgj_965d711a-4595-4903-bd87-8999391906f1_2/source/deno.json",
+      "name": "ai-knowledge-ingest",
+      "slug": "ai-knowledge-ingest",
+      "status": "ACTIVE",
+      "updated_at": 1786744956615,
+      "verify_jwt": true,
+      "version": 10
+    },
+    {
+      "created_at": 1787247304467,
+      "entrypoint_path": "file:///tmp/user_fn_cdtvuovsqwwopktdahgj_f231df46-f112-4669-9c84-e358c68cdded_3/source/index.ts",
+      "ezbr_sha256": "c512ba09ee5c39b88f1c260a26ab5f077acc60364c9b61bf9a633d4ef5f93dfd",
+      "id": "f231df46-f112-4669-9c84-e358c68cdded",
+      "import_map": false,
+      "name": "vehicle-market-reference",
+      "slug": "vehicle-market-reference",
+      "status": "ACTIVE",
+      "updated_at": 1787252223201,
+      "verify_jwt": true,
+      "version": 10
+    },
+    {
+      "created_at": 1787247310748,
+      "entrypoint_path": "file:///tmp/user_fn_cdtvuovsqwwopktdahgj_721e07dd-b0f5-4847-a1bc-0e7ca9e3bdf7_1/source/index.ts",
+      "ezbr_sha256": "f2c7abf51e7379417e486bef605242cb5aeb00d459dca09ef387509e1450cfd9",
+      "id": "721e07dd-b0f5-4847-a1bc-0e7ca9e3bdf7",
+      "import_map": false,
+      "name": "mercadolibre-oauth-start",
+      "slug": "mercadolibre-oauth-start",
+      "status": "ACTIVE",
+      "updated_at": 1787247310748,
+      "verify_jwt": true,
+      "version": 8
+    },
+    {
+      "created_at": 1787247316529,
+      "entrypoint_path": "file:///tmp/user_fn_cdtvuovsqwwopktdahgj_7ab1231f-8b98-42ed-b777-79c0c9311e48_1/source/index.ts",
+      "ezbr_sha256": "2b476e0239b90124672672b8df20b8fd8d0c878a00ad480722d6c192244ea757",
+      "id": "7ab1231f-8b98-42ed-b777-79c0c9311e48",
+      "import_map": false,
+      "name": "mercadolibre-oauth-callback",
+      "slug": "mercadolibre-oauth-callback",
+      "status": "ACTIVE",
+      "updated_at": 1787247316529,
+      "verify_jwt": false,
+      "version": 8
+    },
+    {
+      "created_at": 1787255918809,
+      "entrypoint_path": "file:///tmp/user_fn_cdtvuovsqwwopktdahgj_623862ea-f246-4ca0-8665-36aadd3f4cb1_2/source/index.ts",
+      "ezbr_sha256": "1e0a36e6c0cfa35ae386b3226d018bdf43d805ad5667a187a75abc154e5851b0",
+      "id": "623862ea-f246-4ca0-8665-36aadd3f4cb1",
+      "import_map": true,
+      "import_map_path": "file:///tmp/user_fn_cdtvuovsqwwopktdahgj_623862ea-f246-4ca0-8665-36aadd3f4cb1_2/source/deno.json",
+      "name": "whatsapp-human-message",
+      "slug": "whatsapp-human-message",
+      "status": "ACTIVE",
+      "updated_at": 1787260188516,
+      "verify_jwt": true,
+      "version": 9
+    },
+    {
+      "created_at": 1787317142070,
+      "entrypoint_path": "file:///tmp/user_fn_cdtvuovsqwwopktdahgj_3a4c2c01-09e2-41e8-8ddb-bff34d218616_1/source/index.ts",
+      "ezbr_sha256": "c274d8978795e1aa18c1fdca65cab6c78ddd4c4b4a22e0bc59ee30184a59dc79",
+      "id": "3a4c2c01-09e2-41e8-8ddb-bff34d218616",
+      "import_map": true,
+      "import_map_path": "file:///tmp/user_fn_cdtvuovsqwwopktdahgj_3a4c2c01-09e2-41e8-8ddb-bff34d218616_1/source/deno.json",
+      "name": "whatsapp-follow-up-reminders",
+      "slug": "whatsapp-follow-up-reminders",
+      "status": "ACTIVE",
+      "updated_at": 1787317142070,
+      "verify_jwt": true,
+      "version": 8
+    }
+  ],
+  "project_ref": "cdtvuovsqwwopktdahgj",
+  "query_provenance": {
+    "runtime_aggregate": "SELECT clock_timestamp() AS observed_at,\n(SELECT coalesce(jsonb_agg(jsonb_build_object('jobid',jobid,'jobname',jobname,'schedule',schedule,'active',active,'references_reminder_endpoint',position('whatsapp-follow-up-reminders' in command)>0,'references_pg_net',position('net.http_post' in command)>0) ORDER BY jobid),'[]'::jsonb) FROM cron.job) AS jobs,\n(SELECT coalesce(jsonb_agg(to_jsonb(s)),'[]'::jsonb) FROM (SELECT jobid,status,count(*) AS runs,min(start_time) AS first_start,max(start_time) AS last_start,count(*) FILTER (WHERE end_time IS NULL) AS no_end_recorded FROM cron.job_run_details WHERE start_time>=now()-interval '24 hours' GROUP BY jobid,status ORDER BY jobid,status) s) AS cron_runs_last_24h,\n(SELECT count(*) FROM net.http_request_queue) AS pg_net_queued_requests,\n(SELECT coalesce(jsonb_agg(to_jsonb(s)),'[]'::jsonb) FROM (SELECT status_code,timed_out,count(*) AS responses,min(created) AS first_recorded,max(created) AS last_recorded FROM net._http_response WHERE created>=now()-interval '24 hours' GROUP BY status_code,timed_out ORDER BY status_code,timed_out) s) AS pg_net_responses_last_24h,\n(SELECT coalesce(jsonb_agg(to_jsonb(s)),'[]'::jsonb) FROM (SELECT status,count(*) AS rows,count(*) FILTER(WHERE due_at<=now()) AS due_rows,min(due_at) AS earliest_due,max(claimed_at) AS latest_claim,max(sent_at) AS latest_sent FROM public.whatsapp_follow_up_reminders GROUP BY status ORDER BY status) s) AS reminder_state_aggregate,\n(SELECT coalesce(jsonb_agg(jsonb_build_object('updated_at',updated_at,'qualification_rules_md5',md5(qualification_rules),'qualification_rules_chars',length(qualification_rules),'conversation_style_md5',md5(conversation_style),'conversation_style_chars',length(conversation_style),'vector_store_configured',nullif(vector_store_id,'') IS NOT NULL)),'[]'::jsonb) FROM public.ai_assistant_settings) AS ai_settings_fingerprints,\n(SELECT coalesce(jsonb_agg(jsonb_build_object('role',rolname,'can_login',rolcanlogin,'bypass_rls',rolbypassrls,'superuser',rolsuper)),'[]'::jsonb) FROM pg_roles WHERE rolname IN ('service_role','crm_ingress_worker','crm_processing_worker','crm_dispatch_worker','crm_runtime_owner','crm_runtime_operator')) AS runtime_roles,\n(SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='private' AND c.relname LIKE 'crm_%' AND c.relkind IN ('r','p')) AS proposed_private_crm_table_count",
+    "settings_fingerprints": "SELECT clock_timestamp() AS observed_at, updated_at,\nencode(sha256(convert_to(qualification_rules,'UTF8')),'hex') AS qualification_rules_sha256,\nencode(sha256(convert_to(conversation_style,'UTF8')),'hex') AS conversation_style_sha256,\nchar_length(qualification_rules) AS qualification_rules_chars,\nchar_length(conversation_style) AS conversation_style_chars,\ncoalesce(vector_store_id,'')<>'' AS vector_store_configured\nFROM public.ai_assistant_settings"
+  },
+  "runtime_aggregate": [
+    {
+      "ai_settings_fingerprints": [
+        {
+          "conversation_style_chars": 4650,
+          "conversation_style_md5": "555cf9f29eeab431cc776593404534f5",
+          "qualification_rules_chars": 1958,
+          "qualification_rules_md5": "9e45a0878c16649b2115722abde1fbed",
+          "updated_at": "2026-09-14T23:51:04.665478+00:00",
+          "vector_store_configured": true
+        }
+      ],
+      "cron_runs_last_24h": [
+        {
+          "first_start": "2026-09-16T15:45:00.25592+00:00",
+          "jobid": 1,
+          "last_start": "2026-09-17T15:40:00.187774+00:00",
+          "no_end_recorded": 0,
+          "runs": 288,
+          "status": "succeeded"
+        }
+      ],
+      "jobs": [
+        {
+          "active": true,
+          "jobid": 1,
+          "jobname": "whatsapp-unanswered-follow-up",
+          "references_pg_net": true,
+          "references_reminder_endpoint": true,
+          "schedule": "*/5 * * * *"
+        }
+      ],
+      "observed_at": "2026-09-17 15:43:59.708509+00",
+      "pg_net_queued_requests": 0,
+      "pg_net_responses_last_24h": [
+        {
+          "first_recorded": "2026-09-17T09:45:00.274871+00:00",
+          "last_recorded": "2026-09-17T15:40:00.243057+00:00",
+          "responses": 72,
+          "status_code": 200,
+          "timed_out": false
+        }
+      ],
+      "proposed_private_crm_table_count": 0,
+      "reminder_state_aggregate": [
+        {
+          "due_rows": 291,
+          "earliest_due": "2026-08-21T15:13:38.87+00:00",
+          "latest_claim": null,
+          "latest_sent": null,
+          "rows": 296,
+          "status": "cancelled"
+        },
+        {
+          "due_rows": 1,
+          "earliest_due": "2026-09-17T13:03:10.686+00:00",
+          "latest_claim": null,
+          "latest_sent": null,
+          "rows": 3,
+          "status": "pending"
+        },
+        {
+          "due_rows": 283,
+          "earliest_due": "2026-08-21T15:44:52.129+00:00",
+          "latest_claim": "2026-09-17T12:20:02.017725+00:00",
+          "latest_sent": "2026-09-17T12:20:03.157+00:00",
+          "rows": 283,
+          "status": "sent"
+        }
+      ],
+      "runtime_roles": [
+        {
+          "bypass_rls": true,
+          "can_login": false,
+          "role": "service_role",
+          "superuser": false
+        }
+      ]
+    }
+  ],
+  "schema_version": "crm.m103.m0.runtime-evidence/1",
+  "scope": "BL-04 BL-05 BL-07 and read-only support BL-08; no operational changes",
+  "settings_fingerprints": [
+    {
+      "conversation_style_chars": 4650,
+      "conversation_style_sha256": "756e1cd3d823c851ecd8fe464d5cb63ed8ce66663bb8e1b81600d9e92edd980a",
+      "observed_at": "2026-09-17 15:45:03.577914+00",
+      "qualification_rules_chars": 1958,
+      "qualification_rules_sha256": "52ed5895d31fe20cca5f3a69601edaff932b52331c8ceab8025848a288a91baa",
+      "updated_at": "2026-09-14 23:51:04.665478+00",
+      "vector_store_configured": true
+    }
+  ],
+  "started_at_clock_utc": "2026-09-17T15:41:58Z",
+  "source_recaptures": [
+    {
+      "id": "bdc817de-0629-4abb-8644-c2a0810a9375",
+      "slug": "whatsapp-webhook",
+      "name": "whatsapp-webhook",
+      "version": 41,
+      "status": "ACTIVE",
+      "verify_jwt": false,
+      "updated_at": 1789578474560,
+      "ezbr_sha256": "ab557f7aacf720539d59244996182fccedc4a68c96324593e62925523e20e0a7",
+      "files": [
+        {
+          "name": "index.ts",
+          "bytes": 169,
+          "sha256": "20a05a3df6abce5136ef810e70f7f9321c75454400b065657c84c783b3394e4c",
+          "matches_previous_baseline": true,
+          "direct_env_variable_names": []
+        },
+        {
+          "name": "deno.json",
+          "bytes": 88,
+          "sha256": "adf9df9da776a91804688fa85b87abdc049201a4ab65d32a1919e1625cb0b909",
+          "matches_previous_baseline": true,
+          "direct_env_variable_names": []
+        }
+      ],
+      "matches_previous_bundle_metadata": true
+    },
+    {
+      "id": "623862ea-f246-4ca0-8665-36aadd3f4cb1",
+      "slug": "whatsapp-human-message",
+      "name": "whatsapp-human-message",
+      "version": 9,
+      "status": "ACTIVE",
+      "verify_jwt": true,
+      "updated_at": 1787260188516,
+      "ezbr_sha256": "1e0a36e6c0cfa35ae386b3226d018bdf43d805ad5667a187a75abc154e5851b0",
+      "files": [
+        {
+          "name": "index.ts",
+          "bytes": 5362,
+          "sha256": "0216bc64c5873f7ca65bed99289fa7da4207d069a906e3a554efc57dd9fc95d5",
+          "matches_previous_baseline": true,
+          "direct_env_variable_names": [
+            "META_GRAPH_API_VERSION",
+            "META_WHATSAPP_ACCESS_TOKEN",
+            "META_WHATSAPP_PHONE_NUMBER_ID",
+            "SUPABASE_ANON_KEY",
+            "SUPABASE_SERVICE_ROLE_KEY",
+            "SUPABASE_URL"
+          ]
+        },
+        {
+          "name": "deno.json",
+          "bytes": 88,
+          "sha256": "adf9df9da776a91804688fa85b87abdc049201a4ab65d32a1919e1625cb0b909",
+          "matches_previous_baseline": true,
+          "direct_env_variable_names": []
+        }
+      ],
+      "matches_previous_bundle_metadata": true
+    },
+    {
+      "id": "3a4c2c01-09e2-41e8-8ddb-bff34d218616",
+      "slug": "whatsapp-follow-up-reminders",
+      "name": "whatsapp-follow-up-reminders",
+      "version": 8,
+      "status": "ACTIVE",
+      "verify_jwt": true,
+      "updated_at": 1787317142070,
+      "ezbr_sha256": "c274d8978795e1aa18c1fdca65cab6c78ddd4c4b4a22e0bc59ee30184a59dc79",
+      "files": [
+        {
+          "name": "index.ts",
+          "bytes": 6228,
+          "sha256": "b7a2c58a2bb1d682fa355ea0ef41d7b1ba877f5567ef6f01e76c99854b3367fb",
+          "matches_previous_baseline": true,
+          "direct_env_variable_names": [
+            "META_GRAPH_API_VERSION",
+            "META_WHATSAPP_ACCESS_TOKEN",
+            "META_WHATSAPP_PHONE_NUMBER_ID",
+            "SUPABASE_SERVICE_ROLE_KEY",
+            "SUPABASE_URL"
+          ]
+        },
+        {
+          "name": "reminder-copy.ts",
+          "bytes": 384,
+          "sha256": "73cd67d7c4c6c7ec11d496e97bb7d1d194240c8426f8f93c468f96d0ba95dce7",
+          "matches_previous_baseline": true,
+          "direct_env_variable_names": []
+        },
+        {
+          "name": "deno.json",
+          "bytes": 88,
+          "sha256": "adf9df9da776a91804688fa85b87abdc049201a4ab65d32a1919e1625cb0b909",
+          "matches_previous_baseline": true,
+          "direct_env_variable_names": []
+        }
+      ],
+      "matches_previous_bundle_metadata": true
+    }
+  ],
+  "edge_list_drift": [
+    {
+      "slug": "manage-users",
+      "same_version": true,
+      "same_bundle_hash": true
+    },
+    {
+      "slug": "whatsapp-webhook",
+      "same_version": true,
+      "same_bundle_hash": true
+    },
+    {
+      "slug": "privacy-policy",
+      "same_version": true,
+      "same_bundle_hash": true
+    },
+    {
+      "slug": "ai-knowledge-ingest",
+      "same_version": true,
+      "same_bundle_hash": true
+    },
+    {
+      "slug": "vehicle-market-reference",
+      "same_version": true,
+      "same_bundle_hash": true
+    },
+    {
+      "slug": "mercadolibre-oauth-start",
+      "same_version": true,
+      "same_bundle_hash": true
+    },
+    {
+      "slug": "mercadolibre-oauth-callback",
+      "same_version": true,
+      "same_bundle_hash": true
+    },
+    {
+      "slug": "whatsapp-human-message",
+      "same_version": true,
+      "same_bundle_hash": true
+    },
+    {
+      "slug": "whatsapp-follow-up-reminders",
+      "same_version": true,
+      "same_bundle_hash": true
+    }
+  ],
+  "baseline_references": {
+    "edge_manifest_file": "m01-edge-baseline.json",
+    "edge_manifest_sha256": "621cc201b1b8a5b9e3a7f2950791b431b3a7264a684c4354198a0d5fc4a80a4d",
+    "prior_observed_at": "2026-09-17T13:48:08.983Z",
+    "pinned_webhook_commit": "2a0f8d791aca46851a3685dcbc8b648dca02a3e6",
+    "pinned_graph_sha256": "6ac9b66f6738b2526247a32c7397669341ca5c785f2058bceb00b9291d9f2714",
+    "db_baseline_file": "m01-db-baseline.json"
+  },
+  "local_inventory_only": {
+    "path_executables": {
+      "node": "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+      "npm": "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/npm",
+      "deno": null,
+      "supabase": null,
+      "docker": null,
+      "psql": null
+    },
+    "existing_source_config": [
+      "audit-main/supabase/config.toml",
+      "audit-main/scripts/configure-supabase-preview.mjs",
+      "audit-main/tests/crm-v2-contact-answer.integration.sql"
+    ],
+    "tests_started": false,
+    "services_started": false,
+    "note": "Complementary inventory only; another agent owns isolated PostgreSQL harness evidence."
+  },
+  "blockers": [
+    {
+      "id": "BL-04",
+      "status": "OPEN_NOT_CLOSED",
+      "verified": "Same three direct sender artifacts remain deployed; service_role bypassrls; proposed scoped runtime roles absent.",
+      "not_verified": "Secret availability/scope per execution, actual runtime isolation, emitter credential revocation/gateway and old-runtime shutdown."
+    },
+    {
+      "id": "BL-05",
+      "status": "OPEN_NOT_CLOSED",
+      "verified": "Reminder cron active; aggregate queue/state observed at DB timestamp.",
+      "not_verified": "Edge execution count, Meta requests in flight, complete attempt ledger, provider receipt/correlation/idempotency guarantees and quiescence."
+    },
+    {
+      "id": "BL-07",
+      "status": "PARTIALLY_OBSERVED_OPEN",
+      "verified": "AI settings SHA256/length/update time unchanged from earlier baseline.",
+      "not_verified": "Effective env model/API version/account/sender binding and Shadow/env flags; defaults are not effective values."
+    },
+    {
+      "id": "BL-08",
+      "status": "OPEN_IN_THIS_LIMITED_RECAPTURE",
+      "verified": "Read-only inventory of local executables and existing config/test paths.",
+      "not_verified": "Isolated database roles, egress blocking, deterministic failure provider, concurrent test results; separate implementation-agent evidence required."
+    }
+  ],
+  "p0_seller_channel": {
+    "status": "OPEN_EXISTING_PRODUCTION_PATH",
+    "evidence": "whatsapp-human-message v9 remains ACTIVE with identical source and bundle hash; no endpoint invocation or permission mutation was performed.",
+    "scope_note": "M1-01/02/03 branch does not close the production sender/control path."
+  },
+  "safety_scope": {
+    "read_customer_content": false,
+    "read_secret_values": false,
+    "read_tokens": false,
+    "called_business_or_send_endpoints": false,
+    "changed_production": false,
+    "changed_repository": false,
+    "notes": "Cron command was tested server-side only for two fixed substring booleans; command text, net headers/bodies/content, return_message and individual reminder/lead IDs were not returned.",
+    "returned_headers_bodies_or_cron_commands": false
+  },
+  "limitations": [
+    "ACTIVE metadata does not prove a function is executing now or enumerate all historical isolates.",
+    "Cron succeeded and pg_net HTTP200 do not establish Meta delivery or complete business processing.",
+    "Zero pg_net queue and zero aggregate processing reminders do not prove no direct Edge-to-Meta requests are in flight.",
+    "Snapshot is time-bound and not a quiescence fence.",
+    "No function secrets/env inventory capability is exposed by the available Supabase tools; no token/secret access was attempted.",
+    "No logs were requested because they can contain message bodies, request bodies or credentials.",
+    "No SELECT targeted lead_messages, conversation text, customer records or customer identifiers.",
+    "Full legacy emitter inventory includes possible external consumers not proven by the three known sources."
+  ],
+  "artifact_written_at_utc": "2026-09-17T15:47:22.743807+00:00"
+}

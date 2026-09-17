@@ -1,0 +1,503 @@
+{
+  "format_version": "crm.m103.m0-external-readonly/1",
+  "scope": "Recapture BL-01/02/03/06 only; additive local implementation M1-01/02/03 remains root-owned; no runtime changes, no business endpoint calls",
+  "capture_window": {
+    "started_at": "2026-09-17T15:42:31.674Z",
+    "completed_at": "2026-09-17T15:47:27.702Z",
+    "atomic_across_services": false
+  },
+  "project_ref": "cdtvuovsqwwopktdahgj",
+  "approved_plan": "/workspace/scratch/b9aa5a4c407b/Plan_ejecutable_M0-M1_Grupo_Sur_CDN_v1_2026-09-17.md",
+  "prior_release_manifest": "/workspace/scratch/b9aa5a4c407b/m01-release-baseline.json",
+  "source_snapshot": {
+    "path": "/workspace/scratch/b9aa5a4c407b/audit-main",
+    "git_sha": "e3675903ade49080a575f5d19f61b243ad2aa948",
+    "meaning": "Known source snapshot, not claimed effective frontend. New main and implementation branch managed by root."
+  },
+  "vercel": {
+    "status": "BLOCKED_ACCESS",
+    "blocker": "BL-01",
+    "requests": [
+      {
+        "name": "vercel_teams",
+        "started_at": "2026-09-17T15:42:31.676Z",
+        "completed_at": "2026-09-17T15:42:33.686Z",
+        "sanitized_result": {
+          "teams": []
+        }
+      },
+      {
+        "name": "vercel_deployment",
+        "started_at": "2026-09-17T15:42:31.676Z",
+        "completed_at": "2026-09-17T15:42:34.103Z",
+        "sanitized_result": {
+          "http_status": 403,
+          "error_code": "forbidden",
+          "scope": "cesardenavarrete18-8218s-projects",
+          "team_id": "team_VpgknMEZqTsMNsqczPW0IOi9",
+          "deployment_requested": "2Ns52x4S1yHStGrxBYpTeUMJTo2A",
+          "reason": "Connection not authorized for this scope"
+        }
+      }
+    ],
+    "effective_deployment": null,
+    "effective_aliases": null,
+    "effective_bundle_hash": null,
+    "investigation_stopped": true,
+    "no_credentials_requested": true
+  },
+  "apps_script": {
+    "status": "BLOCKED_SOURCE_AND_DESTINATION_UNKNOWN",
+    "blocker": "BL-02",
+    "source_reference": "audit-main/lead-capture-config.js:2",
+    "frontend_consumers": [
+      "audit-main/script.js:185",
+      "audit-main/lead-capture.js:283"
+    ],
+    "known_endpoint_host": "script.google.com",
+    "known_endpoint_path_shape": "/macros/s/{deployment-id}/exec",
+    "endpoint_invoked": false,
+    "drive_searches": [
+      {
+        "query": "Compromiso",
+        "result_count": 0
+      },
+      {
+        "query": "Grupo Sur",
+        "result_count": 0
+      },
+      {
+        "query": "Leads",
+        "filter": "script or spreadsheet MIME; not trashed",
+        "result_count": 0
+      },
+      {
+        "query": "0km",
+        "result_count": 0
+      }
+    ],
+    "search_mode": "Metadata only; no file contents returned; result count is not proof of no integration",
+    "source_script_id": null,
+    "deployed_revision": null,
+    "sheet_destinations": null,
+    "script_triggers": null,
+    "supabase_downstream": null,
+    "credential_custodian": null,
+    "investigation_stopped": true
+  },
+  "edge_metadata": {
+    "functions": [
+      {
+        "slug": "manage-users",
+        "status": "ACTIVE",
+        "version": 19,
+        "verify_jwt": true,
+        "provider_bundle_sha256": "585094e3c926d1177d9b3ab198f86c60c6a95ae5e4fee732caea0354c521286a",
+        "updated_at": 1787339117578,
+        "matches_prior_provider_bundle": true
+      },
+      {
+        "slug": "whatsapp-webhook",
+        "status": "ACTIVE",
+        "version": 41,
+        "verify_jwt": false,
+        "provider_bundle_sha256": "ab557f7aacf720539d59244996182fccedc4a68c96324593e62925523e20e0a7",
+        "updated_at": 1789578474560,
+        "matches_prior_provider_bundle": true
+      },
+      {
+        "slug": "privacy-policy",
+        "status": "ACTIVE",
+        "version": 12,
+        "verify_jwt": false,
+        "provider_bundle_sha256": "df0a09678cd2e8ce1f7bb2e066f7f2c86b70048e45aa35da4c8bb51a2292b8c7",
+        "updated_at": 1786737416786,
+        "matches_prior_provider_bundle": true
+      },
+      {
+        "slug": "ai-knowledge-ingest",
+        "status": "ACTIVE",
+        "version": 10,
+        "verify_jwt": true,
+        "provider_bundle_sha256": "df4afd66855c02d709c805a612cd702e6ceb4453ac52b3769b7033437f850bc8",
+        "updated_at": 1786744956615,
+        "matches_prior_provider_bundle": true
+      },
+      {
+        "slug": "vehicle-market-reference",
+        "status": "ACTIVE",
+        "version": 10,
+        "verify_jwt": true,
+        "provider_bundle_sha256": "c512ba09ee5c39b88f1c260a26ab5f077acc60364c9b61bf9a633d4ef5f93dfd",
+        "updated_at": 1787252223201,
+        "matches_prior_provider_bundle": true
+      },
+      {
+        "slug": "mercadolibre-oauth-start",
+        "status": "ACTIVE",
+        "version": 8,
+        "verify_jwt": true,
+        "provider_bundle_sha256": "f2c7abf51e7379417e486bef605242cb5aeb00d459dca09ef387509e1450cfd9",
+        "updated_at": 1787247310748,
+        "matches_prior_provider_bundle": true
+      },
+      {
+        "slug": "mercadolibre-oauth-callback",
+        "status": "ACTIVE",
+        "version": 8,
+        "verify_jwt": false,
+        "provider_bundle_sha256": "2b476e0239b90124672672b8df20b8fd8d0c878a00ad480722d6c192244ea757",
+        "updated_at": 1787247316529,
+        "matches_prior_provider_bundle": true
+      },
+      {
+        "slug": "whatsapp-human-message",
+        "status": "ACTIVE",
+        "version": 9,
+        "verify_jwt": true,
+        "provider_bundle_sha256": "1e0a36e6c0cfa35ae386b3226d018bdf43d805ad5667a187a75abc154e5851b0",
+        "updated_at": 1787260188516,
+        "matches_prior_provider_bundle": true
+      },
+      {
+        "slug": "whatsapp-follow-up-reminders",
+        "status": "ACTIVE",
+        "version": 8,
+        "verify_jwt": true,
+        "provider_bundle_sha256": "c274d8978795e1aa18c1fdca65cab6c78ddd4c4b4a22e0bc59ee30184a59dc79",
+        "updated_at": 1787317142070,
+        "matches_prior_provider_bundle": true
+      }
+    ],
+    "method": "Supabase list_edge_functions read-only; no invocation",
+    "meaning": "Deployment metadata and provider bundle identity; consumers are not inferred from ACTIVE"
+  },
+  "human_channel": {
+    "blocker": "BL-06",
+    "status": "OPEN_USE_CONFIRMED_LEGITIMACY_UNRESOLVED",
+    "db_capture": {
+      "policies": [
+        {
+          "name": "lead_messages_read_management_or_owner",
+          "roles": [
+            "authenticated"
+          ],
+          "table": "lead_messages",
+          "using": "(private.current_user_active() AND (EXISTS ( SELECT 1\n   FROM leads lead\n  WHERE ((lead.id = lead_messages.lead_id) AND (private.current_user_is_management() OR ((lead.assigned_seller_user_id = ( SELECT auth.uid() AS uid)) AND (NOT (EXISTS ( SELECT 1\n           FROM sales_cases sales_case\n          WHERE (sales_case.lead_id = lead.id))))))))))",
+          "schema": "public",
+          "command": "SELECT",
+          "with_check": null
+        },
+        {
+          "name": "leads_management_insert",
+          "roles": [
+            "authenticated"
+          ],
+          "table": "leads",
+          "using": null,
+          "schema": "public",
+          "command": "INSERT",
+          "with_check": "private.current_user_is_management()"
+        },
+        {
+          "name": "leads_management_update",
+          "roles": [
+            "authenticated"
+          ],
+          "table": "leads",
+          "using": "private.current_user_is_management()",
+          "schema": "public",
+          "command": "UPDATE",
+          "with_check": "private.current_user_is_management()"
+        },
+        {
+          "name": "leads_read_management_or_owner",
+          "roles": [
+            "authenticated"
+          ],
+          "table": "leads",
+          "using": "(private.current_user_active() AND (private.current_user_is_management() OR ((assigned_seller_user_id = ( SELECT auth.uid() AS uid)) AND (NOT (EXISTS ( SELECT 1\n   FROM sales_cases sales_case\n  WHERE (sales_case.lead_id = leads.id))))) OR (private.current_user_is_sales_admin() AND (EXISTS ( SELECT 1\n   FROM sales_cases sales_case\n  WHERE (sales_case.lead_id = leads.id))))))",
+          "schema": "public",
+          "command": "SELECT",
+          "with_check": null
+        },
+        {
+          "name": "whatsapp_conversation_controls_read_authorized",
+          "roles": [
+            "authenticated"
+          ],
+          "table": "whatsapp_conversation_controls",
+          "using": "private.current_user_can_manage_whatsapp(lead_id)",
+          "schema": "public",
+          "command": "SELECT",
+          "with_check": null
+        },
+        {
+          "name": "whatsapp_conversation_events_read_authorized",
+          "roles": [
+            "authenticated"
+          ],
+          "table": "whatsapp_conversation_events",
+          "using": "private.current_user_can_manage_whatsapp(lead_id)",
+          "schema": "public",
+          "command": "SELECT",
+          "with_check": null
+        }
+      ],
+      "functions": [
+        {
+          "acl": "{postgres=X/postgres,authenticated=X/postgres}",
+          "name": "current_user_can_manage_whatsapp",
+          "owner": "postgres",
+          "config": [
+            "search_path=\"\""
+          ],
+          "schema": "private",
+          "definition": "CREATE OR REPLACE FUNCTION private.current_user_can_manage_whatsapp(p_lead_id uuid)\n RETURNS boolean\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO ''\nAS $function$\n  select exists (\n    select 1\n    from public.profiles p\n    left join public.leads l on l.id = p_lead_id\n    where p.user_id = (select auth.uid())\n      and p.active = true\n      and (\n        p.role::text in ('admin', 'supervisor')\n        or (p.role::text = 'seller' and l.assigned_seller_user_id = p.user_id)\n      )\n  );\n$function$\n",
+          "anon_execute": false,
+          "security_definer": true,
+          "identity_arguments": "p_lead_id uuid",
+          "service_role_execute": false,
+          "authenticated_execute": true,
+          "definition_sha256": "8d9b07f881593a1919c0d2d7e99d089b294e59e0a5cfa9d74313d4b68960c221",
+          "matches_prior_definition": true,
+          "matches_prior_acl": true
+        },
+        {
+          "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+          "name": "set_whatsapp_conversation_mode",
+          "owner": "postgres",
+          "config": [
+            "search_path=\"\""
+          ],
+          "schema": "public",
+          "definition": "CREATE OR REPLACE FUNCTION public.set_whatsapp_conversation_mode(p_lead_id uuid, p_mode text)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\ndeclare\n  v_user_id uuid := (select auth.uid());\n  v_control public.whatsapp_conversation_controls%rowtype;\nbegin\n  if v_user_id is null or not private.current_user_can_manage_whatsapp(p_lead_id) then\n    raise exception 'No tenés permiso para intervenir esta conversación';\n  end if;\n  if p_mode not in ('ai', 'human') then\n    raise exception 'El modo de conversación no es válido';\n  end if;\n\n  insert into public.whatsapp_conversation_controls (\n    lead_id,\n    mode,\n    taken_by_user_id,\n    taken_at,\n    released_by_user_id,\n    released_at\n  ) values (\n    p_lead_id,\n    p_mode,\n    case when p_mode = 'human' then v_user_id else null end,\n    case when p_mode = 'human' then now() else null end,\n    case when p_mode = 'ai' then v_user_id else null end,\n    case when p_mode = 'ai' then now() else null end\n  )\n  on conflict (lead_id) do update set\n    mode = excluded.mode,\n    taken_by_user_id = excluded.taken_by_user_id,\n    taken_at = excluded.taken_at,\n    released_by_user_id = excluded.released_by_user_id,\n    released_at = excluded.released_at\n  returning * into v_control;\n\n  insert into public.whatsapp_conversation_events (lead_id, actor_user_id, event_type)\n  values (p_lead_id, v_user_id, case when p_mode = 'human' then 'taken' else 'released' end);\n\n  return jsonb_build_object(\n    'lead_id', v_control.lead_id,\n    'mode', v_control.mode,\n    'taken_by_user_id', v_control.taken_by_user_id,\n    'taken_at', v_control.taken_at,\n    'released_at', v_control.released_at,\n    'updated_at', v_control.updated_at\n  );\nend;\n$function$\n",
+          "anon_execute": false,
+          "security_definer": true,
+          "identity_arguments": "p_lead_id uuid, p_mode text",
+          "service_role_execute": true,
+          "authenticated_execute": true,
+          "definition_sha256": "90dab399dbe3f95ca539599ccaf6d1bbb78d751d6a0ac76c3d4a1a38694dfe62",
+          "matches_prior_definition": true,
+          "matches_prior_acl": true
+        }
+      ],
+      "captured_at": "2026-09-17T15:44:16.985296+00:00",
+      "channel_event_usage": [
+        {
+          "actor_role": "admin",
+          "event_type": "message_sent",
+          "event_count": 2,
+          "last_event_at": "2026-08-20T21:22:55.096293+00:00",
+          "first_event_at": "2026-08-20T20:39:46.2509+00:00",
+          "distinct_actor_count": 1,
+          "actor_currently_active": true
+        },
+        {
+          "actor_role": "admin",
+          "event_type": "released",
+          "event_count": 3,
+          "last_event_at": "2026-08-24T18:51:20.544171+00:00",
+          "first_event_at": "2026-08-20T20:37:02.950112+00:00",
+          "distinct_actor_count": 1,
+          "actor_currently_active": true
+        },
+        {
+          "actor_role": "admin",
+          "event_type": "taken",
+          "event_count": 4,
+          "last_event_at": "2026-08-24T18:48:40.208013+00:00",
+          "first_event_at": "2026-08-20T20:36:57.378807+00:00",
+          "distinct_actor_count": 1,
+          "actor_currently_active": true
+        }
+      ],
+      "channel_message_usage": [
+        {
+          "origin": "human",
+          "direction": "outbound",
+          "message_count": 1,
+          "last_message_at": "2026-08-20T21:22:55.074537+00:00",
+          "first_message_at": "2026-08-20T21:22:55.074537+00:00"
+        }
+      ],
+      "conversation_control_counts": [
+        {
+          "mode": "ai",
+          "controls_count": 3,
+          "with_last_human_message_count": 1
+        },
+        {
+          "mode": "human",
+          "controls_count": 1,
+          "with_last_human_message_count": 1
+        }
+      ]
+    },
+    "query": "select jsonb_build_object(\n 'captured_at', clock_timestamp(),\n 'functions', (select coalesce(jsonb_agg(jsonb_build_object('schema',n.nspname,'name',p.proname,'identity_arguments',pg_get_function_identity_arguments(p.oid),'definition',pg_get_functiondef(p.oid),'owner',r.rolname,'security_definer',p.prosecdef,'config',p.proconfig,'acl',p.proacl::text,'anon_execute',has_function_privilege('anon',p.oid,'EXECUTE'),'authenticated_execute',has_function_privilege('authenticated',p.oid,'EXECUTE'),'service_role_execute',has_function_privilege('service_role',p.oid,'EXECUTE')) order by n.nspname,p.proname),'[]'::jsonb) from pg_proc p join pg_namespace n on n.oid=p.pronamespace join pg_roles r on r.oid=p.proowner where (n.nspname='private' and p.proname='current_user_can_manage_whatsapp') or (n.nspname='public' and p.proname='set_whatsapp_conversation_mode')),\n 'policies',(select coalesce(jsonb_agg(jsonb_build_object('schema',schemaname,'table',tablename,'name',policyname,'roles',roles,'command',cmd,'using',qual,'with_check',with_check) order by tablename,policyname),'[]'::jsonb) from pg_policies where schemaname='public' and tablename in ('leads','lead_messages','whatsapp_conversation_controls','whatsapp_conversation_events')),\n 'channel_event_usage',(select coalesce(jsonb_agg(to_jsonb(x) order by event_type,actor_role),'[]'::jsonb) from (select e.event_type,coalesce(p.role::text,'missing_profile') actor_role,p.active actor_currently_active,count(*) event_count,count(distinct e.actor_user_id) distinct_actor_count,min(e.created_at) first_event_at,max(e.created_at) last_event_at from public.whatsapp_conversation_events e left join public.profiles p on p.user_id=e.actor_user_id group by e.event_type,p.role,p.active) x),\n 'channel_message_usage',(select coalesce(jsonb_agg(to_jsonb(x) order by origin,direction),'[]'::jsonb) from (select origin,direction,count(*) message_count,min(created_at) first_message_at,max(created_at) last_message_at from public.lead_messages where origin='human' group by origin,direction) x),\n 'conversation_control_counts',(select coalesce(jsonb_agg(to_jsonb(x) order by mode),'[]'::jsonb) from (select mode,count(*) controls_count,count(*) filter(where last_human_message_at is not null) with_last_human_message_count from public.whatsapp_conversation_controls group by mode) x)\n) as capture;",
+    "request_started_at": "2026-09-17T15:43:57.905Z",
+    "request_completed_at": "2026-09-17T15:44:17.348Z",
+    "known_repo_consumer": {
+      "mode_rpc": "vendedores/supervisor/supervisor.js:862",
+      "human_message_edge": "vendedores/supervisor/supervisor.js:881",
+      "composer_context": "Supervisor portal source; effective frontend still not certified"
+    },
+    "caveats": [
+      "Actor role/active are current profile attributes, not historical role at each event",
+      "Recorded events do not prove endpoint of origin, authorized current business need or absence of other callers",
+      "Counts from messages and conversation events do not imply one-to-one correspondence; no reconciliation or data change performed",
+      "No call to set_whatsapp_conversation_mode or whatsapp-human-message was made"
+    ]
+  },
+  "privileged_consumers": {
+    "blocker": "BL-03",
+    "status": "OPEN_CUSTODIAN_AND_CONSUMER_INVENTORY_INCOMPLETE",
+    "db_capture": {
+      "fdw_names": [],
+      "captured_at": "2026-09-17T15:45:09.089926+00:00",
+      "foreign_server_count": 0,
+      "current_session_groups": [
+        {
+          "state": "idle",
+          "database_role": "authenticator",
+          "session_count": 11,
+          "application_class": "other_application_hash:44356524d67e092240b5deda9de3b112"
+        },
+        {
+          "state": "active",
+          "database_role": "postgres",
+          "session_count": 1,
+          "application_class": "other_application_hash:31133e2255ee35130a518a99202153e3"
+        },
+        {
+          "state": "idle",
+          "database_role": "postgres",
+          "session_count": 1,
+          "application_class": "other_application_hash:8cb1279156fba9a813a9b5172828665a"
+        },
+        {
+          "state": "idle",
+          "database_role": "supabase_admin",
+          "session_count": 1,
+          "application_class": "empty"
+        },
+        {
+          "state": null,
+          "database_role": "supabase_admin",
+          "session_count": 1,
+          "application_class": "other_application_hash:4ecf7d509df68cfeebb254271e083ed4"
+        },
+        {
+          "state": "idle",
+          "database_role": "supabase_admin",
+          "session_count": 1,
+          "application_class": "postgres_exporter"
+        }
+      ],
+      "builtin_privileged_roles": [
+        {
+          "role": "authenticator",
+          "login": true,
+          "superuser": false,
+          "bypass_rls": false
+        },
+        {
+          "role": "dashboard_user",
+          "login": false,
+          "superuser": false,
+          "bypass_rls": false
+        },
+        {
+          "role": "postgres",
+          "login": true,
+          "superuser": false,
+          "bypass_rls": true
+        },
+        {
+          "role": "service_role",
+          "login": false,
+          "superuser": false,
+          "bypass_rls": true
+        },
+        {
+          "role": "supabase_admin",
+          "login": true,
+          "superuser": true,
+          "bypass_rls": true
+        },
+        {
+          "role": "supabase_auth_admin",
+          "login": true,
+          "superuser": false,
+          "bypass_rls": false
+        },
+        {
+          "role": "supabase_replication_admin",
+          "login": true,
+          "superuser": false,
+          "bypass_rls": false
+        },
+        {
+          "role": "supabase_storage_admin",
+          "login": true,
+          "superuser": false,
+          "bypass_rls": false
+        }
+      ],
+      "other_privileged_role_count": 2
+    },
+    "query": "select jsonb_build_object(\n 'captured_at',clock_timestamp(),\n 'builtin_privileged_roles',(select coalesce(jsonb_agg(jsonb_build_object('role',rolname,'superuser',rolsuper,'bypass_rls',rolbypassrls,'login',rolcanlogin) order by rolname),'[]'::jsonb) from pg_roles where rolname in ('postgres','supabase_admin','service_role','authenticator','supabase_auth_admin','supabase_storage_admin','supabase_replication_admin','dashboard_user')),\n 'other_privileged_role_count',(select count(*) from pg_roles where (rolsuper or rolbypassrls) and rolname not in ('postgres','supabase_admin','service_role','authenticator','supabase_auth_admin','supabase_storage_admin','supabase_replication_admin','dashboard_user')),\n 'current_session_groups',(select coalesce(jsonb_agg(to_jsonb(x) order by database_role,application_class,state),'[]'::jsonb) from (select case when usename in ('postgres','supabase_admin','service_role','authenticator','supabase_auth_admin','supabase_storage_admin','supabase_replication_admin','dashboard_user','pgbouncer','pgsodium_keyholder') then usename else 'other_role_hash:'||md5(coalesce(usename,'')) end database_role,case when application_name='' then 'empty' when application_name in ('PostgREST','postgrest','pg_cron','supabase_admin','postgres_exporter','realtime','Supavisor') then application_name else 'other_application_hash:'||md5(application_name) end application_class,state,count(*) session_count from pg_stat_activity where datname=current_database() group by 1,2,3) x),\n 'foreign_server_count',(select count(*) from pg_foreign_server),\n 'fdw_names',(select coalesce(jsonb_agg(fdwname order by fdwname),'[]'::jsonb) from pg_foreign_data_wrapper)\n) as capture;",
+    "request_started_at": "2026-09-17T15:44:51.958Z",
+    "request_completed_at": "2026-09-17T15:45:09.220Z",
+    "caveats": [
+      "Session snapshot includes audit connection and is not historical telemetry",
+      "Idle or absent session does not prove no consumer or no capability",
+      "application_name is caller-supplied and only hashed here outside allowlist; it is not a trusted workload identity",
+      "No raw query text, client IP, credentials, Auth personal rows or tokens were selected",
+      "Zero foreign servers/FDWs does not rule out Apps Script, REST, service_role or external workers"
+    ]
+  },
+  "blockers": [
+    {
+      "id": "BL-01",
+      "state": "OPEN",
+      "closure_evidence": "Authorized Vercel read of current alias/deployment/build/settings and effective served asset hashes"
+    },
+    {
+      "id": "BL-02",
+      "state": "OPEN",
+      "closure_evidence": "Apps Script source and deployment revision, trigger inventory, storage/Sheets/CRM destinations, credential classes/custodians and retries"
+    },
+    {
+      "id": "BL-03",
+      "state": "OPEN",
+      "closure_evidence": "Custodian-attested privileged principal/credential inventory correlated to known code revisions and available invocation evidence; not satisfied by empty logs"
+    },
+    {
+      "id": "BL-06",
+      "state": "OPEN",
+      "closure_evidence": "Confirm actual users/integrations, purpose and current operational need by capability without granting a future special channel operator"
+    }
+  ],
+  "authorization_effect": "These unresolved blockers continue to prohibit authority cutover in their domains. They do not by themselves authorize modifying existing senders, privileges, Apps Script or Vercel during M1-01/02/03.",
+  "sanitization": {
+    "secret_values_exported": false,
+    "personal_rows_exported": false,
+    "message_bodies_exported": false,
+    "actor_ids_exported": false,
+    "raw_query_text_exported": false,
+    "client_ips_exported": false,
+    "drive_file_contents_exported": false
+  },
+  "performed_mutations": [
+    "Created only this scratch JSON and accompanying Markdown documentation; no repository edits"
+  ],
+  "rollback": "No runtime or business changes performed; no operational rollback needed",
+  "source_evidence": {
+    "lead-capture-config.js": "9634b063be7f7b450d299f05548da299c9900359fa0c82e40cf8f7414aec9f2b",
+    "lead-capture.js": "60eb6348795f69af9b5993209d4b04cff6059d1479370aaccf412567dfde5797",
+    "script.js": "dce13ce17c9735642da1f0e8a9926ba80fa26aa776540f82fe2a3effed37fd12",
+    "vendedores/supervisor/supervisor.js": "fc8b309363263c70efe5d0400eb584f2dafc908e8c027fe7c4e3cdb76f6482ef",
+    "supabase/functions/whatsapp-human-message/index.ts": "0216bc64c5873f7ca65bed99289fa7da4207d069a906e3a554efc57dd9fc95d5"
+  }
+}
