@@ -1,0 +1,120 @@
+{
+  "harness": "crm-m1-unix-seccomp/2",
+  "run_id": "a89d5604-c5de-487c-b585-f451d5c1162b",
+  "suite": "schema-baseline-b.integration.test.mjs",
+  "source_manifest": {
+    "sha256": "1d4fd3f0cf2b714b83e3eb00a1db0fd05cbcfa456a778b3e441184a17550431e",
+    "git_base_revision": "be507e866722168bae0dbcd847f93b45652333e7",
+    "source_has_uncommitted_changes": true
+  },
+  "fixture_layer": "schema_only_baseline_b",
+  "bootstrap_source": "tests/m1/fixtures/schema-baseline-b/bootstrap.sql",
+  "bootstrap_sha256": "8ea22a1e8b4cd6559732331ca66ac2728d90f58e11ada4f344c398040608c5e6",
+  "cluster_per_suite": true,
+  "bootstrap_user": "supabase_admin",
+  "migration_installation": "suite_controlled_verbatim",
+  "timeout_scale": 3.0,
+  "status": "PASS",
+  "remote_database": false,
+  "external_egress": false,
+  "requested_database_major": 17,
+  "requested_uid": 65534,
+  "database_started": true,
+  "migrations_applied": [],
+  "integration_tests_executed": true,
+  "migration_sha256": {
+    "20260917154844_m1_runtime_authority_foundation.sql": "6dbb4e1c6a0c8da22de49424fdf965f46e74e85dad0e822a6201b2ec31f09d49",
+    "20260917154854_m1_private_capabilities.sql": "6154b2dd302d1f5793ea5c9b4151a1423f4f5b956e688ae7089bf8f00b80cd60",
+    "20260917154905_m1_command_receipts_events.sql": "433615402b82cbc5b85cd4f168c0b96ff48658de84cfdadad56b02616f7bf9e7"
+  },
+  "postgres_binary_sha256": "23cd174849b273064c47d581b55be596be2f5cf0ee5d3e76c0146e2464bf873a",
+  "guard_source_sha256": "589dc0aece8cee8e104a7c3a8c27d6e13ca858518bdf74d0454e67c90cb53fd9",
+  "guard_binary_sha256": "d48cf6d387092c71323d7e6a24af26c582d7bc0103545cd3614641e9608183f7",
+  "guard_precompiled": true,
+  "suite_sha256": {
+    "tests/m1/schema-baseline-b.integration.test.mjs": "9d329069fc08242962363af5a77edccb7eea25983a511ccaef93a8746e03590d"
+  },
+  "limits": [
+    "Schema-only baseline B: coverage is limited to its explicit manifest; no production rows or Supabase REST gateway.",
+    "No legacy handler, trigger, frontend or external sender is changed or certified.",
+    "Database effects occur only in the disposable local cluster."
+  ],
+  "postgres_version": "postgres (PostgreSQL) 17.6",
+  "unix_socket_available": true,
+  "uid_map": [
+    [
+      0,
+      0,
+      4294967295
+    ]
+  ],
+  "gid_map": [
+    [
+      0,
+      0,
+      4294967295
+    ]
+  ],
+  "environment_keys": [
+    "LANG",
+    "LC_ALL",
+    "LD_LIBRARY_PATH",
+    "M1_LIBPQ_PATH",
+    "M1_PYTHON_BIN",
+    "M1_TEST_BOOTSTRAP_USER",
+    "M1_TEST_DATABASE",
+    "M1_TEST_FIXTURE_DIR",
+    "M1_TEST_ISOLATED",
+    "M1_TEST_MIGRATION_DIR",
+    "M1_TEST_PORT",
+    "M1_TEST_RUN_ID",
+    "M1_TEST_SOCKET_DIR",
+    "M1_TEST_TIMEOUT_SCALE",
+    "PATH",
+    "PGPASSFILE",
+    "PGSERVICEFILE",
+    "PYTHONNOUSERSITE",
+    "TZ"
+  ],
+  "isolation": {
+    "ok": true,
+    "columns": [
+      "listen_addresses",
+      "marker",
+      "unix_socket"
+    ],
+    "rows": [
+      [
+        "",
+        "a89d5604-c5de-487c-b585-f451d5c1162b",
+        "t"
+      ]
+    ],
+    "affected": "1",
+    "id": 1
+  },
+  "migration_role": {
+    "ok": true,
+    "columns": [
+      "rolname",
+      "rolsuper",
+      "rolcreaterole",
+      "rolbypassrls"
+    ],
+    "rows": [
+      [
+        "postgres",
+        "f",
+        "t",
+        "t"
+      ]
+    ],
+    "affected": "1",
+    "id": 1
+  },
+  "test_exit_code": 0,
+  "tap": "TAP version 13\n# Subtest: B: observed relevant schema, exact M1 DDL, unchanged legacy catalogs and closed authority\n    # Subtest: B00: source integrity and real bootstrap identity are prerequisites\n    ok 1 - B00: source integrity and real bootstrap identity are prerequisites\n      ---\n      duration_ms: 705.5561\n      type: 'test'\n      ...\n    # Subtest: B01: observed tables, columns, constraints, indexes, triggers, policies, functions, sequences and enum match\n    ok 2 - B01: observed tables, columns, constraints, indexes, triggers, policies, functions, sequences and enum match\n      ---\n      duration_ms: 2251.47417\n      type: 'test'\n      ...\n    # Subtest: B02: selected roles, membership grantors, schemas and default ACLs match\n    ok 3 - B02: selected roles, membership grantors, schemas and default ACLs match\n      ---\n      duration_ms: 98.10978\n      type: 'test'\n      ...\n    # Subtest: B03: captured auth.uid implementation honors real JWT claims precedence and malformed claims\n    ok 4 - B03: captured auth.uid implementation honors real JWT claims precedence and malformed claims\n      ---\n      duration_ms: 93.54787\n      type: 'test'\n      ...\n    # Subtest: B4: 20260917154844_m1_runtime_authority_foundation.sql applies verbatim as postgres NOSUPERUSER and preserves observed objects\n    ok 5 - B4: 20260917154844_m1_runtime_authority_foundation.sql applies verbatim as postgres NOSUPERUSER and preserves observed objects\n      ---\n      duration_ms: 1521.57262\n      type: 'test'\n      ...\n    # Subtest: B5: 20260917154854_m1_private_capabilities.sql applies verbatim as postgres NOSUPERUSER and preserves observed objects\n    ok 6 - B5: 20260917154854_m1_private_capabilities.sql applies verbatim as postgres NOSUPERUSER and preserves observed objects\n      ---\n      duration_ms: 1137.14106\n      type: 'test'\n      ...\n    # Subtest: B6: 20260917154905_m1_command_receipts_events.sql applies verbatim as postgres NOSUPERUSER and preserves observed objects\n    ok 7 - B6: 20260917154905_m1_command_receipts_events.sql applies verbatim as postgres NOSUPERUSER and preserves observed objects\n      ---\n      duration_ms: 1784.65658\n      type: 'test'\n      ...\n    # Subtest: B07: six empty runtime tables are closed despite broad observed public-schema default grants\n    ok 8 - B07: six empty runtime tables are closed despite broad observed public-schema default grants\n      ---\n      duration_ms: 363.45208\n      type: 'test'\n      ...\n    # Subtest: B08: installed handler remains closed and no legacy capabilities leak to the runtime owner\n    ok 9 - B08: installed handler remains closed and no legacy capabilities leak to the runtime owner\n      ---\n      duration_ms: 1163.20129\n      type: 'test'\n      ...\n    1..9\nok 1 - B: observed relevant schema, exact M1 DDL, unchanged legacy catalogs and closed authority\n  ---\n  duration_ms: 9369.03692\n  type: 'test'\n  ...\n1..1\n# tests 10\n# suites 0\n# pass 10\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 10742.45654\n",
+  "stderr": "",
+  "duration_seconds": 29.955,
+  "temporary_cluster_retained": null
+}

@@ -18,12 +18,18 @@ def fail(message):
 
 if os.environ.get("M1_TEST_ISOLATED") != "unix-socket-seccomp-v1":
     fail("BLOCKED: run through harness/run-local.py")
+timeout_scale = float(os.environ.get("M1_TEST_TIMEOUT_SCALE", "1"))
+if not 1 <= timeout_scale <= 10:
+    fail("BLOCKED: invalid timeout scale")
 sockdir = pathlib.Path(os.environ["M1_TEST_SOCKET_DIR"])
 if not sockdir.is_absolute() or not sockdir.is_dir():
     fail("BLOCKED: an existing absolute Unix socket directory is required")
 allowed_database = "postgres" if sys.argv[1:] == ["--bootstrap"] else "m1_foundation_test"
 if os.environ.get("M1_TEST_DATABASE") != allowed_database:
     fail("BLOCKED: unexpected database name")
+bootstrap_user = os.environ.get("M1_TEST_BOOTSTRAP_USER")
+if bootstrap_user not in {"m1_test_admin", "supabase_admin"}:
+    fail("BLOCKED: unexpected local bootstrap identity")
 for family in (socket.AF_INET, socket.AF_INET6):
     try:
         probe = socket.socket(family, socket.SOCK_STREAM)
@@ -67,10 +73,10 @@ params = {
     "host": str(sockdir),
     "port": os.environ["M1_TEST_PORT"],
     "dbname": os.environ["M1_TEST_DATABASE"],
-    "user": "m1_test_admin",
-    "connect_timeout": "3",
+    "user": bootstrap_user,
+    "connect_timeout": str(int(3 * timeout_scale)),
     "application_name": os.environ.get("M1_TEST_APPLICATION", "m1-foundation-harness"),
-    "options": "-c statement_timeout=15000 -c idle_in_transaction_session_timeout=20000",
+    "options": f"-c statement_timeout={int(15000 * timeout_scale)} -c idle_in_transaction_session_timeout={int(20000 * timeout_scale)}",
 }
 keys = (ctypes.c_char_p * (len(params) + 1))(*[key.encode() for key in params], None)
 values = (ctypes.c_char_p * (len(params) + 1))(*[value.encode() for value in params.values()], None)

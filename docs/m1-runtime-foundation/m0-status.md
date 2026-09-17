@@ -2,7 +2,7 @@
 
 Esta rama no declara M0 completo. La autorización permite fundaciones locales inactivas, sin cutover. Las consultas remotas de esta tarea fueron SELECT de catálogo/agregados y lecturas de metadatos/fuentes; no hubo RPC de negocio, envíos, DDL/DML, backfill, rotación de credenciales ni cambios de configuración.
 
-Evidencia saneada reproducible: `evidence/m0-external.json` y `evidence/m0-runtime.json`. Incluyen timestamps, consultas, resultados mínimos y hashes, sin mensajes, destinatarios, tokens, nombres/IDs de clientes o valores de secretos. Captura 15:42–15:47 UTC; no es un snapshot atómico entre proveedores.
+Evidencia saneada reproducible: `evidence/m0-external.json` y `evidence/m0-runtime.json`. Incluyen timestamps, consultas, resultados mínimos y hashes, sin mensajes, destinatarios, tokens, nombres/IDs de clientes o valores de secretos. Captura original 15:42–15:47 UTC; no es un snapshot atómico entre proveedores. La validación DB posterior agrega catálogos de schema entre 18:12 y 18:27 UTC, documentados en `schema-baseline-b.md`; no recaptura uso comercial ni configuración externa.
 
 | Bloqueo | Evidencia nueva | Estado y qué falta |
 |---|---|---|
@@ -11,9 +11,9 @@ Evidencia saneada reproducible: `evidence/m0-external.json` y `evidence/m0-runti
 | BL-03 — externos privilegiados | Catálogos y sesiones agregadas confirman capacidades, no custodios. No se observan foreign servers/FDW | **ABIERTO.** Inventario de credenciales/principals/consumidores y evidencia de uso. FDW ausente no excluye REST o Dashboard |
 | BL-04 — productor/dispatcher/credenciales | Nueve Edge con versiones/bundle hashes sin cambios; tres senders conocidos con fuentes idénticas. Nombres de secrets presentes en código, sin valores | **ABIERTO.** Binding efectivo de secretos, principals y capacidades por runtime; inventario completo de emisores. Módulos separados no prueban aislamiento |
 | BL-05 — trabajo en vuelo | Cron cada 5 min activo, 288 registros succeeded/24 h; 72 respuestas HTTP200 retenidas; cola pg_net 0 al corte; reminders 3 pending (1 vencido), 283 sent, 296 cancelled | **ABIERTO.** Ledger/inventario de intentos HTTP, quiesce y unknown. Cola vacía o HTTP200 no prueba drenaje ni entrega Meta |
-| BL-06 — consumidores human | Uso histórico: 4 taken, 3 released, 2 message_sent; un actor cuyo perfil actual es admin; 1 mensaje origin=human y 4 controls. Ruta en portal Supervisor conocida; ACL/funciones sin cambios | **ABIERTO / P0.** Caracterizar necesidad/legitimidad/consumidores actuales. Rol actual no acredita rol histórico. Seller owner conserva capacidad backend potencial en legacy; no se ensayó con clientes reales |
+| BL-06 — consumidores human | Nueve registros históricos de eventos de modo humano: 4 taken, 3 released, 2 message_sent; un actor observado cuyo perfil actual es admin; agregado de 1 registro de mensaje origin=human y 4 controls. Ruta en portal Supervisor conocida; ACL/funciones sin cambios | **ABIERTO / P0.** Caracterizar necesidad, contexto y consumidores actuales. Esos registros no prueban que actuaran vendedores, que hubiera envíos reales, que el uso fuera incorrecto ni que el actor observado fuera el único consumidor. Rol actual no acredita rol histórico. Seller owner conserva capacidad backend potencial en legacy; no se ensayó con clientes reales |
 | BL-07 — configuración efectiva | Fingerprints/longitudes de qualification_rules y conversation_style idénticos; vector store configurado. No hay `private.crm_*` nuevas instaladas en remoto | **ABIERTO.** Manifest no secreto de env/modelo/flags/API/prompt ensamblado/config resuelta. Defaults del código no equivalen a valores efectivos |
-| BL-08 — aislamiento | Harness local diseñado con Unix socket, entorno permitido y seccomp sin red. Contenedor permite sólo UID/GID 0; PostgreSQL no puede iniciar con usuario no-root; AF_UNIX está prohibido incluso sin filtro propio | **ABIERTO.** Integración/concurrencia/RLS bloqueadas antes de initdb. Frontend/QA remoto tampoco certificados; las pruebas puras no cierran este bloqueo |
+| BL-08 — aislamiento | Validación local acreditada en VM Linux temporal sin NIC, rutas, mounts de host ni credenciales; PostgreSQL 17.6 con UID65534, socket Unix y seccomp sin IP. Se ejecutan las suites DB reales A y B | **ABIERTO para rollout.** Resuelto únicamente el impedimento del laboratorio local. Frontend/QA remoto, configuración y aislamiento completo de despliegue siguen sin certificarse |
 
 ## Riesgo P0 ratificado
 
@@ -24,6 +24,6 @@ Esta rama **no modifica ni elimina** esa ruta, conforme a la autorización. Nuev
 ## Reglas para la siguiente revisión
 
 1. Conservar las ocho filas abiertas hasta evidencia positiva correspondiente; un test sintético no certifica consumidores/configuración reales.
-2. Ejecutar las pruebas DB de esta rama en un host acreditado sin egress que admita PostgreSQL no-root. No usar un proyecto remoto por conveniencia.
+2. Conservar evidencia de las pruebas DB ejecutadas en VM descartable sin egress; no extrapolar el aislamiento local al rollout ni a un proyecto llamado QA.
 3. La rama no cambia main, Vercel, Supabase, Apps Script ni Meta. No hubo cambio operativo que revertir.
-4. No hay autorización implícita para M1-04, instalar migraciones, revocar legacy, desplegar la rama o corregir históricos.
+4. La autorización de esta revisión cubre instalar las tres migraciones sólo en el laboratorio descartable. No autoriza M1-04, instalación remota/productiva, revocar legacy, desplegar la rama ni corregir históricos.

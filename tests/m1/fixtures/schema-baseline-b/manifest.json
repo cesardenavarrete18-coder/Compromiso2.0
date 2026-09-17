@@ -1,0 +1,45 @@
+{
+  "schema": "crm.m1.schema-baseline-b/1",
+  "scope": "Relevant observed schema and direct/transitive application dependencies; not a full production clone.",
+  "source_sha256": "03afa9ff42935e2ad0607e04fad630b1e5ac212370d7383b9658b2252d81e702",
+  "bootstrap_sha256": "8ea22a1e8b4cd6559732331ca66ac2728d90f58e11ada4f344c398040608c5e6",
+  "captures": {
+    "platform": "2026-09-17T18:12:17.085475+00:00",
+    "application": "2026-09-17T18:25:01.068655+00:00",
+    "security": "2026-09-17T18:16:37.79016+00:00"
+  },
+  "counts": {
+    "tables": 29,
+    "columns": 462,
+    "constraints": 237,
+    "indexes": 149,
+    "triggers": 40,
+    "policies": 56,
+    "functions": 42,
+    "sequences": 5
+  },
+  "data_rows": 0,
+  "bootstrap_role": {
+    "name": "supabase_admin",
+    "oid": 10,
+    "production_postgres_is_bootstrap": false
+  },
+  "bootstrap_execution": "NOT_EXECUTED_BY_GENERATOR",
+  "excluded_platform_extensions": [
+    "pg_cron",
+    "pg_net",
+    "pg_stat_statements",
+    "pgcrypto",
+    "supabase_vault",
+    "uuid-ossp"
+  ],
+  "limitations": [
+    "Snapshots span separate SELECT statements; not a transactionally consistent production dump.",
+    "No database data, passwords, sequence last values, jobs, settings secrets or remote egress restored.",
+    "Only listed schema objects are reproduced; other platform auth tables, realtime, storage and unrelated CRM objects remain out of scope.",
+    "Database name and locale are controlled by the isolated harness; database owner postgres is reproduced.",
+    "Database-level CREATE grants to platform-only supabase_etl_admin/supabase_storage_admin are inventoried but not reproduced; those roles have no ownership/grants in the selected object boundary.",
+    "External extensions are inventoried but not installed because the selected dependency boundary has no calls to them.",
+    "No M1 execution or business behavior is certified by generating this file."
+  ]
+}

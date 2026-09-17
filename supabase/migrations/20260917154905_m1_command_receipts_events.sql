@@ -5,7 +5,8 @@ begin;
 
 -- Temporary DDL membership only for the existing trusted migration executor.
 -- REFERENCES/ALTER OWNER require actual ACL, not merely BYPASSRLS.
-grant crm_runtime_owner to postgres with admin true, inherit true, set true;
+-- Preserve the creator's existing ADMIN grant; do not create a circular regrant.
+grant crm_runtime_owner to postgres with inherit true, set true;
 grant usage, create on schema private, public to crm_runtime_owner;
 
 create table private.crm_command_receipts (
@@ -441,5 +442,5 @@ comment on function public.crm_submit_command(jsonb) is
   'M1 foundation only. No EXECUTE grant, no installed business handler, no cutover or channel authority. FoundationProbe is compiled closed.';
 
 revoke create on schema private, public from crm_runtime_owner;
-grant crm_runtime_owner to postgres with admin true, inherit false, set false;
+grant crm_runtime_owner to postgres with inherit false, set false;
 commit;

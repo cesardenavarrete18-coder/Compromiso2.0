@@ -1,147 +1,87 @@
 {
-  "status": "BLOCKED_DATABASE",
-  "database_tests_executed": 0,
-  "migrations_executed": 0,
-  "minimum_contracts_defined": 15,
-  "planned_integration_subtests": 26,
-  "test_titles": [
-    "ISOLATION: PostgreSQL17, Unix socket, restricted migrator and six private tables",
-    "M14: no API role can directly read/write new tables or execute the installed gateway",
-    "M12: default gates observe; no authoritative/quiescing state can be installed",
-    "M13: future recovery/internal send purposes cannot become ready or authoritative",
-    "M15: new conversation structure stays disabled/paused; seller cannot acquire channel authority",
-    "STOCK-HOOK: even fixture-ready gates cannot activate the installed handler",
-    "M01: same command_id and same intent have one logical result",
-    "M02: same idempotency key/hash with a new command UUID replays the original",
-    "M03: a changed payload under the same key conflicts without another effect",
-    "M04: stale aggregate/assignment versions reject before applying",
-    "M05: caller actor/role cannot be supplied in envelope or payload",
-    "M06: inactive user cannot apply a command or recover an old replay",
-    "M07: foreign, unassigned and formerly owned scopes are denied without receipt disclosure",
-    "M08: effect/event/receipt/version commit atomically and SQL hash matches the actual JS contract",
-    "M09: backend crash before COMMIT leaves no partial receipt/event/effect",
-    "M10: retry after COMMIT from a fresh connection returns the committed result",
-    "M11: two real sessions race on one command; observed lock wait, exactly one application",
-    "FAILPOINT: exception after synthetic DML rolls back every command effect",
-    "GATE-VECTOR: changing one domain epoch does not borrow authority from the other",
-    "VERSION-EXHAUSTED: safe integer ceiling cannot overflow into an imprecise JS version",
-    "BUSINESS-DEDUPE: different keys cannot duplicate the synthetic operation identity",
-    "DEFERRED-GUARD: evaluating receipts cannot commit",
-    "APPEND-ONLY: terminal receipts/events/policy reject mutation and TRUNCATE",
-    "DEFERRED-EVENT: an event cannot later attach to a rejected receipt",
-    "CONCURRENT-CAS: distinct intents at one version produce one effect and one conflict",
-    "FINAL-INVARIANTS: no evaluating receipt/orphan event; new channel authority remains closed"
-  ],
-  "database_attempt": {
-    "harness": "crm-m1-unix-seccomp/1",
-    "run_id": "0ada06a9-1fee-4699-ba6f-ec8b6670d134",
-    "status": "BLOCKED",
-    "remote_database": false,
-    "external_egress": false,
-    "requested_database_major": 17,
-    "requested_uid": 65534,
-    "database_started": false,
-    "migrations_applied": [],
-    "integration_tests_executed": false,
-    "migration_sha256": {
-      "20260917154844_m1_runtime_authority_foundation.sql": "6dbb4e1c6a0c8da22de49424fdf965f46e74e85dad0e822a6201b2ec31f09d49",
-      "20260917154854_m1_private_capabilities.sql": "a56220db5a6efc97ad823488ac8979ddc4945401e1db3a8857d9ce37b1490e1c",
-      "20260917154905_m1_command_receipts_events.sql": "86327b508c9d7b006027f379aee6ac0fda35a6c927610cac2e82b419bf1a2428"
+  "schema": "crm.m1.db-validation/2",
+  "approved_candidate": "be507e866722168bae0dbcd847f93b45652333e7",
+  "branch": "feat/m1-runtime-foundation",
+  "status": "PASS_FOR_ISOLATED_FOUNDATION_ONLY",
+  "formal_certification": "User decision pending",
+  "m0_complete": false,
+  "M1-04": "NOT_AUTHORIZED_NOT_IMPLEMENTED",
+  "production_changes": false,
+  "push_pr_merge_deploy": false,
+  "postgres_version": "17.6",
+  "suites": [
+    {
+      "suite": "foundation.integration.test.mjs",
+      "subtests": 26,
+      "tap_entries_including_parent": 27,
+      "status": "PASS",
+      "fixture_layer": "minimal_synthetic_auth_crm",
+      "run_id": "0a4c1585-050b-495a-8d35-c9b2bf2d2265"
     },
-    "postgres_binary_sha256": "23cd174849b273064c47d581b55be596be2f5cf0ee5d3e76c0146e2464bf873a",
-    "suite_sha256": {
-      "tests/m1/foundation.integration.test.mjs": "b044a46e3bfc0d164e1191fa2e3b0bd2da0ba63e255185d604a0e91a15b3d3b1"
+    {
+      "suite": "installation.integration.test.mjs",
+      "subtests": 9,
+      "tap_entries_including_parent": 10,
+      "status": "PASS",
+      "fixture_layer": "minimal_synthetic_auth_crm",
+      "run_id": "a2b11b2a-b5ca-4950-b1f2-677ac110f338"
     },
-    "limits": [
-      "Synthetic auth/profiles/leads fixture; not a full production schema or Supabase REST gateway.",
-      "No legacy handler, trigger, frontend or external sender is changed or certified.",
-      "Database effects occur only in the disposable local cluster."
-    ],
-    "postgres_version": "postgres (PostgreSQL) 17.6",
-    "unix_socket_available": false,
-    "unix_socket_error": {
-      "errno": 1,
-      "reason": "Operation not permitted"
+    {
+      "suite": "schema-baseline-b.integration.test.mjs",
+      "subtests": 9,
+      "tap_entries_including_parent": 10,
+      "status": "PASS",
+      "fixture_layer": "schema_only_baseline_b",
+      "run_id": "f03826b5-5774-4dbd-93ad-79277b4e10f9"
     },
-    "uid_map": [
-      [
-        0,
-        0,
-        1
-      ]
-    ],
-    "gid_map": [
-      [
-        0,
-        0,
-        1
-      ]
-    ],
-    "blockers": [
-      "the runtime rejects required AF_UNIX sockets",
-      "uid 65534 is not mapped (PostgreSQL requires a non-root process)",
-      "gid 65534 is not mapped (PostgreSQL requires a non-root process)"
-    ],
-    "error": "BLOCKED: the runtime rejects required AF_UNIX sockets; uid 65534 is not mapped (PostgreSQL requires a non-root process); gid 65534 is not mapped (PostgreSQL requires a non-root process). Use an authorized local Linux runtime with Unix sockets and a mapped non-root user; no remote fallback or root-guard bypass.",
-    "duration_seconds": 0.004,
-    "temporary_cluster_retained": null
-  },
-  "local_harness_checks": {
-    "status": "PARTIAL_CHECKS_ONLY",
-    "database_tests_executed": 0,
-    "checks": {
-      "c_compile": {
-        "exit_code": 0,
-        "stderr": ""
-      },
-      "seccomp_probe": {
-        "exit_code": 77,
-        "stderr": "BLOCKED: IP socket denial verified, but this runtime does not permit required Unix sockets\n",
-        "ip_socket_denial_verified": true,
-        "unix_socket_supported": false
-      },
-      "tests/m1/foundation.integration.test.mjs": {
-        "syntax_exit_code": 0,
-        "stderr": ""
-      },
-      "tests/m1/harness/pg-session.mjs": {
-        "syntax_exit_code": 0,
-        "stderr": ""
-      },
-      "run-local.py": {
-        "python_syntax": "valid"
-      },
-      "libpq-session.py": {
-        "python_syntax": "valid"
-      }
+    {
+      "suite": "security.integration.test.mjs",
+      "subtests": 10,
+      "tap_entries_including_parent": 11,
+      "status": "PASS",
+      "fixture_layer": "minimal_synthetic_auth_crm",
+      "run_id": "3b9ada56-3424-4406-8fa0-617dc1f86de5"
     }
-  },
-  "source_sha256": {
-    "tests/m1/harness/README.md": "75ce62a3620a24e62dce5c99b94f7cc9b9691ca91c92242c65c2c274a71829d7",
-    "tests/m1/harness/deny-network.c": "589dc0aece8cee8e104a7c3a8c27d6e13ca858518bdf74d0454e67c90cb53fd9",
-    "tests/m1/harness/libpq-session.py": "881da675f65f9baa92f74874d44c4d6fa3a07452871f1863164ee927be61bb9d",
-    "tests/m1/harness/pg-session.mjs": "d55971c00f1e26f9728f5a50beab8282dae779f1fb8d43ac28503ca4f30e90cb",
-    "tests/m1/harness/run-local.py": "5207e51aa2ec719c3633fd8a2f5e55876ae93b6ec1f15b4533bd10e1678019f4",
-    "tests/m1/fixtures/bootstrap.sql": "9b907e47b5de7aee4b80947ec19aef34440a128cfd86a8b0b7077eadcac7caae",
-    "tests/m1/fixtures/probe-handler.sql": "3b403488cca2d7b4252d8cdfb26319e4417c75d0609507b5ecb6218c435840a4",
-    "tests/m1/fixtures/probe-support.sql": "4bc53525afd83eb974a53ab384a0b002c9539c90b3e38f02b737baaefffed652",
-    "tests/m1/foundation.integration.test.mjs": "b044a46e3bfc0d164e1191fa2e3b0bd2da0ba63e255185d604a0e91a15b3d3b1"
-  },
-  "reproduce": "python3 tests/m1/harness/run-local.py --pg-root /absolute/path/to/postgresql-17 --report /absolute/path/outside/repository/m1-pg-report.json",
-  "documentation_note": "Harness README corrected after run: local grant precedes stock-hook execution; hook replacement follows that check. No executable code changed by this correction.",
-  "pure_contracts": {
-    "status": "PASS",
-    "command": "node --test tests/m1/contracts.test.mjs",
-    "node_version": "v24.19.0",
-    "exit_code": 0,
-    "tests": 23,
-    "pass": 23,
-    "fail": 0,
+  ],
+  "db_subtests_total": 54,
+  "db_tap_entries_with_parents": 58,
+  "pure_tests": {
+    "passed": 23,
+    "failed": 0,
     "skipped": 0,
-    "source_sha256": {
-      "tests/m1/contracts.test.mjs": "bc77889f05c506e0fd42c987ab9103f1c9e4647e47a8f417fc571fe57028c105",
-      "supabase/functions/_shared/crm-runtime/contracts.mjs": "baf5bcf12eae9985775d246589b197189f8b0af47e9a7dbdb742a1da43015857"
-    },
-    "limit": "Pure contract/hash tests only, not SQL integration, authority, RLS or concurrency."
-  }
+    "report": "evidence/db-validation/pure.json"
+  },
+  "evidence": {
+    "final_all": "evidence/db-validation/final-all",
+    "initial_db_failure": "evidence/db-validation/failure-0LP01",
+    "schema_boundary": "schema-baseline-b.md",
+    "toolchain": "evidence/db-validation/toolchain.json",
+    "previous_candidate": "evidence/db-validation/previous-candidate-blocked.json"
+  },
+  "migration_sha256": {
+    "20260917154844_m1_runtime_authority_foundation.sql": "6dbb4e1c6a0c8da22de49424fdf965f46e74e85dad0e822a6201b2ec31f09d49",
+    "20260917154854_m1_private_capabilities.sql": "6154b2dd302d1f5793ea5c9b4151a1423f4f5b956e688ae7089bf8f00b80cd60",
+    "20260917154905_m1_command_receipts_events.sql": "433615402b82cbc5b85cd4f168c0b96ff48658de84cfdadad56b02616f7bf9e7"
+  },
+  "remaining_blocked": [
+    "Full Supabase stack, PostgREST/GoTrue signed JWT and deployed bindings",
+    "Unselected production schema/platform extensions/database-level platform grants and locale equivalence",
+    "Legacy writer integration/load, real commercial handlers and rollout isolation"
+  ],
+  "blockers": {
+    "BL-01": "OPEN",
+    "BL-02": "OPEN",
+    "BL-03": "OPEN",
+    "BL-04": "OPEN",
+    "BL-05": "OPEN",
+    "BL-06": "OPEN_P0",
+    "BL-07": "OPEN",
+    "BL-08": "OPEN"
+  },
+  "limits": [
+    "54 SQL subtests use real PostgreSQL; 26 original foundation cases preserved.",
+    "B reproduces only selected schema, no rows or credentials; not full production equivalence.",
+    "A synthetic handler exists only in test fixtures; installed production-target probe remains closed.",
+    "No historical or customer data copied. No production DB migration executed."
+  ]
 }

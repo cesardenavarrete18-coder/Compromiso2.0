@@ -1,0 +1,122 @@
+{
+  "harness": "crm-m1-unix-seccomp/2",
+  "run_id": "454edaf9-fc3e-4b84-bc8a-6fb8752bbd57",
+  "suite": "foundation.integration.test.mjs",
+  "source_manifest": {
+    "sha256": "60e3c2e4c9b7c30564ed815da7ad220441e6fb15edd804ab3e0552cb92a2c438",
+    "git_base_revision": "be507e866722168bae0dbcd847f93b45652333e7",
+    "source_has_uncommitted_changes": true
+  },
+  "fixture_layer": "minimal_synthetic_auth_crm",
+  "bootstrap_source": "tests/m1/fixtures/bootstrap.sql",
+  "bootstrap_sha256": "9b907e47b5de7aee4b80947ec19aef34440a128cfd86a8b0b7077eadcac7caae",
+  "cluster_per_suite": true,
+  "migration_installation": "runner_installs_all_three",
+  "timeout_scale": 3.0,
+  "status": "PASS",
+  "remote_database": false,
+  "external_egress": false,
+  "requested_database_major": 17,
+  "requested_uid": 65534,
+  "database_started": true,
+  "migrations_applied": [
+    "20260917154844_m1_runtime_authority_foundation.sql",
+    "20260917154854_m1_private_capabilities.sql",
+    "20260917154905_m1_command_receipts_events.sql"
+  ],
+  "integration_tests_executed": true,
+  "migration_sha256": {
+    "20260917154844_m1_runtime_authority_foundation.sql": "6dbb4e1c6a0c8da22de49424fdf965f46e74e85dad0e822a6201b2ec31f09d49",
+    "20260917154854_m1_private_capabilities.sql": "6154b2dd302d1f5793ea5c9b4151a1423f4f5b956e688ae7089bf8f00b80cd60",
+    "20260917154905_m1_command_receipts_events.sql": "433615402b82cbc5b85cd4f168c0b96ff48658de84cfdadad56b02616f7bf9e7"
+  },
+  "postgres_binary_sha256": "23cd174849b273064c47d581b55be596be2f5cf0ee5d3e76c0146e2464bf873a",
+  "guard_source_sha256": "589dc0aece8cee8e104a7c3a8c27d6e13ca858518bdf74d0454e67c90cb53fd9",
+  "guard_binary_sha256": "d48cf6d387092c71323d7e6a24af26c582d7bc0103545cd3614641e9608183f7",
+  "guard_precompiled": true,
+  "suite_sha256": {
+    "tests/m1/foundation.integration.test.mjs": "0ae08b7e9d6dd05fe377442a5de5ad26fff5296753484307eb5d05561446dd84"
+  },
+  "limits": [
+    "Synthetic auth/profiles/leads fixture; not a full production schema or Supabase REST gateway.",
+    "No legacy handler, trigger, frontend or external sender is changed or certified.",
+    "Database effects occur only in the disposable local cluster."
+  ],
+  "postgres_version": "postgres (PostgreSQL) 17.6",
+  "unix_socket_available": true,
+  "uid_map": [
+    [
+      0,
+      0,
+      4294967295
+    ]
+  ],
+  "gid_map": [
+    [
+      0,
+      0,
+      4294967295
+    ]
+  ],
+  "environment_keys": [
+    "LANG",
+    "LC_ALL",
+    "LD_LIBRARY_PATH",
+    "M1_LIBPQ_PATH",
+    "M1_PYTHON_BIN",
+    "M1_TEST_DATABASE",
+    "M1_TEST_FIXTURE_DIR",
+    "M1_TEST_ISOLATED",
+    "M1_TEST_MIGRATION_DIR",
+    "M1_TEST_PORT",
+    "M1_TEST_RUN_ID",
+    "M1_TEST_SOCKET_DIR",
+    "M1_TEST_TIMEOUT_SCALE",
+    "PATH",
+    "PGPASSFILE",
+    "PGSERVICEFILE",
+    "PYTHONNOUSERSITE",
+    "TZ"
+  ],
+  "isolation": {
+    "ok": true,
+    "columns": [
+      "listen_addresses",
+      "marker",
+      "unix_socket"
+    ],
+    "rows": [
+      [
+        "",
+        "454edaf9-fc3e-4b84-bc8a-6fb8752bbd57",
+        "t"
+      ]
+    ],
+    "affected": "1",
+    "id": 1
+  },
+  "migration_role": {
+    "ok": true,
+    "columns": [
+      "rolname",
+      "rolsuper",
+      "rolcreaterole",
+      "rolbypassrls"
+    ],
+    "rows": [
+      [
+        "postgres",
+        "f",
+        "t",
+        "t"
+      ]
+    ],
+    "affected": "1",
+    "id": 1
+  },
+  "test_exit_code": 0,
+  "tap": "TAP version 13\n# Subtest: M1-01/02/03: isolated PostgreSQL foundation\n    # Subtest: ISOLATION: PostgreSQL17, Unix socket, restricted migrator and six private tables\n    ok 1 - ISOLATION: PostgreSQL17, Unix socket, restricted migrator and six private tables\n      ---\n      duration_ms: 1103.93033\n      type: 'test'\n      ...\n    # Subtest: M14: no API role can directly read/write new tables or execute the installed gateway\n    ok 2 - M14: no API role can directly read/write new tables or execute the installed gateway\n      ---\n      duration_ms: 428.61704\n      type: 'test'\n      ...\n    # Subtest: M12: default gates observe; no authoritative/quiescing state can be installed\n    ok 3 - M12: default gates observe; no authoritative/quiescing state can be installed\n      ---\n      duration_ms: 159.3383\n      type: 'test'\n      ...\n    # Subtest: M13: future recovery/internal send purposes cannot become ready or authoritative\n    ok 4 - M13: future recovery/internal send purposes cannot become ready or authoritative\n      ---\n      duration_ms: 178.98541\n      type: 'test'\n      ...\n    # Subtest: M15: new conversation structure stays disabled/paused; seller cannot acquire channel authority\n    ok 5 - M15: new conversation structure stays disabled/paused; seller cannot acquire channel authority\n      ---\n      duration_ms: 111.79307\n      type: 'test'\n      ...\n    # Subtest: STOCK-HOOK: even fixture-ready gates cannot activate the installed handler\n    ok 6 - STOCK-HOOK: even fixture-ready gates cannot activate the installed handler\n      ---\n      duration_ms: 501.38673\n      type: 'test'\n      ...\n    # Subtest: M01: same command_id and same intent have one logical result\n    ok 7 - M01: same command_id and same intent have one logical result\n      ---\n      duration_ms: 289.87177\n      type: 'test'\n      ...\n    # Subtest: M02: same idempotency key/hash with a new command UUID replays the original\n    ok 8 - M02: same idempotency key/hash with a new command UUID replays the original\n      ---\n      duration_ms: 278.09875\n      type: 'test'\n      ...\n    # Subtest: M03: a changed payload under the same key conflicts without another effect\n    ok 9 - M03: a changed payload under the same key conflicts without another effect\n      ---\n      duration_ms: 252.14181\n      type: 'test'\n      ...\n    # Subtest: M04: stale aggregate/assignment versions reject before applying\n    ok 10 - M04: stale aggregate/assignment versions reject before applying\n      ---\n      duration_ms: 312.8008\n      type: 'test'\n      ...\n    # Subtest: M05: caller actor/role cannot be supplied in envelope or payload\n    ok 11 - M05: caller actor/role cannot be supplied in envelope or payload\n      ---\n      duration_ms: 221.69486\n      type: 'test'\n      ...\n    # Subtest: M06: inactive user cannot apply a command or recover an old replay\n    ok 12 - M06: inactive user cannot apply a command or recover an old replay\n      ---\n      duration_ms: 354.18823\n      type: 'test'\n      ...\n    # Subtest: M07: foreign, unassigned and formerly owned scopes are denied without receipt disclosure\n    ok 13 - M07: foreign, unassigned and formerly owned scopes are denied without receipt disclosure\n      ---\n      duration_ms: 525.46089\n      type: 'test'\n      ...\n    # Subtest: M08: effect/event/receipt/version commit atomically and SQL hash matches the actual JS contract\n    ok 14 - M08: effect/event/receipt/version commit atomically and SQL hash matches the actual JS contract\n      ---\n      duration_ms: 296.88829\n      type: 'test'\n      ...\n    # Subtest: M09: backend crash before COMMIT leaves no partial receipt/event/effect\n    ok 15 - M09: backend crash before COMMIT leaves no partial receipt/event/effect\n      ---\n      duration_ms: 1108.12297\n      type: 'test'\n      ...\n    # Subtest: M10: retry after COMMIT from a fresh connection returns the committed result\n    ok 16 - M10: retry after COMMIT from a fresh connection returns the committed result\n      ---\n      duration_ms: 1222.52513\n      type: 'test'\n      ...\n    # Subtest: M11: two real sessions race on one command; observed lock wait, exactly one application\n    ok 17 - M11: two real sessions race on one command; observed lock wait, exactly one application\n      ---\n      duration_ms: 1353.37414\n      type: 'test'\n      ...\n    # Subtest: FAILPOINT: exception after synthetic DML rolls back every command effect\n    ok 18 - FAILPOINT: exception after synthetic DML rolls back every command effect\n      ---\n      duration_ms: 138.6527\n      type: 'test'\n      ...\n    # Subtest: GATE-VECTOR: changing one domain epoch does not borrow authority from the other\n    ok 19 - GATE-VECTOR: changing one domain epoch does not borrow authority from the other\n      ---\n      duration_ms: 141.929\n      type: 'test'\n      ...\n    # Subtest: VERSION-EXHAUSTED: safe integer ceiling cannot overflow into an imprecise JS version\n    ok 20 - VERSION-EXHAUSTED: safe integer ceiling cannot overflow into an imprecise JS version\n      ---\n      duration_ms: 131.43086\n      type: 'test'\n      ...\n    # Subtest: BUSINESS-DEDUPE: different keys cannot duplicate the synthetic operation identity\n    ok 21 - BUSINESS-DEDUPE: different keys cannot duplicate the synthetic operation identity\n      ---\n      duration_ms: 280.91418\n      type: 'test'\n      ...\n    # Subtest: DEFERRED-GUARD: evaluating receipts cannot commit\n    ok 22 - DEFERRED-GUARD: evaluating receipts cannot commit\n      ---\n      duration_ms: 181.33219\n      type: 'test'\n      ...\n    # Subtest: APPEND-ONLY: terminal receipts/events/policy reject mutation and TRUNCATE\n    ok 23 - APPEND-ONLY: terminal receipts/events/policy reject mutation and TRUNCATE\n      ---\n      duration_ms: 127.10146\n      type: 'test'\n      ...\n    # Subtest: DEFERRED-EVENT: an event cannot later attach to a rejected receipt\n    ok 24 - DEFERRED-EVENT: an event cannot later attach to a rejected receipt\n      ---\n      duration_ms: 222.64491\n      type: 'test'\n      ...\n    # Subtest: CONCURRENT-CAS: distinct intents at one version produce one effect and one conflict\n    ok 25 - CONCURRENT-CAS: distinct intents at one version produce one effect and one conflict\n      ---\n      duration_ms: 1133.85737\n      type: 'test'\n      ...\n    # Subtest: FINAL-INVARIANTS: no evaluating receipt/orphan event; new channel authority remains closed\n    ok 26 - FINAL-INVARIANTS: no evaluating receipt/orphan event; new channel authority remains closed\n      ---\n      duration_ms: 43.95203\n      type: 'test'\n      ...\n    1..26\nok 1 - M1-01/02/03: isolated PostgreSQL foundation\n  ---\n  duration_ms: 11784.97777\n  type: 'test'\n  ...\n1..1\n# tests 27\n# suites 0\n# pass 27\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 13499.80297\n",
+  "stderr": "",
+  "duration_seconds": 35.939,
+  "temporary_cluster_retained": null
+}

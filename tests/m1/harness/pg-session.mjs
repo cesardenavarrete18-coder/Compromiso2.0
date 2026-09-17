@@ -3,6 +3,10 @@ import { createInterface } from 'node:readline';
 import { fileURLToPath } from 'node:url';
 
 const transport = fileURLToPath(new URL('./libpq-session.py', import.meta.url));
+export const TIMEOUT_SCALE = Number(process.env.M1_TEST_TIMEOUT_SCALE ?? 1);
+if (!Number.isFinite(TIMEOUT_SCALE) || TIMEOUT_SCALE < 1 || TIMEOUT_SCALE > 10) {
+  throw new Error('BLOCKED: invalid timeout scale');
+}
 
 export function sqlLiteral(value) {
   if (value === null) return 'NULL';
@@ -44,7 +48,7 @@ export class PgSession {
     });
   }
 
-  query(sql, { allowError = false, timeout = 18000 } = {}) {
+  query(sql, { allowError = false, timeout = 18000 * TIMEOUT_SCALE } = {}) {
     const id = ++this.sequence;
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => {

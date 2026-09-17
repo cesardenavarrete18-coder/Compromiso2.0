@@ -1,0 +1,99 @@
+{
+  "harness": "crm-m1-unix-seccomp/2",
+  "run_id": "baf6f872-ba00-4f9b-832c-b58842461394",
+  "suite": "foundation.integration.test.mjs",
+  "source_manifest": {
+    "sha256": "fb1880207a837918976dae2246b4fcc93b6fd2cb5cd9d434e4e2c7d71e16b43e",
+    "git_base_revision": "be507e866722168bae0dbcd847f93b45652333e7",
+    "source_has_uncommitted_changes": true
+  },
+  "fixture_layer": "minimal_synthetic_auth_crm",
+  "bootstrap_source": "tests/m1/fixtures/bootstrap.sql",
+  "bootstrap_sha256": "9b907e47b5de7aee4b80947ec19aef34440a128cfd86a8b0b7077eadcac7caae",
+  "cluster_per_suite": true,
+  "migration_installation": "runner_installs_all_three",
+  "timeout_scale": 3.0,
+  "status": "FAIL",
+  "remote_database": false,
+  "external_egress": false,
+  "requested_database_major": 17,
+  "requested_uid": 65534,
+  "database_started": true,
+  "migrations_applied": [
+    "20260917154844_m1_runtime_authority_foundation.sql"
+  ],
+  "integration_tests_executed": false,
+  "migration_sha256": {
+    "20260917154844_m1_runtime_authority_foundation.sql": "6dbb4e1c6a0c8da22de49424fdf965f46e74e85dad0e822a6201b2ec31f09d49",
+    "20260917154854_m1_private_capabilities.sql": "a56220db5a6efc97ad823488ac8979ddc4945401e1db3a8857d9ce37b1490e1c",
+    "20260917154905_m1_command_receipts_events.sql": "86327b508c9d7b006027f379aee6ac0fda35a6c927610cac2e82b419bf1a2428"
+  },
+  "postgres_binary_sha256": "23cd174849b273064c47d581b55be596be2f5cf0ee5d3e76c0146e2464bf873a",
+  "guard_source_sha256": "589dc0aece8cee8e104a7c3a8c27d6e13ca858518bdf74d0454e67c90cb53fd9",
+  "guard_binary_sha256": "d48cf6d387092c71323d7e6a24af26c582d7bc0103545cd3614641e9608183f7",
+  "guard_precompiled": true,
+  "suite_sha256": {
+    "tests/m1/foundation.integration.test.mjs": "0ae08b7e9d6dd05fe377442a5de5ad26fff5296753484307eb5d05561446dd84"
+  },
+  "limits": [
+    "Synthetic auth/profiles/leads fixture; not a full production schema or Supabase REST gateway.",
+    "No legacy handler, trigger, frontend or external sender is changed or certified.",
+    "Database effects occur only in the disposable local cluster."
+  ],
+  "postgres_version": "postgres (PostgreSQL) 17.6",
+  "unix_socket_available": true,
+  "uid_map": [
+    [
+      0,
+      0,
+      4294967295
+    ]
+  ],
+  "gid_map": [
+    [
+      0,
+      0,
+      4294967295
+    ]
+  ],
+  "environment_keys": [
+    "LANG",
+    "LC_ALL",
+    "LD_LIBRARY_PATH",
+    "M1_LIBPQ_PATH",
+    "M1_PYTHON_BIN",
+    "M1_TEST_DATABASE",
+    "M1_TEST_FIXTURE_DIR",
+    "M1_TEST_ISOLATED",
+    "M1_TEST_MIGRATION_DIR",
+    "M1_TEST_PORT",
+    "M1_TEST_RUN_ID",
+    "M1_TEST_SOCKET_DIR",
+    "M1_TEST_TIMEOUT_SCALE",
+    "PATH",
+    "PGPASSFILE",
+    "PGSERVICEFILE",
+    "PYTHONNOUSERSITE",
+    "TZ"
+  ],
+  "isolation": {
+    "ok": true,
+    "columns": [
+      "listen_addresses",
+      "marker",
+      "unix_socket"
+    ],
+    "rows": [
+      [
+        "",
+        "baf6f872-ba00-4f9b-832c-b58842461394",
+        "t"
+      ]
+    ],
+    "affected": "1",
+    "id": 1
+  },
+  "error": "SQL fixture/migration failed: {'ok': False, 'sqlstate': '0LP01', 'error': 'ERROR:  ADMIN option cannot be granted back to your own grantor\\n', 'id': 1}",
+  "duration_seconds": 13.771,
+  "temporary_cluster_retained": null
+}

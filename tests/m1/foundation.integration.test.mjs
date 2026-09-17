@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import { hashCommandIntent } from '../../supabase/functions/_shared/crm-runtime/contracts.mjs';
-import { PgSession, sqlJson, sqlLiteral as q } from './harness/pg-session.mjs';
+import { PgSession, sqlJson, sqlLiteral as q, TIMEOUT_SCALE } from './harness/pg-session.mjs';
 
 const ACTOR = {
   seller: '00000000-0000-4000-8000-000000000001',
@@ -68,7 +68,7 @@ async function counts(db, lead) {
 }
 
 async function expectWaiting(db, application) {
-  const deadline = Date.now() + 5000;
+  const deadline = Date.now() + 5000 * TIMEOUT_SCALE;
   while (Date.now() < deadline) {
     if (await db.scalar(`SELECT EXISTS(SELECT 1 FROM pg_stat_activity
       WHERE application_name=${q(application)} AND wait_event_type='Lock')`) === 't') return;
@@ -77,7 +77,7 @@ async function expectWaiting(db, application) {
   throw new Error(`No real database lock wait observed for ${application}`);
 }
 
-test('M1-01/02/03: isolated PostgreSQL foundation', { timeout: 180000 }, async t => {
+test('M1-01/02/03: isolated PostgreSQL foundation', { timeout: 180000 * TIMEOUT_SCALE }, async t => {
   const db = new PgSession('m1-observer');
   try {
     await t.test('ISOLATION: PostgreSQL17, Unix socket, restricted migrator and six private tables', async () => {

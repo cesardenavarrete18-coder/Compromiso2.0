@@ -8,7 +8,7 @@
     "M1-02",
     "M1-03"
   ],
-  "authorization": "User authorized local inactive foundations only; M0 remains open; no production apply, PR, merge or M1-04.",
+  "authorization": "User authorized isolated PostgreSQL validation and corrections limited to new M1-01/02/03 foundations; M0 remains open; no production apply, push, PR, merge or M1-04.",
   "repository": {
     "name": "cesardenavarrete18-coder/Compromiso2.0",
     "verified_main_sha": "e3675903ade49080a575f5d19f61b243ad2aa948",
@@ -17,7 +17,8 @@
       "git fetch origin main"
     ],
     "branch": "feat/m1-runtime-foundation",
-    "remote_publication": "not performed; effective Vercel preview behavior unverified"
+    "remote_publication": "not performed; effective Vercel preview behavior unverified",
+    "approved_candidate_sha": "be507e866722168bae0dbcd847f93b45652333e7"
   },
   "observed_database": {
     "project_ref": "cdtvuovsqwwopktdahgj",
@@ -134,7 +135,7 @@
         "table_name": "profiles"
       }
     ],
-    "fixture_limit": "Minimal auth.uid/auth users/profiles/leads, not full production clone."
+    "fixture_limit": "A: minimal synthetic fixture. B: captured relevant schema only, no rows, not a full production/Supabase clone; see schema-baseline-b.md."
   },
   "evidence_references": [
     {
@@ -206,7 +207,7 @@
     },
     "BL-06": {
       "state": "OPEN",
-      "detail": "Historical human use exists; seller backend capability remains P0."
+      "detail": "Nine historical human-mode event records observed; they do not prove sellers, real sends, misuse or exhaustive consumers. Legacy seller backend capability remains P0."
     },
     "BL-07": {
       "state": "OPEN",
@@ -214,7 +215,7 @@
     },
     "BL-08": {
       "state": "OPEN",
-      "detail": "Remote QA/frontend egress isolation unproven. Local PostgreSQL integration blocked before initdb: namespace maps only UID/GID0 and runtime forbids AF_UNIX sockets."
+      "detail": "Temporary local no-NIC VM isolation verified and PostgreSQL suites executed. Full rollout, remote QA and frontend isolation remain unproven; blocker OPEN."
     }
   },
   "unknown_configuration": [

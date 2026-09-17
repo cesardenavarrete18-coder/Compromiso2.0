@@ -8,7 +8,9 @@ create role crm_runtime_owner with
 -- PostgreSQL 17 requires SET membership and schema CREATE to transfer ownership
 -- when the migration executor is not a superuser. Only postgres receives this
 -- administrative membership, never authenticated, authenticator or a worker.
-grant crm_runtime_owner to postgres with admin true, inherit false, set true;
+-- CREATEROLE already supplies ADMIN via the bootstrap grantor. Regranting ADMIN
+-- to the creator itself would make a circular grant in PostgreSQL 17 (0LP01).
+grant crm_runtime_owner to postgres with inherit false, set true;
 grant usage, create on schema private to crm_runtime_owner;
 
 alter table private.crm_runtime_policies owner to crm_runtime_owner;
@@ -53,7 +55,7 @@ reset role;
 -- ADMIN without SET/INHERIT lets the trusted migration administrator perform a
 -- future reviewed owner transfer; it does not grant runtime access to clients.
 revoke create on schema private from crm_runtime_owner;
-grant crm_runtime_owner to postgres with admin true, inherit false, set false;
+grant crm_runtime_owner to postgres with inherit false, set false;
 
 comment on role crm_runtime_owner is
   'NOLOGIN owner of closed M1 foundation objects. No membership for API roles or workers; postgres administrative membership only.';

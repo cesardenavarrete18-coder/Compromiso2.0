@@ -1,0 +1,118 @@
+{
+  "harness": "crm-m1-unix-seccomp/2",
+  "run_id": "a09a6c75-49fd-40be-93c7-8ff9445c1253",
+  "suite": "installation.integration.test.mjs",
+  "source_manifest": {
+    "sha256": "60e3c2e4c9b7c30564ed815da7ad220441e6fb15edd804ab3e0552cb92a2c438",
+    "git_base_revision": "be507e866722168bae0dbcd847f93b45652333e7",
+    "source_has_uncommitted_changes": true
+  },
+  "fixture_layer": "minimal_synthetic_auth_crm",
+  "bootstrap_source": "tests/m1/fixtures/bootstrap.sql",
+  "bootstrap_sha256": "9b907e47b5de7aee4b80947ec19aef34440a128cfd86a8b0b7077eadcac7caae",
+  "cluster_per_suite": true,
+  "migration_installation": "suite_controlled_verbatim",
+  "timeout_scale": 3.0,
+  "status": "PASS",
+  "remote_database": false,
+  "external_egress": false,
+  "requested_database_major": 17,
+  "requested_uid": 65534,
+  "database_started": true,
+  "migrations_applied": [],
+  "integration_tests_executed": true,
+  "migration_sha256": {
+    "20260917154844_m1_runtime_authority_foundation.sql": "6dbb4e1c6a0c8da22de49424fdf965f46e74e85dad0e822a6201b2ec31f09d49",
+    "20260917154854_m1_private_capabilities.sql": "6154b2dd302d1f5793ea5c9b4151a1423f4f5b956e688ae7089bf8f00b80cd60",
+    "20260917154905_m1_command_receipts_events.sql": "433615402b82cbc5b85cd4f168c0b96ff48658de84cfdadad56b02616f7bf9e7"
+  },
+  "postgres_binary_sha256": "23cd174849b273064c47d581b55be596be2f5cf0ee5d3e76c0146e2464bf873a",
+  "guard_source_sha256": "589dc0aece8cee8e104a7c3a8c27d6e13ca858518bdf74d0454e67c90cb53fd9",
+  "guard_binary_sha256": "d48cf6d387092c71323d7e6a24af26c582d7bc0103545cd3614641e9608183f7",
+  "guard_precompiled": true,
+  "suite_sha256": {
+    "tests/m1/installation.integration.test.mjs": "98358e5b31408b8f30b5eb50a70f5f3a1ce7c71fcfa3156374250a7cead284c0"
+  },
+  "limits": [
+    "Synthetic auth/profiles/leads fixture; not a full production schema or Supabase REST gateway.",
+    "No legacy handler, trigger, frontend or external sender is changed or certified.",
+    "Database effects occur only in the disposable local cluster."
+  ],
+  "postgres_version": "postgres (PostgreSQL) 17.6",
+  "unix_socket_available": true,
+  "uid_map": [
+    [
+      0,
+      0,
+      4294967295
+    ]
+  ],
+  "gid_map": [
+    [
+      0,
+      0,
+      4294967295
+    ]
+  ],
+  "environment_keys": [
+    "LANG",
+    "LC_ALL",
+    "LD_LIBRARY_PATH",
+    "M1_LIBPQ_PATH",
+    "M1_PYTHON_BIN",
+    "M1_TEST_DATABASE",
+    "M1_TEST_FIXTURE_DIR",
+    "M1_TEST_ISOLATED",
+    "M1_TEST_MIGRATION_DIR",
+    "M1_TEST_PORT",
+    "M1_TEST_RUN_ID",
+    "M1_TEST_SOCKET_DIR",
+    "M1_TEST_TIMEOUT_SCALE",
+    "PATH",
+    "PGPASSFILE",
+    "PGSERVICEFILE",
+    "PYTHONNOUSERSITE",
+    "TZ"
+  ],
+  "isolation": {
+    "ok": true,
+    "columns": [
+      "listen_addresses",
+      "marker",
+      "unix_socket"
+    ],
+    "rows": [
+      [
+        "",
+        "a09a6c75-49fd-40be-93c7-8ff9445c1253",
+        "t"
+      ]
+    ],
+    "affected": "1",
+    "id": 1
+  },
+  "migration_role": {
+    "ok": true,
+    "columns": [
+      "rolname",
+      "rolsuper",
+      "rolcreaterole",
+      "rolbypassrls"
+    ],
+    "rows": [
+      [
+        "postgres",
+        "f",
+        "t",
+        "t"
+      ]
+    ],
+    "affected": "1",
+    "id": 1
+  },
+  "test_exit_code": 0,
+  "tap": "TAP version 13\n# Subtest: M1 installation: exact files, clean failures and closed partial states\n    # Subtest: I00: fresh relevant schema only, with no M1 role, gateway or tables\n    ok 1 - I00: fresh relevant schema only, with no M1 role, gateway or tables\n      ---\n      duration_ms: 96.80453\n      type: 'test'\n      ...\n    # Subtest: I01: 02 and 03 without predecessors fail and leave no role, schema grant or object\n    ok 2 - I01: 02 and 03 without predecessors fail and leave no role, schema grant or object\n      ---\n      duration_ms: 345.68296\n      type: 'test'\n      ...\n    # Subtest: I02: 01 preflight rejects an absent required legacy relation before creating anything\n    ok 3 - I02: 01 preflight rejects an absent required legacy relation before creating anything\n      ---\n      duration_ms: 194.84071\n      type: 'test'\n      ...\n    # Subtest: I03: 01 alone commits four empty tables, FORCE RLS and no API permission\n    ok 4 - I03: 01 alone commits four empty tables, FORCE RLS and no API permission\n      ---\n      duration_ms: 1004.83349\n      type: 'test'\n      ...\n    # Subtest: I04: 03 after only 01 fails without making the partial installation usable\n    ok 5 - I04: 03 after only 01 fails without making the partial installation usable\n      ---\n      duration_ms: 696.46813\n      type: 'test'\n      ...\n    # Subtest: I05: 02 transfers only new ownership and removes temporary CREATE/SET/INHERIT\n    ok 6 - I05: 02 transfers only new ownership and removes temporary CREATE/SET/INHERIT\n      ---\n      duration_ms: 1027.23168\n      type: 'test'\n      ...\n    # Subtest: I06: a dependency failure in 03 rolls back its temporary membership and schema grants\n    ok 7 - I06: a dependency failure in 03 rolls back its temporary membership and schema grants\n      ---\n      duration_ms: 857.44973\n      type: 'test'\n      ...\n    # Subtest: I07: 01->02->03 commits six closed tables with validated constraints/indexes and expected trigger graph\n    ok 8 - I07: 01->02->03 commits six closed tables with validated constraints/indexes and expected trigger graph\n      ---\n      duration_ms: 1372.14425\n      type: 'test'\n      ...\n    # Subtest: I08: accidentally applying 03 twice fails transactionally, without changing the installed state\n    ok 9 - I08: accidentally applying 03 twice fails transactionally, without changing the installed state\n      ---\n      duration_ms: 745.57215\n      type: 'test'\n      ...\n    1..9\nok 1 - M1 installation: exact files, clean failures and closed partial states\n  ---\n  duration_ms: 7497.58894\n  type: 'test'\n  ...\n1..1\n# tests 10\n# suites 0\n# pass 10\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 8921.59116\n",
+  "stderr": "",
+  "duration_seconds": 27.214,
+  "temporary_cluster_retained": null
+}

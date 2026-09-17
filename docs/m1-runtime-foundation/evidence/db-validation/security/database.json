@@ -1,0 +1,122 @@
+{
+  "harness": "crm-m1-unix-seccomp/2",
+  "run_id": "4ff90d3a-6568-4bdf-b407-aa024fcead3b",
+  "suite": "security.integration.test.mjs",
+  "source_manifest": {
+    "sha256": "60e3c2e4c9b7c30564ed815da7ad220441e6fb15edd804ab3e0552cb92a2c438",
+    "git_base_revision": "be507e866722168bae0dbcd847f93b45652333e7",
+    "source_has_uncommitted_changes": true
+  },
+  "fixture_layer": "minimal_synthetic_auth_crm",
+  "bootstrap_source": "tests/m1/fixtures/bootstrap.sql",
+  "bootstrap_sha256": "9b907e47b5de7aee4b80947ec19aef34440a128cfd86a8b0b7077eadcac7caae",
+  "cluster_per_suite": true,
+  "migration_installation": "runner_installs_all_three",
+  "timeout_scale": 3.0,
+  "status": "PASS",
+  "remote_database": false,
+  "external_egress": false,
+  "requested_database_major": 17,
+  "requested_uid": 65534,
+  "database_started": true,
+  "migrations_applied": [
+    "20260917154844_m1_runtime_authority_foundation.sql",
+    "20260917154854_m1_private_capabilities.sql",
+    "20260917154905_m1_command_receipts_events.sql"
+  ],
+  "integration_tests_executed": true,
+  "migration_sha256": {
+    "20260917154844_m1_runtime_authority_foundation.sql": "6dbb4e1c6a0c8da22de49424fdf965f46e74e85dad0e822a6201b2ec31f09d49",
+    "20260917154854_m1_private_capabilities.sql": "6154b2dd302d1f5793ea5c9b4151a1423f4f5b956e688ae7089bf8f00b80cd60",
+    "20260917154905_m1_command_receipts_events.sql": "433615402b82cbc5b85cd4f168c0b96ff48658de84cfdadad56b02616f7bf9e7"
+  },
+  "postgres_binary_sha256": "23cd174849b273064c47d581b55be596be2f5cf0ee5d3e76c0146e2464bf873a",
+  "guard_source_sha256": "589dc0aece8cee8e104a7c3a8c27d6e13ca858518bdf74d0454e67c90cb53fd9",
+  "guard_binary_sha256": "d48cf6d387092c71323d7e6a24af26c582d7bc0103545cd3614641e9608183f7",
+  "guard_precompiled": true,
+  "suite_sha256": {
+    "tests/m1/security.integration.test.mjs": "9aa66d3e7eac29e6edf3ba23782fa18768b33840831ec3a1ca7cf8b0b9689614"
+  },
+  "limits": [
+    "Synthetic auth/profiles/leads fixture; not a full production schema or Supabase REST gateway.",
+    "No legacy handler, trigger, frontend or external sender is changed or certified.",
+    "Database effects occur only in the disposable local cluster."
+  ],
+  "postgres_version": "postgres (PostgreSQL) 17.6",
+  "unix_socket_available": true,
+  "uid_map": [
+    [
+      0,
+      0,
+      4294967295
+    ]
+  ],
+  "gid_map": [
+    [
+      0,
+      0,
+      4294967295
+    ]
+  ],
+  "environment_keys": [
+    "LANG",
+    "LC_ALL",
+    "LD_LIBRARY_PATH",
+    "M1_LIBPQ_PATH",
+    "M1_PYTHON_BIN",
+    "M1_TEST_DATABASE",
+    "M1_TEST_FIXTURE_DIR",
+    "M1_TEST_ISOLATED",
+    "M1_TEST_MIGRATION_DIR",
+    "M1_TEST_PORT",
+    "M1_TEST_RUN_ID",
+    "M1_TEST_SOCKET_DIR",
+    "M1_TEST_TIMEOUT_SCALE",
+    "PATH",
+    "PGPASSFILE",
+    "PGSERVICEFILE",
+    "PYTHONNOUSERSITE",
+    "TZ"
+  ],
+  "isolation": {
+    "ok": true,
+    "columns": [
+      "listen_addresses",
+      "marker",
+      "unix_socket"
+    ],
+    "rows": [
+      [
+        "",
+        "4ff90d3a-6568-4bdf-b407-aa024fcead3b",
+        "t"
+      ]
+    ],
+    "affected": "1",
+    "id": 1
+  },
+  "migration_role": {
+    "ok": true,
+    "columns": [
+      "rolname",
+      "rolsuper",
+      "rolcreaterole",
+      "rolbypassrls"
+    ],
+    "rows": [
+      [
+        "postgres",
+        "f",
+        "t",
+        "t"
+      ]
+    ],
+    "affected": "1",
+    "id": 1
+  },
+  "test_exit_code": 0,
+  "tap": "TAP version 13\n# Subtest: M1 security: real roles, forced RLS and transactional locks\n    # Subtest: S16/S19: installed owners, membership options and real API denials\n    ok 1 - S16/S19: installed owners, membership options and real API denials\n      ---\n      duration_ms: 1837.99187\n      type: 'test'\n      ...\n    # Subtest: S18: definer/invoker ownership and private helper EXECUTE are explicit\n    ok 2 - S18: definer/invoker ownership and private helper EXECUTE are explicit\n      ---\n      duration_ms: 222.25224\n      type: 'test'\n      ...\n    # Subtest: S18/S26: installed probe derives actor through read/lock helpers and cannot mutate legacy\n    ok 3 - S18/S26: installed probe derives actor through read/lock helpers and cannot mutate legacy\n      ---\n      duration_ms: 685.65712\n      type: 'test'\n      ...\n    # Subtest: S20/S21/S22: UPDATE, DELETE and TRUNCATE cannot rewrite or remove committed history\n    ok 4 - S20/S21/S22: UPDATE, DELETE and TRUNCATE cannot rewrite or remove committed history\n      ---\n      duration_ms: 365.57072\n      type: 'test'\n      ...\n    # Subtest: S17: FORCE RLS filters the NOLOGIN table owner; disabling FORCE changes the result\n    ok 5 - S17: FORCE RLS filters the NOLOGIN table owner; disabling FORCE changes the result\n      ---\n      duration_ms: 660.13491\n      type: 'test'\n      ...\n    # Subtest: S16/S17: RLS still denies an ordinary role with fixture SELECT; BYPASSRLS is not falsely certified\n    ok 6 - S16/S17: RLS still denies an ordinary role with fixture SELECT; BYPASSRLS is not falsely certified\n      ---\n      duration_ms: 96.34203\n      type: 'test'\n      ...\n    # Subtest: S18/S25: spoofed auxiliary claims do not replace the active profile or current owner\n    ok 7 - S18/S25: spoofed auxiliary claims do not replace the active profile or current owner\n      ---\n      duration_ms: 255.33952\n      type: 'test'\n      ...\n    # Subtest: S23-GATE: an in-flight gate change is awaited and rechecked before any effect\n    ok 8 - S23-GATE: an in-flight gate change is awaited and rechecked before any effect\n      ---\n      duration_ms: 1498.45182\n      type: 'test'\n      ...\n    # Subtest: S23-LEAD/S25: current ownership is read under a real lead lock after waiting\n    ok 9 - S23-LEAD/S25: current ownership is read under a real lead lock after waiting\n      ---\n      duration_ms: 1196.20636\n      type: 'test'\n      ...\n    # Subtest: S24: a real PostgreSQL deadlock and full transaction retry cannot duplicate an intent\n    ok 10 - S24: a real PostgreSQL deadlock and full transaction retry cannot duplicate an intent\n      ---\n      duration_ms: 1577.95623\n      type: 'test'\n      ...\n    1..10\nok 1 - M1 security: real roles, forced RLS and transactional locks\n  ---\n  duration_ms: 8950.31302\n  type: 'test'\n  ...\n1..1\n# tests 11\n# suites 0\n# pass 11\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 10830.20366\n",
+  "stderr": "",
+  "duration_seconds": 32.504,
+  "temporary_cluster_retained": null
+}
