@@ -181,13 +181,57 @@ function normalizeArgentineAmount(amount) {
   if (/\bcero\b/.test(literal)) value = 0;
   else if (/\bdiez\s+millones\b/.test(literal)) value = 10_000_000;
   else {
-    const scaled = literal.match(/\b(\d+)\s*(millones?|palos?|lucas?)\b/);
-    if (scaled) value = Number(scaled[1]) * (/lucas?/.test(scaled[2]) ? 1_000 : 1_000_000);
+    // "mil" is as explicit and dictionary-standard a scale word as "millones" - it
+    // belongs alongside it, not just the slang terms ("palos"/"lucas"), and its
+    // absence here (while "lucas", its slang synonym, was already handled) was an
+    // inconsistency in this list, not a deliberate scope boundary.
+    const scaled = literal.match(/\b(\d+)\s*(mil|millones?|palos?|lucas?)\b/);
+    // scaled[2] is the whole matched word already ("mil", "millon"/"millones",
+    // "palo"/"palos" or "luca"/"lucas") - this must be an ANCHORED equality check,
+    // not a bare substring test: "millones" itself contains "mil" as a substring,
+    // so an unanchored /mil/.test() would wrongly multiply "2 millones" by 1_000.
+    if (scaled) value = Number(scaled[1]) * (/^(mil|lucas?)$/.test(scaled[2]) ? 1_000 : 1_000_000);
   }
   if (value !== null) {
     amount.numeric_value = value;
     if (amount.certainty === "ambiguous") amount.certainty = "explicit";
   }
+}
+
+// Pre-canary blocker (real Candidate 2 incident): a monthly_installment_capacity or
+// down_payment_capacity amount whose numeric_value came from the provider (LLM) as
+// "explicit"/"contextual" is trustworthy only when the literal ITSELF makes the scale
+// unambiguous - an explicit scale word (mil/millones/palos/lucas), an explicit
+// currency/unit word, or enough digits that the customer plainly typed the full
+// number out (e.g. "300.000", not "300"). Real incident: "cuotas de 300 a 500 x mes"
+// was extracted as numeric_value 300/500, certainty "explicit" - the literal alone
+// never says whether the customer meant 300 pesos or 300 mil pesos, but the provider
+// asserted a specific answer anyway, and nothing downstream ever challenged it. This
+// is a pure trust boundary: it never invents or upscales a value (that would be the
+// "no inferir escalas por intuición" violation) - it only refuses to accept an
+// unsupported "explicit" claim, downgrading it to the same ambiguous/null shape the
+// provider is already expected to produce for a genuinely scale-less mention (see
+// "Tengo 5.000 para entrar" in the prompt). Zero is exempt: "cero" has no scale to be
+// ambiguous about.
+const AMBIGUOUS_CAPACITY_KINDS = new Set(["monthly_installment_capacity", "down_payment_capacity"]);
+const EXPLICIT_SCALE_OR_CURRENCY_WORDS = /\b(mil|millon\w*|palos?|lucas?|pesos?|dolares|ars|u\$s)\b/;
+// "Nm" (e.g. "2m") is not a new capability being added here: the provider itself
+// already reliably resolves it to millions unassisted in real traffic (confirmed,
+// e.g. real Candidate 2 lead e8ffcdc7: "2m" -> numeric_value 2000000, correctly).
+// This only teaches the TRUST check the same abbreviation, so this fix does not
+// regress that already-relied-upon behavior. It is scoped to a digit immediately
+// followed by "m" - distinct from "k", which is audited as unsupported (see report).
+const DIGIT_M_ABBREVIATION = /\b\d+\s*m\b/;
+function hasSelfEvidentScale(literal) {
+  if (EXPLICIT_SCALE_OR_CURRENCY_WORDS.test(literal) || DIGIT_M_ABBREVIATION.test(literal)) return true;
+  const digitGroups = literal.replace(/[.,]/g, "").match(/\d+/g) ?? [];
+  return digitGroups.some(group => group.length >= 4);
+}
+function flagAmbiguousCapacityScale(normalized, amount) {
+  amount.certainty = "ambiguous";
+  amount.confirmation_recommended = true;
+  if (!normalized.needs_clarification.some(item => item.code === "amount_scale_or_currency" && item.evidence === amount.evidence))
+    normalized.needs_clarification.push({ code: "amount_scale_or_currency", evidence: amount.evidence });
 }
 
 // Family S2: purchase_mode_literal is a raw provider field (string|null, never validated
@@ -367,6 +411,10 @@ export function normalizeSemanticExtraction(candidate, input = null) {
     const conflictingKind = normalizeAmountKind(amount);
     normalizeArgentineAmount(amount);
     if (conflictingKind) amount.certainty = "ambiguous";
+    if (AMBIGUOUS_CAPACITY_KINDS.has(amount.kind) && amount.certainty !== "ambiguous" && amount.numeric_value !== null && amount.numeric_value !== 0
+      && !hasSelfEvidentScale(fold(amount.literal ?? ""))) {
+      flagAmbiguousCapacityScale(normalized, amount);
+    }
     if (amount.certainty === "ambiguous") { amount.numeric_value = null; amount.currency = null; }
     if (amount.numeric_value === 0) amount.numeric_value = 0;
   }
