@@ -11,7 +11,14 @@ import { buildFilterInput, selectPreviousShadowRun } from "../../../supabase/fun
 import { replayConversation } from "../../../supabase/functions/_shared/ai-v2-shadow/replay.mjs";
 
 const state = target => ({ target_model: target ? { status: "known", value: target } : { status: "unknown", value: null }, has_trade_in: { status: "unknown", value: null } });
-const engine = input => ({ status: "ok", next_state: input.previous_filter_state ?? state({ model_id: "208", model: "Peugeot 208", brand: "Peugeot" }), response_plan: { prompt: "¿Cómo pensás comprarlo?" }, handoff_decision: {}, resolved_facts: [], warnings: [] });
+// response_plan uses the real contract field (next_filter_question), not the
+// stray "prompt" key this mock previously carried - that key was never read by
+// response-generator.mjs, so this mock's candidate reply was actually coming
+// from the Composer's old hardcoded fallback (the P1 bug fixed in Family U),
+// not from a well-formed response plan. next_filter_question:"purchase_mode"
+// reproduces the same intended question ("¿Cómo pensás comprarlo...?") via the
+// real, now-fixed contract.
+const engine = input => ({ status: "ok", next_state: input.previous_filter_state ?? state({ model_id: "208", model: "Peugeot 208", brand: "Peugeot" }), response_plan: { next_filter_question: "purchase_mode" }, handoff_decision: {}, resolved_facts: [], warnings: [] });
 const semantic = async () => ({ extraction: { trade_in_intent: "not_present", evidence: {} } });
 function memoryRepo() { const runs = new Map(); return { runs, async claim(mid,lid){ if(runs.has(mid)) return {created:false,run:runs.get(mid)}; const run={id:mid,lead_id:lid};runs.set(mid,run);return{created:true,run};}, async complete(id,r){runs.set(id,{...runs.get(id),...r});}, async fail(id,r){runs.set(id,{...runs.get(id),...r});} }; }
 function args(overrides={}) { const repo=overrides.repository??memoryRepo(); return { env:{AI_V2_SHADOW_MODE:"true"}, input:{lead:{id:"lead"},inboundMessage:{id:"m1",body:"hola",created_at:"2026-01-01T00:00:00Z"},filterInput:{lead:{},catalog:[],campaigns:[],bank_offers:[],conversation_control:{mode:"ai"}}}, repository:repo, extractSemantic:semantic, runFilter:engine, ...overrides }; }

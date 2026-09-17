@@ -136,5 +136,19 @@ export function generateCandidateReply(input) {
 
   if (questionCopy) return finalize(questionCopy);
 
-  return finalize("¿En qué modelo estás interesado?");
+  // Family U (P1 pre-canary fix): response_plan (the real engine) is the sole
+  // authority on what to answer, ask, or hand off this turn - the Composer only
+  // materializes that plan, it never corrects or second-guesses it. Reaching here
+  // means next_filter_question was null, there was no answer_fact, no handoff, no
+  // DNC, no closure, and no legacy structured-facts match: the engine deliberately
+  // has nothing for this turn to say. Before Family T this branch was effectively
+  // unreachable outside a handoff/DNC turn (both return earlier above), so it was
+  // never exercised on real traffic; Family T's asked-once/exhaustion logic
+  // legitimately produces null in an ordinary turn, and inventing a question here
+  // (previously a hardcoded, often-wrong "¿En qué modelo estás interesado?", even
+  // when the model was already known) directly contradicted the engine's own
+  // decision. `no_response_planned` is a distinct status from `suppressed_*`
+  // (human/DNC) - it means "the engine had nothing to add", not "a signal actively
+  // suppressed a reply" - so a future sender can tell the two apart.
+  return { text: null, status: "no_response_planned", question_count: 0 };
 }
