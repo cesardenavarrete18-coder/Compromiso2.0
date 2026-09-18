@@ -1,0 +1,33 @@
+{
+  "classification": "ISOLATED_SCHEMA_BASELINE_ONLY",
+  "project_ref": "cdtvuovsqwwopktdahgj",
+  "captured_at": "2026-09-18T03:32:37.756702+00:00",
+  "source_sha256": "6d55f0b7dd3833daf419ea01b72e653211f79085e40a0fdeada5db8e951761ca",
+  "overlay_sha256": "fd56528e45a1be74ca4381842c336b036b981e1a6cb9bb78e205cdb0f806ded8",
+  "relations": [
+    "lead_messages",
+    "whatsapp_conversation_events",
+    "whatsapp_follow_up_reminders"
+  ],
+  "functions": [
+    "public.set_whatsapp_conversation_mode(uuid,text)"
+  ],
+  "inherited_unchanged": [
+    "private.set_updated_at() from B",
+    "private.current_user_can_manage_whatsapp(uuid) from assignment-boundary before candidate",
+    "private.cancel_whatsapp_follow_up_on_takeover() from assignment-boundary"
+  ],
+  "includes_actual_rpc_side_effects": [
+    "mode controls upsert",
+    "event insert",
+    "takeover trigger cancels eligible reminders"
+  ],
+  "excludes": [
+    "provider/API clients",
+    "Edge handlers",
+    "credentials",
+    "production business rows",
+    "any network behavior"
+  ],
+  "warning": "lead_messages policy remains independently tied to commercial owner; this fixture does not claim denial of all transcript reads."
+}

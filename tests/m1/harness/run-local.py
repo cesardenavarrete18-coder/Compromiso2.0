@@ -21,6 +21,8 @@ import tempfile
 import time
 import uuid
 
+from candidate_plan import candidate_migrations_for
+
 
 MIGRATIONS = (
     "20260917154844_m1_runtime_authority_foundation.sql",
@@ -33,6 +35,9 @@ BOOTSTRAP_ONLY_SUITES = {"installation.integration.test.mjs", "schema-baseline-b
 SCHEMA_BOOTSTRAPS = {
     "schema-baseline-b.integration.test.mjs": "fixtures/schema-baseline-b/bootstrap.sql",
     "assignment-boundary.integration.test.mjs": "fixtures/schema-baseline-b/bootstrap.sql",
+    "assignment-channel-prerequisite.integration.test.mjs": "fixtures/schema-baseline-b/bootstrap.sql",
+    "assignment-channel-guard.integration.test.mjs": "fixtures/schema-baseline-b/bootstrap.sql",
+    "assignment-runtime.integration.test.mjs": "fixtures/schema-baseline-b/bootstrap.sql",
 }
 SOURCE_MANIFEST = REPO / "m1-validation-source-manifest.json"
 
@@ -162,7 +167,13 @@ def main():
     if len(test_files) > 1:
         return run_independent_suites(args, test_files, node)
     suite_name = test_files[0].name
+    candidate_migrations = candidate_migrations_for(suite_name)
+    for name in candidate_migrations:
+        path = REPO / "supabase/migrations" / name
+        if not path.is_file() or not path.read_text().strip():
+            raise SystemExit(f"BLOCKED: candidate migration not ready: {name}")
     boundary_diagnostic = suite_name == "assignment-boundary.integration.test.mjs"
+    assignment_candidate = bool(candidate_migrations)
     bootstrap_only = suite_name in BOOTSTRAP_ONLY_SUITES
     bootstrap_user = "supabase_admin" if suite_name in SCHEMA_BOOTSTRAPS else "m1_test_admin"
     bootstrap_relative = SCHEMA_BOOTSTRAPS.get(suite_name, "fixtures/bootstrap.sql")
@@ -178,6 +189,7 @@ def main():
         "harness": "crm-m1-unix-seccomp/2", "run_id": str(uuid.uuid4()), "suite": suite_name,
         "source_manifest": source_manifest,
         "fixture_layer": ("B_plus_synthetic_boundary_data" if boundary_diagnostic else
+                          "B_plus_synthetic_assignment_data" if assignment_candidate else
                           "schema_only_baseline_b" if suite_name in SCHEMA_BOOTSTRAPS else "minimal_synthetic_auth_crm"),
         "bootstrap_source": f"tests/m1/{bootstrap_relative}", "bootstrap_sha256": digest(bootstrap_source), "cluster_per_suite": True,
         "bootstrap_user": bootstrap_user,
@@ -187,17 +199,26 @@ def main():
         "requested_database_major": 17, "requested_uid": account.pw_uid,
         "database_started": False, "migrations_applied": [], "integration_tests_executed": False,
         "migration_sha256": {name: digest(REPO / "supabase/migrations" / name) for name in MIGRATIONS},
+        "candidate_migration_sha256": {name: digest(REPO / "supabase/migrations" / name) for name in candidate_migrations},
+        "candidate_installation": "suite_controlled_verbatim" if candidate_migrations else "none",
+        "candidate_validation_stage": ("guard_prerequisite_only" if suite_name == "assignment-channel-prerequisite.integration.test.mjs"
+                                       else "assignment_acceptance_candidate" if assignment_candidate else None),
         "postgres_binary_sha256": digest(pg_root / "bin/postgres"),
         "guard_source_sha256": digest(SOURCE_TESTS / "harness/deny-network.c"),
         "guard_binary_sha256": args.guard_sha256 if args.guard_binary else None,
         "guard_precompiled": bool(args.guard_binary),
         "suite_sha256": {str(p.relative_to(REPO)): digest(p) for p in test_files},
         "limits": [
+            ("Guard prerequisite evidence only; this does not certify the final command-based guard matrix or M1-04A."
+             if suite_name == "assignment-channel-prerequisite.integration.test.mjs" else
             ("Schema B plus synthetic boundary diagnostic data; not M1-04A acceptance, no production rows or Supabase REST gateway."
              if boundary_diagnostic else
+             "Schema B plus observed overlays and synthetic assignment data; candidate DDL is suite-controlled, no production rows or Supabase REST gateway."
+             if assignment_candidate else
              "Schema-only baseline B: coverage is limited to its explicit manifest; no production rows or Supabase REST gateway."
-             if suite_name in SCHEMA_BOOTSTRAPS else "Synthetic auth/profiles/leads fixture; not a full production schema or Supabase REST gateway."),
-            "No legacy handler, trigger, frontend or external sender is changed or certified.",
+             if suite_name in SCHEMA_BOOTSTRAPS else "Synthetic auth/profiles/leads fixture; not a full production schema or Supabase REST gateway.")),
+            ("Only the selected assignment candidate boundary is exercised; no sender, frontend, production authority or wider CRM certification."
+             if assignment_candidate else "No legacy handler, trigger, frontend or external sender is changed or certified."),
             "Database effects occur only in the disposable local cluster.",
         ],
     }
@@ -236,7 +257,7 @@ def main():
         shutil.copytree(REPO / "supabase/functions/_shared/crm-runtime", work / "supabase/functions/_shared/crm-runtime")
         migration_dir = work / "migrations"
         migration_dir.mkdir()
-        for name in MIGRATIONS:
+        for name in (*MIGRATIONS, *candidate_migrations):
             shutil.copy2(REPO / "supabase/migrations" / name, migration_dir / name)
         guard = work / "deny-network"
         if args.guard_binary:
@@ -271,6 +292,8 @@ def main():
             "M1_TEST_FIXTURE_DIR": str(tests / "fixtures"),
             "PGPASSFILE": "/dev/null", "PGSERVICEFILE": "/dev/null",
         }
+        if candidate_migrations:
+            child_env["M1_TEST_CANDIDATE_MIGRATIONS"] = json.dumps(candidate_migrations)
         report["environment_keys"] = sorted(child_env)
         options = {"env": child_env, "cwd": work, "close_fds": True, **child_identity}
 

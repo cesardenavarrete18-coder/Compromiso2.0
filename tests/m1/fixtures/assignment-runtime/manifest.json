@@ -1,0 +1,207 @@
+{
+  "schema": "crm.m1.assignment-runtime-fixture/1",
+  "classification": "SCHEMA_ONLY_FIXTURE_NOT_ACCEPTANCE_OR_DEPLOYMENT",
+  "scope": "Legacy assignment/task-result/follow-up dependency closure over unchanged B; channel schema is a separately captured overlay.",
+  "source_sha256": "831870bd7accb4e49627bc9d543e01fa44239892b074c4c70d55e3335dbe5f4b",
+  "build_sha256": "317b55b3e82480f5958a17c6c5d7bbcaf28235664c6f74e1efed4a5a3a135159",
+  "overlay_sha256": "074ddac9fcf64e390d67f3b7c40ae07bf0cf0bb8be1ba59859f1e7dc712a941f",
+  "base_bootstrap_sha256": "8ea22a1e8b4cd6559732331ca66ac2728d90f58e11ada4f344c398040608c5e6",
+  "boundary_overlay_sha256": "54516871fa828fe83a7ca28f4790999a576195c1abaccc26544b178d60e5e17a",
+  "captures": {
+    "functions_m0": "2026-09-17T13:51:42.147Z",
+    "lead_assignments_catalog": "2026-09-18T03:31:13.477246+00:00"
+  },
+  "counts": {
+    "tables": 1,
+    "columns": 7,
+    "constraints": 5,
+    "indexes": 4,
+    "sequences": 1,
+    "triggers": 0,
+    "policies": 2,
+    "functions": 13,
+    "data_rows": 0
+  },
+  "functions": [
+    {
+      "signature": "private.apply_lead_opt_out(p_lead_id uuid, p_reason text)",
+      "sha256": "dc1cd80dd3525fbe89baf2f92070e798567381c28b2dbecb9649d1c2bcd3d4e6",
+      "owner": "postgres",
+      "acl": "{postgres=X/postgres}"
+    },
+    {
+      "signature": "private.assign_lead_to_seller_with_reason(p_lead_id uuid, p_seller_user_id uuid, p_actor_user_id uuid, p_reason text)",
+      "sha256": "1a99cae30aa30f1700d8063744b7934e768687097c244d230e3e05a8c061960a",
+      "owner": "postgres",
+      "acl": "{postgres=X/postgres}"
+    },
+    {
+      "signature": "private.crm_transition_allowed(p_from text, p_to text)",
+      "sha256": "6a1c4eb41450332a1cd731c57a3dda0c638459ff8b796c30afd505e2daef6cb9",
+      "owner": "postgres",
+      "acl": "{postgres=X/postgres}"
+    },
+    {
+      "signature": "private.sync_protocol_next_action(p_sequence_id uuid, p_lead_id uuid)",
+      "sha256": "1d6a89dcc30821ab901b049cac40c4e17ba191a6777af1cc796ab30529f25307",
+      "owner": "postgres",
+      "acl": "{postgres=X/postgres}"
+    },
+    {
+      "signature": "public.assign_lead_to_seller(p_lead_id uuid, p_seller_user_id uuid)",
+      "sha256": "bdd67087cf3d6b8b91d2d1e68679b864ff647ee5cf2e7dc770ec24441e2809a1",
+      "owner": "postgres",
+      "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
+    },
+    {
+      "signature": "public.complete_contact_task(p_task_id uuid, p_outcome text, p_note text)",
+      "sha256": "1fa03660a0d5bcbc4decadb41c91a07a13916663ef1ff13750625db5d039bbc8",
+      "owner": "postgres",
+      "acl": "{postgres=X/postgres,service_role=X/postgres}"
+    },
+    {
+      "signature": "public.complete_contact_task_with_follow_up(p_task_id uuid, p_outcome text, p_note text, p_next_contact_at timestamp with time zone, p_next_contact_note text)",
+      "sha256": "a220b8aa716ae3d113e17660a4aa120f7ae15e588254010346493286f1f2c5fe",
+      "owner": "postgres",
+      "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
+    },
+    {
+      "signature": "public.reassign_leads_to_seller(p_lead_ids uuid[], p_seller_user_id uuid, p_reason text)",
+      "sha256": "bdaf57f166a5f695b56f9d87fb4df420e971ea9ab5314f5181f6484020ea5717",
+      "owner": "postgres",
+      "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
+    },
+    {
+      "signature": "public.record_contact_answer_with_transition(p_task_id uuid, p_status text, p_interview_operational_status text, p_note text, p_next_contact_at timestamp with time zone, p_next_contact_note text, p_contact_outcome text, p_interview_at timestamp with time zone, p_interview_location text, p_deposit_amount numeric, p_priority text, p_performed_at timestamp with time zone, p_interview_mode text, p_deposit_validation text, p_desist_reason text)",
+      "sha256": "5cb0f78ee3e4bbe36778f69a450139a98dc72193602f1eaaecb631a71bfd106b",
+      "owner": "postgres",
+      "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
+    },
+    {
+      "signature": "public.record_contact_answer_with_transition(p_task_id uuid, p_status text, p_note text, p_next_contact_at timestamp with time zone, p_next_contact_note text, p_contact_outcome text, p_interview_at timestamp with time zone, p_interview_location text, p_deposit_amount numeric, p_priority text, p_performed_at timestamp with time zone, p_interview_mode text, p_deposit_validation text, p_desist_reason text)",
+      "sha256": "d5698692879313b264637d5e3a702d69619aa77c548602aac6fddfee1ba6a0c1",
+      "owner": "postgres",
+      "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
+    },
+    {
+      "signature": "public.record_contact_task_result(p_task_id uuid, p_outcome text, p_note text, p_performed_at timestamp with time zone)",
+      "sha256": "de727776dd56413d9d4ae91052dc6fa2daa299ebce453f1f7e6f55467a6fcce6",
+      "owner": "postgres",
+      "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
+    },
+    {
+      "signature": "public.record_lead_follow_up(p_lead_id uuid, p_status text, p_note text, p_next_contact_at timestamp with time zone, p_next_contact_note text, p_contact_outcome text, p_interview_at timestamp with time zone, p_interview_location text, p_deposit_amount numeric, p_priority text, p_interview_mode text, p_interview_operational_status text, p_deposit_validation text, p_desist_reason text)",
+      "sha256": "19804c2875930510189e74972ee81a78aa4460386fd657082449aff353d4e99d",
+      "owner": "postgres",
+      "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
+    },
+    {
+      "signature": "public.refresh_due_contact_protocols()",
+      "sha256": "e3cf722ebcafefee14eefd350aa80a8fdf68fec300dcb131c541fd68cd9c7bfc",
+      "owner": "postgres",
+      "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
+    }
+  ],
+  "dependencies": {
+    "private.apply_lead_opt_out(p_lead_id uuid, p_reason text)": [
+      "public.customers",
+      "public.leads"
+    ],
+    "private.assign_lead_to_seller_with_reason(p_lead_id uuid, p_seller_user_id uuid, p_actor_user_id uuid, p_reason text)": [
+      "public.lead_activities",
+      "public.lead_assignments",
+      "public.leads",
+      "public.profiles"
+    ],
+    "private.crm_transition_allowed(p_from text, p_to text)": [],
+    "private.sync_protocol_next_action(p_sequence_id uuid, p_lead_id uuid)": [
+      "public.lead_contact_sequences",
+      "public.lead_contact_tasks"
+    ],
+    "public.assign_lead_to_seller(p_lead_id uuid, p_seller_user_id uuid)": [
+      "auth.uid",
+      "private.assign_lead_to_seller_with_reason",
+      "private.current_user_is_management",
+      "public.profiles"
+    ],
+    "public.complete_contact_task(p_task_id uuid, p_outcome text, p_note text)": [
+      "auth.uid",
+      "private.apply_lead_opt_out",
+      "private.cancel_lead_contact_protocol",
+      "private.current_user_active",
+      "private.current_user_is_management",
+      "private.sync_protocol_next_action",
+      "public.lead_activities",
+      "public.lead_contact_sequences",
+      "public.lead_contact_tasks",
+      "public.lead_crm"
+    ],
+    "public.complete_contact_task_with_follow_up(p_task_id uuid, p_outcome text, p_note text, p_next_contact_at timestamp with time zone, p_next_contact_note text)": [
+      "public.complete_contact_task"
+    ],
+    "public.reassign_leads_to_seller(p_lead_ids uuid[], p_seller_user_id uuid, p_reason text)": [
+      "auth.uid",
+      "private.assign_lead_to_seller_with_reason",
+      "private.current_user_is_management",
+      "public.lead_crm",
+      "public.leads",
+      "public.profiles"
+    ],
+    "public.record_contact_answer_with_transition(p_task_id uuid, p_status text, p_interview_operational_status text, p_note text, p_next_contact_at timestamp with time zone, p_next_contact_note text, p_contact_outcome text, p_interview_at timestamp with time zone, p_interview_location text, p_deposit_amount numeric, p_priority text, p_performed_at timestamp with time zone, p_interview_mode text, p_deposit_validation text, p_desist_reason text)": [],
+    "public.record_contact_answer_with_transition(p_task_id uuid, p_status text, p_note text, p_next_contact_at timestamp with time zone, p_next_contact_note text, p_contact_outcome text, p_interview_at timestamp with time zone, p_interview_location text, p_deposit_amount numeric, p_priority text, p_performed_at timestamp with time zone, p_interview_mode text, p_deposit_validation text, p_desist_reason text)": [
+      "auth.uid",
+      "private.apply_lead_opt_out",
+      "private.cancel_lead_contact_protocol",
+      "private.crm_transition_allowed",
+      "private.current_user_active",
+      "private.current_user_is_management",
+      "public.lead_activities",
+      "public.lead_contact_tasks",
+      "public.lead_crm"
+    ],
+    "public.record_contact_task_result(p_task_id uuid, p_outcome text, p_note text, p_performed_at timestamp with time zone)": [
+      "public.complete_contact_task",
+      "public.lead_contact_tasks"
+    ],
+    "public.record_lead_follow_up(p_lead_id uuid, p_status text, p_note text, p_next_contact_at timestamp with time zone, p_next_contact_note text, p_contact_outcome text, p_interview_at timestamp with time zone, p_interview_location text, p_deposit_amount numeric, p_priority text, p_interview_mode text, p_interview_operational_status text, p_deposit_validation text, p_desist_reason text)": [
+      "auth.uid",
+      "private.apply_lead_opt_out",
+      "private.cancel_lead_contact_protocol",
+      "private.create_lead_contact_sequence",
+      "private.crm_transition_allowed",
+      "private.current_user_active",
+      "private.current_user_is_management",
+      "public.lead_activities",
+      "public.lead_crm",
+      "public.leads"
+    ],
+    "public.refresh_due_contact_protocols()": [
+      "auth.uid",
+      "private.current_user_active",
+      "private.current_user_is_management",
+      "public.lead_activities",
+      "public.lead_contact_sequences",
+      "public.lead_contact_tasks",
+      "public.lead_crm",
+      "public.leads"
+    ]
+  },
+  "installation_order": [
+    "schema-baseline-b/bootstrap.sql",
+    "certified M1-01/02/03 (runner)",
+    "assignment-boundary/overlay.sql",
+    "assignment-runtime/overlay.sql",
+    "assignment-runtime/channel-overlay.sql (separate capture)",
+    "authorized candidate migrations (verbatim, isolated only)"
+  ],
+  "generation_status": "GENERATED_ONLY_NOT_EXECUTED_BY_BUILDER",
+  "limitations": [
+    "M0 function capture and later table metadata are separate snapshots; not an atomic production dump.",
+    "Observed function definitions, owners and ACLs are reproduced verbatim; no production/auth rows or sequence current value.",
+    "B's relevant schema limits remain; this does not capture every CRM or external writer.",
+    "Channel source/overlay are built separately and must be loaded to exercise human-mode legacy branches.",
+    "No HTTP/Edge/provider implementation is included or certified by a database fixture.",
+    "No AssignLead/TransferLead/Acknowledge behavior is implemented by this legacy fixture.",
+    "Dependency regex detects missing qualified references only; real PostgreSQL installation/behavior remains required."
+  ]
+}

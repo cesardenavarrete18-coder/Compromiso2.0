@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Create a deterministic, credential-free M1 validation source archive.
 
-Only the three new migrations, closed runtime contract and M1 tests/fixtures are
-included. No repository config, environment, git directory, data dump, production
+Only the three certified migrations, explicitly declared assignment candidates,
+runtime contract and M1 tests/fixtures are included. No repository config,
+environment, git directory, data dump, production
 manifest, provider token or dependency installation is copied.
 """
 import argparse
@@ -13,6 +14,8 @@ import json
 import pathlib
 import subprocess
 import tarfile
+
+from candidate_plan import CANDIDATE_MIGRATIONS_BY_SUITE, all_candidate_migrations, candidate_migrations_for
 
 REPO = pathlib.Path(__file__).resolve().parents[3]
 MIGRATIONS = (
@@ -26,12 +29,19 @@ MANIFEST_NAME = "m1-validation-source-manifest.json"
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", required=True, type=pathlib.Path)
+    parser.add_argument("--suite", help="restrict candidate artifacts to one existing integration suite")
     args = parser.parse_args()
     output = args.output.resolve()
     if output.is_relative_to(REPO):
         raise SystemExit("Refusing to write validation archive inside the repository")
-    selected = [REPO / "supabase/migrations" / name for name in MIGRATIONS]
+    if args.suite and args.suite not in {path.name for path in (REPO / "tests/m1").glob("*.integration.test.mjs")}:
+        raise SystemExit("Suite must be an existing integration basename under tests/m1")
+    candidates = candidate_migrations_for(args.suite) if args.suite else all_candidate_migrations()
+    selected = [REPO / "supabase/migrations" / name for name in (*MIGRATIONS, *candidates)]
     selected += [REPO / "supabase/functions/_shared/crm-runtime/contracts.mjs"]
+    assignment_contract = REPO / "supabase/functions/_shared/crm-runtime/assignment-contracts.mjs"
+    if assignment_contract.is_file():
+        selected.append(assignment_contract)
     selected += sorted((REPO / "tests/m1").glob("*.mjs"))
     for directory, suffixes in (("harness", {".py", ".mjs", ".c", ".md"}), ("fixtures", {".sql", ".json", ".py"})):
         selected += sorted(path for path in (REPO / "tests/m1" / directory).rglob("*") if path.is_file() and path.suffix in suffixes)
@@ -48,7 +58,8 @@ def main():
     manifest = {
         "schema": "crm-m1-validation-source/1", "git_base_revision": revision,
         "source_has_uncommitted_changes": bool(dirty), "changed_paths": sorted(dirty),
-        "scope": "M1-01/M1-02/M1-03 validation only",
+        "scope": "M1-01/M1-02/M1-03 regression and explicitly declared assignment candidate validation; no production",
+        "candidate_migrations_by_suite": ({args.suite: candidates} if args.suite else CANDIDATE_MIGRATIONS_BY_SUITE),
         "files": [{"path": name, "sha256": hashlib.sha256(content).hexdigest(), "size": len(content)}
                   for name, content in sorted(entries.items())],
     }

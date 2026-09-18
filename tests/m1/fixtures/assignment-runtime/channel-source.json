@@ -1,0 +1,1147 @@
+{
+  "project_ref": "cdtvuovsqwwopktdahgj",
+  "classification": "schema_only_no_business_rows",
+  "query": "WITH selected AS (SELECT c.oid,c.relname,c.relowner,c.relacl,c.relrowsecurity,c.relforcerowsecurity FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' AND c.relname IN ('whatsapp_conversation_events','whatsapp_follow_up_reminders','lead_messages'))\nSELECT jsonb_build_object(\n'captured_at',clock_timestamp(),\n'tables',(SELECT jsonb_agg(jsonb_build_object('schema','public','name',relname,'owner',pg_get_userbyid(relowner),'acl',relacl::text,'rls_enabled',relrowsecurity,'rls_forced',relforcerowsecurity) ORDER BY relname) FROM selected),\n'columns',(SELECT jsonb_agg(jsonb_build_object('table',s.relname,'name',a.attname,'position',a.attnum,'type',format_type(a.atttypid,a.atttypmod),'not_null',a.attnotnull,'identity',a.attidentity,'generated',a.attgenerated,'default',pg_get_expr(d.adbin,d.adrelid)) ORDER BY s.relname,a.attnum) FROM selected s JOIN pg_attribute a ON a.attrelid=s.oid LEFT JOIN pg_attrdef d ON d.adrelid=a.attrelid AND d.adnum=a.attnum WHERE a.attnum>0 AND NOT a.attisdropped),\n'constraints',(SELECT jsonb_agg(jsonb_build_object('table',s.relname,'name',c.conname,'definition',pg_get_constraintdef(c.oid)) ORDER BY s.relname,c.conname) FROM selected s JOIN pg_constraint c ON c.conrelid=s.oid),\n'indexes',(SELECT jsonb_agg(jsonb_build_object('table',tablename,'name',indexname,'definition',indexdef) ORDER BY tablename,indexname) FROM pg_indexes WHERE schemaname='public' AND tablename IN(SELECT relname FROM selected)),\n'triggers',(SELECT jsonb_agg(jsonb_build_object('table',s.relname,'name',t.tgname,'definition',pg_get_triggerdef(t.oid),'enabled',t.tgenabled) ORDER BY s.relname,t.tgname) FROM selected s JOIN pg_trigger t ON t.tgrelid=s.oid WHERE NOT t.tgisinternal),\n'policies',(SELECT jsonb_agg(to_jsonb(p) ORDER BY p.tablename,p.policyname) FROM pg_policies p WHERE p.schemaname='public' AND p.tablename IN(SELECT relname FROM selected)),\n'grants',(SELECT jsonb_agg(jsonb_build_object('table',s.relname,'grantor',pg_get_userbyid(x.grantor),'grantee',CASE WHEN x.grantee=0 THEN 'PUBLIC' ELSE pg_get_userbyid(x.grantee) END,'privilege',x.privilege_type,'grantable',x.is_grantable) ORDER BY s.relname,x.grantee,x.privilege_type) FROM selected s CROSS JOIN LATERAL aclexplode(s.relacl)x),\n'sequences',(SELECT jsonb_agg(jsonb_build_object('name',c.relname,'owner',pg_get_userbyid(c.relowner),'acl',c.relacl::text,'type',format_type(s.seqtypid,null),'start',s.seqstart::text,'increment',s.seqincrement::text,'max',s.seqmax::text,'min',s.seqmin::text,'cache',s.seqcache::text,'cycle',s.seqcycle) ORDER BY c.relname) FROM pg_sequence s JOIN pg_class c ON c.oid=s.seqrelid WHERE c.oid IN(SELECT d.objid FROM pg_depend d JOIN selected t ON t.oid=d.refobjid WHERE d.classid='pg_class'::regclass AND d.refclassid='pg_class'::regclass AND d.deptype IN('a','i'))),\n'sequence_grants',(SELECT jsonb_agg(jsonb_build_object('sequence',c.relname,'grantor',pg_get_userbyid(x.grantor),'grantee',CASE WHEN x.grantee=0 THEN 'PUBLIC' ELSE pg_get_userbyid(x.grantee) END,'privilege',x.privilege_type,'grantable',x.is_grantable) ORDER BY c.relname,x.grantee,x.privilege_type) FROM pg_sequence s JOIN pg_class c ON c.oid=s.seqrelid CROSS JOIN LATERAL aclexplode(c.relacl)x WHERE c.oid IN(SELECT d.objid FROM pg_depend d JOIN selected t ON t.oid=d.refobjid WHERE d.classid='pg_class'::regclass AND d.refclassid='pg_class'::regclass AND d.deptype IN('a','i'))),\n'functions',(SELECT jsonb_agg(jsonb_build_object('schema',n.nspname,'name',p.proname,'arguments',pg_get_function_identity_arguments(p.oid),'definition',pg_get_functiondef(p.oid),'sha256',encode(sha256(convert_to(pg_get_functiondef(p.oid),'UTF8')),'hex'),'owner',pg_get_userbyid(p.proowner),'acl',p.proacl::text,'security_definer',p.prosecdef,'config',p.proconfig) ORDER BY n.nspname,p.proname) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE (n.nspname='public' AND p.proname='set_whatsapp_conversation_mode') OR p.oid IN(SELECT t.tgfoid FROM selected s JOIN pg_trigger t ON t.tgrelid=s.oid WHERE NOT t.tgisinternal))\n) AS snapshot",
+  "snapshot": {
+    "grants": [
+      {
+        "table": "lead_messages",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "DELETE"
+      },
+      {
+        "table": "lead_messages",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "INSERT"
+      },
+      {
+        "table": "lead_messages",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "MAINTAIN"
+      },
+      {
+        "table": "lead_messages",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "REFERENCES"
+      },
+      {
+        "table": "lead_messages",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "SELECT"
+      },
+      {
+        "table": "lead_messages",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "TRIGGER"
+      },
+      {
+        "table": "lead_messages",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "TRUNCATE"
+      },
+      {
+        "table": "lead_messages",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "UPDATE"
+      },
+      {
+        "table": "lead_messages",
+        "grantee": "anon",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "DELETE"
+      },
+      {
+        "table": "lead_messages",
+        "grantee": "anon",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "INSERT"
+      },
+      {
+        "table": "lead_messages",
+        "grantee": "anon",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "MAINTAIN"
+      },
+      {
+        "table": "lead_messages",
+        "grantee": "anon",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "REFERENCES"
+      },
+      {
+        "table": "lead_messages",
+        "grantee": "anon",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "SELECT"
+      },
+      {
+        "table": "lead_messages",
+        "grantee": "anon",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "TRIGGER"
+      },
+      {
+        "table": "lead_messages",
+        "grantee": "anon",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "TRUNCATE"
+      },
+      {
+        "table": "lead_messages",
+        "grantee": "anon",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "UPDATE"
+      },
+      {
+        "table": "lead_messages",
+        "grantee": "authenticated",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "DELETE"
+      },
+      {
+        "table": "lead_messages",
+        "grantee": "authenticated",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "INSERT"
+      },
+      {
+        "table": "lead_messages",
+        "grantee": "authenticated",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "MAINTAIN"
+      },
+      {
+        "table": "lead_messages",
+        "grantee": "authenticated",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "REFERENCES"
+      },
+      {
+        "table": "lead_messages",
+        "grantee": "authenticated",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "SELECT"
+      },
+      {
+        "table": "lead_messages",
+        "grantee": "authenticated",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "TRIGGER"
+      },
+      {
+        "table": "lead_messages",
+        "grantee": "authenticated",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "TRUNCATE"
+      },
+      {
+        "table": "lead_messages",
+        "grantee": "authenticated",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "UPDATE"
+      },
+      {
+        "table": "lead_messages",
+        "grantee": "service_role",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "DELETE"
+      },
+      {
+        "table": "lead_messages",
+        "grantee": "service_role",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "INSERT"
+      },
+      {
+        "table": "lead_messages",
+        "grantee": "service_role",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "MAINTAIN"
+      },
+      {
+        "table": "lead_messages",
+        "grantee": "service_role",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "REFERENCES"
+      },
+      {
+        "table": "lead_messages",
+        "grantee": "service_role",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "SELECT"
+      },
+      {
+        "table": "lead_messages",
+        "grantee": "service_role",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "TRIGGER"
+      },
+      {
+        "table": "lead_messages",
+        "grantee": "service_role",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "TRUNCATE"
+      },
+      {
+        "table": "lead_messages",
+        "grantee": "service_role",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "UPDATE"
+      },
+      {
+        "table": "whatsapp_conversation_events",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "DELETE"
+      },
+      {
+        "table": "whatsapp_conversation_events",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "INSERT"
+      },
+      {
+        "table": "whatsapp_conversation_events",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "MAINTAIN"
+      },
+      {
+        "table": "whatsapp_conversation_events",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "REFERENCES"
+      },
+      {
+        "table": "whatsapp_conversation_events",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "SELECT"
+      },
+      {
+        "table": "whatsapp_conversation_events",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "TRIGGER"
+      },
+      {
+        "table": "whatsapp_conversation_events",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "TRUNCATE"
+      },
+      {
+        "table": "whatsapp_conversation_events",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "UPDATE"
+      },
+      {
+        "table": "whatsapp_conversation_events",
+        "grantee": "authenticated",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "DELETE"
+      },
+      {
+        "table": "whatsapp_conversation_events",
+        "grantee": "authenticated",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "INSERT"
+      },
+      {
+        "table": "whatsapp_conversation_events",
+        "grantee": "authenticated",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "MAINTAIN"
+      },
+      {
+        "table": "whatsapp_conversation_events",
+        "grantee": "authenticated",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "REFERENCES"
+      },
+      {
+        "table": "whatsapp_conversation_events",
+        "grantee": "authenticated",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "SELECT"
+      },
+      {
+        "table": "whatsapp_conversation_events",
+        "grantee": "authenticated",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "TRIGGER"
+      },
+      {
+        "table": "whatsapp_conversation_events",
+        "grantee": "authenticated",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "TRUNCATE"
+      },
+      {
+        "table": "whatsapp_conversation_events",
+        "grantee": "authenticated",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "UPDATE"
+      },
+      {
+        "table": "whatsapp_conversation_events",
+        "grantee": "service_role",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "DELETE"
+      },
+      {
+        "table": "whatsapp_conversation_events",
+        "grantee": "service_role",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "INSERT"
+      },
+      {
+        "table": "whatsapp_conversation_events",
+        "grantee": "service_role",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "MAINTAIN"
+      },
+      {
+        "table": "whatsapp_conversation_events",
+        "grantee": "service_role",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "REFERENCES"
+      },
+      {
+        "table": "whatsapp_conversation_events",
+        "grantee": "service_role",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "SELECT"
+      },
+      {
+        "table": "whatsapp_conversation_events",
+        "grantee": "service_role",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "TRIGGER"
+      },
+      {
+        "table": "whatsapp_conversation_events",
+        "grantee": "service_role",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "TRUNCATE"
+      },
+      {
+        "table": "whatsapp_conversation_events",
+        "grantee": "service_role",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "UPDATE"
+      },
+      {
+        "table": "whatsapp_follow_up_reminders",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "DELETE"
+      },
+      {
+        "table": "whatsapp_follow_up_reminders",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "INSERT"
+      },
+      {
+        "table": "whatsapp_follow_up_reminders",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "MAINTAIN"
+      },
+      {
+        "table": "whatsapp_follow_up_reminders",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "REFERENCES"
+      },
+      {
+        "table": "whatsapp_follow_up_reminders",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "SELECT"
+      },
+      {
+        "table": "whatsapp_follow_up_reminders",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "TRIGGER"
+      },
+      {
+        "table": "whatsapp_follow_up_reminders",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "TRUNCATE"
+      },
+      {
+        "table": "whatsapp_follow_up_reminders",
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "UPDATE"
+      },
+      {
+        "table": "whatsapp_follow_up_reminders",
+        "grantee": "authenticated",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "SELECT"
+      },
+      {
+        "table": "whatsapp_follow_up_reminders",
+        "grantee": "service_role",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "DELETE"
+      },
+      {
+        "table": "whatsapp_follow_up_reminders",
+        "grantee": "service_role",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "INSERT"
+      },
+      {
+        "table": "whatsapp_follow_up_reminders",
+        "grantee": "service_role",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "MAINTAIN"
+      },
+      {
+        "table": "whatsapp_follow_up_reminders",
+        "grantee": "service_role",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "REFERENCES"
+      },
+      {
+        "table": "whatsapp_follow_up_reminders",
+        "grantee": "service_role",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "SELECT"
+      },
+      {
+        "table": "whatsapp_follow_up_reminders",
+        "grantee": "service_role",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "TRIGGER"
+      },
+      {
+        "table": "whatsapp_follow_up_reminders",
+        "grantee": "service_role",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "TRUNCATE"
+      },
+      {
+        "table": "whatsapp_follow_up_reminders",
+        "grantee": "service_role",
+        "grantor": "postgres",
+        "grantable": false,
+        "privilege": "UPDATE"
+      }
+    ],
+    "tables": [
+      {
+        "acl": "{postgres=arwdDxtm/postgres,anon=arwdDxtm/postgres,authenticated=arwdDxtm/postgres,service_role=arwdDxtm/postgres}",
+        "name": "lead_messages",
+        "owner": "postgres",
+        "schema": "public",
+        "rls_forced": false,
+        "rls_enabled": true
+      },
+      {
+        "acl": "{postgres=arwdDxtm/postgres,authenticated=arwdDxtm/postgres,service_role=arwdDxtm/postgres}",
+        "name": "whatsapp_conversation_events",
+        "owner": "postgres",
+        "schema": "public",
+        "rls_forced": false,
+        "rls_enabled": true
+      },
+      {
+        "acl": "{postgres=arwdDxtm/postgres,service_role=arwdDxtm/postgres,authenticated=r/postgres}",
+        "name": "whatsapp_follow_up_reminders",
+        "owner": "postgres",
+        "schema": "public",
+        "rls_forced": false,
+        "rls_enabled": true
+      }
+    ],
+    "columns": [
+      {
+        "name": "id",
+        "type": "uuid",
+        "table": "lead_messages",
+        "default": "gen_random_uuid()",
+        "identity": "",
+        "not_null": true,
+        "position": 1,
+        "generated": ""
+      },
+      {
+        "name": "lead_id",
+        "type": "uuid",
+        "table": "lead_messages",
+        "default": null,
+        "identity": "",
+        "not_null": true,
+        "position": 2,
+        "generated": ""
+      },
+      {
+        "name": "whatsapp_message_id",
+        "type": "text",
+        "table": "lead_messages",
+        "default": null,
+        "identity": "",
+        "not_null": false,
+        "position": 3,
+        "generated": ""
+      },
+      {
+        "name": "direction",
+        "type": "text",
+        "table": "lead_messages",
+        "default": "'inbound'::text",
+        "identity": "",
+        "not_null": true,
+        "position": 4,
+        "generated": ""
+      },
+      {
+        "name": "message_type",
+        "type": "text",
+        "table": "lead_messages",
+        "default": "'text'::text",
+        "identity": "",
+        "not_null": true,
+        "position": 5,
+        "generated": ""
+      },
+      {
+        "name": "body",
+        "type": "text",
+        "table": "lead_messages",
+        "default": "''::text",
+        "identity": "",
+        "not_null": true,
+        "position": 6,
+        "generated": ""
+      },
+      {
+        "name": "raw_payload",
+        "type": "jsonb",
+        "table": "lead_messages",
+        "default": "'{}'::jsonb",
+        "identity": "",
+        "not_null": true,
+        "position": 7,
+        "generated": ""
+      },
+      {
+        "name": "created_at",
+        "type": "timestamp with time zone",
+        "table": "lead_messages",
+        "default": "now()",
+        "identity": "",
+        "not_null": true,
+        "position": 8,
+        "generated": ""
+      },
+      {
+        "name": "origin",
+        "type": "text",
+        "table": "lead_messages",
+        "default": "'unknown'::text",
+        "identity": "",
+        "not_null": true,
+        "position": 9,
+        "generated": ""
+      },
+      {
+        "name": "id",
+        "type": "bigint",
+        "table": "whatsapp_conversation_events",
+        "default": null,
+        "identity": "a",
+        "not_null": true,
+        "position": 1,
+        "generated": ""
+      },
+      {
+        "name": "lead_id",
+        "type": "uuid",
+        "table": "whatsapp_conversation_events",
+        "default": null,
+        "identity": "",
+        "not_null": true,
+        "position": 2,
+        "generated": ""
+      },
+      {
+        "name": "actor_user_id",
+        "type": "uuid",
+        "table": "whatsapp_conversation_events",
+        "default": null,
+        "identity": "",
+        "not_null": false,
+        "position": 3,
+        "generated": ""
+      },
+      {
+        "name": "event_type",
+        "type": "text",
+        "table": "whatsapp_conversation_events",
+        "default": null,
+        "identity": "",
+        "not_null": true,
+        "position": 4,
+        "generated": ""
+      },
+      {
+        "name": "body",
+        "type": "text",
+        "table": "whatsapp_conversation_events",
+        "default": null,
+        "identity": "",
+        "not_null": false,
+        "position": 5,
+        "generated": ""
+      },
+      {
+        "name": "metadata",
+        "type": "jsonb",
+        "table": "whatsapp_conversation_events",
+        "default": "'{}'::jsonb",
+        "identity": "",
+        "not_null": true,
+        "position": 6,
+        "generated": ""
+      },
+      {
+        "name": "created_at",
+        "type": "timestamp with time zone",
+        "table": "whatsapp_conversation_events",
+        "default": "now()",
+        "identity": "",
+        "not_null": true,
+        "position": 7,
+        "generated": ""
+      },
+      {
+        "name": "id",
+        "type": "uuid",
+        "table": "whatsapp_follow_up_reminders",
+        "default": "gen_random_uuid()",
+        "identity": "",
+        "not_null": true,
+        "position": 1,
+        "generated": ""
+      },
+      {
+        "name": "lead_id",
+        "type": "uuid",
+        "table": "whatsapp_follow_up_reminders",
+        "default": null,
+        "identity": "",
+        "not_null": true,
+        "position": 2,
+        "generated": ""
+      },
+      {
+        "name": "first_inbound_message_id",
+        "type": "uuid",
+        "table": "whatsapp_follow_up_reminders",
+        "default": null,
+        "identity": "",
+        "not_null": true,
+        "position": 3,
+        "generated": ""
+      },
+      {
+        "name": "due_at",
+        "type": "timestamp with time zone",
+        "table": "whatsapp_follow_up_reminders",
+        "default": null,
+        "identity": "",
+        "not_null": true,
+        "position": 4,
+        "generated": ""
+      },
+      {
+        "name": "status",
+        "type": "text",
+        "table": "whatsapp_follow_up_reminders",
+        "default": "'pending'::text",
+        "identity": "",
+        "not_null": true,
+        "position": 5,
+        "generated": ""
+      },
+      {
+        "name": "attempts",
+        "type": "smallint",
+        "table": "whatsapp_follow_up_reminders",
+        "default": "0",
+        "identity": "",
+        "not_null": true,
+        "position": 6,
+        "generated": ""
+      },
+      {
+        "name": "claimed_at",
+        "type": "timestamp with time zone",
+        "table": "whatsapp_follow_up_reminders",
+        "default": null,
+        "identity": "",
+        "not_null": false,
+        "position": 7,
+        "generated": ""
+      },
+      {
+        "name": "sent_at",
+        "type": "timestamp with time zone",
+        "table": "whatsapp_follow_up_reminders",
+        "default": null,
+        "identity": "",
+        "not_null": false,
+        "position": 8,
+        "generated": ""
+      },
+      {
+        "name": "whatsapp_message_id",
+        "type": "text",
+        "table": "whatsapp_follow_up_reminders",
+        "default": null,
+        "identity": "",
+        "not_null": false,
+        "position": 9,
+        "generated": ""
+      },
+      {
+        "name": "last_error",
+        "type": "text",
+        "table": "whatsapp_follow_up_reminders",
+        "default": "''::text",
+        "identity": "",
+        "not_null": true,
+        "position": 10,
+        "generated": ""
+      },
+      {
+        "name": "created_at",
+        "type": "timestamp with time zone",
+        "table": "whatsapp_follow_up_reminders",
+        "default": "now()",
+        "identity": "",
+        "not_null": true,
+        "position": 11,
+        "generated": ""
+      },
+      {
+        "name": "updated_at",
+        "type": "timestamp with time zone",
+        "table": "whatsapp_follow_up_reminders",
+        "default": "now()",
+        "identity": "",
+        "not_null": true,
+        "position": 12,
+        "generated": ""
+      }
+    ],
+    "indexes": [
+      {
+        "name": "lead_messages_lead_time_idx",
+        "table": "lead_messages",
+        "definition": "CREATE INDEX lead_messages_lead_time_idx ON public.lead_messages USING btree (lead_id, created_at)"
+      },
+      {
+        "name": "lead_messages_pkey",
+        "table": "lead_messages",
+        "definition": "CREATE UNIQUE INDEX lead_messages_pkey ON public.lead_messages USING btree (id)"
+      },
+      {
+        "name": "lead_messages_whatsapp_message_id_key",
+        "table": "lead_messages",
+        "definition": "CREATE UNIQUE INDEX lead_messages_whatsapp_message_id_key ON public.lead_messages USING btree (whatsapp_message_id)"
+      },
+      {
+        "name": "whatsapp_conversation_events_actor_idx",
+        "table": "whatsapp_conversation_events",
+        "definition": "CREATE INDEX whatsapp_conversation_events_actor_idx ON public.whatsapp_conversation_events USING btree (actor_user_id) WHERE (actor_user_id IS NOT NULL)"
+      },
+      {
+        "name": "whatsapp_conversation_events_lead_created_idx",
+        "table": "whatsapp_conversation_events",
+        "definition": "CREATE INDEX whatsapp_conversation_events_lead_created_idx ON public.whatsapp_conversation_events USING btree (lead_id, created_at DESC)"
+      },
+      {
+        "name": "whatsapp_conversation_events_pkey",
+        "table": "whatsapp_conversation_events",
+        "definition": "CREATE UNIQUE INDEX whatsapp_conversation_events_pkey ON public.whatsapp_conversation_events USING btree (id)"
+      },
+      {
+        "name": "whatsapp_follow_up_reminders_due_idx",
+        "table": "whatsapp_follow_up_reminders",
+        "definition": "CREATE INDEX whatsapp_follow_up_reminders_due_idx ON public.whatsapp_follow_up_reminders USING btree (due_at) WHERE (status = 'pending'::text)"
+      },
+      {
+        "name": "whatsapp_follow_up_reminders_first_inbound_message_id_key",
+        "table": "whatsapp_follow_up_reminders",
+        "definition": "CREATE UNIQUE INDEX whatsapp_follow_up_reminders_first_inbound_message_id_key ON public.whatsapp_follow_up_reminders USING btree (first_inbound_message_id)"
+      },
+      {
+        "name": "whatsapp_follow_up_reminders_lead_id_key",
+        "table": "whatsapp_follow_up_reminders",
+        "definition": "CREATE UNIQUE INDEX whatsapp_follow_up_reminders_lead_id_key ON public.whatsapp_follow_up_reminders USING btree (lead_id)"
+      },
+      {
+        "name": "whatsapp_follow_up_reminders_pkey",
+        "table": "whatsapp_follow_up_reminders",
+        "definition": "CREATE UNIQUE INDEX whatsapp_follow_up_reminders_pkey ON public.whatsapp_follow_up_reminders USING btree (id)"
+      }
+    ],
+    "policies": [
+      {
+        "cmd": "SELECT",
+        "qual": "(private.current_user_active() AND (EXISTS ( SELECT 1\n   FROM leads lead\n  WHERE ((lead.id = lead_messages.lead_id) AND (private.current_user_is_management() OR ((lead.assigned_seller_user_id = ( SELECT auth.uid() AS uid)) AND (NOT (EXISTS ( SELECT 1\n           FROM sales_cases sales_case\n          WHERE (sales_case.lead_id = lead.id))))))))))",
+        "roles": [
+          "authenticated"
+        ],
+        "tablename": "lead_messages",
+        "permissive": "PERMISSIVE",
+        "policyname": "lead_messages_read_management_or_owner",
+        "schemaname": "public",
+        "with_check": null
+      },
+      {
+        "cmd": "SELECT",
+        "qual": "private.current_user_can_manage_whatsapp(lead_id)",
+        "roles": [
+          "authenticated"
+        ],
+        "tablename": "whatsapp_conversation_events",
+        "permissive": "PERMISSIVE",
+        "policyname": "whatsapp_conversation_events_read_authorized",
+        "schemaname": "public",
+        "with_check": null
+      },
+      {
+        "cmd": "SELECT",
+        "qual": "private.current_user_is_management()",
+        "roles": [
+          "authenticated"
+        ],
+        "tablename": "whatsapp_follow_up_reminders",
+        "permissive": "PERMISSIVE",
+        "policyname": "whatsapp_follow_up_reminders_management_read",
+        "schemaname": "public",
+        "with_check": null
+      }
+    ],
+    "triggers": [
+      {
+        "name": "whatsapp_follow_up_reminders_set_updated_at",
+        "table": "whatsapp_follow_up_reminders",
+        "enabled": "O",
+        "definition": "CREATE TRIGGER whatsapp_follow_up_reminders_set_updated_at BEFORE UPDATE ON public.whatsapp_follow_up_reminders FOR EACH ROW EXECUTE FUNCTION private.set_updated_at()"
+      }
+    ],
+    "functions": [
+      {
+        "acl": null,
+        "name": "set_updated_at",
+        "owner": "postgres",
+        "config": [
+          "search_path=\"\""
+        ],
+        "schema": "private",
+        "sha256": "28c9d300e064d5bcdb66c2cfbcc14546a29d5ff973a2e017ed837b55cbce6a7b",
+        "arguments": "",
+        "definition": "CREATE OR REPLACE FUNCTION private.set_updated_at()\n RETURNS trigger\n LANGUAGE plpgsql\n SET search_path TO ''\nAS $function$\nbegin\n  new.updated_at = now();\n  return new;\nend;\n$function$\n",
+        "security_definer": false
+      },
+      {
+        "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+        "name": "set_whatsapp_conversation_mode",
+        "owner": "postgres",
+        "config": [
+          "search_path=\"\""
+        ],
+        "schema": "public",
+        "sha256": "90dab399dbe3f95ca539599ccaf6d1bbb78d751d6a0ac76c3d4a1a38694dfe62",
+        "arguments": "p_lead_id uuid, p_mode text",
+        "definition": "CREATE OR REPLACE FUNCTION public.set_whatsapp_conversation_mode(p_lead_id uuid, p_mode text)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\ndeclare\n  v_user_id uuid := (select auth.uid());\n  v_control public.whatsapp_conversation_controls%rowtype;\nbegin\n  if v_user_id is null or not private.current_user_can_manage_whatsapp(p_lead_id) then\n    raise exception 'No tenés permiso para intervenir esta conversación';\n  end if;\n  if p_mode not in ('ai', 'human') then\n    raise exception 'El modo de conversación no es válido';\n  end if;\n\n  insert into public.whatsapp_conversation_controls (\n    lead_id,\n    mode,\n    taken_by_user_id,\n    taken_at,\n    released_by_user_id,\n    released_at\n  ) values (\n    p_lead_id,\n    p_mode,\n    case when p_mode = 'human' then v_user_id else null end,\n    case when p_mode = 'human' then now() else null end,\n    case when p_mode = 'ai' then v_user_id else null end,\n    case when p_mode = 'ai' then now() else null end\n  )\n  on conflict (lead_id) do update set\n    mode = excluded.mode,\n    taken_by_user_id = excluded.taken_by_user_id,\n    taken_at = excluded.taken_at,\n    released_by_user_id = excluded.released_by_user_id,\n    released_at = excluded.released_at\n  returning * into v_control;\n\n  insert into public.whatsapp_conversation_events (lead_id, actor_user_id, event_type)\n  values (p_lead_id, v_user_id, case when p_mode = 'human' then 'taken' else 'released' end);\n\n  return jsonb_build_object(\n    'lead_id', v_control.lead_id,\n    'mode', v_control.mode,\n    'taken_by_user_id', v_control.taken_by_user_id,\n    'taken_at', v_control.taken_at,\n    'released_at', v_control.released_at,\n    'updated_at', v_control.updated_at\n  );\nend;\n$function$\n",
+        "security_definer": true
+      }
+    ],
+    "sequences": [
+      {
+        "acl": "{postgres=rwU/postgres,anon=rwU/postgres,authenticated=rwU/postgres,service_role=rwU/postgres}",
+        "max": "9223372036854775807",
+        "min": "1",
+        "name": "whatsapp_conversation_events_id_seq",
+        "type": "bigint",
+        "cache": "1",
+        "cycle": false,
+        "owner": "postgres",
+        "start": "1",
+        "increment": "1"
+      }
+    ],
+    "captured_at": "2026-09-18T03:32:37.756702+00:00",
+    "constraints": [
+      {
+        "name": "lead_messages_body_length",
+        "table": "lead_messages",
+        "definition": "CHECK ((char_length(body) <= 10000))"
+      },
+      {
+        "name": "lead_messages_direction",
+        "table": "lead_messages",
+        "definition": "CHECK ((direction = ANY (ARRAY['inbound'::text, 'outbound'::text, 'system'::text])))"
+      },
+      {
+        "name": "lead_messages_lead_id_fkey",
+        "table": "lead_messages",
+        "definition": "FOREIGN KEY (lead_id) REFERENCES leads(id) ON DELETE CASCADE"
+      },
+      {
+        "name": "lead_messages_origin_check",
+        "table": "lead_messages",
+        "definition": "CHECK ((origin = ANY (ARRAY['customer'::text, 'ai'::text, 'human'::text, 'system'::text, 'unknown'::text])))"
+      },
+      {
+        "name": "lead_messages_pkey",
+        "table": "lead_messages",
+        "definition": "PRIMARY KEY (id)"
+      },
+      {
+        "name": "lead_messages_whatsapp_message_id_key",
+        "table": "lead_messages",
+        "definition": "UNIQUE (whatsapp_message_id)"
+      },
+      {
+        "name": "whatsapp_conversation_events_actor_user_id_fkey",
+        "table": "whatsapp_conversation_events",
+        "definition": "FOREIGN KEY (actor_user_id) REFERENCES profiles(user_id) ON DELETE SET NULL"
+      },
+      {
+        "name": "whatsapp_conversation_events_lead_id_fkey",
+        "table": "whatsapp_conversation_events",
+        "definition": "FOREIGN KEY (lead_id) REFERENCES leads(id) ON DELETE CASCADE"
+      },
+      {
+        "name": "whatsapp_conversation_events_pkey",
+        "table": "whatsapp_conversation_events",
+        "definition": "PRIMARY KEY (id)"
+      },
+      {
+        "name": "whatsapp_conversation_events_type",
+        "table": "whatsapp_conversation_events",
+        "definition": "CHECK ((event_type = ANY (ARRAY['taken'::text, 'released'::text, 'message_sent'::text])))"
+      },
+      {
+        "name": "whatsapp_follow_up_reminders_attempts",
+        "table": "whatsapp_follow_up_reminders",
+        "definition": "CHECK (((attempts >= 0) AND (attempts <= 3)))"
+      },
+      {
+        "name": "whatsapp_follow_up_reminders_error_length",
+        "table": "whatsapp_follow_up_reminders",
+        "definition": "CHECK ((char_length(last_error) <= 1000))"
+      },
+      {
+        "name": "whatsapp_follow_up_reminders_first_inbound_message_id_fkey",
+        "table": "whatsapp_follow_up_reminders",
+        "definition": "FOREIGN KEY (first_inbound_message_id) REFERENCES lead_messages(id) ON DELETE CASCADE"
+      },
+      {
+        "name": "whatsapp_follow_up_reminders_first_inbound_message_id_key",
+        "table": "whatsapp_follow_up_reminders",
+        "definition": "UNIQUE (first_inbound_message_id)"
+      },
+      {
+        "name": "whatsapp_follow_up_reminders_lead_id_fkey",
+        "table": "whatsapp_follow_up_reminders",
+        "definition": "FOREIGN KEY (lead_id) REFERENCES leads(id) ON DELETE CASCADE"
+      },
+      {
+        "name": "whatsapp_follow_up_reminders_lead_id_key",
+        "table": "whatsapp_follow_up_reminders",
+        "definition": "UNIQUE (lead_id)"
+      },
+      {
+        "name": "whatsapp_follow_up_reminders_pkey",
+        "table": "whatsapp_follow_up_reminders",
+        "definition": "PRIMARY KEY (id)"
+      },
+      {
+        "name": "whatsapp_follow_up_reminders_status",
+        "table": "whatsapp_follow_up_reminders",
+        "definition": "CHECK ((status = ANY (ARRAY['pending'::text, 'processing'::text, 'sent'::text, 'cancelled'::text, 'failed'::text])))"
+      }
+    ],
+    "sequence_grants": [
+      {
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "sequence": "whatsapp_conversation_events_id_seq",
+        "grantable": false,
+        "privilege": "SELECT"
+      },
+      {
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "sequence": "whatsapp_conversation_events_id_seq",
+        "grantable": false,
+        "privilege": "UPDATE"
+      },
+      {
+        "grantee": "postgres",
+        "grantor": "postgres",
+        "sequence": "whatsapp_conversation_events_id_seq",
+        "grantable": false,
+        "privilege": "USAGE"
+      },
+      {
+        "grantee": "anon",
+        "grantor": "postgres",
+        "sequence": "whatsapp_conversation_events_id_seq",
+        "grantable": false,
+        "privilege": "SELECT"
+      },
+      {
+        "grantee": "anon",
+        "grantor": "postgres",
+        "sequence": "whatsapp_conversation_events_id_seq",
+        "grantable": false,
+        "privilege": "UPDATE"
+      },
+      {
+        "grantee": "anon",
+        "grantor": "postgres",
+        "sequence": "whatsapp_conversation_events_id_seq",
+        "grantable": false,
+        "privilege": "USAGE"
+      },
+      {
+        "grantee": "authenticated",
+        "grantor": "postgres",
+        "sequence": "whatsapp_conversation_events_id_seq",
+        "grantable": false,
+        "privilege": "SELECT"
+      },
+      {
+        "grantee": "authenticated",
+        "grantor": "postgres",
+        "sequence": "whatsapp_conversation_events_id_seq",
+        "grantable": false,
+        "privilege": "UPDATE"
+      },
+      {
+        "grantee": "authenticated",
+        "grantor": "postgres",
+        "sequence": "whatsapp_conversation_events_id_seq",
+        "grantable": false,
+        "privilege": "USAGE"
+      },
+      {
+        "grantee": "service_role",
+        "grantor": "postgres",
+        "sequence": "whatsapp_conversation_events_id_seq",
+        "grantable": false,
+        "privilege": "SELECT"
+      },
+      {
+        "grantee": "service_role",
+        "grantor": "postgres",
+        "sequence": "whatsapp_conversation_events_id_seq",
+        "grantable": false,
+        "privilege": "UPDATE"
+      },
+      {
+        "grantee": "service_role",
+        "grantor": "postgres",
+        "sequence": "whatsapp_conversation_events_id_seq",
+        "grantable": false,
+        "privilege": "USAGE"
+      }
+    ]
+  }
+}

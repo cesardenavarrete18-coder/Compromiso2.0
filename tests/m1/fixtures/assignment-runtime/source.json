@@ -1,0 +1,592 @@
+{
+  "format_version": 1,
+  "classification": "SCHEMA_ONLY_NO_APPLICATION_ROWS",
+  "project_ref": "cdtvuovsqwwopktdahgj",
+  "table_catalog": {
+    "query": "with wanted as (select c.oid,c.relname,n.nspname from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname||'.'||c.relname in ('public.lead_assignments')),\nfns as (select p.oid from pg_proc p join pg_namespace n on n.oid=p.pronamespace where false)\nselect jsonb_build_object(\n'captured_at',clock_timestamp(),\n'tables',(select jsonb_agg(jsonb_build_object('schema',n.nspname,'name',c.relname,'owner',pg_get_userbyid(c.relowner),'acl',c.relacl::text,'kind',c.relkind,'persistence',c.relpersistence,'rls_enabled',c.relrowsecurity,'rls_forced',c.relforcerowsecurity,'options',c.reloptions) order by n.nspname,c.relname) from pg_class c join pg_namespace n on n.oid=c.relnamespace where c.oid in(select oid from wanted)),\n'columns',(select jsonb_agg(jsonb_build_object('schema',w.nspname,'table',w.relname,'name',a.attname,'ordinal',a.attnum,'type',format_type(a.atttypid,a.atttypmod),'not_null',a.attnotnull,'identity',a.attidentity,'generated',a.attgenerated,'default',pg_get_expr(ad.adbin,ad.adrelid),'collation',case when a.attcollation<>0 then a.attcollation::regcollation::text end,'acl',a.attacl::text) order by w.nspname,w.relname,a.attnum) from wanted w join pg_attribute a on a.attrelid=w.oid left join pg_attrdef ad on ad.adrelid=a.attrelid and ad.adnum=a.attnum where a.attnum>0 and not a.attisdropped),\n'constraints',(select jsonb_agg(jsonb_build_object('schema',w.nspname,'table',w.relname,'name',x.conname,'type',x.contype,'definition',pg_get_constraintdef(x.oid,true),'validated',x.convalidated,'deferrable',x.condeferrable,'deferred',x.condeferred,'index_name',case when x.conindid<>0 then (select relname from pg_class where oid=x.conindid) end,'referenced_relation',case when x.confrelid<>0 then x.confrelid::regclass::text end) order by w.nspname,w.relname,x.conname) from wanted w join pg_constraint x on x.conrelid=w.oid),\n'indexes',(select jsonb_agg(jsonb_build_object('schema',w.nspname,'table',w.relname,'name',ci.relname,'definition',pg_get_indexdef(i.indexrelid),'valid',i.indisvalid,'ready',i.indisready,'constraint_name',(select conname from pg_constraint where conindid=i.indexrelid and contype in('p','u','x') limit 1)) order by w.nspname,w.relname,ci.relname) from wanted w join pg_index i on i.indrelid=w.oid join pg_class ci on ci.oid=i.indexrelid),\n'sequences',(select jsonb_agg(jsonb_build_object('schema',ns.nspname,'name',cs.relname,'owner',pg_get_userbyid(cs.relowner),'acl',cs.relacl::text,'type',format_type(s.seqtypid,null),'start',s.seqstart::text,'increment',s.seqincrement::text,'minimum',s.seqmin::text,'maximum',s.seqmax::text,'cache',s.seqcache::text,'cycle',s.seqcycle,'table_schema',w.nspname,'table',w.relname,'column',(select attname from pg_attribute where attrelid=w.oid and attnum=d.refobjsubid),'dependency_type',d.deptype) order by ns.nspname,cs.relname) from wanted w join pg_depend d on d.refobjid=w.oid and d.refclassid='pg_class'::regclass and d.classid='pg_class'::regclass and d.deptype in('a','i') join pg_class cs on cs.oid=d.objid and cs.relkind='S' join pg_namespace ns on ns.oid=cs.relnamespace join pg_sequence s on s.seqrelid=cs.oid),\n'triggers',(select jsonb_agg(jsonb_build_object('schema',w.nspname,'table',w.relname,'name',t.tgname,'definition',pg_get_triggerdef(t.oid,true),'enabled',t.tgenabled,'function_schema',nf.nspname,'function_name',p.proname,'function_arguments',pg_get_function_identity_arguments(p.oid)) order by w.nspname,w.relname,t.tgname) from wanted w join pg_trigger t on t.tgrelid=w.oid join pg_proc p on p.oid=t.tgfoid join pg_namespace nf on nf.oid=p.pronamespace where not t.tgisinternal),\n'policies',(select jsonb_agg(to_jsonb(p) order by schemaname,tablename,policyname) from pg_policies p where schemaname||'.'||tablename in('public.lead_assignments')),\n'enums',(select jsonb_agg(jsonb_build_object('schema',n.nspname,'name',t.typname,'owner',pg_get_userbyid(t.typowner),'acl',t.typacl::text,'label',e.enumlabel,'sort',e.enumsortorder) order by n.nspname,t.typname,e.enumsortorder) from pg_type t join pg_namespace n on n.oid=t.typnamespace join pg_enum e on e.enumtypid=t.oid where n.nspname='public' and t.typname='app_role'),\n'functions',(select jsonb_agg(jsonb_build_object('schema',n.nspname,'name',p.proname,'arguments',pg_get_function_identity_arguments(p.oid),'owner',pg_get_userbyid(p.proowner),'acl',p.proacl::text,'definition',pg_get_functiondef(p.oid),'sha256',encode(sha256(convert_to(pg_get_functiondef(p.oid),'UTF8')),'hex'),'definer',p.prosecdef,'config',p.proconfig,'language',l.lanname) order by n.nspname,p.proname,pg_get_function_identity_arguments(p.oid)) from fns f join pg_proc p on p.oid=f.oid join pg_namespace n on n.oid=p.pronamespace join pg_language l on l.oid=p.prolang)\n) as snapshot;\n",
+    "snapshot": {
+      "enums": [
+        {
+          "acl": null,
+          "name": "app_role",
+          "sort": 1,
+          "label": "admin",
+          "owner": "postgres",
+          "schema": "public"
+        },
+        {
+          "acl": null,
+          "name": "app_role",
+          "sort": 2,
+          "label": "seller",
+          "owner": "postgres",
+          "schema": "public"
+        },
+        {
+          "acl": null,
+          "name": "app_role",
+          "sort": 3,
+          "label": "supervisor",
+          "owner": "postgres",
+          "schema": "public"
+        },
+        {
+          "acl": null,
+          "name": "app_role",
+          "sort": 4,
+          "label": "admventas",
+          "owner": "postgres",
+          "schema": "public"
+        }
+      ],
+      "tables": [
+        {
+          "acl": "{postgres=arwdDxtm/postgres,anon=arwdDxtm/postgres,authenticated=arwdDxtm/postgres,service_role=arwdDxtm/postgres}",
+          "kind": "r",
+          "name": "lead_assignments",
+          "owner": "postgres",
+          "schema": "public",
+          "options": null,
+          "rls_forced": false,
+          "persistence": "p",
+          "rls_enabled": true
+        }
+      ],
+      "columns": [
+        {
+          "acl": null,
+          "name": "id",
+          "type": "bigint",
+          "table": "lead_assignments",
+          "schema": "public",
+          "default": null,
+          "ordinal": 1,
+          "identity": "a",
+          "not_null": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "lead_id",
+          "type": "uuid",
+          "table": "lead_assignments",
+          "schema": "public",
+          "default": null,
+          "ordinal": 2,
+          "identity": "",
+          "not_null": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "seller_user_id",
+          "type": "uuid",
+          "table": "lead_assignments",
+          "schema": "public",
+          "default": null,
+          "ordinal": 3,
+          "identity": "",
+          "not_null": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "assigned_by_user_id",
+          "type": "uuid",
+          "table": "lead_assignments",
+          "schema": "public",
+          "default": null,
+          "ordinal": 4,
+          "identity": "",
+          "not_null": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "assignment_type",
+          "type": "text",
+          "table": "lead_assignments",
+          "schema": "public",
+          "default": null,
+          "ordinal": 5,
+          "identity": "",
+          "not_null": true,
+          "collation": "\"default\"",
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "reason",
+          "type": "text",
+          "table": "lead_assignments",
+          "schema": "public",
+          "default": "''::text",
+          "ordinal": 6,
+          "identity": "",
+          "not_null": true,
+          "collation": "\"default\"",
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "table": "lead_assignments",
+          "schema": "public",
+          "default": "now()",
+          "ordinal": 7,
+          "identity": "",
+          "not_null": true,
+          "collation": null,
+          "generated": ""
+        }
+      ],
+      "indexes": [
+        {
+          "name": "lead_assignments_assigned_by_idx",
+          "ready": true,
+          "table": "lead_assignments",
+          "valid": true,
+          "schema": "public",
+          "definition": "CREATE INDEX lead_assignments_assigned_by_idx ON public.lead_assignments USING btree (assigned_by_user_id)",
+          "constraint_name": null
+        },
+        {
+          "name": "lead_assignments_lead_time_idx",
+          "ready": true,
+          "table": "lead_assignments",
+          "valid": true,
+          "schema": "public",
+          "definition": "CREATE INDEX lead_assignments_lead_time_idx ON public.lead_assignments USING btree (lead_id, created_at DESC)",
+          "constraint_name": null
+        },
+        {
+          "name": "lead_assignments_pkey",
+          "ready": true,
+          "table": "lead_assignments",
+          "valid": true,
+          "schema": "public",
+          "definition": "CREATE UNIQUE INDEX lead_assignments_pkey ON public.lead_assignments USING btree (id)",
+          "constraint_name": "lead_assignments_pkey"
+        },
+        {
+          "name": "lead_assignments_seller_time_idx",
+          "ready": true,
+          "table": "lead_assignments",
+          "valid": true,
+          "schema": "public",
+          "definition": "CREATE INDEX lead_assignments_seller_time_idx ON public.lead_assignments USING btree (seller_user_id, created_at DESC)",
+          "constraint_name": null
+        }
+      ],
+      "policies": [
+        {
+          "cmd": "INSERT",
+          "qual": null,
+          "roles": [
+            "authenticated"
+          ],
+          "tablename": "lead_assignments",
+          "permissive": "PERMISSIVE",
+          "policyname": "lead_assignments_management_insert",
+          "schemaname": "public",
+          "with_check": "private.current_user_is_management()"
+        },
+        {
+          "cmd": "SELECT",
+          "qual": "(private.current_user_active() AND ((seller_user_id = ( SELECT auth.uid() AS uid)) OR private.current_user_is_management()))",
+          "roles": [
+            "authenticated"
+          ],
+          "tablename": "lead_assignments",
+          "permissive": "PERMISSIVE",
+          "policyname": "lead_assignments_read_management_or_owner",
+          "schemaname": "public",
+          "with_check": null
+        }
+      ],
+      "triggers": null,
+      "functions": null,
+      "sequences": [
+        {
+          "acl": "{postgres=rwU/postgres,anon=rwU/postgres,authenticated=rwU/postgres,service_role=rwU/postgres}",
+          "name": "lead_assignments_id_seq",
+          "type": "bigint",
+          "cache": "1",
+          "cycle": false,
+          "owner": "postgres",
+          "start": "1",
+          "table": "lead_assignments",
+          "column": "id",
+          "schema": "public",
+          "maximum": "9223372036854775807",
+          "minimum": "1",
+          "increment": "1",
+          "table_schema": "public",
+          "dependency_type": "i"
+        }
+      ],
+      "captured_at": "2026-09-18T03:31:13.477246+00:00",
+      "constraints": [
+        {
+          "name": "lead_assignments_assigned_by_user_id_fkey",
+          "type": "f",
+          "table": "lead_assignments",
+          "schema": "public",
+          "deferred": false,
+          "validated": true,
+          "deferrable": false,
+          "definition": "FOREIGN KEY (assigned_by_user_id) REFERENCES profiles(user_id) ON DELETE SET NULL",
+          "index_name": "profiles_pkey",
+          "referenced_relation": "profiles"
+        },
+        {
+          "name": "lead_assignments_lead_id_fkey",
+          "type": "f",
+          "table": "lead_assignments",
+          "schema": "public",
+          "deferred": false,
+          "validated": true,
+          "deferrable": false,
+          "definition": "FOREIGN KEY (lead_id) REFERENCES leads(id) ON DELETE CASCADE",
+          "index_name": "leads_pkey",
+          "referenced_relation": "leads"
+        },
+        {
+          "name": "lead_assignments_pkey",
+          "type": "p",
+          "table": "lead_assignments",
+          "schema": "public",
+          "deferred": false,
+          "validated": true,
+          "deferrable": false,
+          "definition": "PRIMARY KEY (id)",
+          "index_name": "lead_assignments_pkey",
+          "referenced_relation": null
+        },
+        {
+          "name": "lead_assignments_seller_user_id_fkey",
+          "type": "f",
+          "table": "lead_assignments",
+          "schema": "public",
+          "deferred": false,
+          "validated": true,
+          "deferrable": false,
+          "definition": "FOREIGN KEY (seller_user_id) REFERENCES profiles(user_id) ON DELETE SET NULL",
+          "index_name": "profiles_pkey",
+          "referenced_relation": "profiles"
+        },
+        {
+          "name": "lead_assignments_type",
+          "type": "c",
+          "table": "lead_assignments",
+          "schema": "public",
+          "deferred": false,
+          "validated": true,
+          "deferrable": false,
+          "definition": "CHECK (assignment_type = ANY (ARRAY['direct_code'::text, 'manual'::text, 'reassigned'::text, 'unassigned'::text]))",
+          "index_name": null,
+          "referenced_relation": null
+        }
+      ]
+    }
+  },
+  "functions_from_m0": {
+    "captured_at": "2026-09-17T13:51:42.147Z",
+    "query": "WITH f AS (SELECT p.oid,n.nspname AS schema,p.proname AS name,pg_get_function_identity_arguments(p.oid) AS arguments,pg_get_function_result(p.oid) AS result_type,pg_get_userbyid(p.proowner) AS owner,p.prosecdef AS security_definer,p.provolatile,p.proparallel,p.proacl::text AS acl,p.proconfig,pg_get_functiondef(p.oid) AS definition FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname IN ('public','private') AND p.prokind IN ('f','p')) SELECT oid,schema,name,arguments,result_type,owner,security_definer,provolatile,proparallel,acl,proconfig,has_function_privilege('anon',oid,'EXECUTE') AS anon_execute,has_function_privilege('authenticated',oid,'EXECUTE') AS authenticated_execute,has_function_privilege('service_role',oid,'EXECUTE') AS service_execute,encode(sha256(convert_to(definition,'UTF8')),'hex') AS definition_sha256,regexp_replace(regexp_replace(definition,'eyJ[A-Za-z0-9_-]+[.][A-Za-z0-9_-]+[.][A-Za-z0-9_-]+','[REDACTED_JWT]','g'),'(?i)(bearer[[:space:]]+)[A-Za-z0-9._-]{24,}','\\1[REDACTED_TOKEN]','g') AS definition FROM f ORDER BY schema,name,arguments;",
+    "data": [
+      {
+        "acl": "{postgres=X/postgres}",
+        "anon_execute": false,
+        "arguments": "p_lead_id uuid, p_reason text",
+        "authenticated_execute": false,
+        "definition": "CREATE OR REPLACE FUNCTION private.apply_lead_opt_out(p_lead_id uuid, p_reason text)\n RETURNS void\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\ndeclare v_customer_id uuid;\nbegin\n  select customer_id into v_customer_id from public.leads where id=p_lead_id;\n  update public.leads set do_not_contact=true,do_not_contact_at=now(),do_not_contact_reason=coalesce(nullif(trim(p_reason),''),'Solicitud individual') where id=p_lead_id;\n  if v_customer_id is not null then update public.customers set do_not_contact=true,do_not_contact_at=now(),do_not_contact_reason=coalesce(nullif(trim(p_reason),''),'Solicitud individual') where id=v_customer_id; end if;\nend;\n$function$\n",
+        "definition_sha256": "dc1cd80dd3525fbe89baf2f92070e798567381c28b2dbecb9649d1c2bcd3d4e6",
+        "name": "apply_lead_opt_out",
+        "oid": 22786,
+        "owner": "postgres",
+        "proconfig": [
+          "search_path=\"\""
+        ],
+        "proparallel": "u",
+        "provolatile": "v",
+        "result_type": "void",
+        "schema": "private",
+        "security_definer": true,
+        "service_execute": false
+      },
+      {
+        "acl": "{postgres=X/postgres}",
+        "anon_execute": false,
+        "arguments": "p_lead_id uuid, p_seller_user_id uuid, p_actor_user_id uuid, p_reason text",
+        "authenticated_execute": false,
+        "definition": "CREATE OR REPLACE FUNCTION private.assign_lead_to_seller_with_reason(p_lead_id uuid, p_seller_user_id uuid, p_actor_user_id uuid, p_reason text)\n RETURNS void\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\ndeclare\n  v_previous_seller uuid;\n  v_previous_seller_name text;\n  v_new_seller_name text;\n  v_reason text := trim(coalesce(p_reason, ''));\nbegin\n  select\n    lead.assigned_seller_user_id,\n    previous_seller.full_name,\n    new_seller.full_name\n  into v_previous_seller, v_previous_seller_name, v_new_seller_name\n  from public.leads lead\n  left join public.profiles previous_seller\n    on previous_seller.user_id = lead.assigned_seller_user_id\n  join public.profiles new_seller\n    on new_seller.user_id = p_seller_user_id\n  where lead.id = p_lead_id\n  for update of lead;\n\n  if not found then\n    raise exception 'No se encontró el Lead';\n  end if;\n  if v_previous_seller is not distinct from p_seller_user_id then\n    raise exception 'El Lead ya está asignado al vendedor seleccionado';\n  end if;\n  if char_length(v_reason) < 3 or char_length(v_reason) > 1000 then\n    raise exception 'Indicá un motivo válido para la reasignación';\n  end if;\n\n  update public.leads set\n    assigned_seller_user_id = p_seller_user_id,\n    assigned_by_user_id = p_actor_user_id,\n    assigned_at = now(),\n    routing_status = 'assigned_manual',\n    routing_reason = case\n      when v_previous_seller is null then 'supervisor_assignment'\n      else 'supervisor_reassignment'\n    end\n  where id = p_lead_id;\n\n  insert into public.lead_assignments (\n    lead_id,\n    seller_user_id,\n    assigned_by_user_id,\n    assignment_type,\n    reason\n  ) values (\n    p_lead_id,\n    p_seller_user_id,\n    p_actor_user_id,\n    case when v_previous_seller is null then 'manual' else 'reassigned' end,\n    v_reason\n  );\n\n  insert into public.lead_activities (\n    lead_id,\n    actor_user_id,\n    activity_type,\n    title,\n    detail,\n    metadata\n  ) values (\n    p_lead_id,\n    p_actor_user_id,\n    'assignment',\n    case when v_previous_seller is null then 'Lead asignado a un vendedor' else 'Lead reasignado' end,\n    format(\n      '%s → %s · Motivo: %s',\n      coalesce(v_previous_seller_name, 'Sin vendedor'),\n      v_new_seller_name,\n      v_reason\n    ),\n    jsonb_build_object(\n      'origin', 'supervisor_portfolio',\n      'previous_seller_user_id', v_previous_seller,\n      'previous_seller_name', v_previous_seller_name,\n      'seller_user_id', p_seller_user_id,\n      'seller_name', v_new_seller_name,\n      'supervisor_user_id', p_actor_user_id,\n      'reason', v_reason\n    )\n  );\nend;\n$function$\n",
+        "definition_sha256": "1a99cae30aa30f1700d8063744b7934e768687097c244d230e3e05a8c061960a",
+        "name": "assign_lead_to_seller_with_reason",
+        "oid": 21819,
+        "owner": "postgres",
+        "proconfig": [
+          "search_path=\"\""
+        ],
+        "proparallel": "u",
+        "provolatile": "v",
+        "result_type": "void",
+        "schema": "private",
+        "security_definer": true,
+        "service_execute": false
+      },
+      {
+        "acl": "{postgres=X/postgres}",
+        "anon_execute": false,
+        "arguments": "p_from text, p_to text",
+        "authenticated_execute": false,
+        "definition": "CREATE OR REPLACE FUNCTION private.crm_transition_allowed(p_from text, p_to text)\n RETURNS boolean\n LANGUAGE sql\n IMMUTABLE\n SET search_path TO ''\nAS $function$\n  select case p_from\n    when 'nuevo' then p_to in ('contacto_futuro','en_proceso','entrevista','cierre','sena','venta','desistir','no_contesta','invalido')\n    when 'no_contesta' then p_to in ('contacto_futuro','en_proceso','entrevista','cierre','sena','venta','desistir','no_contesta','invalido')\n    when 'contacto_futuro' then p_to in ('contacto_futuro','no_contesta','en_proceso','entrevista','cierre','sena','venta','desistir')\n    when 'en_proceso' then p_to in ('en_proceso','entrevista','cierre','sena','venta','desistir')\n    when 'entrevista' then p_to in ('en_proceso','entrevista','cierre','sena','venta','desistir')\n    when 'cierre' then p_to in ('cierre','entrevista','en_proceso','sena','venta','desistir')\n    when 'sena' then p_to in ('sena','venta','desistir')\n    when 'venta' then p_to = 'venta'\n    else false\n  end;\n$function$\n",
+        "definition_sha256": "6a1c4eb41450332a1cd731c57a3dda0c638459ff8b796c30afd505e2daef6cb9",
+        "name": "crm_transition_allowed",
+        "oid": 22755,
+        "owner": "postgres",
+        "proconfig": [
+          "search_path=\"\""
+        ],
+        "proparallel": "u",
+        "provolatile": "i",
+        "result_type": "boolean",
+        "schema": "private",
+        "security_definer": false,
+        "service_execute": false
+      },
+      {
+        "acl": "{postgres=X/postgres}",
+        "anon_execute": false,
+        "arguments": "p_sequence_id uuid, p_lead_id uuid",
+        "authenticated_execute": false,
+        "definition": "CREATE OR REPLACE FUNCTION private.sync_protocol_next_action(p_sequence_id uuid, p_lead_id uuid)\n RETURNS uuid\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\ndeclare\n  v_task public.lead_contact_tasks%rowtype;\nbegin\n  select task.* into v_task\n  from public.lead_contact_tasks task\n  join public.lead_contact_sequences sequence on sequence.id = task.sequence_id\n  where task.sequence_id = p_sequence_id\n    and task.lead_id = p_lead_id\n    and task.status = 'pending'\n    and sequence.status = 'active'\n  order by task.sequence_order\n  limit 1\n  for update of task;\n\n  if v_task.id is null then\n    select task.* into v_task\n    from public.lead_contact_tasks task\n    join public.lead_contact_sequences sequence on sequence.id = task.sequence_id\n    where task.sequence_id = p_sequence_id\n      and task.lead_id = p_lead_id\n      and task.status = 'scheduled'\n      and sequence.status = 'active'\n    order by task.sequence_order\n    limit 1\n    for update of task;\n\n    if v_task.id is null then return null; end if;\n\n    update public.lead_contact_tasks\n    set status = 'pending',\n        updated_at = now()\n    where id = v_task.id\n    returning * into v_task;\n  end if;\n\n  return v_task.id;\nend;\n$function$\n",
+        "definition_sha256": "1d6a89dcc30821ab901b049cac40c4e17ba191a6777af1cc796ab30529f25307",
+        "name": "sync_protocol_next_action",
+        "oid": 21859,
+        "owner": "postgres",
+        "proconfig": [
+          "search_path=\"\""
+        ],
+        "proparallel": "u",
+        "provolatile": "v",
+        "result_type": "uuid",
+        "schema": "private",
+        "security_definer": true,
+        "service_execute": false
+      },
+      {
+        "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+        "anon_execute": false,
+        "arguments": "p_lead_id uuid, p_seller_user_id uuid",
+        "authenticated_execute": true,
+        "definition": "CREATE OR REPLACE FUNCTION public.assign_lead_to_seller(p_lead_id uuid, p_seller_user_id uuid)\n RETURNS void\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\ndeclare\n  v_user_id uuid := (select auth.uid());\nbegin\n  if v_user_id is null or not private.current_user_is_management() then\n    raise exception 'Se requiere permiso de supervisión';\n  end if;\n  if not exists (\n    select 1\n    from public.profiles\n    where user_id = p_seller_user_id\n      and role::text = 'seller'\n      and active = true\n  ) then\n    raise exception 'El vendedor seleccionado no está activo';\n  end if;\n\n  perform private.assign_lead_to_seller_with_reason(\n    p_lead_id,\n    p_seller_user_id,\n    v_user_id,\n    'Asignación individual desde Supervisión'\n  );\nend;\n$function$\n",
+        "definition_sha256": "bdd67087cf3d6b8b91d2d1e68679b864ff647ee5cf2e7dc770ec24441e2809a1",
+        "name": "assign_lead_to_seller",
+        "oid": 18638,
+        "owner": "postgres",
+        "proconfig": [
+          "search_path=\"\""
+        ],
+        "proparallel": "u",
+        "provolatile": "v",
+        "result_type": "void",
+        "schema": "public",
+        "security_definer": true,
+        "service_execute": true
+      },
+      {
+        "acl": "{postgres=X/postgres,service_role=X/postgres}",
+        "anon_execute": false,
+        "arguments": "p_task_id uuid, p_outcome text, p_note text",
+        "authenticated_execute": false,
+        "definition": "CREATE OR REPLACE FUNCTION public.complete_contact_task(p_task_id uuid, p_outcome text, p_note text DEFAULT ''::text)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\ndeclare v_user_id uuid:=(select auth.uid()); v_task public.lead_contact_tasks%rowtype; v_next public.lead_contact_tasks%rowtype; v_next_task_id uuid; v_previous_status text; v_sequence_finished boolean:=false;\nbegin\n if v_user_id is null or not private.current_user_active() then raise exception 'Acceso no autorizado'; end if;\n if p_outcome='answered' then raise exception 'Una respuesta requiere record_contact_answer_with_transition'; end if;\n if p_outcome not in('no_answer','sent','skipped','invalid','no_interest','requested_no_contact') then raise exception 'Resultado de contacto inválido'; end if;\n if char_length(trim(coalesce(p_note,'')))>3000 then raise exception 'El detalle es demasiado extenso'; end if;\n select * into v_task from public.lead_contact_tasks where id=p_task_id for update;\n if v_task.id is null or v_task.status<>'pending' then raise exception 'La tarea ya fue procesada o no existe'; end if;\n if v_task.seller_user_id<>v_user_id and not private.current_user_is_management() then raise exception 'La tarea no corresponde a este vendedor'; end if;\n if v_task.channel='call' and p_outcome='sent' then raise exception 'Resultado incompatible con una llamada'; end if;\n if v_task.channel='whatsapp' and p_outcome='no_answer' then raise exception 'Resultado incompatible con WhatsApp'; end if;\n update public.lead_contact_tasks set status=case when p_outcome='skipped' then 'skipped' else 'completed' end,outcome=p_outcome,note=trim(coalesce(p_note,'')),completed_at=now(),completed_by=v_user_id,updated_at=now() where id=p_task_id;\n insert into public.lead_activities(lead_id,actor_user_id,activity_type,title,detail,metadata) values(v_task.lead_id,v_user_id,case when v_task.channel='call' then 'contact' else 'follow_up' end,case when v_task.channel='call' then 'Intento de llamada '||v_task.call_attempt||' registrado' else 'WhatsApp de seguimiento '||v_task.message_step||' registrado' end,trim(coalesce(p_note,'')),jsonb_build_object('task_id',v_task.id,'channel',v_task.channel,'outcome',p_outcome,'call_attempt',v_task.call_attempt,'message_step',v_task.message_step));\n if p_outcome in('invalid','no_interest','requested_no_contact') then\n  select status into v_previous_status from public.lead_crm where lead_id=v_task.lead_id for update; if v_previous_status is null then raise exception 'No se encontró la ficha CRM del lead'; end if;\n  perform private.cancel_lead_contact_protocol(v_task.lead_id,case p_outcome when 'invalid' then 'Contacto inválido' when 'requested_no_contact' then 'Solicitó no ser contactado' else 'El cliente no desea continuar' end);\n  update public.lead_crm set status=case when p_outcome='invalid' then 'invalido' else 'desistir' end,status_reason=coalesce(nullif(trim(p_note),''),case when p_outcome='invalid' then 'Contacto inválido' when p_outcome='requested_no_contact' then 'Solicitó no ser contactado' else 'No desea continuar' end),desist_reason=case when p_outcome='no_interest' then 'no_interest' when p_outcome='requested_no_contact' then 'requested_no_contact' else desist_reason end,next_contact_at=null,next_contact_note='',next_contact_source=null,last_contact_at=now(),last_contact_outcome=p_outcome,cold_base_at=null,previous_status=v_previous_status,terminal_at=now(),updated_by=v_user_id,updated_at=now() where lead_id=v_task.lead_id;\n  if p_outcome='requested_no_contact' then perform private.apply_lead_opt_out(v_task.lead_id,trim(coalesce(p_note,''))); end if;\n else\n  v_next_task_id:=private.sync_protocol_next_action(v_task.sequence_id,v_task.lead_id);\n  if v_next_task_id is null then v_sequence_finished:=true; update public.lead_contact_sequences set status='completed',completed_at=now(),stopped_reason='Protocolo CRM V2 procesado por completo',updated_at=now() where id=v_task.sequence_id;\n  else select * into v_next from public.lead_contact_tasks where id=v_next_task_id; update public.lead_crm set status=case when p_outcome='no_answer' and status='nuevo' then 'no_contesta' else status end,last_contact_at=now(),last_contact_outcome=p_outcome,updated_by=v_user_id,updated_at=now() where lead_id=v_task.lead_id; end if;\n end if;\n return jsonb_build_object('lead_id',v_task.lead_id,'sequence_finished',v_sequence_finished,'next_task_id',v_next.id,'next_due_at',v_next.due_start);\nend; $function$\n",
+        "definition_sha256": "1fa03660a0d5bcbc4decadb41c91a07a13916663ef1ff13750625db5d039bbc8",
+        "name": "complete_contact_task",
+        "oid": 19711,
+        "owner": "postgres",
+        "proconfig": [
+          "search_path=\"\""
+        ],
+        "proparallel": "u",
+        "provolatile": "v",
+        "result_type": "jsonb",
+        "schema": "public",
+        "security_definer": true,
+        "service_execute": true
+      },
+      {
+        "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+        "anon_execute": false,
+        "arguments": "p_task_id uuid, p_outcome text, p_note text, p_next_contact_at timestamp with time zone, p_next_contact_note text",
+        "authenticated_execute": true,
+        "definition": "CREATE OR REPLACE FUNCTION public.complete_contact_task_with_follow_up(p_task_id uuid, p_outcome text, p_note text DEFAULT ''::text, p_next_contact_at timestamp with time zone DEFAULT NULL::timestamp with time zone, p_next_contact_note text DEFAULT ''::text)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\nbegin\n  if p_outcome = 'answered' then\n    raise exception 'Una respuesta requiere record_contact_answer_with_transition';\n  end if;\n  return public.complete_contact_task(p_task_id, p_outcome, p_note);\nend;\n$function$\n",
+        "definition_sha256": "a220b8aa716ae3d113e17660a4aa120f7ae15e588254010346493286f1f2c5fe",
+        "name": "complete_contact_task_with_follow_up",
+        "oid": 19745,
+        "owner": "postgres",
+        "proconfig": [
+          "search_path=\"\""
+        ],
+        "proparallel": "u",
+        "provolatile": "v",
+        "result_type": "jsonb",
+        "schema": "public",
+        "security_definer": true,
+        "service_execute": true
+      },
+      {
+        "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+        "anon_execute": false,
+        "arguments": "p_lead_ids uuid[], p_seller_user_id uuid, p_reason text",
+        "authenticated_execute": true,
+        "definition": "CREATE OR REPLACE FUNCTION public.reassign_leads_to_seller(p_lead_ids uuid[], p_seller_user_id uuid, p_reason text)\n RETURNS integer\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\ndeclare\n  v_user_id uuid := (select auth.uid());\n  v_reason text := trim(coalesce(p_reason, ''));\n  v_expected_count integer;\n  v_locked_count integer := 0;\n  v_lead record;\nbegin\n  if v_user_id is null or not private.current_user_is_management() then\n    raise exception 'Se requiere permiso de supervisión';\n  end if;\n  if p_lead_ids is null or cardinality(p_lead_ids) = 0 then\n    raise exception 'Seleccioná al menos un Lead';\n  end if;\n  if cardinality(p_lead_ids) > 500 then\n    raise exception 'La reasignación admite hasta 500 Leads por operación';\n  end if;\n  if exists (\n    select 1 from unnest(p_lead_ids) as selected(lead_id)\n    where selected.lead_id is null\n  ) then\n    raise exception 'La selección contiene un Lead inválido';\n  end if;\n\n  select count(distinct lead_id)::integer\n  into v_expected_count\n  from unnest(p_lead_ids) as selected(lead_id);\n  if v_expected_count <> cardinality(p_lead_ids) then\n    raise exception 'La selección contiene Leads duplicados';\n  end if;\n  if char_length(v_reason) < 3 or char_length(v_reason) > 1000 then\n    raise exception 'Indicá un motivo válido para la reasignación masiva';\n  end if;\n  if not exists (\n    select 1\n    from public.profiles\n    where user_id = p_seller_user_id\n      and role::text = 'seller'\n      and active = true\n  ) then\n    raise exception 'El vendedor seleccionado no está activo';\n  end if;\n\n  -- Lock every target in a deterministic order before the first mutation. If\n  -- any validation fails, Postgres rolls back the complete RPC transaction.\n  for v_lead in\n    select lead.id, lead.assigned_seller_user_id, crm.status as crm_status\n    from public.leads lead\n    join public.lead_crm crm on crm.lead_id = lead.id\n    where lead.id = any(p_lead_ids)\n    order by lead.id\n    for update of lead, crm\n  loop\n    if v_lead.assigned_seller_user_id is null then\n      raise exception 'Todos los Leads deben estar asignados antes de reasignarlos';\n    end if;\n    if v_lead.crm_status in ('venta', 'desistir', 'invalido') then\n      raise exception 'Los Leads con estado terminal no se pueden reasignar';\n    end if;\n    if v_lead.assigned_seller_user_id is not distinct from p_seller_user_id then\n      raise exception 'Uno de los Leads ya pertenece al vendedor seleccionado';\n    end if;\n    v_locked_count := v_locked_count + 1;\n  end loop;\n\n  if v_locked_count <> v_expected_count then\n    raise exception 'No se encontraron todos los Leads seleccionados';\n  end if;\n\n  for v_lead in\n    select lead.id\n    from public.leads lead\n    where lead.id = any(p_lead_ids)\n    order by lead.id\n  loop\n    perform private.assign_lead_to_seller_with_reason(\n      v_lead.id,\n      p_seller_user_id,\n      v_user_id,\n      v_reason\n    );\n  end loop;\n\n  return v_locked_count;\nend;\n$function$\n",
+        "definition_sha256": "bdaf57f166a5f695b56f9d87fb4df420e971ea9ab5314f5181f6484020ea5717",
+        "name": "reassign_leads_to_seller",
+        "oid": 21820,
+        "owner": "postgres",
+        "proconfig": [
+          "search_path=\"\""
+        ],
+        "proparallel": "u",
+        "provolatile": "v",
+        "result_type": "integer",
+        "schema": "public",
+        "security_definer": true,
+        "service_execute": true
+      },
+      {
+        "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+        "anon_execute": false,
+        "arguments": "p_task_id uuid, p_status text, p_interview_operational_status text, p_note text, p_next_contact_at timestamp with time zone, p_next_contact_note text, p_contact_outcome text, p_interview_at timestamp with time zone, p_interview_location text, p_deposit_amount numeric, p_priority text, p_performed_at timestamp with time zone, p_interview_mode text, p_deposit_validation text, p_desist_reason text",
+        "authenticated_execute": true,
+        "definition": "CREATE OR REPLACE FUNCTION public.record_contact_answer_with_transition(p_task_id uuid, p_status text, p_interview_operational_status text, p_note text DEFAULT ''::text, p_next_contact_at timestamp with time zone DEFAULT NULL::timestamp with time zone, p_next_contact_note text DEFAULT ''::text, p_contact_outcome text DEFAULT ''::text, p_interview_at timestamp with time zone DEFAULT NULL::timestamp with time zone, p_interview_location text DEFAULT ''::text, p_deposit_amount numeric DEFAULT NULL::numeric, p_priority text DEFAULT 'normal'::text, p_performed_at timestamp with time zone DEFAULT now(), p_interview_mode text DEFAULT NULL::text, p_deposit_validation text DEFAULT ''::text, p_desist_reason text DEFAULT NULL::text)\n RETURNS void\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\nbegin\n  if p_interview_operational_status is not null\n     and p_interview_operational_status <> 'scheduled' then\n    raise exception 'Estado operativo de entrevista inválido para una respuesta inicial';\n  end if;\n\n  perform public.record_contact_answer_with_transition(\n    p_task_id => p_task_id,\n    p_status => p_status,\n    p_note => p_note,\n    p_next_contact_at => p_next_contact_at,\n    p_next_contact_note => p_next_contact_note,\n    p_contact_outcome => p_contact_outcome,\n    p_interview_at => p_interview_at,\n    p_interview_location => p_interview_location,\n    p_deposit_amount => p_deposit_amount,\n    p_priority => p_priority,\n    p_performed_at => p_performed_at,\n    p_interview_mode => p_interview_mode,\n    p_deposit_validation => p_deposit_validation,\n    p_desist_reason => p_desist_reason\n  );\nend;\n$function$\n",
+        "definition_sha256": "5cb0f78ee3e4bbe36778f69a450139a98dc72193602f1eaaecb631a71bfd106b",
+        "name": "record_contact_answer_with_transition",
+        "oid": 23226,
+        "owner": "postgres",
+        "proconfig": [
+          "search_path=\"\""
+        ],
+        "proparallel": "u",
+        "provolatile": "v",
+        "result_type": "void",
+        "schema": "public",
+        "security_definer": true,
+        "service_execute": true
+      },
+      {
+        "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+        "anon_execute": false,
+        "arguments": "p_task_id uuid, p_status text, p_note text, p_next_contact_at timestamp with time zone, p_next_contact_note text, p_contact_outcome text, p_interview_at timestamp with time zone, p_interview_location text, p_deposit_amount numeric, p_priority text, p_performed_at timestamp with time zone, p_interview_mode text, p_deposit_validation text, p_desist_reason text",
+        "authenticated_execute": true,
+        "definition": "CREATE OR REPLACE FUNCTION public.record_contact_answer_with_transition(p_task_id uuid, p_status text, p_note text DEFAULT ''::text, p_next_contact_at timestamp with time zone DEFAULT NULL::timestamp with time zone, p_next_contact_note text DEFAULT ''::text, p_contact_outcome text DEFAULT ''::text, p_interview_at timestamp with time zone DEFAULT NULL::timestamp with time zone, p_interview_location text DEFAULT ''::text, p_deposit_amount numeric DEFAULT NULL::numeric, p_priority text DEFAULT 'normal'::text, p_performed_at timestamp with time zone DEFAULT now(), p_interview_mode text DEFAULT NULL::text, p_deposit_validation text DEFAULT ''::text, p_desist_reason text DEFAULT NULL::text)\n RETURNS void\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\ndeclare v_user_id uuid:=(select auth.uid()); v_task public.lead_contact_tasks%rowtype; v_previous_status text; v_next_note text:=left(coalesce(nullif(trim(p_next_contact_note),''),trim(p_note)),1000); v_activity_type text:='status_change'; v_title text;\nbegin\n if v_user_id is null or not private.current_user_active() then raise exception 'Acceso no autorizado'; end if;\n if p_performed_at is null or p_performed_at>now()+interval '5 minutes' then raise exception 'La hora efectiva del contacto no es válida'; end if;\n if char_length(trim(coalesce(p_note,'')))>3000 then raise exception 'El detalle es demasiado extenso'; end if;\n if p_priority not in('low','normal','high') then raise exception 'Prioridad inválida'; end if;\n if p_status not in('contacto_futuro','en_proceso','entrevista','cierre','sena','desistir') then raise exception 'Resultado comercial no permitido después de una respuesta'; end if;\n if p_status='desistir' and p_desist_reason is null then raise exception 'Seleccioná el motivo del desistimiento'; end if;\n if p_status='desistir' and p_desist_reason is not null and p_desist_reason not in('no_interest','conditions_not_viable','chose_other_option','postponed_without_date','requested_no_contact','other') then raise exception 'Motivo de desistimiento inválido'; end if;\n select * into v_task from public.lead_contact_tasks where id=p_task_id for update;\n if v_task.id is null or v_task.status<>'pending' then raise exception 'La tarea ya fue procesada o no existe'; end if;\n if v_task.seller_user_id<>v_user_id and not private.current_user_is_management() then raise exception 'La tarea no corresponde a este vendedor'; end if;\n select status into v_previous_status from public.lead_crm where lead_id=v_task.lead_id for update;\n if v_previous_status is null then raise exception 'No se encontró la ficha CRM del lead'; end if;\n if v_previous_status not in('nuevo','no_contesta') then raise exception 'El Lead ya no está en Nuevo ni en Sin contacto'; end if;\n if not private.crm_transition_allowed(v_previous_status,p_status) then raise exception 'Transición comercial no permitida: % → %',v_previous_status,p_status; end if;\n if p_status in('contacto_futuro','en_proceso') and(p_next_contact_at is null or p_next_contact_at<=now()) then if p_status='en_proceso' then raise exception 'En gestión requiere un próximo contacto con fecha y hora'; else raise exception 'Programá el contacto solicitado'; end if; end if;\n if p_status='entrevista' and(p_interview_at is null or p_interview_at<=now()) then raise exception 'Indicá la fecha y hora futura de la entrevista'; end if;\n if p_status='entrevista' and p_interview_mode not in('presencial','videollamada') then raise exception 'La entrevista debe ser Presencial o Videollamada'; end if;\n if p_status='sena' and(p_deposit_amount is null or p_deposit_amount<=0) then raise exception 'Indicá el importe de la seña'; end if;\n if p_status='desistir' and char_length(trim(coalesce(p_note,'')))<3 then raise exception 'Indicá el motivo para este estado'; end if;\n update public.lead_contact_tasks set status='completed',outcome='answered',note=trim(coalesce(p_note,'')),completed_at=now(),performed_at=p_performed_at,recorded_at=now(),completed_by=v_user_id,updated_at=now() where id=v_task.id;\n insert into public.lead_activities(lead_id,actor_user_id,activity_type,title,detail,metadata) values(v_task.lead_id,v_user_id,case when v_task.channel='call' then 'contact' else 'follow_up' end,case when v_task.channel='call' then 'Intento de llamada '||v_task.call_attempt||' contestado' else 'WhatsApp de seguimiento '||v_task.message_step||' contestado' end,trim(coalesce(p_note,'')),jsonb_build_object('task_id',v_task.id,'channel',v_task.channel,'outcome','answered','call_attempt',v_task.call_attempt,'message_step',v_task.message_step,'performed_at',p_performed_at,'recorded_at',now()));\n perform private.cancel_lead_contact_protocol(v_task.lead_id,'El cliente respondió');\n if p_status='entrevista' then v_activity_type:='interview'; end if; if p_status in('contacto_futuro','en_proceso') then v_activity_type:='follow_up'; end if; if p_status='en_proceso' then v_activity_type:='contact'; end if;\n v_title:=case p_status when 'contacto_futuro' then 'El cliente pidió contacto futuro' when 'en_proceso' then 'Contacto en proceso' when 'entrevista' then 'Entrevista programada' when 'cierre' then 'Oportunidad en cierre' when 'sena' then 'Seña registrada' when 'desistir' then 'Oportunidad desistida' end;\n update public.lead_crm set status=p_status,priority=case when p_status='cierre' then 'high' else p_priority end,status_reason=case when p_status='desistir' then trim(coalesce(p_note,'')) else status_reason end,desist_reason=case when p_status='desistir' then p_desist_reason else desist_reason end,next_contact_at=case when p_status in('contacto_futuro','en_proceso') then p_next_contact_at else null end,next_contact_note=case when p_status in('contacto_futuro','en_proceso') then v_next_note else '' end,next_contact_source=case when p_status in('contacto_futuro','en_proceso') then 'manual' else null end,last_contact_at=p_performed_at,last_contact_outcome='answered',interview_at=case when p_status='entrevista' then p_interview_at else interview_at end,interview_location=case when p_status='entrevista' then trim(coalesce(p_interview_location,'')) else interview_location end,interview_mode=case when p_status='entrevista' then p_interview_mode else interview_mode end,interview_operational_status=case when p_status='entrevista' then 'scheduled' else interview_operational_status end,interview_objective=case when p_status='entrevista' then trim(coalesce(p_note,'')) else interview_objective end,final_objection=case when p_status='cierre' then trim(coalesce(p_note,'')) else final_objection end,deposit_amount=case when p_status='sena' then p_deposit_amount else deposit_amount end,deposit_at=case when p_status='sena' then now() else deposit_at end,deposit_validation=case when p_status='sena' then trim(coalesce(p_deposit_validation,'')) else deposit_validation end,cold_base_at=null,previous_status=case when p_status='desistir' then v_previous_status else previous_status end,terminal_at=case when p_status='desistir' then now() else null end,updated_by=v_user_id,updated_at=now() where lead_id=v_task.lead_id;\n insert into public.lead_activities(lead_id,actor_user_id,activity_type,title,detail,metadata) values(v_task.lead_id,v_user_id,v_activity_type,v_title,trim(coalesce(p_note,'')),jsonb_build_object('previous_status',v_previous_status,'status',p_status,'desist_reason',case when p_status='desistir' then p_desist_reason else null end,'next_contact_at',case when p_status in('contacto_futuro','en_proceso') then p_next_contact_at else null end,'next_contact_note',case when p_status in('contacto_futuro','en_proceso') then v_next_note else null end,'next_contact_source',case when p_status in('contacto_futuro','en_proceso') then 'manual' else null end,'interview_at',p_interview_at,'interview_location',trim(coalesce(p_interview_location,'')),'deposit_amount',p_deposit_amount,'performed_at',p_performed_at));\n if p_status='desistir' and p_desist_reason='requested_no_contact' then perform private.apply_lead_opt_out(v_task.lead_id,trim(coalesce(p_note,''))); end if;\nend; $function$\n",
+        "definition_sha256": "d5698692879313b264637d5e3a702d69619aa77c548602aac6fddfee1ba6a0c1",
+        "name": "record_contact_answer_with_transition",
+        "oid": 22791,
+        "owner": "postgres",
+        "proconfig": [
+          "search_path=\"\""
+        ],
+        "proparallel": "u",
+        "provolatile": "v",
+        "result_type": "void",
+        "schema": "public",
+        "security_definer": true,
+        "service_execute": true
+      },
+      {
+        "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+        "anon_execute": false,
+        "arguments": "p_task_id uuid, p_outcome text, p_note text, p_performed_at timestamp with time zone",
+        "authenticated_execute": true,
+        "definition": "CREATE OR REPLACE FUNCTION public.record_contact_task_result(p_task_id uuid, p_outcome text, p_note text DEFAULT ''::text, p_performed_at timestamp with time zone DEFAULT now())\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\ndeclare\n  v_result jsonb;\nbegin\n  if p_outcome = 'answered' then\n    raise exception 'Una respuesta requiere record_contact_answer_with_transition';\n  end if;\n  if p_performed_at is null or p_performed_at > now() + interval '5 minutes' then\n    raise exception 'La hora efectiva del contacto no es válida';\n  end if;\n\n  v_result := public.complete_contact_task(p_task_id, p_outcome, p_note);\n\n  update public.lead_contact_tasks\n  set performed_at = p_performed_at,\n      recorded_at = now()\n  where id = p_task_id;\n\n  return v_result;\nend;\n$function$\n",
+        "definition_sha256": "de727776dd56413d9d4ae91052dc6fa2daa299ebce453f1f7e6f55467a6fcce6",
+        "name": "record_contact_task_result",
+        "oid": 22758,
+        "owner": "postgres",
+        "proconfig": [
+          "search_path=\"\""
+        ],
+        "proparallel": "u",
+        "provolatile": "v",
+        "result_type": "jsonb",
+        "schema": "public",
+        "security_definer": true,
+        "service_execute": true
+      },
+      {
+        "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+        "anon_execute": false,
+        "arguments": "p_lead_id uuid, p_status text, p_note text, p_next_contact_at timestamp with time zone, p_next_contact_note text, p_contact_outcome text, p_interview_at timestamp with time zone, p_interview_location text, p_deposit_amount numeric, p_priority text, p_interview_mode text, p_interview_operational_status text, p_deposit_validation text, p_desist_reason text",
+        "authenticated_execute": true,
+        "definition": "CREATE OR REPLACE FUNCTION public.record_lead_follow_up(p_lead_id uuid, p_status text, p_note text DEFAULT ''::text, p_next_contact_at timestamp with time zone DEFAULT NULL::timestamp with time zone, p_next_contact_note text DEFAULT ''::text, p_contact_outcome text DEFAULT ''::text, p_interview_at timestamp with time zone DEFAULT NULL::timestamp with time zone, p_interview_location text DEFAULT ''::text, p_deposit_amount numeric DEFAULT NULL::numeric, p_priority text DEFAULT 'normal'::text, p_interview_mode text DEFAULT NULL::text, p_interview_operational_status text DEFAULT NULL::text, p_deposit_validation text DEFAULT ''::text, p_desist_reason text DEFAULT NULL::text)\n RETURNS void\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\ndeclare v_user_id uuid:=(select auth.uid()); v_is_management boolean; v_previous_status text; v_seller uuid; v_activity_type text:='status_change'; v_title text; v_next_note text:=left(coalesce(nullif(trim(coalesce(p_note,'')),''),'Próximo contacto programado'),1000);\nbegin\n if v_user_id is null or not private.current_user_active() then raise exception 'Acceso no autorizado'; end if;\n v_is_management:=private.current_user_is_management();\n if not v_is_management and not exists(select 1 from public.leads where id=p_lead_id and assigned_seller_user_id=v_user_id) then raise exception 'El lead no está asignado a este vendedor'; end if;\n if p_status='nuevo' then raise exception 'Nuevo es un estado de ingreso. Seleccioná el resultado de la gestión'; end if;\n if p_status is null or p_status not in('no_contesta','contacto_futuro','en_proceso','invalido','entrevista','cierre','sena','desistir') then raise exception 'Estado comercial inválido'; end if;\n if p_priority not in('low','normal','high') then raise exception 'Prioridad inválida'; end if;\n if char_length(trim(coalesce(p_note,'')))>3000 then raise exception 'El detalle es demasiado extenso'; end if;\n if p_status in('contacto_futuro','en_proceso','cierre','sena') and p_next_contact_at is null then raise exception 'Programá el próximo contacto'; end if;\n if p_status<>'no_contesta' and p_next_contact_at is not null and p_next_contact_at<=now() then raise exception 'El próximo contacto debe quedar programado a futuro'; end if;\n if p_status='entrevista' and p_interview_at is null then raise exception 'Indicá la fecha y hora de la entrevista'; end if;\n if p_status='entrevista' and p_interview_mode not in('presencial','videollamada') then raise exception 'La entrevista debe ser Presencial o Videollamada'; end if;\n if p_status='sena' and(p_deposit_amount is null or p_deposit_amount<=0) then raise exception 'Indicá el importe de la seña'; end if;\n if p_status in('invalido','desistir') and char_length(trim(coalesce(p_note,'')))<3 then raise exception 'Indicá el motivo para este estado'; end if;\n if p_status='desistir' and p_desist_reason is null then raise exception 'Seleccioná el motivo del desistimiento'; end if;\n if p_status='desistir' and p_desist_reason is not null and p_desist_reason not in('no_interest','conditions_not_viable','chose_other_option','postponed_without_date','requested_no_contact','other') then raise exception 'Motivo de desistimiento inválido'; end if;\n select status into v_previous_status from public.lead_crm where lead_id=p_lead_id for update;\n if v_previous_status is null then raise exception 'No se encontró la ficha CRM del lead'; end if;\n if not private.crm_transition_allowed(v_previous_status,p_status) then raise exception 'Transición comercial no permitida: % → %',v_previous_status,p_status; end if;\n if p_status='entrevista' then v_activity_type:='interview'; end if;\n if p_status in('no_contesta','contacto_futuro') or p_next_contact_at is not null then v_activity_type:='follow_up'; end if;\n if p_status in('en_proceso','invalido') then v_activity_type:='contact'; end if;\n v_title:=case p_status when 'no_contesta' then 'El cliente no respondió' when 'contacto_futuro' then 'El cliente pidió contacto futuro' when 'en_proceso' then 'Contacto en proceso' when 'invalido' then 'Contacto inválido o erróneo' when 'entrevista' then 'Entrevista programada' when 'cierre' then 'Oportunidad en cierre' when 'sena' then 'Seña registrada' when 'desistir' then 'Oportunidad desistida' end;\n if p_status<>'no_contesta' then perform private.cancel_lead_contact_protocol(p_lead_id,'Gestión manual registrada'); end if;\n update public.lead_crm set status=p_status,priority=case when p_status='cierre' then 'high' else p_priority end,status_reason=case when p_status in('invalido','desistir') then trim(coalesce(p_note,'')) else status_reason end,desist_reason=case when p_status='desistir' then p_desist_reason else desist_reason end,next_contact_at=case when p_status in('no_contesta','desistir','invalido') then null else p_next_contact_at end,next_contact_note=case when p_status in('no_contesta','desistir','invalido') or p_next_contact_at is null then '' else v_next_note end,next_contact_source=case when p_status in('no_contesta','desistir','invalido') or p_next_contact_at is null then null else 'manual' end,last_contact_at=now(),last_contact_outcome=trim(coalesce(p_contact_outcome,'')),interview_at=coalesce(p_interview_at,interview_at),interview_location=case when p_interview_at is not null then trim(coalesce(p_interview_location,'')) else interview_location end,interview_mode=case when p_status='entrevista' then p_interview_mode else interview_mode end,interview_operational_status=case when p_status='entrevista' then coalesce(p_interview_operational_status,'scheduled') when v_previous_status='entrevista' then 'completed' else interview_operational_status end,interview_objective=case when p_status='entrevista' then trim(coalesce(p_note,'')) else interview_objective end,final_objection=case when p_status='cierre' then trim(coalesce(p_note,'')) else final_objection end,deposit_amount=coalesce(p_deposit_amount,deposit_amount),deposit_at=case when p_status='sena' then now() else deposit_at end,deposit_validation=case when p_status='sena' then trim(coalesce(p_deposit_validation,'')) else deposit_validation end,cold_base_at=null,previous_status=case when p_status in('desistir','invalido') then v_previous_status else previous_status end,terminal_at=case when p_status in('desistir','invalido') then now() else null end,updated_by=v_user_id,updated_at=now() where lead_id=p_lead_id;\n insert into public.lead_activities(lead_id,actor_user_id,activity_type,title,detail,metadata) values(p_lead_id,v_user_id,v_activity_type,v_title,trim(coalesce(p_note,'')),jsonb_build_object('previous_status',v_previous_status,'status',p_status,'desist_reason',case when p_status='desistir' then p_desist_reason else null end,'next_contact_at',case when p_status='no_contesta' then null else p_next_contact_at end,'next_contact_note',case when p_status='no_contesta' or p_next_contact_at is null then null else v_next_note end,'next_contact_source',case when p_status='no_contesta' or p_next_contact_at is null then null else 'manual' end,'interview_at',p_interview_at,'interview_location',trim(coalesce(p_interview_location,'')),'interview_mode',p_interview_mode,'deposit_amount',p_deposit_amount));\n if p_status='desistir' and p_desist_reason='requested_no_contact' then perform private.apply_lead_opt_out(p_lead_id,trim(coalesce(p_note,''))); end if;\n if p_status='no_contesta' then select assigned_seller_user_id into v_seller from public.leads where id=p_lead_id; if private.create_lead_contact_sequence(p_lead_id,v_seller,now()) is null then raise exception 'No se pudo iniciar el protocolo CRM V2'; end if; end if;\nend; $function$\n",
+        "definition_sha256": "19804c2875930510189e74972ee81a78aa4460386fd657082449aff353d4e99d",
+        "name": "record_lead_follow_up",
+        "oid": 22787,
+        "owner": "postgres",
+        "proconfig": [
+          "search_path=\"\""
+        ],
+        "proparallel": "u",
+        "provolatile": "v",
+        "result_type": "void",
+        "schema": "public",
+        "security_definer": true,
+        "service_execute": true
+      },
+      {
+        "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+        "anon_execute": false,
+        "arguments": "",
+        "authenticated_execute": true,
+        "definition": "CREATE OR REPLACE FUNCTION public.refresh_due_contact_protocols()\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\ndeclare\n  v_user_id uuid := (select auth.uid());\n  v_is_management boolean;\n  v_sequence record;\n  v_unfinished_exists boolean;\n  v_next_task_id uuid;\n  v_skipped integer;\n  v_skipped_total integer := 0;\n  v_sequences_touched integer := 0;\nbegin\n  if v_user_id is null or not private.current_user_active() then\n    raise exception 'Acceso no autorizado';\n  end if;\n  v_is_management := private.current_user_is_management();\n  for v_sequence in\n    select sequence.id, sequence.lead_id\n    from public.lead_contact_sequences sequence\n    join public.leads lead on lead.id = sequence.lead_id\n    join public.lead_crm crm on crm.lead_id = sequence.lead_id\n    where sequence.status = 'active'\n      and crm.status in ('nuevo', 'no_contesta')\n      and lead.closed_at is null\n      and not coalesce(lead.do_not_contact, false)\n      and (v_is_management or sequence.seller_user_id = v_user_id)\n    order by sequence.started_at, sequence.id\n    for update of sequence\n  loop\n    v_next_task_id := null;\n    v_skipped := 0;\n    update public.lead_contact_tasks task\n    set status = 'skipped',\n        outcome = 'skipped',\n        note = case when trim(coalesce(task.note, '')) = '' then 'No realizada: ventana vencida' else task.note end,\n        completed_at = coalesce(task.completed_at, now()),\n        completed_by = null,\n        performed_at = null,\n        recorded_at = coalesce(task.recorded_at, now()),\n        updated_at = now()\n    where task.sequence_id = v_sequence.id\n      and task.status in ('pending', 'scheduled')\n      and task.due_end <= now();\n    get diagnostics v_skipped = row_count;\n    if v_skipped > 0 then\n      v_skipped_total := v_skipped_total + v_skipped;\n      v_sequences_touched := v_sequences_touched + 1;\n      insert into public.lead_activities (lead_id, actor_user_id, activity_type, title, detail, metadata)\n      values (\n        v_sequence.lead_id,\n        null,\n        'follow_up',\n        'Intentos vencidos registrados como no realizados',\n        v_skipped || ' tarea(s) vencida(s) se omitieron sin inventar un contacto.',\n        jsonb_build_object(\n          'sequence_id', v_sequence.id,\n          'skipped_count', v_skipped,\n          'reason', 'window_expired_without_recorded_attempt',\n          'origin', 'protocol_clock'\n        )\n      );\n    end if;\n    select exists (\n      select 1 from public.lead_contact_tasks task\n      where task.sequence_id = v_sequence.id and task.status in ('pending', 'scheduled')\n    ) into v_unfinished_exists;\n    if not v_unfinished_exists then\n      update public.lead_contact_sequences\n      set status = 'completed',\n          completed_at = coalesce(completed_at, now()),\n          stopped_reason = case when v_skipped > 0 then 'Calendario finalizado con intentos no realizados' else coalesce(stopped_reason, 'Protocolo finalizado') end,\n          updated_at = now()\n      where id = v_sequence.id and status = 'active';\n      continue;\n    end if;\n    select task.id into v_next_task_id\n    from public.lead_contact_tasks task\n    where task.sequence_id = v_sequence.id and task.status in ('pending', 'scheduled')\n    order by task.sequence_order\n    limit 1\n    for update;\n    if v_next_task_id is not null then\n      update public.lead_contact_tasks\n      set status = 'pending',\n          updated_at = case when status <> 'pending' then now() else updated_at end\n      where id = v_next_task_id;\n    end if;\n  end loop;\n  return jsonb_build_object('sequences_touched', v_sequences_touched, 'tasks_skipped', v_skipped_total);\nend;\n$function$\n",
+        "definition_sha256": "e3cf722ebcafefee14eefd350aa80a8fdf68fec300dcb131c541fd68cd9c7bfc",
+        "name": "refresh_due_contact_protocols",
+        "oid": 23896,
+        "owner": "postgres",
+        "proconfig": [
+          "search_path=\"\""
+        ],
+        "proparallel": "u",
+        "provolatile": "v",
+        "result_type": "jsonb",
+        "schema": "public",
+        "security_definer": true,
+        "service_execute": true
+      }
+    ]
+  },
+  "provenance": {
+    "reason_for_recapture": "M0 lacked identity generation mode, sequence configuration/ACL, column type modifier/collation and column ACL for lead_assignments.",
+    "remote_operations": "One SELECT-only catalogue statement. No application/auth rows or sequence current value were queried.",
+    "base_fixture": "schema-baseline-b",
+    "required_prior_overlay": "assignment-boundary/overlay.sql",
+    "business_semantics": "Captured legacy definitions verbatim; no substitute business stubs.",
+    "m0_file_sha256": "11b49868c9d4a8f37a2a628d50bf25205a857f48710beb09586abccf424298ec",
+    "base_bootstrap_sha256": "8ea22a1e8b4cd6559732331ca66ac2728d90f58e11ada4f344c398040608c5e6",
+    "boundary_overlay_sha256": "54516871fa828fe83a7ca28f4790999a576195c1abaccc26544b178d60e5e17a",
+    "captured_function_count": 13,
+    "lead_assignments_comparison_to_m0": {
+      "status": "MATCH_FOR_COMPARABLE_FIELDS",
+      "fields": [
+        "table ACL",
+        "column names/order/default/nullability/identity-present",
+        "constraints",
+        "indexes",
+        "non-internal triggers",
+        "policies"
+      ],
+      "newly_captured": [
+        "identity generation mode",
+        "sequence configuration/ACL/dependency",
+        "column format_type/collation/ACL",
+        "table persistence/options"
+      ]
+    }
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "schema": "crm.m1.assignment-appraisal-fixture/1",
+  "classification": "OPTIONAL_SCHEMA_ONLY_FIXTURE_NOT_ACCEPTANCE_OR_DEPLOYMENT",
+  "captured_at": "2026-09-18T03:42:00.783495+00:00",
+  "source_sha256": "6c446ebff0a85ec2deae0a17640db50517d5b2c9568eb345cc74e6d5cef23655",
+  "build_sha256": "9b2c9f804cc1e011074be3be1f20de4484c249d09d42b1f96e3f28dcb36edb8d",
+  "overlay_sha256": "4f26e3ec77e98f5e39006c5750039db2355bee6a31eb0061985e7617e3ee6e93",
+  "base_bootstrap_sha256": "8ea22a1e8b4cd6559732331ca66ac2728d90f58e11ada4f344c398040608c5e6",
+  "main_overlay_sha256": "074ddac9fcf64e390d67f3b7c40ae07bf0cf0bb8be1ba59859f1e7dc712a941f",
+  "counts": {
+    "tables": 1,
+    "columns": 28,
+    "constraints": 15,
+    "indexes": 3,
+    "triggers": 1,
+    "policies": 1,
+    "functions": 1,
+    "sequences": 0
+  },
+  "data_rows": 0,
+  "function": {
+    "signature": "public.save_lead_vehicle_appraisal(p_lead_id uuid, p_brand text, p_model text, p_version text, p_vehicle_year integer, p_mileage_km integer, p_condition text, p_notes text)",
+    "sha256": "fbca760484e24520b505c1edd44787980cee3c505c5725978a884b678490207b",
+    "owner": "postgres",
+    "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
+  },
+  "qualified_dependencies": [
+    "auth.uid",
+    "private.current_user_active",
+    "private.current_user_is_management",
+    "private.set_updated_at",
+    "public.lead_activities",
+    "public.leads",
+    "public.save_lead_vehicle_appraisal",
+    "public.vehicle_appraisals"
+  ],
+  "m0_function_comparison": {
+    "status": "MATCH",
+    "function_hash": {
+      "m0": "fbca760484e24520b505c1edd44787980cee3c505c5725978a884b678490207b",
+      "fresh": "fbca760484e24520b505c1edd44787980cee3c505c5725978a884b678490207b"
+    },
+    "owner_matches": true,
+    "acl_matches": true
+  },
+  "generation_status": "GENERATED_ONLY_NOT_EXECUTED_BY_BUILDER",
+  "limitations": [
+    "Legacy owner authorization and upsert body are preserved verbatim; this is not a repaired function.",
+    "Optional overlay does not alter principal assignment/channel fixtures or foundation B.",
+    "No live appraisals, provider calls, market-reference Edge Function or credentials included.",
+    "Real PostgreSQL execution is required to prove ownership guarding and concurrency behavior."
+  ]
+}

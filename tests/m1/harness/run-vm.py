@@ -145,10 +145,15 @@ def main():
             "__pycache__", "site-packages", "dist-packages", "test", "tests", "idlelib", "tkinter", "ensurepip"))
         shutil.copytree(args.pg_root, guest / "opt/pg", symlinks=True)
         source_archive = work / "source.tar.gz"
-        subprocess.run([sys.executable, str(REPO / "tests/m1/harness/pack-source.py"), "--output", str(source_archive)],
+        pack_command = [sys.executable, str(REPO / "tests/m1/harness/pack-source.py"), "--output", str(source_archive)]
+        if args.suite:
+            pack_command += ["--suite", args.suite[0]]
+        subprocess.run(pack_command,
                        check=True, capture_output=True, env={"PATH": "/usr/bin:/bin", "LANG": "C"})
         with tarfile.open(source_archive, "r:gz") as sources:
             sources.extractall(guest / "work", filter="data")
+        source_manifest = json.loads((guest / "work/m1-validation-source-manifest.json").read_text())
+        manifest["candidate_migrations_by_suite"] = source_manifest["candidate_migrations_by_suite"]
         manifest["source_archive_sha256"] = sha(source_archive)
         for path in sorted((guest / "work").rglob("*")):
             if path.is_file():
@@ -244,6 +249,11 @@ print('M1_VM_RESULT_BASE64=' + base64.b64encode(json.dumps(output).encode()).dec
         for item in suites:
             if set(item.get("migration_sha256", {})) != set(MIGRATIONS):
                 raise RuntimeError("Database report lacks the three migration artifact identities")
+            expected_candidates = manifest["candidate_migrations_by_suite"].get(item["suite"], [])
+            if set(item.get("candidate_migration_sha256", {})) != set(expected_candidates):
+                raise RuntimeError("Candidate artifact identities differ from the selected suite's explicit plan")
+            if expected_candidates and item.get("candidate_installation") != "suite_controlled_verbatim":
+                raise RuntimeError("Candidate installation was not reported as suite-controlled")
             if item.get("postgres_binary_sha256") != manifest["postgres_binary_sha256"]:
                 raise RuntimeError("PostgreSQL executable differs from the reviewed guest artifact")
             if set(item.get("suite_sha256", {})) != {"tests/m1/" + item["suite"]}:
@@ -251,6 +261,9 @@ print('M1_VM_RESULT_BASE64=' + base64.b64encode(json.dumps(output).encode()).dec
             for name, digest in item.get("migration_sha256", {}).items():
                 if manifest["repository_source_sha256"].get("supabase/migrations/" + name) != digest:
                     raise RuntimeError("Migration hash differs from the VM source snapshot")
+            for name, digest in item.get("candidate_migration_sha256", {}).items():
+                if manifest["repository_source_sha256"].get("supabase/migrations/" + name) != digest:
+                    raise RuntimeError("Candidate migration hash differs from the VM source snapshot")
             for name, digest in item.get("suite_sha256", {}).items():
                 if manifest["repository_source_sha256"].get(name) != digest:
                     raise RuntimeError("Suite hash differs from the VM source snapshot")

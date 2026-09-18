@@ -1,0 +1,697 @@
+{
+  "format_version": 1,
+  "classification": "OPTIONAL_SCHEMA_ONLY_LEGACY_APPRAISAL_FIXTURE",
+  "project_ref": "cdtvuovsqwwopktdahgj",
+  "catalog": {
+    "query": "with wanted as (select c.oid,c.relname,n.nspname from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname||'.'||c.relname in ('public.vehicle_appraisals')),\nfns as (select p.oid from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname='save_lead_vehicle_appraisal')\nselect jsonb_build_object(\n'captured_at',clock_timestamp(),\n'tables',(select jsonb_agg(jsonb_build_object('schema',n.nspname,'name',c.relname,'owner',pg_get_userbyid(c.relowner),'acl',c.relacl::text,'kind',c.relkind,'persistence',c.relpersistence,'rls_enabled',c.relrowsecurity,'rls_forced',c.relforcerowsecurity,'options',c.reloptions) order by n.nspname,c.relname) from pg_class c join pg_namespace n on n.oid=c.relnamespace where c.oid in(select oid from wanted)),\n'columns',(select jsonb_agg(jsonb_build_object('schema',w.nspname,'table',w.relname,'name',a.attname,'ordinal',a.attnum,'type',format_type(a.atttypid,a.atttypmod),'not_null',a.attnotnull,'identity',a.attidentity,'generated',a.attgenerated,'default',pg_get_expr(ad.adbin,ad.adrelid),'collation',case when a.attcollation<>0 then a.attcollation::regcollation::text end,'acl',a.attacl::text) order by w.nspname,w.relname,a.attnum) from wanted w join pg_attribute a on a.attrelid=w.oid left join pg_attrdef ad on ad.adrelid=a.attrelid and ad.adnum=a.attnum where a.attnum>0 and not a.attisdropped),\n'constraints',(select jsonb_agg(jsonb_build_object('schema',w.nspname,'table',w.relname,'name',x.conname,'type',x.contype,'definition',pg_get_constraintdef(x.oid,true),'validated',x.convalidated,'deferrable',x.condeferrable,'deferred',x.condeferred,'index_name',case when x.conindid<>0 then (select relname from pg_class where oid=x.conindid) end,'referenced_relation',case when x.confrelid<>0 then x.confrelid::regclass::text end) order by w.nspname,w.relname,x.conname) from wanted w join pg_constraint x on x.conrelid=w.oid),\n'indexes',(select jsonb_agg(jsonb_build_object('schema',w.nspname,'table',w.relname,'name',ci.relname,'definition',pg_get_indexdef(i.indexrelid),'valid',i.indisvalid,'ready',i.indisready,'constraint_name',(select conname from pg_constraint where conindid=i.indexrelid and contype in('p','u','x') limit 1)) order by w.nspname,w.relname,ci.relname) from wanted w join pg_index i on i.indrelid=w.oid join pg_class ci on ci.oid=i.indexrelid),\n'sequences',(select jsonb_agg(jsonb_build_object('schema',ns.nspname,'name',cs.relname,'owner',pg_get_userbyid(cs.relowner),'acl',cs.relacl::text,'type',format_type(s.seqtypid,null),'start',s.seqstart::text,'increment',s.seqincrement::text,'minimum',s.seqmin::text,'maximum',s.seqmax::text,'cache',s.seqcache::text,'cycle',s.seqcycle,'table_schema',w.nspname,'table',w.relname,'column',(select attname from pg_attribute where attrelid=w.oid and attnum=d.refobjsubid),'dependency_type',d.deptype) order by ns.nspname,cs.relname) from wanted w join pg_depend d on d.refobjid=w.oid and d.refclassid='pg_class'::regclass and d.classid='pg_class'::regclass and d.deptype in('a','i') join pg_class cs on cs.oid=d.objid and cs.relkind='S' join pg_namespace ns on ns.oid=cs.relnamespace join pg_sequence s on s.seqrelid=cs.oid),\n'triggers',(select jsonb_agg(jsonb_build_object('schema',w.nspname,'table',w.relname,'name',t.tgname,'definition',pg_get_triggerdef(t.oid,true),'enabled',t.tgenabled,'function_schema',nf.nspname,'function_name',p.proname,'function_arguments',pg_get_function_identity_arguments(p.oid)) order by w.nspname,w.relname,t.tgname) from wanted w join pg_trigger t on t.tgrelid=w.oid join pg_proc p on p.oid=t.tgfoid join pg_namespace nf on nf.oid=p.pronamespace where not t.tgisinternal),\n'policies',(select jsonb_agg(to_jsonb(p) order by schemaname,tablename,policyname) from pg_policies p where schemaname||'.'||tablename in('public.vehicle_appraisals')),\n'enums',(select jsonb_agg(jsonb_build_object('schema',n.nspname,'name',t.typname,'owner',pg_get_userbyid(t.typowner),'acl',t.typacl::text,'label',e.enumlabel,'sort',e.enumsortorder) order by n.nspname,t.typname,e.enumsortorder) from pg_type t join pg_namespace n on n.oid=t.typnamespace join pg_enum e on e.enumtypid=t.oid where n.nspname='public' and t.typname='app_role'),\n'functions',(select jsonb_agg(jsonb_build_object('schema',n.nspname,'name',p.proname,'arguments',pg_get_function_identity_arguments(p.oid),'owner',pg_get_userbyid(p.proowner),'acl',p.proacl::text,'definition',pg_get_functiondef(p.oid),'sha256',encode(sha256(convert_to(pg_get_functiondef(p.oid),'UTF8')),'hex'),'definer',p.prosecdef,'config',p.proconfig,'language',l.lanname) order by n.nspname,p.proname,pg_get_function_identity_arguments(p.oid)) from fns f join pg_proc p on p.oid=f.oid join pg_namespace n on n.oid=p.pronamespace join pg_language l on l.oid=p.prolang)\n) as snapshot;\n",
+    "snapshot": {
+      "enums": [
+        {
+          "acl": null,
+          "name": "app_role",
+          "sort": 1,
+          "label": "admin",
+          "owner": "postgres",
+          "schema": "public"
+        },
+        {
+          "acl": null,
+          "name": "app_role",
+          "sort": 2,
+          "label": "seller",
+          "owner": "postgres",
+          "schema": "public"
+        },
+        {
+          "acl": null,
+          "name": "app_role",
+          "sort": 3,
+          "label": "supervisor",
+          "owner": "postgres",
+          "schema": "public"
+        },
+        {
+          "acl": null,
+          "name": "app_role",
+          "sort": 4,
+          "label": "admventas",
+          "owner": "postgres",
+          "schema": "public"
+        }
+      ],
+      "tables": [
+        {
+          "acl": "{postgres=arwdDxtm/postgres,anon=arwdDxtm/postgres,authenticated=arwdDxtm/postgres,service_role=arwdDxtm/postgres}",
+          "kind": "r",
+          "name": "vehicle_appraisals",
+          "owner": "postgres",
+          "schema": "public",
+          "options": null,
+          "rls_forced": false,
+          "persistence": "p",
+          "rls_enabled": true
+        }
+      ],
+      "columns": [
+        {
+          "acl": null,
+          "name": "id",
+          "type": "uuid",
+          "table": "vehicle_appraisals",
+          "schema": "public",
+          "default": "gen_random_uuid()",
+          "ordinal": 1,
+          "identity": "",
+          "not_null": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "lead_id",
+          "type": "uuid",
+          "table": "vehicle_appraisals",
+          "schema": "public",
+          "default": null,
+          "ordinal": 2,
+          "identity": "",
+          "not_null": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "brand",
+          "type": "text",
+          "table": "vehicle_appraisals",
+          "schema": "public",
+          "default": null,
+          "ordinal": 3,
+          "identity": "",
+          "not_null": true,
+          "collation": "\"default\"",
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "model",
+          "type": "text",
+          "table": "vehicle_appraisals",
+          "schema": "public",
+          "default": null,
+          "ordinal": 4,
+          "identity": "",
+          "not_null": true,
+          "collation": "\"default\"",
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "version",
+          "type": "text",
+          "table": "vehicle_appraisals",
+          "schema": "public",
+          "default": "''::text",
+          "ordinal": 5,
+          "identity": "",
+          "not_null": true,
+          "collation": "\"default\"",
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "vehicle_year",
+          "type": "integer",
+          "table": "vehicle_appraisals",
+          "schema": "public",
+          "default": null,
+          "ordinal": 6,
+          "identity": "",
+          "not_null": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "mileage_km",
+          "type": "integer",
+          "table": "vehicle_appraisals",
+          "schema": "public",
+          "default": null,
+          "ordinal": 7,
+          "identity": "",
+          "not_null": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "condition",
+          "type": "text",
+          "table": "vehicle_appraisals",
+          "schema": "public",
+          "default": "'good'::text",
+          "ordinal": 8,
+          "identity": "",
+          "not_null": true,
+          "collation": "\"default\"",
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "notes",
+          "type": "text",
+          "table": "vehicle_appraisals",
+          "schema": "public",
+          "default": "''::text",
+          "ordinal": 9,
+          "identity": "",
+          "not_null": true,
+          "collation": "\"default\"",
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "estimated_min",
+          "type": "numeric",
+          "table": "vehicle_appraisals",
+          "schema": "public",
+          "default": null,
+          "ordinal": 10,
+          "identity": "",
+          "not_null": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "estimated_max",
+          "type": "numeric",
+          "table": "vehicle_appraisals",
+          "schema": "public",
+          "default": null,
+          "ordinal": 11,
+          "identity": "",
+          "not_null": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "market_median",
+          "type": "numeric",
+          "table": "vehicle_appraisals",
+          "schema": "public",
+          "default": null,
+          "ordinal": 12,
+          "identity": "",
+          "not_null": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "suggested_value",
+          "type": "numeric",
+          "table": "vehicle_appraisals",
+          "schema": "public",
+          "default": null,
+          "ordinal": 13,
+          "identity": "",
+          "not_null": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "market_currency",
+          "type": "text",
+          "table": "vehicle_appraisals",
+          "schema": "public",
+          "default": null,
+          "ordinal": 14,
+          "identity": "",
+          "not_null": false,
+          "collation": "\"default\"",
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "estimate_source",
+          "type": "text",
+          "table": "vehicle_appraisals",
+          "schema": "public",
+          "default": "'pending_market_reference'::text",
+          "ordinal": 15,
+          "identity": "",
+          "not_null": true,
+          "collation": "\"default\"",
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "estimate_basis",
+          "type": "text",
+          "table": "vehicle_appraisals",
+          "schema": "public",
+          "default": "''::text",
+          "ordinal": 16,
+          "identity": "",
+          "not_null": true,
+          "collation": "\"default\"",
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "reference_count",
+          "type": "integer",
+          "table": "vehicle_appraisals",
+          "schema": "public",
+          "default": "0",
+          "ordinal": 17,
+          "identity": "",
+          "not_null": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "market_references",
+          "type": "jsonb",
+          "table": "vehicle_appraisals",
+          "schema": "public",
+          "default": "'[]'::jsonb",
+          "ordinal": 18,
+          "identity": "",
+          "not_null": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "market_checked_at",
+          "type": "timestamp with time zone",
+          "table": "vehicle_appraisals",
+          "schema": "public",
+          "default": null,
+          "ordinal": 19,
+          "identity": "",
+          "not_null": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "status",
+          "type": "text",
+          "table": "vehicle_appraisals",
+          "schema": "public",
+          "default": "'pending'::text",
+          "ordinal": 20,
+          "identity": "",
+          "not_null": true,
+          "collation": "\"default\"",
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "confirmed_value",
+          "type": "numeric",
+          "table": "vehicle_appraisals",
+          "schema": "public",
+          "default": null,
+          "ordinal": 21,
+          "identity": "",
+          "not_null": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "confirmed_currency",
+          "type": "text",
+          "table": "vehicle_appraisals",
+          "schema": "public",
+          "default": null,
+          "ordinal": 22,
+          "identity": "",
+          "not_null": false,
+          "collation": "\"default\"",
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "review_note",
+          "type": "text",
+          "table": "vehicle_appraisals",
+          "schema": "public",
+          "default": "''::text",
+          "ordinal": 23,
+          "identity": "",
+          "not_null": true,
+          "collation": "\"default\"",
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "created_by",
+          "type": "uuid",
+          "table": "vehicle_appraisals",
+          "schema": "public",
+          "default": null,
+          "ordinal": 24,
+          "identity": "",
+          "not_null": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "reviewed_by",
+          "type": "uuid",
+          "table": "vehicle_appraisals",
+          "schema": "public",
+          "default": null,
+          "ordinal": 25,
+          "identity": "",
+          "not_null": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "reviewed_at",
+          "type": "timestamp with time zone",
+          "table": "vehicle_appraisals",
+          "schema": "public",
+          "default": null,
+          "ordinal": 26,
+          "identity": "",
+          "not_null": false,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "table": "vehicle_appraisals",
+          "schema": "public",
+          "default": "now()",
+          "ordinal": 27,
+          "identity": "",
+          "not_null": true,
+          "collation": null,
+          "generated": ""
+        },
+        {
+          "acl": null,
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "table": "vehicle_appraisals",
+          "schema": "public",
+          "default": "now()",
+          "ordinal": 28,
+          "identity": "",
+          "not_null": true,
+          "collation": null,
+          "generated": ""
+        }
+      ],
+      "indexes": [
+        {
+          "name": "vehicle_appraisals_lead_id_key",
+          "ready": true,
+          "table": "vehicle_appraisals",
+          "valid": true,
+          "schema": "public",
+          "definition": "CREATE UNIQUE INDEX vehicle_appraisals_lead_id_key ON public.vehicle_appraisals USING btree (lead_id)",
+          "constraint_name": "vehicle_appraisals_lead_id_key"
+        },
+        {
+          "name": "vehicle_appraisals_pkey",
+          "ready": true,
+          "table": "vehicle_appraisals",
+          "valid": true,
+          "schema": "public",
+          "definition": "CREATE UNIQUE INDEX vehicle_appraisals_pkey ON public.vehicle_appraisals USING btree (id)",
+          "constraint_name": "vehicle_appraisals_pkey"
+        },
+        {
+          "name": "vehicle_appraisals_status_time_idx",
+          "ready": true,
+          "table": "vehicle_appraisals",
+          "valid": true,
+          "schema": "public",
+          "definition": "CREATE INDEX vehicle_appraisals_status_time_idx ON public.vehicle_appraisals USING btree (status, updated_at DESC)",
+          "constraint_name": null
+        }
+      ],
+      "policies": [
+        {
+          "cmd": "SELECT",
+          "qual": "(private.current_user_active() AND (EXISTS ( SELECT 1\n   FROM leads lead\n  WHERE ((lead.id = vehicle_appraisals.lead_id) AND ((lead.assigned_seller_user_id = ( SELECT auth.uid() AS uid)) OR private.current_user_is_management())))))",
+          "roles": [
+            "authenticated"
+          ],
+          "tablename": "vehicle_appraisals",
+          "permissive": "PERMISSIVE",
+          "policyname": "vehicle_appraisals_read_management_or_owner",
+          "schemaname": "public",
+          "with_check": null
+        }
+      ],
+      "triggers": [
+        {
+          "name": "vehicle_appraisals_set_updated_at",
+          "table": "vehicle_appraisals",
+          "schema": "public",
+          "enabled": "O",
+          "definition": "CREATE TRIGGER vehicle_appraisals_set_updated_at BEFORE UPDATE ON vehicle_appraisals FOR EACH ROW EXECUTE FUNCTION private.set_updated_at()",
+          "function_name": "set_updated_at",
+          "function_schema": "private",
+          "function_arguments": ""
+        }
+      ],
+      "functions": [
+        {
+          "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+          "name": "save_lead_vehicle_appraisal",
+          "owner": "postgres",
+          "config": [
+            "search_path=\"\""
+          ],
+          "schema": "public",
+          "sha256": "fbca760484e24520b505c1edd44787980cee3c505c5725978a884b678490207b",
+          "definer": true,
+          "language": "plpgsql",
+          "arguments": "p_lead_id uuid, p_brand text, p_model text, p_version text, p_vehicle_year integer, p_mileage_km integer, p_condition text, p_notes text",
+          "definition": "CREATE OR REPLACE FUNCTION public.save_lead_vehicle_appraisal(p_lead_id uuid, p_brand text, p_model text, p_version text, p_vehicle_year integer, p_mileage_km integer, p_condition text, p_notes text DEFAULT ''::text)\n RETURNS uuid\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO ''\nAS $function$\ndeclare\n  v_appraisal_id uuid;\n  v_is_owner boolean;\nbegin\n  select exists (\n    select 1\n    from public.leads lead\n    where lead.id = p_lead_id\n      and lead.assigned_seller_user_id = (select auth.uid())\n      and lead.routing_status not in ('closed', 'lost')\n  ) into v_is_owner;\n\n  if not (v_is_owner or private.current_user_is_management()) then\n    raise exception 'No tenés permiso para registrar la tasación de este lead';\n  end if;\n  if char_length(trim(coalesce(p_brand, ''))) < 1 or char_length(trim(coalesce(p_model, ''))) < 1 then\n    raise exception 'Completá marca y modelo del usado';\n  end if;\n  if p_vehicle_year < 1950 or p_vehicle_year > extract(year from current_date)::integer + 1 then\n    raise exception 'El año del vehículo no es válido';\n  end if;\n  if p_mileage_km < 0 or p_mileage_km > 3000000 then\n    raise exception 'El kilometraje no es válido';\n  end if;\n  if p_condition not in ('excellent', 'good', 'fair', 'to_review') then\n    raise exception 'El estado general no es válido';\n  end if;\n\n  insert into public.vehicle_appraisals (\n    lead_id, brand, model, version, vehicle_year, mileage_km, condition, notes,\n    estimate_source, status, created_by\n  ) values (\n    p_lead_id, trim(p_brand), trim(p_model), trim(coalesce(p_version, '')),\n    p_vehicle_year, p_mileage_km, p_condition, trim(coalesce(p_notes, '')),\n    'pending_market_reference', 'pending', (select auth.uid())\n  )\n  on conflict (lead_id) do update set\n    brand = excluded.brand,\n    model = excluded.model,\n    version = excluded.version,\n    vehicle_year = excluded.vehicle_year,\n    mileage_km = excluded.mileage_km,\n    condition = excluded.condition,\n    notes = excluded.notes,\n    estimated_min = null,\n    estimated_max = null,\n    market_median = null,\n    suggested_value = null,\n    market_currency = null,\n    estimate_source = 'pending_market_reference',\n    estimate_basis = '',\n    reference_count = 0,\n    market_references = '[]'::jsonb,\n    market_checked_at = null,\n    status = 'pending',\n    confirmed_value = null,\n    confirmed_currency = null,\n    review_note = '',\n    reviewed_by = null,\n    reviewed_at = null,\n    created_by = (select auth.uid())\n  returning id into v_appraisal_id;\n\n  insert into public.lead_activities (lead_id, actor_user_id, activity_type, title, detail, metadata)\n  values (\n    p_lead_id,\n    (select auth.uid()),\n    'vehicle_appraisal_requested',\n    'Tasación de usado solicitada',\n    concat_ws(' · ', trim(p_brand), trim(p_model), trim(coalesce(p_version, '')), p_vehicle_year::text, p_mileage_km::text || ' km'),\n    jsonb_build_object('appraisal_id', v_appraisal_id, 'status', 'pending')\n  );\n\n  return v_appraisal_id;\nend;\n$function$\n"
+        }
+      ],
+      "sequences": null,
+      "captured_at": "2026-09-18T03:42:00.783495+00:00",
+      "constraints": [
+        {
+          "name": "vehicle_appraisals_condition",
+          "type": "c",
+          "table": "vehicle_appraisals",
+          "schema": "public",
+          "deferred": false,
+          "validated": true,
+          "deferrable": false,
+          "definition": "CHECK (condition = ANY (ARRAY['excellent'::text, 'good'::text, 'fair'::text, 'to_review'::text]))",
+          "index_name": null,
+          "referenced_relation": null
+        },
+        {
+          "name": "vehicle_appraisals_confirmed_value",
+          "type": "c",
+          "table": "vehicle_appraisals",
+          "schema": "public",
+          "deferred": false,
+          "validated": true,
+          "deferrable": false,
+          "definition": "CHECK (confirmed_value IS NULL OR confirmed_value >= 0::numeric)",
+          "index_name": null,
+          "referenced_relation": null
+        },
+        {
+          "name": "vehicle_appraisals_created_by_fkey",
+          "type": "f",
+          "table": "vehicle_appraisals",
+          "schema": "public",
+          "deferred": false,
+          "validated": true,
+          "deferrable": false,
+          "definition": "FOREIGN KEY (created_by) REFERENCES profiles(user_id) ON DELETE SET NULL",
+          "index_name": "profiles_pkey",
+          "referenced_relation": "profiles"
+        },
+        {
+          "name": "vehicle_appraisals_currency",
+          "type": "c",
+          "table": "vehicle_appraisals",
+          "schema": "public",
+          "deferred": false,
+          "validated": true,
+          "deferrable": false,
+          "definition": "CHECK ((market_currency IS NULL OR (market_currency = ANY (ARRAY['ARS'::text, 'USD'::text]))) AND (confirmed_currency IS NULL OR (confirmed_currency = ANY (ARRAY['ARS'::text, 'USD'::text]))))",
+          "index_name": null,
+          "referenced_relation": null
+        },
+        {
+          "name": "vehicle_appraisals_lead_id_fkey",
+          "type": "f",
+          "table": "vehicle_appraisals",
+          "schema": "public",
+          "deferred": false,
+          "validated": true,
+          "deferrable": false,
+          "definition": "FOREIGN KEY (lead_id) REFERENCES leads(id) ON DELETE CASCADE",
+          "index_name": "leads_pkey",
+          "referenced_relation": "leads"
+        },
+        {
+          "name": "vehicle_appraisals_lead_id_key",
+          "type": "u",
+          "table": "vehicle_appraisals",
+          "schema": "public",
+          "deferred": false,
+          "validated": true,
+          "deferrable": false,
+          "definition": "UNIQUE (lead_id)",
+          "index_name": "vehicle_appraisals_lead_id_key",
+          "referenced_relation": null
+        },
+        {
+          "name": "vehicle_appraisals_market_references",
+          "type": "c",
+          "table": "vehicle_appraisals",
+          "schema": "public",
+          "deferred": false,
+          "validated": true,
+          "deferrable": false,
+          "definition": "CHECK (jsonb_typeof(market_references) = 'array'::text)",
+          "index_name": null,
+          "referenced_relation": null
+        },
+        {
+          "name": "vehicle_appraisals_market_values",
+          "type": "c",
+          "table": "vehicle_appraisals",
+          "schema": "public",
+          "deferred": false,
+          "validated": true,
+          "deferrable": false,
+          "definition": "CHECK ((market_median IS NULL OR market_median >= 0::numeric) AND (suggested_value IS NULL OR suggested_value >= 0::numeric))",
+          "index_name": null,
+          "referenced_relation": null
+        },
+        {
+          "name": "vehicle_appraisals_mileage",
+          "type": "c",
+          "table": "vehicle_appraisals",
+          "schema": "public",
+          "deferred": false,
+          "validated": true,
+          "deferrable": false,
+          "definition": "CHECK (mileage_km >= 0 AND mileage_km <= 3000000)",
+          "index_name": null,
+          "referenced_relation": null
+        },
+        {
+          "name": "vehicle_appraisals_pkey",
+          "type": "p",
+          "table": "vehicle_appraisals",
+          "schema": "public",
+          "deferred": false,
+          "validated": true,
+          "deferrable": false,
+          "definition": "PRIMARY KEY (id)",
+          "index_name": "vehicle_appraisals_pkey",
+          "referenced_relation": null
+        },
+        {
+          "name": "vehicle_appraisals_range",
+          "type": "c",
+          "table": "vehicle_appraisals",
+          "schema": "public",
+          "deferred": false,
+          "validated": true,
+          "deferrable": false,
+          "definition": "CHECK (estimated_min IS NULL AND estimated_max IS NULL OR estimated_min >= 0::numeric AND estimated_max >= estimated_min)",
+          "index_name": null,
+          "referenced_relation": null
+        },
+        {
+          "name": "vehicle_appraisals_reviewed_by_fkey",
+          "type": "f",
+          "table": "vehicle_appraisals",
+          "schema": "public",
+          "deferred": false,
+          "validated": true,
+          "deferrable": false,
+          "definition": "FOREIGN KEY (reviewed_by) REFERENCES profiles(user_id) ON DELETE SET NULL",
+          "index_name": "profiles_pkey",
+          "referenced_relation": "profiles"
+        },
+        {
+          "name": "vehicle_appraisals_status",
+          "type": "c",
+          "table": "vehicle_appraisals",
+          "schema": "public",
+          "deferred": false,
+          "validated": true,
+          "deferrable": false,
+          "definition": "CHECK (status = ANY (ARRAY['pending'::text, 'confirmed'::text, 'rejected'::text]))",
+          "index_name": null,
+          "referenced_relation": null
+        },
+        {
+          "name": "vehicle_appraisals_text_length",
+          "type": "c",
+          "table": "vehicle_appraisals",
+          "schema": "public",
+          "deferred": false,
+          "validated": true,
+          "deferrable": false,
+          "definition": "CHECK (char_length(brand) >= 1 AND char_length(brand) <= 80 AND char_length(model) >= 1 AND char_length(model) <= 120 AND char_length(version) <= 160 AND char_length(notes) <= 3000 AND char_length(estimate_basis) <= 3000 AND char_length(review_note) <= 3000)",
+          "index_name": null,
+          "referenced_relation": null
+        },
+        {
+          "name": "vehicle_appraisals_year",
+          "type": "c",
+          "table": "vehicle_appraisals",
+          "schema": "public",
+          "deferred": false,
+          "validated": true,
+          "deferrable": false,
+          "definition": "CHECK (vehicle_year >= 1950 AND vehicle_year <= 2100)",
+          "index_name": null,
+          "referenced_relation": null
+        }
+      ]
+    }
+  },
+  "provenance": {
+    "remote_operations": "One SELECT-only catalogue statement; no application rows or sequence current values.",
+    "scope": "Observed save_lead_vehicle_appraisal and table dependency for old-owner authorization race. No appraisal business redesign or candidate implementation.",
+    "prerequisites": [
+      "schema-baseline-b/bootstrap.sql",
+      "assignment-runtime/overlay.sql"
+    ],
+    "m0_comparison": {
+      "status": "MATCH",
+      "function_hash": {
+        "m0": "fbca760484e24520b505c1edd44787980cee3c505c5725978a884b678490207b",
+        "fresh": "fbca760484e24520b505c1edd44787980cee3c505c5725978a884b678490207b"
+      },
+      "owner_matches": true,
+      "acl_matches": true
+    },
+    "main_overlay_sha256": "074ddac9fcf64e390d67f3b7c40ae07bf0cf0bb8be1ba59859f1e7dc712a941f",
+    "base_bootstrap_sha256": "8ea22a1e8b4cd6559732331ca66ac2728d90f58e11ada4f344c398040608c5e6"
+  }
+}

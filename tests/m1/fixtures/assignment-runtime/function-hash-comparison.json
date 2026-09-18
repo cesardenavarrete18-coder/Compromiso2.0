@@ -1,0 +1,100 @@
+{
+  "format_version": 1,
+  "classification": "READ_ONLY_FUNCTION_DEFINITION_HASH_COMPARISON",
+  "project_ref": "cdtvuovsqwwopktdahgj",
+  "query": "select jsonb_build_object('captured_at',clock_timestamp(),'functions',(select jsonb_agg(jsonb_build_object('schema',n.nspname,'name',p.proname,'arguments',pg_get_function_identity_arguments(p.oid),'definition_sha256',encode(sha256(convert_to(pg_get_functiondef(p.oid),'UTF8')),'hex')) order by n.nspname,p.proname,pg_get_function_identity_arguments(p.oid)) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname||'.'||p.proname in ('private.apply_lead_opt_out','private.assign_lead_to_seller_with_reason','private.crm_transition_allowed','private.sync_protocol_next_action','public.assign_lead_to_seller','public.complete_contact_task','public.complete_contact_task_with_follow_up','public.reassign_leads_to_seller','public.record_contact_answer_with_transition','public.record_contact_task_result','public.record_lead_follow_up','public.refresh_due_contact_protocols'))) as snapshot;",
+  "snapshot": {
+    "functions": [
+      {
+        "name": "apply_lead_opt_out",
+        "schema": "private",
+        "arguments": "p_lead_id uuid, p_reason text",
+        "definition_sha256": "dc1cd80dd3525fbe89baf2f92070e798567381c28b2dbecb9649d1c2bcd3d4e6"
+      },
+      {
+        "name": "assign_lead_to_seller_with_reason",
+        "schema": "private",
+        "arguments": "p_lead_id uuid, p_seller_user_id uuid, p_actor_user_id uuid, p_reason text",
+        "definition_sha256": "1a99cae30aa30f1700d8063744b7934e768687097c244d230e3e05a8c061960a"
+      },
+      {
+        "name": "crm_transition_allowed",
+        "schema": "private",
+        "arguments": "p_from text, p_to text",
+        "definition_sha256": "6a1c4eb41450332a1cd731c57a3dda0c638459ff8b796c30afd505e2daef6cb9"
+      },
+      {
+        "name": "sync_protocol_next_action",
+        "schema": "private",
+        "arguments": "p_sequence_id uuid, p_lead_id uuid",
+        "definition_sha256": "1d6a89dcc30821ab901b049cac40c4e17ba191a6777af1cc796ab30529f25307"
+      },
+      {
+        "name": "assign_lead_to_seller",
+        "schema": "public",
+        "arguments": "p_lead_id uuid, p_seller_user_id uuid",
+        "definition_sha256": "bdd67087cf3d6b8b91d2d1e68679b864ff647ee5cf2e7dc770ec24441e2809a1"
+      },
+      {
+        "name": "complete_contact_task",
+        "schema": "public",
+        "arguments": "p_task_id uuid, p_outcome text, p_note text",
+        "definition_sha256": "1fa03660a0d5bcbc4decadb41c91a07a13916663ef1ff13750625db5d039bbc8"
+      },
+      {
+        "name": "complete_contact_task_with_follow_up",
+        "schema": "public",
+        "arguments": "p_task_id uuid, p_outcome text, p_note text, p_next_contact_at timestamp with time zone, p_next_contact_note text",
+        "definition_sha256": "a220b8aa716ae3d113e17660a4aa120f7ae15e588254010346493286f1f2c5fe"
+      },
+      {
+        "name": "reassign_leads_to_seller",
+        "schema": "public",
+        "arguments": "p_lead_ids uuid[], p_seller_user_id uuid, p_reason text",
+        "definition_sha256": "bdaf57f166a5f695b56f9d87fb4df420e971ea9ab5314f5181f6484020ea5717"
+      },
+      {
+        "name": "record_contact_answer_with_transition",
+        "schema": "public",
+        "arguments": "p_task_id uuid, p_status text, p_interview_operational_status text, p_note text, p_next_contact_at timestamp with time zone, p_next_contact_note text, p_contact_outcome text, p_interview_at timestamp with time zone, p_interview_location text, p_deposit_amount numeric, p_priority text, p_performed_at timestamp with time zone, p_interview_mode text, p_deposit_validation text, p_desist_reason text",
+        "definition_sha256": "5cb0f78ee3e4bbe36778f69a450139a98dc72193602f1eaaecb631a71bfd106b"
+      },
+      {
+        "name": "record_contact_answer_with_transition",
+        "schema": "public",
+        "arguments": "p_task_id uuid, p_status text, p_note text, p_next_contact_at timestamp with time zone, p_next_contact_note text, p_contact_outcome text, p_interview_at timestamp with time zone, p_interview_location text, p_deposit_amount numeric, p_priority text, p_performed_at timestamp with time zone, p_interview_mode text, p_deposit_validation text, p_desist_reason text",
+        "definition_sha256": "d5698692879313b264637d5e3a702d69619aa77c548602aac6fddfee1ba6a0c1"
+      },
+      {
+        "name": "record_contact_task_result",
+        "schema": "public",
+        "arguments": "p_task_id uuid, p_outcome text, p_note text, p_performed_at timestamp with time zone",
+        "definition_sha256": "de727776dd56413d9d4ae91052dc6fa2daa299ebce453f1f7e6f55467a6fcce6"
+      },
+      {
+        "name": "record_lead_follow_up",
+        "schema": "public",
+        "arguments": "p_lead_id uuid, p_status text, p_note text, p_next_contact_at timestamp with time zone, p_next_contact_note text, p_contact_outcome text, p_interview_at timestamp with time zone, p_interview_location text, p_deposit_amount numeric, p_priority text, p_interview_mode text, p_interview_operational_status text, p_deposit_validation text, p_desist_reason text",
+        "definition_sha256": "19804c2875930510189e74972ee81a78aa4460386fd657082449aff353d4e99d"
+      },
+      {
+        "name": "refresh_due_contact_protocols",
+        "schema": "public",
+        "arguments": "",
+        "definition_sha256": "e3cf722ebcafefee14eefd350aa80a8fdf68fec300dcb131c541fd68cd9c7bfc"
+      }
+    ],
+    "captured_at": "2026-09-18T03:41:51.399757+00:00"
+  },
+  "comparison_to_m0": {
+    "status": "MATCH",
+    "expected_count": 13,
+    "observed_count": 13,
+    "changed_or_missing": [],
+    "unexpected_signatures": [],
+    "source_file": "source.json",
+    "source_sha256": "831870bd7accb4e49627bc9d543e01fa44239892b074c4c70d55e3335dbe5f4b",
+    "m0_capture": "2026-09-17T13:51:42.147Z"
+  },
+  "limitations": "Definition hashes only; not a recapture of role ownership, ACL or consumers; separate timestamp from fixture table/function capture."
+}

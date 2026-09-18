@@ -1,6 +1,8 @@
-# Local PostgreSQL harness — M1-01/02/03 only
+# Local PostgreSQL harness — foundation and assignment candidates
 
-This harness is a **proposed verification artifact, not evidence that SQL passed**.
+The foundation's recorded execution is documented in
+[db-validation.md](../../../docs/m1-runtime-foundation/db-validation.md). Its
+certification does not extend automatically to a new candidate or source snapshot.
 The initial attempt in the hosted runtime was blocked before `initdb`: only UID/GID 0 were
 mapped, and creating an `AF_UNIX` socket returned `EPERM`. No migrations or database
 tests ran in that attempt. Its report remains `BLOCKED`, not PASS; a subsequent
@@ -11,9 +13,9 @@ work around this result.
 The test runner uses real PostgreSQL/libpq, not an in-memory SQL substitute. It
 creates a separate disposable cluster **for each integration file**, including
 fresh roles, so the synthetic handler/grants of the foundation suite cannot
-contaminate security or installation verification. It loads only the three
-explicitly named M1 migrations. `installation.integration.test.mjs` is the explicit
-exception: its fresh cluster has bootstrap only; that suite tests ordering and
+contaminate security or installation verification. The runner installs only the
+three explicitly named foundation migrations. `installation.integration.test.mjs`
+starts with bootstrap only; that suite tests ordering and
 applies the exact migration files from `M1_TEST_MIGRATION_DIR`, without removing
 their BEGIN/COMMIT statements. It does not run the repository-wide npm test command
 or any online harness.
@@ -28,6 +30,55 @@ The B mapping initializes the local cluster as `supabase_admin`, preserving its
 captured structural role as PostgreSQL's bootstrap superuser; other suites use
 `m1_test_admin`. The local transport accepts only those two fixed fixture identities.
 Neither is a credential or a connection to an existing Supabase database.
+
+## Assignment candidate boundary
+
+The certified test files and bootstraps remain unchanged. New assignment suites
+receive their own cluster initialized from B, followed by the three certified
+migrations. They then load the observed overlays and apply their candidate files
+verbatim as `postgres NOSUPERUSER`, preserving each file's transaction boundaries.
+This lets the suite compare the installed-but-inactive state with later isolated
+exercise of the new path. The runner does not activate an assignment gate.
+
+| Suite | Candidate files made available | Who installs candidates |
+|---|---|---|
+| Four certified foundation suites | None | Nobody |
+| `assignment-boundary.integration.test.mjs` | None | Historical diagnostic only |
+| `assignment-channel-prerequisite.integration.test.mjs` | `20260918033251_m1_assignment_adoption_guard.sql` | Prerequisite suite; not the final 23-case command acceptance |
+| `assignment-channel-guard.integration.test.mjs` | Guard, then `20260918033407_m1_assignment_commands.sql` | Final guard suite with actual commands |
+| `assignment-runtime.integration.test.mjs` | Guard, then `20260918033407_m1_assignment_commands.sql` | Assignment suite |
+
+`candidate_plan.py` is the explicit allowlist shared by the source packer and
+runner. Only the three candidate suites receive `M1_TEST_CANDIDATE_MIGRATIONS`, a JSON
+array of basenames in `M1_TEST_MIGRATION_DIR`. Certified suites receive neither
+that variable nor candidate files in their staged migration directory. New suite
+bootstrap mapping and its `B_plus_synthetic_assignment_data` report label are
+separate from data-free B certification and the older boundary diagnostic.
+
+The expected overlay order is `assignment-boundary/overlay.sql`,
+`assignment-runtime/overlay.sql`, then `assignment-runtime/channel-overlay.sql`.
+The two final A+B suites also load the captured
+`assignment-runtime/appraisal-overlay.sql` before candidate B creates its guard
+on that existing legacy relation; prerequisite A does not load this optional
+baseline extension. Only the suite installs these overlays. They are fixture artifacts, never added
+to the product migration list. Candidate hashes are recorded separately from the
+three certified migration hashes; `candidate_installation=suite_controlled_verbatim`
+means the suite controls installation, not that the runner has proved execution.
+Installation assertions and the resulting TAP are required evidence. The VM
+verifier checks the per-suite candidate set against the transported manifest,
+not against a potentially edited checkout after the guest has booted.
+The VM's `--suite` selector is also passed to the source packer. A prerequisite
+run transports only candidate A, even while candidate B is still being authored;
+an ordinary certified suite transports no candidate DDL. Its report explicitly
+labels the prerequisite as `guard_prerequisite_only`, not final command acceptance.
+
+One QEMU invocation without `--suite` packs the source once, then runs each DB
+suite sequentially in a fresh cluster. This avoids sharing synthetic roles, hooks
+or grants while avoiding one VM build per suite. During development, use the
+explicit guard or assignment suite selector; final regression should use one
+complete, stable source snapshot. Pure tests remain a separate explicit Node
+invocation (`contracts.test.mjs`, plus the new `assignment-contracts.test.mjs` when
+ready); they are not silently counted as DB tests or executed by `run-vm.py`.
 
 ## Prerequisites and reproducible invocation
 
@@ -137,8 +188,9 @@ Create the source-only allowlist archive outside the checkout:
 python3 tests/m1/harness/pack-source.py --output /absolute/path/outside/repository/m1-validation-source.tar.gz
 ```
 
-It contains only M1 tests/harness/SQL fixtures, the closed contract module and the
-three named migrations. It excludes `.git`, repository configuration, environment
+It contains only M1 tests/harness/SQL fixtures, the certified contract module, the
+explicit assignment contract module when present, the three certified migrations
+and the two named assignment candidates. It excludes `.git`, repository configuration, environment
 files, all data dumps, production manifests and service credentials. It records
 actual file hashes and the base revision; uncommitted source changes remain marked
 as such. The runner validates the included source manifest before using its files.
