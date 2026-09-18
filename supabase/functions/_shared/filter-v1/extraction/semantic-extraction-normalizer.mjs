@@ -130,7 +130,10 @@ function normalizeQueryIntent(extraction, input) {
   const current = input?.current_message;
   if (!current) return;
   const text = fold(current.text);
-  const price = /\b(precio|cuanto (?:sale|cuesta|vale)|que valor|cual es el valor|valor de)\b/.test(text);
+  // "presio" is a confirmed, non-hypothetical spelling alias of "precio" (real Candidate 3
+  // traffic: 4 inbound messages contain "presio" vs 44 with "precio") - added as an explicit
+  // alias, not fuzzy/Levenshtein matching, and scoped to this one observed variant only.
+  const price = /\b(precio|presio|cuanto (?:sale|cuesta|vale)|que valor|cual es el valor|valor de)\b/.test(text);
   const technical = /\b(motor|motorizacion|potencia|cilindrada|caja|transmision|automatic[ao]|manual|version|equipamiento|seguridad|airbags?|adas|consumo|carroceria|pick[ -]?up|suv|dimensiones|baul|capacidad de carga|traccion|llantas|multimedia)\b/.test(text);
   const technicalQuestion = technical && (/\?/.test(text) || /^(?:¿)?(que|cual|es|tiene|trae)\b/.test(text));
   const ambiguousInitial = /\b(suscrib\w*|entr(?:o|ar) al plan|arranc(?:o|ar) el plan|con cuanto (?:puedo )?entrar|necesito de entrada)\b/.test(text);
