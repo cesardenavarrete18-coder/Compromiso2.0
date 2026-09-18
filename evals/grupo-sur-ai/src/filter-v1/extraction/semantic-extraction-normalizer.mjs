@@ -214,6 +214,17 @@ function normalizeArgentineAmount(amount) {
 // "Tengo 5.000 para entrar" in the prompt). Zero is exempt: "cero" has no scale to be
 // ambiguous about.
 const AMBIGUOUS_CAPACITY_KINDS = new Set(["monthly_installment_capacity", "down_payment_capacity"]);
+// Mirrors the convention already used by every legitimate contextual resolution elsewhere in
+// this file (trade-in/purchase-mode short answers, the "$10 millones" contextual down-payment
+// case): the CURRENT message must be part of the proof, not just conversation history. No
+// current_message at all (offline/unit callers) preserves prior behavior, matching every other
+// contextual normalizer function here.
+function hasCurrentTurnEvidence(amount, input) {
+  const currentId = input?.current_message?.id;
+  if (!currentId) return true;
+  const evidence = Array.isArray(amount.evidence) ? amount.evidence : [amount.evidence].filter(Boolean);
+  return evidence.some(item => item?.source_message_id === currentId);
+}
 const EXPLICIT_SCALE_OR_CURRENCY_WORDS = /\b(mil|millon\w*|palos?|lucas?|pesos?|dolares|ars|u\$s)\b/;
 // "Nm" (e.g. "2m") is not a new capability being added here: the provider itself
 // already reliably resolves it to millions unassisted in real traffic (confirmed,
@@ -411,6 +422,29 @@ export function normalizeSemanticExtraction(candidate, input = null) {
     const conflictingKind = normalizeAmountKind(amount);
     normalizeArgentineAmount(amount);
     if (conflictingKind) amount.certainty = "ambiguous";
+    // Pre-canary blocker (real Candidate 3 incident, lead 8abcbc5e): conversation history is
+    // CONTEXT, not permission to mint a new material fact. Real bug: T1 customer said
+    // "Entregando el usado mas 10.000.000 cuanto seria la cuotas" (correctly resolved as
+    // down_payment_capacity=10000000, current-turn evidence). T2 customer said only "Si" - the
+    // provider nonetheless re-emitted the SAME literal/value under a DIFFERENT kind
+    // (monthly_installment_capacity), with evidence sourced ENTIRELY from T1's message id, none
+    // from T2. sanitizeSemanticEvidence's validateEvidence() only checks that a message with
+    // that id exists somewhere in [current_message, ...recent_conversation] and that the
+    // literal appears in it - it has no concept of "this turn" vs "any prior turn", so the
+    // resurrected claim passed validation and created a capacity the customer never stated on
+    // "Si". A capacity/down-payment mention is only ever material here in the two kinds that
+    // reach next_state (AMBIGUOUS_CAPACITY_KINDS): every legitimate contextual resolution
+    // already elsewhere in this file (trade-in short answers, purchase-mode short answers, the
+    // pre-existing "$10 millones" contextual down-payment test) always includes the CURRENT
+    // message in its evidence array alongside any prior one - this only enforces that same
+    // existing convention for amounts, it does not forbid prior-turn context from being cited
+    // too. If a material capacity amount cites no evidence at all from the current turn, it is
+    // downgraded the same way an unsupported-scale claim is (ambiguous/null below) - never
+    // dropped from state (a previously-persisted value is untouched; only this turn's own
+    // proposal is rejected).
+    if (AMBIGUOUS_CAPACITY_KINDS.has(amount.kind) && amount.certainty !== "ambiguous" && !hasCurrentTurnEvidence(amount, input)) {
+      amount.certainty = "ambiguous";
+    }
     if (AMBIGUOUS_CAPACITY_KINDS.has(amount.kind) && amount.certainty !== "ambiguous" && amount.numeric_value !== null && amount.numeric_value !== 0
       && !hasSelfEvidentScale(fold(amount.literal ?? ""))) {
       flagAmbiguousCapacityScale(normalized, amount);
