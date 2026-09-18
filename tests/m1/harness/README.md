@@ -80,6 +80,56 @@ complete, stable source snapshot. Pure tests remain a separate explicit Node
 invocation (`contracts.test.mjs`, plus the new `assignment-contracts.test.mjs` when
 ready); they are not silently counted as DB tests or executed by `run-vm.py`.
 
+## Contact/next-action candidate
+
+`contact-runtime.integration.test.mjs` gets its own schema-B cluster and only the
+three certified foundation migrations preinstalled. Its single explicit candidate
+list contains the two Assignment migrations first, then the three Contact/Next
+Action migrations. The suite installs captured Assignment overlays and the two A
+files, verifies negative B dependency/partial-installation cases, then applies B
+in order. The harness never adopts leads, enables gates, or grants API execution.
+The suite must demonstrate every such fixture-only action explicitly.
+
+This profile is labelled `B_plus_synthetic_contact_data` and
+`contact_acceptance_candidate`; it is not full production-schema compatibility or
+rollout certification. Existing foundation/Assignment profiles keep their exact
+candidate lists and independent clusters. `--suite contact-runtime.integration.test.mjs`
+is the development selector; a final invocation without `--suite` executes all
+profiles from one transported snapshot. Pure tests remain separate.
+
+Two additional profiles reuse the existing assertions directly:
+`contact-assignment-regression.integration.test.mjs` (47 cases) and
+`contact-channel-regression.integration.test.mjs` (23 cases). Their explicit
+candidate list contains A2+B3. The original A installation assertion runs first;
+then `contact-regression.mjs` installs the captured Contact overlay and B3 before
+the command/channel assertions. Original profiles do not enable this hook.
+These are 70 repeated regression cases with B installed, not 70 new requirements.
+The runner reports their separate `post_contact_regression` stage and hashes.
+
+The runner streams TAP and preserves the same bytes in its report. B tests stop
+after installation checks if any DB-B01–05 fails. An interrupted VM without a
+completed report is incomplete even if its serial log contains some PASS lines.
+
+Its exact B candidate filenames are:
+
+- `20260918160432_m1_contact_runtime_foundation.sql`
+- `20260918160433_m1_contact_legacy_fences.sql`
+- `20260918160434_m1_contact_commands.sql`
+
+These local filenames were allocated from system UTC after no Supabase CLI was
+available and attempts to obtain it failed. This differs from the preferred CLI
+scaffold procedure; installation tests exercise the exact files and retain their
+transaction boundaries. No production migration tool was used as a fallback.
+
+Only this larger profile has a 900-second base test deadline (scaled by the
+existing `--timeout-scale`). This increases runtime allowance, never weakens an
+assertion, permits a skip, or replaces observed lock barriers with sleep.
+
+After a completed run, `summarize-evidence.py /absolute/output/directory` writes a
+leaf-case summary from its real VM/PG/TAP evidence. `--certified-cases` accepts the
+previous exact suite/case manifest to detect a missing regression. This summary
+does not execute tests and cannot replace their database evidence.
+
 ## Prerequisites and reproducible invocation
 
 - Linux with a mapped non-root user and permission to create Unix sockets.

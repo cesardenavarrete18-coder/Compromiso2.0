@@ -18,10 +18,12 @@ import socket
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 import uuid
 
-from candidate_plan import candidate_migrations_for
+sys.dont_write_bytecode = True
+from candidate_plan import candidate_migrations_for, CONTACT_REGRESSION_SUITES
 
 
 MIGRATIONS = (
@@ -38,7 +40,9 @@ SCHEMA_BOOTSTRAPS = {
     "assignment-channel-prerequisite.integration.test.mjs": "fixtures/schema-baseline-b/bootstrap.sql",
     "assignment-channel-guard.integration.test.mjs": "fixtures/schema-baseline-b/bootstrap.sql",
     "assignment-runtime.integration.test.mjs": "fixtures/schema-baseline-b/bootstrap.sql",
+    "contact-runtime.integration.test.mjs": "fixtures/schema-baseline-b/bootstrap.sql",
 }
+SCHEMA_BOOTSTRAPS.update({name: "fixtures/schema-baseline-b/bootstrap.sql" for name in CONTACT_REGRESSION_SUITES})
 SOURCE_MANIFEST = REPO / "m1-validation-source-manifest.json"
 
 
@@ -87,7 +91,8 @@ def run_independent_suites(args, test_files, node):
             print(f"=== Fresh isolated cluster: {suite.name} ===", flush=True)
             process = subprocess.Popen(command, env=clean_env, close_fds=True, start_new_session=True)
             try:
-                code = process.wait(timeout=360 * args.timeout_scale)
+                suite_seconds = 1020 if suite.name == "contact-runtime.integration.test.mjs" else 360
+                code = process.wait(timeout=suite_seconds * args.timeout_scale)
             except subprocess.TimeoutExpired:
                 os.killpg(process.pid, signal.SIGTERM)
                 try:
@@ -173,7 +178,9 @@ def main():
         if not path.is_file() or not path.read_text().strip():
             raise SystemExit(f"BLOCKED: candidate migration not ready: {name}")
     boundary_diagnostic = suite_name == "assignment-boundary.integration.test.mjs"
-    assignment_candidate = bool(candidate_migrations)
+    contact_candidate = suite_name == "contact-runtime.integration.test.mjs"
+    contact_regression = suite_name in CONTACT_REGRESSION_SUITES
+    assignment_candidate = bool(candidate_migrations) and not contact_candidate
     bootstrap_only = suite_name in BOOTSTRAP_ONLY_SUITES
     bootstrap_user = "supabase_admin" if suite_name in SCHEMA_BOOTSTRAPS else "m1_test_admin"
     bootstrap_relative = SCHEMA_BOOTSTRAPS.get(suite_name, "fixtures/bootstrap.sql")
@@ -189,6 +196,8 @@ def main():
         "harness": "crm-m1-unix-seccomp/2", "run_id": str(uuid.uuid4()), "suite": suite_name,
         "source_manifest": source_manifest,
         "fixture_layer": ("B_plus_synthetic_boundary_data" if boundary_diagnostic else
+                          "B_plus_post_contact_assignment_regression" if contact_regression else
+                          "B_plus_synthetic_contact_data" if contact_candidate else
                           "B_plus_synthetic_assignment_data" if assignment_candidate else
                           "schema_only_baseline_b" if suite_name in SCHEMA_BOOTSTRAPS else "minimal_synthetic_auth_crm"),
         "bootstrap_source": f"tests/m1/{bootstrap_relative}", "bootstrap_sha256": digest(bootstrap_source), "cluster_per_suite": True,
@@ -202,6 +211,8 @@ def main():
         "candidate_migration_sha256": {name: digest(REPO / "supabase/migrations" / name) for name in candidate_migrations},
         "candidate_installation": "suite_controlled_verbatim" if candidate_migrations else "none",
         "candidate_validation_stage": ("guard_prerequisite_only" if suite_name == "assignment-channel-prerequisite.integration.test.mjs"
+                                       else "post_contact_regression" if contact_regression
+                                       else "contact_acceptance_candidate" if contact_candidate
                                        else "assignment_acceptance_candidate" if assignment_candidate else None),
         "postgres_binary_sha256": digest(pg_root / "bin/postgres"),
         "guard_source_sha256": digest(SOURCE_TESTS / "harness/deny-network.c"),
@@ -213,11 +224,15 @@ def main():
              if suite_name == "assignment-channel-prerequisite.integration.test.mjs" else
             ("Schema B plus synthetic boundary diagnostic data; not M1-04A acceptance, no production rows or Supabase REST gateway."
              if boundary_diagnostic else
+             "Schema B plus captured overlays and synthetic contact data; A and B candidate DDL is suite-controlled, no production rows or Supabase REST gateway."
+             if contact_candidate else
              "Schema B plus observed overlays and synthetic assignment data; candidate DDL is suite-controlled, no production rows or Supabase REST gateway."
              if assignment_candidate else
              "Schema-only baseline B: coverage is limited to its explicit manifest; no production rows or Supabase REST gateway."
              if suite_name in SCHEMA_BOOTSTRAPS else "Synthetic auth/profiles/leads fixture; not a full production schema or Supabase REST gateway.")),
-            ("Only the selected assignment candidate boundary is exercised; no sender, frontend, production authority or wider CRM certification."
+            ("Only contact/next-action laboratory contracts are exercised; no production frontend, sender, webhook, stage authority or rollout certification."
+             if contact_candidate else
+             "Only the selected assignment candidate boundary is exercised; no sender, frontend, production authority or wider CRM certification."
              if assignment_candidate else "No legacy handler, trigger, frontend or external sender is changed or certified."),
             "Database effects occur only in the disposable local cluster.",
         ],
@@ -293,7 +308,9 @@ def main():
             "PGPASSFILE": "/dev/null", "PGSERVICEFILE": "/dev/null",
         }
         if candidate_migrations:
-            child_env["M1_TEST_CANDIDATE_MIGRATIONS"] = json.dumps(candidate_migrations)
+            child_env["M1_TEST_CANDIDATE_MIGRATIONS"] = json.dumps(candidate_migrations[:2] if contact_regression else candidate_migrations)
+        if contact_regression:
+            child_env["M1_TEST_CONTACT_REGRESSION_MIGRATIONS"] = json.dumps(candidate_migrations[2:])
         report["environment_keys"] = sorted(child_env)
         options = {"env": child_env, "cwd": work, "close_fds": True, **child_identity}
 
@@ -336,6 +353,22 @@ def main():
                 raise RuntimeError(f"SQL fixture/migration failed: {result}")
             return result
 
+        # A socket may exist while PostgreSQL still rejects sessions during
+        # startup. Probe through the same Unix-only, seccomp/libpq transport.
+        # Retry only that observed startup condition; never retry DDL/migrations.
+        report["startup_probes"] = []
+        while True:
+            try:
+                sql("SELECT 1", bootstrap=True)
+                report["startup_probes"].append("accepting_connections")
+                break
+            except RuntimeError as error:
+                if ("FATAL:  the database system is starting up" not in str(error)
+                        or server.poll() is not None or time.monotonic() > deadline):
+                    raise
+                report["startup_probes"].append("starting_up")
+                time.sleep(0.05)
+
         sql("CREATE DATABASE m1_foundation_test", bootstrap=True)
         report["database_started"] = True
         report["isolation"] = sql("SELECT current_setting('listen_addresses') AS listen_addresses, current_setting('m1.test_run_id') AS marker, inet_server_addr() IS NULL AS unix_socket")
@@ -347,14 +380,37 @@ def main():
         report["migration_role"] = sql("SELECT rolname, rolsuper, rolcreaterole, rolbypassrls FROM pg_roles WHERE rolname = 'postgres'")
         selected = [str(tests / path.name) for path in test_files]
         report["integration_tests_executed"] = True
-        outcome = run([node, "--test", "--test-concurrency=1", "--test-reporter=tap", *selected],
-                      capture_output=True, text=True, timeout=240 * args.timeout_scale)
-        report["test_exit_code"] = outcome.returncode
-        report["tap"] = outcome.stdout
-        report["stderr"] = outcome.stderr
-        report["status"] = "PASS" if outcome.returncode == 0 else "FAIL"
-        sys.stdout.write(outcome.stdout)
-        sys.stderr.write(outcome.stderr)
+        test_seconds = 900 if contact_candidate else 240
+        report["test_timeout_seconds"] = test_seconds * args.timeout_scale
+        # Stream the real TAP while retaining the exact bytes as evidence. A
+        # long concurrency run must not hide its last completed scenario.
+        process = subprocess.Popen([str(guard), node, "--test", "--test-concurrency=1",
+                                    "--test-reporter=tap", *selected],
+                                   stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, **options)
+        captured_out, captured_err = [], []
+        def forward(pipe, captured, destination):
+            for line in iter(pipe.readline, ""):
+                captured.append(line)
+                destination.write(line)
+                destination.flush()
+            pipe.close()
+        streams = [threading.Thread(target=forward, args=(process.stdout, captured_out, sys.stdout)),
+                   threading.Thread(target=forward, args=(process.stderr, captured_err, sys.stderr))]
+        for stream in streams:
+            stream.start()
+        try:
+            process.wait(timeout=test_seconds * args.timeout_scale)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            process.wait()
+            raise
+        finally:
+            for stream in streams:
+                stream.join(timeout=10)
+            report["tap"] = "".join(captured_out)
+            report["stderr"] = "".join(captured_err)
+        report["test_exit_code"] = process.returncode
+        report["status"] = "PASS" if process.returncode == 0 else "FAIL"
     except Exception as error:
         report["error"] = str(error)
         report["status"] = "BLOCKED" if "BLOCKED" in str(error) else "FAIL"

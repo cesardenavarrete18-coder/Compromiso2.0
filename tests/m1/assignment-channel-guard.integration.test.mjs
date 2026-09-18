@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { PgSession, sqlLiteral as q, TIMEOUT_SCALE } from './harness/pg-session.mjs';
+import { installContactRegression } from './harness/contact-regression.mjs';
 import {
   ACTORS as A, LEADS as L, GATE_REVISION,
   installChannelBaselineAndCandidates, seedChannelData, asActor,
@@ -59,6 +60,7 @@ test('Assignment channel guard: 23 real PostgreSQL cases using actual A+B comman
   let lastAck;
   try {
     await installChannelBaselineAndCandidates(db, 2, ['assignment-runtime/appraisal-overlay.sql']);
+    await installContactRegression(db, t);
     assert.equal(await db.scalar(`SELECT has_function_privilege('authenticated','public.crm_submit_command(jsonb)','EXECUTE')`), 'f');
     await seedChannelData(db);
     // Explicit local test capability only. Installed product remains closed.

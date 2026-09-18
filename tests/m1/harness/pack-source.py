@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Create a deterministic, credential-free M1 validation source archive.
 
-Only the three certified migrations, explicitly declared assignment candidates,
+Only the three certified migrations, explicitly declared assignment/contact candidates,
 runtime contract and M1 tests/fixtures are included. No repository config,
 environment, git directory, data dump, production
 manifest, provider token or dependency installation is copied.
@@ -13,8 +13,10 @@ import io
 import json
 import pathlib
 import subprocess
+import sys
 import tarfile
 
+sys.dont_write_bytecode = True
 from candidate_plan import CANDIDATE_MIGRATIONS_BY_SUITE, all_candidate_migrations, candidate_migrations_for
 
 REPO = pathlib.Path(__file__).resolve().parents[3]
@@ -42,6 +44,9 @@ def main():
     assignment_contract = REPO / "supabase/functions/_shared/crm-runtime/assignment-contracts.mjs"
     if assignment_contract.is_file():
         selected.append(assignment_contract)
+    contact_contract = REPO / "supabase/functions/_shared/crm-runtime/contact-next-action-contracts.mjs"
+    if contact_contract.is_file():
+        selected.append(contact_contract)
     selected += sorted((REPO / "tests/m1").glob("*.mjs"))
     for directory, suffixes in (("harness", {".py", ".mjs", ".c", ".md"}), ("fixtures", {".sql", ".json", ".py"})):
         selected += sorted(path for path in (REPO / "tests/m1" / directory).rglob("*") if path.is_file() and path.suffix in suffixes)
@@ -58,7 +63,7 @@ def main():
     manifest = {
         "schema": "crm-m1-validation-source/1", "git_base_revision": revision,
         "source_has_uncommitted_changes": bool(dirty), "changed_paths": sorted(dirty),
-        "scope": "M1-01/M1-02/M1-03 regression and explicitly declared assignment candidate validation; no production",
+        "scope": "M1-01/M1-02/M1-03 regression and explicitly declared assignment/contact candidate validation; no production",
         "candidate_migrations_by_suite": ({args.suite: candidates} if args.suite else CANDIDATE_MIGRATIONS_BY_SUITE),
         "files": [{"path": name, "sha256": hashlib.sha256(content).hexdigest(), "size": len(content)}
                   for name, content in sorted(entries.items())],

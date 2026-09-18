@@ -1,0 +1,32 @@
+[
+  {
+    "name": "public.supervisor_manage_lead",
+    "definition_sha256": "a14d3183f263346631c2d1b56ed64dd67dc306b5700945ea813e8c3fb8f184c9",
+    "source": "m01-current-sql-definitions.md (captured 2026-09-17)",
+    "signature": "CREATE OR REPLACE FUNCTION public.supervisor_manage_lead(p_lead_id uuid, p_action text, p_status text DEFAULT NULL::text, p_priority text DEFAULT NULL::text, p_note text DEFAULT ''::text, p_next_contact_at timestamp with time zone DEFAULT NULL::timestamp with time zone, p_next_contact_note text DEFAULT ''::text, p_contact_outcome text DEFAULT ''::text, p_desist_reason text DEFAULT NULL::text)"
+  },
+  {
+    "name": "public.restart_lead_contact_sequence",
+    "definition_sha256": "660ecf1c959061264f8f31490b45411b07fd05e02c458143bef96f24fc44f822",
+    "source": "m01-current-sql-definitions.md (captured 2026-09-17)",
+    "signature": "CREATE OR REPLACE FUNCTION public.restart_lead_contact_sequence(p_lead_id uuid)"
+  },
+  {
+    "name": "public.reconcile_lead_contact_protocol",
+    "definition_sha256": "4a09892521f301f7668aab2a37821c7a7c25fb528f4231ef76a1b1a9f7dc07c4",
+    "source": "m01-current-sql-definitions.md (captured 2026-09-17)",
+    "signature": "CREATE OR REPLACE FUNCTION public.reconcile_lead_contact_protocol(p_lead_id uuid)"
+  },
+  {
+    "name": "public.start_no_contact_protocol_from_future",
+    "definition_sha256": "0a8ec765969442607288401d40753a3d74f5f71107da3c7b4e628f73c11a75ef",
+    "source": "m01-current-sql-definitions.md (captured 2026-09-17)",
+    "signature": "CREATE OR REPLACE FUNCTION public.start_no_contact_protocol_from_future(p_lead_id uuid)"
+  },
+  {
+    "name": "public.record_recall_attempt",
+    "definition_sha256": "9e14c00929958e0f14b28ef783a6c0e240747d01d34b828618e9756dc58da3f7",
+    "source": "m01-current-sql-definitions.md (captured 2026-09-17)",
+    "signature": "CREATE OR REPLACE FUNCTION public.record_recall_attempt(p_item_id uuid, p_time_band text, p_outcome text, p_contacted_at timestamp with time zone, p_note text DEFAULT ''::text, p_next_contact_at timestamp with time zone DEFAULT NULL::timestamp with time zone, p_next_contact_note text DEFAULT ''::text)"
+  }
+]

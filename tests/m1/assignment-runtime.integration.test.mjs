@@ -6,6 +6,7 @@ import path from 'node:path';
 import { hashCommandIntent } from '../../supabase/functions/_shared/crm-runtime/contracts.mjs';
 import { hashAssignmentCommandIntent } from '../../supabase/functions/_shared/crm-runtime/assignment-contracts.mjs';
 import { PgSession, sqlLiteral as q, sqlJson, TIMEOUT_SCALE } from './harness/pg-session.mjs';
+import { installContactRegression } from './harness/contact-regression.mjs';
 
 // Actual PostgreSQL acceptance, on captured legacy bodies. The runner supplies a
 // fresh schema-B database plus only the three certified foundation migrations.
@@ -311,6 +312,7 @@ test('M1-04A: actual assignment/transfer command acceptance (27 required cases)'
       }
     });
 
+    await installContactRegression(db, t);
     await t.test('A26: inactive installation retains characterized legacy transfer reset; runtime gate inactive rejects', async () => {
       assert.deepEqual(await legacyTransferShape(db), legacyShape);
       // Test-only gateway access, never supplied by a product migration.

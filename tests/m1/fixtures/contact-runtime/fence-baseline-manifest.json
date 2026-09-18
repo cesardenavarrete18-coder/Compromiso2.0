@@ -1,0 +1,267 @@
+[
+  {
+    "signature": "private.cancel_lead_contact_protocol(uuid,text)",
+    "source_file": "m01-current-sql-definitions.md",
+    "prosrc_md5": "35c8d8a86580a2bcb9010c6b546e3cf9",
+    "prosrc_sha256": "3ba9d07a5101c6fe8ce3d4704c357774c74bf0c0edbb146b6e20e7017c545ff9",
+    "owner": "postgres",
+    "security_definer": true,
+    "acl": [
+      "postgres=X/postgres"
+    ]
+  },
+  {
+    "signature": "private.classify_completed_contact_protocol()",
+    "source_file": "m01-current-sql-definitions.md",
+    "prosrc_md5": "2b380d46640508dfcb0b6909fe5f27d0",
+    "prosrc_sha256": "43a6a55fadb94b76ef6e92a90539c1cb8014a43528847b9f1281663a1a54af9b",
+    "owner": "postgres",
+    "security_definer": true,
+    "acl": [
+      "postgres=X/postgres"
+    ]
+  },
+  {
+    "signature": "private.classify_exhausted_contact_protocol(uuid,uuid,text)",
+    "source_file": "m01-current-sql-definitions.md",
+    "prosrc_md5": "535fd72fd7181f8214a6478f608b6d7c",
+    "prosrc_sha256": "16967c95f345e4d022bba15283ed643d73f5016a2d96c9257e4abee6f6343f1d",
+    "owner": "postgres",
+    "security_definer": true,
+    "acl": [
+      "postgres=X/postgres"
+    ]
+  },
+  {
+    "signature": "private.create_lead_contact_sequence(uuid,uuid,timestamp with time zone)",
+    "source_file": "m01-current-sql-definitions.md",
+    "prosrc_md5": "4df2ba9ae29d71297f933e7c9ac66053",
+    "prosrc_sha256": "ff6bac4d15063eb2d6a2746df34a8279b42a33f293f4a417866ad21c3191e5d9",
+    "owner": "postgres",
+    "security_definer": true,
+    "acl": [
+      "postgres=X/postgres"
+    ]
+  },
+  {
+    "signature": "private.enforce_en_gestion_next_contact()",
+    "source_file": "m01-current-sql-definitions.md",
+    "prosrc_md5": "c516e81a1494060f6899759938c9a204",
+    "prosrc_sha256": "5c2596bf90f942424712d5b52548c697a56b4c2ea2c0a68fea5dca469d3d7466",
+    "owner": "postgres",
+    "security_definer": false,
+    "acl": [
+      "postgres=X/postgres"
+    ]
+  },
+  {
+    "signature": "private.ensure_lead_customer()",
+    "source_file": "m01-current-sql-definitions.md",
+    "prosrc_md5": "61336cb9e76a26a39f84f4f5c00b107b",
+    "prosrc_sha256": "16d6edef58a277cdbd1b17153f306ea88c969385a729d52d950b39fd4a229928",
+    "owner": "postgres",
+    "security_definer": true,
+    "acl": [
+      "postgres=X/postgres"
+    ]
+  },
+  {
+    "signature": "private.keep_protocol_deadlines_out_of_manual_agenda()",
+    "source_file": "m01-current-sql-definitions.md",
+    "prosrc_md5": "50baad34e98737b87b77caedb4639f01",
+    "prosrc_sha256": "367672e43eb52799bc3b82a5ef0db367f51b8857277ca9526f5b539085775019",
+    "owner": "postgres",
+    "security_definer": true,
+    "acl": [
+      "postgres=X/postgres"
+    ]
+  },
+  {
+    "signature": "private.sync_contact_sequence_with_status()",
+    "source_file": "m01-current-sql-definitions.md",
+    "prosrc_md5": "1e146d77f5395a1663928b7014e7c4d2",
+    "prosrc_sha256": "85a96b40c3f4e7e8351406ab932cf0e2d997bf81dc0f0d4c6dffdeaf2485513f",
+    "owner": "postgres",
+    "security_definer": true,
+    "acl": [
+      "postgres=X/postgres"
+    ]
+  },
+  {
+    "signature": "private.sync_protocol_next_action(uuid,uuid)",
+    "source_file": "m01-current-sql-definitions.md",
+    "prosrc_md5": "ccbfedd011059c2550768bb93cd0891b",
+    "prosrc_sha256": "505cf8ed488c5ffd4620b1ce0ac3f446c736041e1f1f3b1194f1cbc0d9a4b612",
+    "owner": "postgres",
+    "security_definer": true,
+    "acl": [
+      "postgres=X/postgres"
+    ]
+  },
+  {
+    "signature": "public.complete_contact_task(uuid,text,text)",
+    "source_file": "supabase/migrations/20260918033407_m1_assignment_commands.sql",
+    "prosrc_md5": "d552badd3ad44c9fcdcf49cecb3dcd00",
+    "prosrc_sha256": "accfcd7627a5c332654542bba937c835845369c7d41c001e369f59c2e5b6edd8",
+    "owner": "postgres",
+    "security_definer": true,
+    "acl": [
+      "postgres=X/postgres",
+      "service_role=X/postgres"
+    ]
+  },
+  {
+    "signature": "public.complete_contact_task_with_follow_up(uuid,text,text,timestamp with time zone,text)",
+    "source_file": "m01-current-sql-definitions.md",
+    "prosrc_md5": "d7b5f3b5164afad82e1cd0ce0b218c7d",
+    "prosrc_sha256": "0ec8901e721d88d9ab2b6f300fdbd175f87d22297bbcb87fb39512a826fb2759",
+    "owner": "postgres",
+    "security_definer": true,
+    "acl": [
+      "authenticated=X/postgres",
+      "postgres=X/postgres",
+      "service_role=X/postgres"
+    ]
+  },
+  {
+    "signature": "public.record_contact_answer_with_transition(uuid,text,text,text,timestamp with time zone,text,text,timestamp with time zone,text,numeric,text,timestamp with time zone,text,text,text)",
+    "source_file": "m01-current-sql-definitions.md",
+    "prosrc_md5": "b29d080fc94a279f1b28d881322c9530",
+    "prosrc_sha256": "eff3be89d03faf15d3d079a9e6706a9001a885f26abdb4107b870131aa0e7c16",
+    "owner": "postgres",
+    "security_definer": true,
+    "acl": [
+      "authenticated=X/postgres",
+      "postgres=X/postgres",
+      "service_role=X/postgres"
+    ]
+  },
+  {
+    "signature": "public.record_contact_answer_with_transition(uuid,text,text,timestamp with time zone,text,text,timestamp with time zone,text,numeric,text,timestamp with time zone,text,text,text)",
+    "source_file": "supabase/migrations/20260918033407_m1_assignment_commands.sql",
+    "prosrc_md5": "4355de2adfe5b23e9326bf2e7601b400",
+    "prosrc_sha256": "c74ec9a47879f9ea2090b876740cee4c035783dac776730be10bf0e86b7724db",
+    "owner": "postgres",
+    "security_definer": true,
+    "acl": [
+      "authenticated=X/postgres",
+      "postgres=X/postgres",
+      "service_role=X/postgres"
+    ]
+  },
+  {
+    "signature": "public.record_contact_task_result(uuid,text,text,timestamp with time zone)",
+    "source_file": "m01-current-sql-definitions.md",
+    "prosrc_md5": "385b4b880f68aaa586cc6686910df08d",
+    "prosrc_sha256": "54cb708465d981413398d4d262b3192a5ef04183b1d03b358d4daaff5431ba0c",
+    "owner": "postgres",
+    "security_definer": true,
+    "acl": [
+      "authenticated=X/postgres",
+      "postgres=X/postgres",
+      "service_role=X/postgres"
+    ]
+  },
+  {
+    "signature": "public.record_lead_follow_up(uuid,text,text,timestamp with time zone,text,text,timestamp with time zone,text,numeric,text,text,text,text,text)",
+    "source_file": "supabase/migrations/20260918033407_m1_assignment_commands.sql",
+    "prosrc_md5": "4991b76f765a7570f7f65cb591c20b92",
+    "prosrc_sha256": "10c3d9788ea456dd1b3d58348cf2d85936e6265925eeea2a347bf9b968311426",
+    "owner": "postgres",
+    "security_definer": true,
+    "acl": [
+      "authenticated=X/postgres",
+      "postgres=X/postgres",
+      "service_role=X/postgres"
+    ]
+  },
+  {
+    "signature": "public.refresh_due_contact_protocols()",
+    "source_file": "supabase/migrations/20260918033407_m1_assignment_commands.sql",
+    "prosrc_md5": "5ad7edd955935b946e7b2f642ac441ee",
+    "prosrc_sha256": "f0176e8e0b6568107867f038a9938982223d7ac6103c01292a803e086067e887",
+    "owner": "postgres",
+    "security_definer": true,
+    "acl": [
+      "authenticated=X/postgres",
+      "postgres=X/postgres",
+      "service_role=X/postgres"
+    ]
+  },
+  {
+    "signature": "public.reconcile_lead_contact_protocol(uuid)",
+    "source_file": "m01-current-sql-definitions.md",
+    "prosrc_md5": "adb686286ed68a179e306d689128f2a6",
+    "prosrc_sha256": "0702104777540c5494aa52fa9d181b140342e6fdafb1e4396f57a9d2072471c2",
+    "owner": "postgres",
+    "security_definer": true,
+    "acl": [
+      "authenticated=X/postgres",
+      "postgres=X/postgres",
+      "service_role=X/postgres"
+    ]
+  },
+  {
+    "signature": "public.record_recall_attempt(uuid,text,text,timestamp with time zone,text,timestamp with time zone,text)",
+    "source_file": "m01-current-sql-definitions.md",
+    "prosrc_md5": "df3bf63be03d363c287ed1c1ae601b66",
+    "prosrc_sha256": "49f8abc5accd95b93ccfc78ba95a075f788ef7aa7723fb313fcf1a77a8f1cad8",
+    "owner": "postgres",
+    "security_definer": true,
+    "acl": [
+      "authenticated=X/postgres",
+      "postgres=X/postgres",
+      "service_role=X/postgres"
+    ]
+  },
+  {
+    "signature": "public.restart_lead_contact_sequence(uuid)",
+    "source_file": "m01-current-sql-definitions.md",
+    "prosrc_md5": "b3ff1f1235718f514e3bf2e171ea896a",
+    "prosrc_sha256": "546f5f560685808fc87f4a708cb8fb48c2e2620291a46bf211620e3bd5041392",
+    "owner": "postgres",
+    "security_definer": true,
+    "acl": [
+      "authenticated=X/postgres",
+      "postgres=X/postgres",
+      "service_role=X/postgres"
+    ]
+  },
+  {
+    "signature": "public.start_no_contact_protocol_from_future(uuid)",
+    "source_file": "m01-current-sql-definitions.md",
+    "prosrc_md5": "abeb15a817e3cc82da752efc42a54fb1",
+    "prosrc_sha256": "a8bb094c105ce060cf32fd9d4335c81e496ab9dd6e72f5ea0f0451af55439cf4",
+    "owner": "postgres",
+    "security_definer": true,
+    "acl": [
+      "authenticated=X/postgres",
+      "postgres=X/postgres",
+      "service_role=X/postgres"
+    ]
+  },
+  {
+    "signature": "public.supervisor_manage_lead(uuid,text,text,text,text,timestamp with time zone,text,text,text)",
+    "source_file": "m01-current-sql-definitions.md",
+    "prosrc_md5": "1526945f104c3f95c90e2613cecef606",
+    "prosrc_sha256": "28228c5eaf8fc6fe802347b8164ccdb290557bf21ba10adb0d741f5cde95ecee",
+    "owner": "postgres",
+    "security_definer": true,
+    "acl": [
+      "authenticated=X/postgres",
+      "postgres=X/postgres",
+      "service_role=X/postgres"
+    ]
+  },
+  {
+    "signature": "private.crm_assignment_guard_commercial_seller()",
+    "source_file": "supabase/migrations/20260918033407_m1_assignment_commands.sql",
+    "prosrc_md5": "a1ea0b4a9425dfcce386e94db0d2728c",
+    "prosrc_sha256": "9b37f0abb39c2416bcf5d24be093c2cf17a661368a4bd6773a6eb0d630bc1784",
+    "owner": "postgres",
+    "security_definer": true,
+    "acl": [
+      "postgres=X/postgres"
+    ]
+  }
+]
