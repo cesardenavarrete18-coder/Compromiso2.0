@@ -1,0 +1,130 @@
+{
+  "harness": "crm-m1-unix-seccomp/2",
+  "run_id": "8fae13c8-0970-47b2-9164-8b1b7bcb3f3c",
+  "suite": "assignment-channel-prerequisite.integration.test.mjs",
+  "source_manifest": {
+    "sha256": "0816ce96e336c5037270fc493b73c0eb71a48fc1b06394e26f837c068d4419a9",
+    "git_base_revision": "ef4b59b86467f3c29064e02f3cf22127a2a20f97",
+    "source_has_uncommitted_changes": true
+  },
+  "fixture_layer": "B_plus_synthetic_assignment_data",
+  "bootstrap_source": "tests/m1/fixtures/schema-baseline-b/bootstrap.sql",
+  "bootstrap_sha256": "8ea22a1e8b4cd6559732331ca66ac2728d90f58e11ada4f344c398040608c5e6",
+  "cluster_per_suite": true,
+  "bootstrap_user": "supabase_admin",
+  "migration_installation": "runner_installs_all_three",
+  "timeout_scale": 3.0,
+  "status": "PASS",
+  "remote_database": false,
+  "external_egress": false,
+  "requested_database_major": 17,
+  "requested_uid": 65534,
+  "database_started": true,
+  "migrations_applied": [
+    "20260917154844_m1_runtime_authority_foundation.sql",
+    "20260917154854_m1_private_capabilities.sql",
+    "20260917154905_m1_command_receipts_events.sql"
+  ],
+  "integration_tests_executed": true,
+  "migration_sha256": {
+    "20260917154844_m1_runtime_authority_foundation.sql": "6dbb4e1c6a0c8da22de49424fdf965f46e74e85dad0e822a6201b2ec31f09d49",
+    "20260917154854_m1_private_capabilities.sql": "6154b2dd302d1f5793ea5c9b4151a1423f4f5b956e688ae7089bf8f00b80cd60",
+    "20260917154905_m1_command_receipts_events.sql": "433615402b82cbc5b85cd4f168c0b96ff48658de84cfdadad56b02616f7bf9e7"
+  },
+  "candidate_migration_sha256": {
+    "20260918033251_m1_assignment_adoption_guard.sql": "89bd8e0a1e8ecfaad13077780da576612f81fc34bf94347bfd7ea0104ae654be"
+  },
+  "candidate_installation": "suite_controlled_verbatim",
+  "candidate_validation_stage": "guard_prerequisite_only",
+  "postgres_binary_sha256": "23cd174849b273064c47d581b55be596be2f5cf0ee5d3e76c0146e2464bf873a",
+  "guard_source_sha256": "589dc0aece8cee8e104a7c3a8c27d6e13ca858518bdf74d0454e67c90cb53fd9",
+  "guard_binary_sha256": "d48cf6d387092c71323d7e6a24af26c582d7bc0103545cd3614641e9608183f7",
+  "guard_precompiled": true,
+  "suite_sha256": {
+    "tests/m1/assignment-channel-prerequisite.integration.test.mjs": "7f7ab9b3e824206e43cca76fe09763ba44c5f7d0d51624afa3c89a96be6b1b65"
+  },
+  "limits": [
+    "Guard prerequisite evidence only; this does not certify the final command-based guard matrix or M1-04A.",
+    "Only the selected assignment candidate boundary is exercised; no sender, frontend, production authority or wider CRM certification.",
+    "Database effects occur only in the disposable local cluster."
+  ],
+  "postgres_version": "postgres (PostgreSQL) 17.6",
+  "unix_socket_available": true,
+  "uid_map": [
+    [
+      0,
+      0,
+      4294967295
+    ]
+  ],
+  "gid_map": [
+    [
+      0,
+      0,
+      4294967295
+    ]
+  ],
+  "environment_keys": [
+    "LANG",
+    "LC_ALL",
+    "LD_LIBRARY_PATH",
+    "M1_LIBPQ_PATH",
+    "M1_PYTHON_BIN",
+    "M1_TEST_BOOTSTRAP_USER",
+    "M1_TEST_CANDIDATE_MIGRATIONS",
+    "M1_TEST_DATABASE",
+    "M1_TEST_FIXTURE_DIR",
+    "M1_TEST_ISOLATED",
+    "M1_TEST_MIGRATION_DIR",
+    "M1_TEST_PORT",
+    "M1_TEST_RUN_ID",
+    "M1_TEST_SOCKET_DIR",
+    "M1_TEST_TIMEOUT_SCALE",
+    "PATH",
+    "PGPASSFILE",
+    "PGSERVICEFILE",
+    "PYTHONNOUSERSITE",
+    "TZ"
+  ],
+  "isolation": {
+    "ok": true,
+    "columns": [
+      "listen_addresses",
+      "marker",
+      "unix_socket"
+    ],
+    "rows": [
+      [
+        "",
+        "8fae13c8-0970-47b2-9164-8b1b7bcb3f3c",
+        "t"
+      ]
+    ],
+    "affected": "1",
+    "id": 1
+  },
+  "migration_role": {
+    "ok": true,
+    "columns": [
+      "rolname",
+      "rolsuper",
+      "rolcreaterole",
+      "rolbypassrls"
+    ],
+    "rows": [
+      [
+        "postgres",
+        "f",
+        "t",
+        "t"
+      ]
+    ],
+    "affected": "1",
+    "id": 1
+  },
+  "test_exit_code": 0,
+  "tap": "TAP version 13\n# Subtest: Assignment channel prerequisite A: real legacy RPC/RLS, durable adoption and old SQL snapshots; NOT full 23-case acceptance\n    # Subtest: P01: captured legacy channel closure and candidate A install verbatim as non-superuser with zero adoption or authority seeds\n    ok 1 - P01: captured legacy channel closure and candidate A install verbatim as non-superuser with zero adoption or authority seeds\n      ---\n      duration_ms: 2985.35511\n      type: 'test'\n      ...\n    # Subtest: P02: legacy owner retains helper/control access and actual mode RPC; nonowner is denied atomically\n    ok 2 - P02: legacy owner retains helper/control access and actual mode RPC; nonowner is denied atomically\n      ---\n      duration_ms: 314.34949\n      type: 'test'\n      ...\n    # Subtest: P03: active admin and supervisor retain actual legacy mode RPC behavior\n    ok 3 - P03: active admin and supervisor retain actual legacy mode RPC behavior\n      ---\n      duration_ms: 196.11418\n      type: 'test'\n      ...\n    # Subtest: P04: runtime metadata and even an authoritative gate alone are not durable adoption\n    ok 4 - P04: runtime metadata and even an authoritative gate alone are not durable adoption\n      ---\n      duration_ms: 119.32724\n      type: 'test'\n      ...\n    # Subtest: P05: controlled adoption records server-derived cutover provenance and denies owner through helper, RLS and the real legacy mode RPC\n    ok 5 - P05: controlled adoption records server-derived cutover provenance and denies owner through helper, RLS and the real legacy mode RPC\n      ---\n      duration_ms: 370.55467\n      type: 'test'\n      ...\n    # Subtest: P06: the restriction needs no conversation state row or channel authority mutation\n    ok 6 - P06: the restriction needs no conversation state row or channel authority mutation\n      ---\n      duration_ms: 232.13715\n      type: 'test'\n      ...\n    # Subtest: P07: pausing the gate and retrying the same technical adoption cannot restore seller capability\n    ok 7 - P07: pausing the gate and retrying the same technical adoption cannot restore seller capability\n      ---\n      duration_ms: 357.1093\n      type: 'test'\n      ...\n    # Subtest: P08: durable evidence rejects UPDATE/DELETE/TRUNCATE and survives rollback of a later gate transaction\n    ok 8 - P08: durable evidence rejects UPDATE/DELETE/TRUNCATE and survives rollback of a later gate transaction\n      ---\n      duration_ms: 238.62268\n      type: 'test'\n      ...\n    # Subtest: P09: authenticated seller cannot write adoption/runtime/gates, assume owner role or invoke the technical adoption capability\n    ok 9 - P09: authenticated seller cannot write adoption/runtime/gates, assume owner role or invoke the technical adoption capability\n      ---\n      duration_ms: 107.02597\n      type: 'test'\n      ...\n    # Subtest: P10: actor metadata, arbitrary GUCs and request-header claims cannot remove the durable restriction\n    ok 10 - P10: actor metadata, arbitrary GUCs and request-header claims cannot remove the durable restriction\n      ---\n      duration_ms: 195.85604\n      type: 'test'\n      ...\n    # Subtest: P11: inactive seller is denied on both legacy and adopted ownership\n    ok 11 - P11: inactive seller is denied on both legacy and adopted ownership\n      ---\n      duration_ms: 260.71103\n      type: 'test'\n      ...\n    # Subtest: P12: adoption preserves active admin/supervisor behavior and does not touch M1 channel state or epoch\n    ok 12 - P12: adoption preserves active admin/supervisor behavior and does not touch M1 channel state or epoch\n      ---\n      duration_ms: 320.15432\n      type: 'test'\n      ...\n    # Subtest: P13: real READ COMMITTED mode RPC holds the lead permission lock; technical adoption waits then revokes the old seller session\n    ok 13 - P13: real READ COMMITTED mode RPC holds the lead permission lock; technical adoption waits then revokes the old seller session\n      ---\n      duration_ms: 924.8879\n      type: 'test'\n      ...\n    # Subtest: P14: real old REPEATABLE READ snapshot cannot use the legacy mode RPC after adoption; serialization failure precedes channel writes\n    ok 14 - P14: real old REPEATABLE READ snapshot cannot use the legacy mode RPC after adoption; serialization failure precedes channel writes\n      ---\n      duration_ms: 786.07402\n      type: 'test'\n      ...\n    # Subtest: P15: old REPEATABLE READ cannot truncate assignment history inserted and adopted after its snapshot\n    ok 15 - P15: old REPEATABLE READ cannot truncate assignment history inserted and adopted after its snapshot\n      ---\n      duration_ms: 652.36299\n      type: 'test'\n      ...\n    # Subtest: P16: PostgREST-style READ ONLY transaction can evaluate legacy and adopted helper/control SELECT policies\n    ok 16 - P16: PostgREST-style READ ONLY transaction can evaluate legacy and adopted helper/control SELECT policies\n      ---\n      duration_ms: 89.15\n      type: 'test'\n      ...\n    1..16\nok 1 - Assignment channel prerequisite A: real legacy RPC/RLS, durable adoption and old SQL snapshots; NOT full 23-case acceptance\n  ---\n  duration_ms: 8327.40839\n  type: 'test'\n  ...\n# {\"stage\":\"A_PREREQUISITE_ONLY\",\"candidate\":\"20260918033251_m1_assignment_adoption_guard.sql\",\"baseline\":\"B_plus_observed_channel_and_assignment_schema\",\"synthetic_leads\":10,\"network_provider_calls\":0}\n# {\"stage\":\"A_PREREQUISITE_ONLY\",\"old_snapshot_isolation\":\"repeatable read\",\"actual_mode_rpc_sqlstate\":\"40001\",\"provider_calls\":0,\"after_rollback_seller_denied\":true}\n1..1\n# tests 17\n# suites 0\n# pass 17\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 9486.78692\n",
+  "stderr": "",
+  "duration_seconds": 28.832,
+  "temporary_cluster_retained": null
+}

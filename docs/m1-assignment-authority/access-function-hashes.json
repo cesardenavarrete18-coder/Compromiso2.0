@@ -1,0 +1,83 @@
+{
+  "source": "m01-db-baseline.json",
+  "scope": "Four legacy authorization/lock adaptations, three read policies, three seller mutation guards.",
+  "functions": [
+    {
+      "signature": "public.complete_contact_task(uuid, text, text)",
+      "before_sha256": "1fa03660a0d5bcbc4decadb41c91a07a13916663ef1ff13750625db5d039bbc8",
+      "after_pg_get_functiondef_expected_sha256": "000d2e2ff136d9b9c5fed31f57ac78ea2670d4b50cfc1478c61276d9dc591505",
+      "owner_before_after": "postgres",
+      "acl_before_after": [
+        "postgres=X/postgres",
+        "service_role=X/postgres"
+      ]
+    },
+    {
+      "signature": "public.record_contact_answer_with_transition(uuid, text, text, timestamp with time zone, text, text, timestamp with time zone, text, numeric, text, timestamp with time zone, text, text, text)",
+      "before_sha256": "d5698692879313b264637d5e3a702d69619aa77c548602aac6fddfee1ba6a0c1",
+      "after_pg_get_functiondef_expected_sha256": "19bd4539543f0141f79bd183458300cb19c662b1e133afdb88bb0bfce3dc6f7c",
+      "owner_before_after": "postgres",
+      "acl_before_after": [
+        "authenticated=X/postgres",
+        "postgres=X/postgres",
+        "service_role=X/postgres"
+      ]
+    },
+    {
+      "signature": "public.record_lead_follow_up(uuid, text, text, timestamp with time zone, text, text, timestamp with time zone, text, numeric, text, text, text, text, text)",
+      "before_sha256": "19804c2875930510189e74972ee81a78aa4460386fd657082449aff353d4e99d",
+      "after_pg_get_functiondef_expected_sha256": "7990cc2c396ae9c11f5d8484b58e5300a7a02ddbf60031e8dd3684fcbb0604d2",
+      "owner_before_after": "postgres",
+      "acl_before_after": [
+        "authenticated=X/postgres",
+        "postgres=X/postgres",
+        "service_role=X/postgres"
+      ]
+    },
+    {
+      "signature": "public.refresh_due_contact_protocols()",
+      "before_sha256": "e3cf722ebcafefee14eefd350aa80a8fdf68fec300dcb131c541fd68cd9c7bfc",
+      "after_pg_get_functiondef_expected_sha256": "718f381880ed832ca19f976690569e59ea2371a73a33a399c8581d735fb3e9fa",
+      "owner_before_after": "postgres",
+      "acl_before_after": [
+        "authenticated=X/postgres",
+        "postgres=X/postgres",
+        "service_role=X/postgres"
+      ]
+    }
+  ],
+  "policies": [
+    {
+      "table": "lead_assignments",
+      "name": "lead_assignments_read_management_or_owner",
+      "before": "(private.current_user_active() AND ((seller_user_id = ( SELECT auth.uid() AS uid)) OR private.current_user_is_management()))",
+      "after": "((private.current_user_active() AND ((seller_user_id = ( SELECT auth.uid() AS uid)) OR private.current_user_is_management()))) OR private.crm_assignment_current_owner_read(lead_id)",
+      "historical_read_preserved": true
+    },
+    {
+      "table": "lead_contact_sequences",
+      "name": "lead_contact_sequences_read_management_or_owner",
+      "before": "(private.current_user_active() AND ((seller_user_id = ( SELECT auth.uid() AS uid)) OR private.current_user_is_management()))",
+      "after": "((private.current_user_active() AND ((seller_user_id = ( SELECT auth.uid() AS uid)) OR private.current_user_is_management()))) OR private.crm_assignment_current_owner_read(lead_id)",
+      "historical_read_preserved": true
+    },
+    {
+      "table": "lead_contact_tasks",
+      "name": "lead_contact_tasks_read_management_or_owner",
+      "before": "(private.current_user_active() AND ((seller_user_id = ( SELECT auth.uid() AS uid)) OR private.current_user_is_management()))",
+      "after": "((private.current_user_active() AND ((seller_user_id = ( SELECT auth.uid() AS uid)) OR private.current_user_is_management()))) OR private.crm_assignment_current_owner_read(lead_id)",
+      "historical_read_preserved": true
+    }
+  ],
+  "new_functions": [
+    "private.crm_assignment_assert_current_owner(uuid)",
+    "private.crm_assignment_current_owner_read(uuid)",
+    "private.crm_assignment_guard_commercial_seller()"
+  ],
+  "guard_tables": [
+    "public.lead_crm",
+    "public.sales_quotes",
+    "public.vehicle_appraisals"
+  ],
+  "validation": "Source transformation checked; PostgreSQL compilation and behavior require the isolated root harness."
+}

@@ -1,0 +1,131 @@
+{
+  "harness": "crm-m1-unix-seccomp/2",
+  "run_id": "a439d317-b7c0-43b9-9f30-29629b56609a",
+  "suite": "assignment-runtime.integration.test.mjs",
+  "source_manifest": {
+    "sha256": "14e93142c1bd4183adb2d838da84dcc16eeef4e3275b71ca1003f8fafb11bc0c",
+    "git_base_revision": "ef4b59b86467f3c29064e02f3cf22127a2a20f97",
+    "source_has_uncommitted_changes": true
+  },
+  "fixture_layer": "B_plus_synthetic_assignment_data",
+  "bootstrap_source": "tests/m1/fixtures/schema-baseline-b/bootstrap.sql",
+  "bootstrap_sha256": "8ea22a1e8b4cd6559732331ca66ac2728d90f58e11ada4f344c398040608c5e6",
+  "cluster_per_suite": true,
+  "bootstrap_user": "supabase_admin",
+  "migration_installation": "runner_installs_all_three",
+  "timeout_scale": 3.0,
+  "status": "PASS",
+  "remote_database": false,
+  "external_egress": false,
+  "requested_database_major": 17,
+  "requested_uid": 65534,
+  "database_started": true,
+  "migrations_applied": [
+    "20260917154844_m1_runtime_authority_foundation.sql",
+    "20260917154854_m1_private_capabilities.sql",
+    "20260917154905_m1_command_receipts_events.sql"
+  ],
+  "integration_tests_executed": true,
+  "migration_sha256": {
+    "20260917154844_m1_runtime_authority_foundation.sql": "6dbb4e1c6a0c8da22de49424fdf965f46e74e85dad0e822a6201b2ec31f09d49",
+    "20260917154854_m1_private_capabilities.sql": "6154b2dd302d1f5793ea5c9b4151a1423f4f5b956e688ae7089bf8f00b80cd60",
+    "20260917154905_m1_command_receipts_events.sql": "433615402b82cbc5b85cd4f168c0b96ff48658de84cfdadad56b02616f7bf9e7"
+  },
+  "candidate_migration_sha256": {
+    "20260918033251_m1_assignment_adoption_guard.sql": "89bd8e0a1e8ecfaad13077780da576612f81fc34bf94347bfd7ea0104ae654be",
+    "20260918033407_m1_assignment_commands.sql": "f8760de6053cdb2d56ec23e6b1d4c7bf7efbfaa31ed174bd7ddaf22f21c0b9bf"
+  },
+  "candidate_installation": "suite_controlled_verbatim",
+  "candidate_validation_stage": "assignment_acceptance_candidate",
+  "postgres_binary_sha256": "23cd174849b273064c47d581b55be596be2f5cf0ee5d3e76c0146e2464bf873a",
+  "guard_source_sha256": "589dc0aece8cee8e104a7c3a8c27d6e13ca858518bdf74d0454e67c90cb53fd9",
+  "guard_binary_sha256": "d48cf6d387092c71323d7e6a24af26c582d7bc0103545cd3614641e9608183f7",
+  "guard_precompiled": true,
+  "suite_sha256": {
+    "tests/m1/assignment-runtime.integration.test.mjs": "28c9d83096294a0d25c7095205764821a48999da2a37705ed33966d982e94b4d"
+  },
+  "limits": [
+    "Schema B plus observed overlays and synthetic assignment data; candidate DDL is suite-controlled, no production rows or Supabase REST gateway.",
+    "Only the selected assignment candidate boundary is exercised; no sender, frontend, production authority or wider CRM certification.",
+    "Database effects occur only in the disposable local cluster."
+  ],
+  "postgres_version": "postgres (PostgreSQL) 17.6",
+  "unix_socket_available": true,
+  "uid_map": [
+    [
+      0,
+      0,
+      4294967295
+    ]
+  ],
+  "gid_map": [
+    [
+      0,
+      0,
+      4294967295
+    ]
+  ],
+  "environment_keys": [
+    "LANG",
+    "LC_ALL",
+    "LD_LIBRARY_PATH",
+    "M1_LIBPQ_PATH",
+    "M1_PYTHON_BIN",
+    "M1_TEST_BOOTSTRAP_USER",
+    "M1_TEST_CANDIDATE_MIGRATIONS",
+    "M1_TEST_DATABASE",
+    "M1_TEST_FIXTURE_DIR",
+    "M1_TEST_ISOLATED",
+    "M1_TEST_MIGRATION_DIR",
+    "M1_TEST_PORT",
+    "M1_TEST_RUN_ID",
+    "M1_TEST_SOCKET_DIR",
+    "M1_TEST_TIMEOUT_SCALE",
+    "PATH",
+    "PGPASSFILE",
+    "PGSERVICEFILE",
+    "PYTHONNOUSERSITE",
+    "TZ"
+  ],
+  "isolation": {
+    "ok": true,
+    "columns": [
+      "listen_addresses",
+      "marker",
+      "unix_socket"
+    ],
+    "rows": [
+      [
+        "",
+        "a439d317-b7c0-43b9-9f30-29629b56609a",
+        "t"
+      ]
+    ],
+    "affected": "1",
+    "id": 1
+  },
+  "migration_role": {
+    "ok": true,
+    "columns": [
+      "rolname",
+      "rolsuper",
+      "rolcreaterole",
+      "rolbypassrls"
+    ],
+    "rows": [
+      [
+        "postgres",
+        "f",
+        "t",
+        "t"
+      ]
+    ],
+    "affected": "1",
+    "id": 1
+  },
+  "test_exit_code": 0,
+  "tap": "TAP version 13\n# Subtest: M1-04A: actual assignment/transfer command acceptance (27 required cases)\n    # Subtest: A27: installing candidates changes no business rows, activates no gate and grants no API access\n    ok 1 - A27: installing candidates changes no business rows, activates no gate and grants no API access\n      ---\n      duration_ms: 865.03691\n      type: 'test'\n      ...\n    # Subtest: A26: inactive installation retains characterized legacy transfer reset; runtime gate inactive rejects\n    ok 2 - A26: inactive installation retains characterized legacy transfer reset; runtime gate inactive rejects\n      ---\n      duration_ms: 1012.23122\n      type: 'test'\n      ...\n    # Subtest: A01: genuine initial assignment succeeds without creating a protocol or acquiring a channel\n    ok 3 - A01: genuine initial assignment succeeds without creating a protocol or acquiring a channel\n      ---\n      duration_ms: 291.05399\n      type: 'test'\n      ...\n    # Subtest: A02: TransferLead A\u2192B changes future owner with a valid versioned command\n    ok 4 - A02: TransferLead A\u2192B changes future owner with a valid versioned command\n      ---\n      duration_ms: 565.78779\n      type: 'test'\n      ...\n    # Subtest: A03: Se\u00f1a and Cierre stages survive transfer without becoming Nuevo\n    ok 5 - A03: Se\u00f1a and Cierre stages survive transfer without becoming Nuevo\n      ---\n      duration_ms: 498.48967\n      type: 'test'\n      ...\n    # Subtest: A04: next action, its source and post-deposit appointment are preserved\n    ok 6 - A04: next action, its source and post-deposit appointment are preserved\n      ---\n      duration_ms: 5.12704\n      type: 'test'\n      ...\n    # Subtest: A05: interview facts and historical timestamps are preserved\n    ok 7 - A05: interview facts and historical timestamps are preserved\n      ---\n      duration_ms: 3.08325\n      type: 'test'\n      ...\n    # Subtest: A06: deposit amount, effective date and validation are unchanged\n    ok 8 - A06: deposit amount, effective date and validation are unchanged\n      ---\n      duration_ms: 2.92206\n      type: 'test'\n      ...\n    # Subtest: A07: active protocol IDs, started_at and historical seller survive intact\n    ok 9 - A07: active protocol IDs, started_at and historical seller survive intact\n      ---\n      duration_ms: 5.93739\n      type: 'test'\n      ...\n    # Subtest: A08: historical tasks, actors, performed_at and existing activity rows are not reattributed\n    ok 10 - A08: historical tasks, actors, performed_at and existing activity rows are not reattributed\n      ---\n      duration_ms: 63.8346\n      type: 'test'\n      ...\n    # Subtest: A09: transfer creates no protocol and cancels no existing task\n    ok 11 - A09: transfer creates no protocol and cancels no existing task\n      ---\n      duration_ms: 20.43171\n      type: 'test'\n      ...\n    # Subtest: A10: transfer has no start_lead_crm_cycle semantics or new cycle activity\n    ok 12 - A10: transfer has no start_lead_crm_cycle semantics or new cycle activity\n      ---\n      duration_ms: 38.0529\n      type: 'test'\n      ...\n    # Subtest: A11: assignment_epoch increments exactly once\n    ok 13 - A11: assignment_epoch increments exactly once\n      ---\n      duration_ms: 17.17343\n      type: 'test'\n      ...\n    # Subtest: A12: aggregate_version increments exactly once under the command contract\n    ok 14 - A12: aggregate_version increments exactly once under the command contract\n      ---\n      duration_ms: 11.38468\n      type: 'test'\n      ...\n    # Subtest: A13: exactly one assignment history row and command event identify the actual supervisor\n    ok 15 - A13: exactly one assignment history row and command event identify the actual supervisor\n      ---\n      duration_ms: 75.7929\n      type: 'test'\n      ...\n    # Subtest: A14: retries/double click preserve one Assign and Transfer effect; changed destination conflicts\n    ok 16 - A14: retries/double click preserve one Assign and Transfer effect; changed destination conflicts\n      ---\n      duration_ms: 277.6767\n      type: 'test'\n      ...\n    # Subtest: A15: former owner using an authenticated old identity cannot mutate an inherited pending task\n    ok 17 - A15: former owner using an authenticated old identity cannot mutate an inherited pending task\n      ---\n      duration_ms: 205.36317\n      type: 'test'\n      ...\n    # Subtest: A16: B resolves the original pending task through the real RPC without rewriting task or sequence provenance\n    ok 18 - A16: B resolves the original pending task through the real RPC without rewriting task or sequence provenance\n      ---\n      duration_ms: 220.76431\n      type: 'test'\n      ...\n    # Subtest: A17: TransferLead leaves channel authority unchanged\n    ok 19 - A17: TransferLead leaves channel authority unchanged\n      ---\n      duration_ms: 4.53106\n      type: 'test'\n      ...\n    # Subtest: A18: TransferLead changes no channel authority_epoch\n    ok 20 - A18: TransferLead changes no channel authority_epoch\n      ---\n      duration_ms: 2.00503\n      type: 'test'\n      ...\n    # Subtest: A19: adopted assignment cannot grant seller WhatsApp capability or mode RPC access\n    ok 21 - A19: adopted assignment cannot grant seller WhatsApp capability or mode RPC access\n      ---\n      duration_ms: 185.99363\n      type: 'test'\n      ...\n    # Subtest: A20: acknowledge is versioned/idempotent and changes neither owner nor assigned_at\n    ok 22 - A20: acknowledge is versioned/idempotent and changes neither owner nor assigned_at\n      ---\n      duration_ms: 308.83062\n      type: 'test'\n      ...\n    # Subtest: A21: acknowledge does not fabricate handoff/obligations or change dialogue policy\n    ok 23 - A21: acknowledge does not fabricate handoff/obligations or change dialogue policy\n      ---\n      duration_ms: 69.07857\n      type: 'test'\n      ...\n    # Subtest: A22: two supervisors A\u2192B versus A\u2192C serialize in real sessions with one actionable loser\n    ok 24 - A22: two supervisors A\u2192B versus A\u2192C serialize in real sessions with one actionable loser\n      ---\n      duration_ms: 1578.40489\n      type: 'test'\n      ...\n    # Subtest: A23: an old-owner real follow-up racing an uncommitted transfer cannot overwrite B\n    ok 25 - A23: an old-owner real follow-up racing an uncommitted transfer cannot overwrite B\n      ---\n      duration_ms: 1480.22461\n      type: 'test'\n      ...\n    # Subtest: A24: target becoming inactive concurrently rejects atomically after a real profile lock wait\n    ok 26 - A24: target becoming inactive concurrently rejects atomically after a real profile lock wait\n      ---\n      duration_ms: 1349.33352\n      type: 'test'\n      ...\n    # Subtest: A25: adopted-domain legacy RPC/direct owner writers are characterized and actually fenced\n    ok 27 - A25: adopted-domain legacy RPC/direct owner writers are characterized and actually fenced\n      ---\n      duration_ms: 198.28476\n      type: 'test'\n      ...\n    # Subtest: X01: B acknowledging an assignment not yet committed loses with an actionable version conflict\n    ok 28 - X01: B acknowledging an assignment not yet committed loses with an actionable version conflict\n      ---\n      duration_ms: 1328.125\n      type: 'test'\n      ...\n    # Subtest: X02: simultaneous supervisor double click serializes the same key into one effect and a replay\n    ok 29 - X02: simultaneous supervisor double click serializes the same key into one effect and a replay\n      ---\n      duration_ms: 1304.75106\n      type: 'test'\n      ...\n    # Subtest: X03: retry from a new session after a committed response is lost returns the durable prior result\n    ok 30 - X03: retry from a new session after a committed response is lost returns the durable prior result\n      ---\n      duration_ms: 1752.50411\n      type: 'test'\n      ...\n    # Subtest: X04: seller cannot self-assign, transfer, forge actor/assigned_by/epoch or acknowledge another owner\n    ok 31 - X04: seller cannot self-assign, transfer, forge actor/assigned_by/epoch or acknowledge another owner\n      ---\n      duration_ms: 686.31343\n      type: 'test'\n      ...\n    # Subtest: X05: old owner refresh_due_contact_protocols does not advance an adopted protocol still bearing historical A\n    ok 32 - X05: old owner refresh_due_contact_protocols does not advance an adopted protocol still bearing historical A\n      ---\n      duration_ms: 367.98965\n      type: 'test'\n      ...\n    # Subtest: X06: adopted current-owner task/sequence/assignment reads work in a genuine read-only authenticated transaction\n    ok 33 - X06: adopted current-owner task/sequence/assignment reads work in a genuine read-only authenticated transaction\n      ---\n      duration_ms: 140.66173\n      type: 'test'\n      ...\n    # Subtest: X07: historical quote ownership does not let A mutate an adopted opportunity after transfer\n    ok 34 - X07: historical quote ownership does not let A mutate an adopted opportunity after transfer\n      ---\n      duration_ms: 325.60522\n      type: 'test'\n      ...\n    # Subtest: X08: real appraisal RPC passes its old owner check, then a committed transfer makes its eventual write fail atomically\n    ok 35 - X08: real appraisal RPC passes its old owner check, then a committed transfer makes its eventual write fail atomically\n      ---\n      duration_ms: 1177.57479\n      type: 'test'\n      ...\n    # Subtest: X09: Assign rejects orphan opportunities with a prior agenda, contact or inherited protocol/history\n    ok 36 - X09: Assign rejects orphan opportunities with a prior agenda, contact or inherited protocol/history\n      ---\n      duration_ms: 751.03688\n      type: 'test'\n      ...\n    # Subtest: X10: Transfer rejects terminal CRM stages and an administrative sales case without altering historical facts\n    ok 37 - X10: Transfer rejects terminal CRM stages and an administrative sales case without altering historical facts\n      ---\n      duration_ms: 1108.48948\n      type: 'test'\n      ...\n    # Subtest: X11: an actual assignment-history INSERT failure rolls back owner/history/activity/runtime/receipt/event and permits the same-key retry\n    ok 38 - X11: an actual assignment-history INSERT failure rolls back owner/history/activity/runtime/receipt/event and permits the same-key retry\n      ---\n      duration_ms: 637.88257\n      type: 'test'\n      ...\n    # Subtest: F01 extra foundation: certified execution, normalization and canonical hash SQL remain byte-identical after A+B\n    ok 39 - F01 extra foundation: certified execution, normalization and canonical hash SQL remain byte-identical after A+B\n      ---\n      duration_ms: 24.36173\n      type: 'test'\n      ...\n    # Subtest: F02 extra foundation: added authority stays private and runtime gains no broad legacy DML\n    ok 40 - F02 extra foundation: added authority stays private and runtime gains no broad legacy DML\n      ---\n      duration_ms: 100.94724\n      type: 'test'\n      ...\n    # Subtest: F03 extra foundation: stock FoundationProbe remains compiled closed through the new public gateway\n    ok 41 - F03 extra foundation: stock FoundationProbe remains compiled closed through the new public gateway\n      ---\n      duration_ms: 236.60324\n      type: 'test'\n      ...\n    # Subtest: F04 extra foundation: actual probe commits one effect/event/receipt, replays, rejects key conflict, and retains SQL/JS hash parity\n    ok 42 - F04 extra foundation: actual probe commits one effect/event/receipt, replays, rejects key conflict, and retains SQL/JS hash parity\n      ---\n      duration_ms: 383.75902\n      type: 'test'\n      ...\n    # Subtest: F05 extra foundation: stale aggregate and assignment versions reject without a synthetic effect\n    ok 43 - F05 extra foundation: stale aggregate and assignment versions reject without a synthetic effect\n      ---\n      duration_ms: 323.13128\n      type: 'test'\n      ...\n    # Subtest: F06 extra foundation: exception after real SQL effect rolls back effect, receipt, event and aggregate atomically\n    ok 44 - F06 extra foundation: exception after real SQL effect rolls back effect, receipt, event and aggregate atomically\n      ---\n      duration_ms: 162.78431\n      type: 'test'\n      ...\n    # Subtest: F07 extra foundation: test hook is restored closed and no evaluating receipt or orphan event remains\n    ok 45 - F07 extra foundation: test hook is restored closed and no evaluating receipt or orphan event remains\n      ---\n      duration_ms: 177.28381\n      type: 'test'\n      ...\n    # Subtest: F08 extra foundation: receipt execution proof is server-derived, terminally disabled and cannot be supplied through the API\n    ok 46 - F08 extra foundation: receipt execution proof is server-derived, terminally disabled and cannot be supplied through the API\n      ---\n      duration_ms: 356.55671\n      type: 'test'\n      ...\n    # Subtest: F09 extra foundation: receipt proof constraints reject invalid proof, duplicate active proof and undecided COMMIT\n    ok 47 - F09 extra foundation: receipt proof constraints reject invalid proof, duplicate active proof and undecided COMMIT\n      ---\n      duration_ms: 262.68025\n      type: 'test'\n      ...\n    1..47\nok 1 - M1-04A: actual assignment/transfer command acceptance (27 required cases)\n  ---\n  duration_ms: 24032.16692\n  type: 'test'\n  ...\n# {\"candidate\":\"20260918033251_m1_assignment_adoption_guard.sql\",\"sha256\":\"89bd8e0a1e8ecfaad13077780da576612f81fc34bf94347bfd7ea0104ae654be\",\"installed_as\":\"postgres\",\"isolated_only\":true}\n# {\"candidate\":\"20260918033407_m1_assignment_commands.sql\",\"sha256\":\"f8760de6053cdb2d56ec23e6b1d4c7bf7efbfaa31ed174bd7ddaf22f21c0b9bf\",\"installed_as\":\"postgres\",\"isolated_only\":true}\n# {\"certified_core_sha256\":\"95200960d359c19cc187dadc5abc1b9dbf4a0a8ae1a55d5585b0b01320efdaa6\",\"compared_functions\":[\"crm_execute_command\",\"crm_normalize_command\",\"crm_canonical_json\",\"crm_json_keys\",\"crm_json_integer\",\"crm_foundation_actor\",\"crm_foundation_scope\",\"crm_apply_foundation_probe\"]}\n1..1\n# tests 48\n# suites 0\n# pass 48\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 25122.95369\n",
+  "stderr": "",
+  "duration_seconds": 43.567,
+  "temporary_cluster_retained": null
+}

@@ -1,0 +1,39 @@
+{
+  "initial_head": "ef4b59b86467f3c29064e02f3cf22127a2a20f97",
+  "implementation_commit": "364f28b78e12be8b59b8d65444037dd149c644f8",
+  "branch": "feat/m1-runtime-foundation",
+  "postgres_version": "17.6",
+  "unique_db_cases": 146,
+  "required_guard": {
+    "pass": 23,
+    "fail": 0
+  },
+  "required_assignment": {
+    "pass": 27,
+    "fail": 0
+  },
+  "foundation_regression": {
+    "pass": 54,
+    "fail": 0
+  },
+  "pure_foundation": 23,
+  "pure_assignment": 23,
+  "legacy_selected_pure": 131,
+  "composition": {
+    "full_profile_leaves": 143,
+    "prior_runtime_leaves": 44,
+    "replacement_runtime_leaves": 47,
+    "non_runtime_final_leaves": 99
+  },
+  "changed_executable_source_between_runs": [
+    "tests/m1/assignment-runtime.integration.test.mjs"
+  ],
+  "final_source_files_verified": 48,
+  "final_source_mismatch": [],
+  "production_changes": false,
+  "push_pr_merge_deploy": false,
+  "m104b_implemented": false,
+  "m0_complete": false,
+  "bl06": "OPEN/P0",
+  "test_evidence": "evidence/validation-20260918/test-cases.json"
+}

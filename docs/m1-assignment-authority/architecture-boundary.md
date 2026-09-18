@@ -1,3 +1,5 @@
+> Documento histórico del diagnóstico anterior a la excepción autorizada. La implementación y evidencia posteriores están en [README.md](README.md); sus estados «pendiente/BLOCKED» describen aquel momento.
+
 # M1-04A: frontera de asignación y transferencia — propuesta no implementada
 
 Base certificada: `292e1f8a435a07d104e990b129707fbfffc1a795`, rama `feat/m1-runtime-foundation`. Alcance recibido en `Pasted markdown(20260917-193622).md`: únicamente AssignLead, AcknowledgeLeadAssignment y TransferLead, con convivencia legacy e instalación inactiva. Este documento es análisis y diseño; no contiene ni certifica un handler nuevo, una migración candidata o un cambio de autoridad.

@@ -1,0 +1,25 @@
+{
+  "status": "FAIL",
+  "leaf_cases": 47,
+  "leaf_pass": 46,
+  "leaf_fail": 1,
+  "tap_entries_including_parent": 48,
+  "failed_case": "X09",
+  "failure_stage": "fixture preparation before command submission",
+  "sqlstate": "23514",
+  "constraint": "leads_assignment_complete",
+  "source_manifest_sha256": "5c72b2a2a3faf99f52c2b8c55bf90cf7c2519be06182863f894aa644e9c2d809",
+  "source_archive_sha256": "3cfac57afdee90ef37d3bd88e3d23181ba2a39ea5493bb55277a89cc3ae77341",
+  "source_difference_from_final_run": [
+    {
+      "path": "tests/m1/assignment-runtime.integration.test.mjs",
+      "before": "ffde95755fb010126991861e908dbb3b322061c1c20713819695c660a0cfae5c",
+      "after": "6c5e86dff4f3ab908344bef55a56bbd88ec162d4f617ed58979cbfa279135662"
+    }
+  ],
+  "candidate_migration_sha256": {
+    "20260918033251_m1_assignment_adoption_guard.sql": "89bd8e0a1e8ecfaad13077780da576612f81fc34bf94347bfd7ea0104ae654be",
+    "20260918033407_m1_assignment_commands.sql": "f8760de6053cdb2d56ec23e6b1d4c7bf7efbfaa31ed174bd7ddaf22f21c0b9bf"
+  },
+  "guest_destroyed": true
+}

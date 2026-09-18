@@ -1,3 +1,5 @@
+> Documento histórico del diagnóstico anterior a la excepción autorizada. La implementación y evidencia posteriores están en [README.md](README.md); sus estados «pendiente/BLOCKED» describen aquel momento.
+
 # M1-04A — writers de ownership y plan de regresión
 
 Base de código: `292e1f8a435a07d104e990b129707fbfffc1a795`, rama `feat/m1-runtime-foundation`. Autorización: `Pasted markdown(20260917-193622).md`. Este documento caracteriza entradas existentes y pruebas necesarias; **no acredita una implementación ni la aceptación de M1-04A**. No se modificaron writers, policies ni migraciones para preparar esta matriz. Esta matriz reutiliza capturas anteriores; las recapturas puntuales de catálogo de la revisión global se documentan por separado en el README y no incluyen datos comerciales.

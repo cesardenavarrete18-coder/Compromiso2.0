@@ -1,0 +1,32 @@
+{
+  "status": "PASS",
+  "leaf_cases": 47,
+  "leaf_pass": 47,
+  "leaf_fail": 0,
+  "tap": {
+    "tests": 48,
+    "pass": 48,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "source_manifest_sha256": "14e93142c1bd4183adb2d838da84dcc16eeef4e3275b71ca1003f8fafb11bc0c",
+  "source_archive_sha256": "31e1ac9fc8270b0b456e0274357b4ff7d94023549c1279126d81f7c3640bb775",
+  "source_difference_from_final_run": [
+    {
+      "path": "tests/m1/assignment-runtime.integration.test.mjs",
+      "before": "ffde95755fb010126991861e908dbb3b322061c1c20713819695c660a0cfae5c",
+      "after": "28c9d83096294a0d25c7095205764821a48999da2a37705ed33966d982e94b4d"
+    }
+  ],
+  "candidate_migration_sha256": {
+    "20260918033251_m1_assignment_adoption_guard.sql": "89bd8e0a1e8ecfaad13077780da576612f81fc34bf94347bfd7ea0104ae654be",
+    "20260918033407_m1_assignment_commands.sql": "f8760de6053cdb2d56ec23e6b1d4c7bf7efbfaa31ed174bd7ddaf22f21c0b9bf"
+  },
+  "guest_destroyed": true,
+  "supersedes_runtime_profile_only": "/workspace/scratch/b9aa5a4c407b/m104a-vm-final-evidence-20260918-run01/database.json",
+  "combined_unique_leaf_cases": 146,
+  "combined_evidence": "99 unchanged non-runtime leaves from final all-profile run plus 47 runtime leaves from this supplement; not an additional 47 unique cases",
+  "first_supplement_failed_fixture_preserved": "/workspace/scratch/b9aa5a4c407b/m104a-vm-runtime-supplement-20260918-run01"
+}

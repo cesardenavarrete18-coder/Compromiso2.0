@@ -1,0 +1,187 @@
+{
+  "status": "PASS",
+  "postgres_version": "17.6",
+  "source_archive_sha256": "1089fec0615f0a066dd9e020300e8b79523a661d1400beffceaba920be20f73e",
+  "source_manifest_sha256": "8d39a9b75e8471ae42b57a3aaca7ca69a12d53cffb1bdcf52de037229203dcda",
+  "source_files": 48,
+  "source_preservation": "Deterministic archive regenerated immediately after run, byte-for-byte SHA256 equality checked against archive consumed by guest",
+  "profiles": [
+    {
+      "suite": "assignment-boundary.integration.test.mjs",
+      "group": "historical_diagnostic",
+      "status": "PASS",
+      "leaf_cases": 6,
+      "tap": {
+        "tests": 7,
+        "pass": 7,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "suite_sha256": {
+        "tests/m1/assignment-boundary.integration.test.mjs": "8c7b128e845839ab74efb8493f1850401d7a6e8487d4434e16c1ca9a39911ffb"
+      },
+      "candidate_migration_sha256": {},
+      "candidate_validation_stage": null,
+      "fixture_layer": "B_plus_synthetic_boundary_data"
+    },
+    {
+      "suite": "assignment-channel-guard.integration.test.mjs",
+      "group": "new_candidate_validation",
+      "status": "PASS",
+      "leaf_cases": 23,
+      "tap": {
+        "tests": 24,
+        "pass": 24,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "suite_sha256": {
+        "tests/m1/assignment-channel-guard.integration.test.mjs": "86377f018a7135f1717133fda9f4e39d457aeefcc4aa00c5583141a9d550dff2"
+      },
+      "candidate_migration_sha256": {
+        "20260918033251_m1_assignment_adoption_guard.sql": "89bd8e0a1e8ecfaad13077780da576612f81fc34bf94347bfd7ea0104ae654be",
+        "20260918033407_m1_assignment_commands.sql": "f8760de6053cdb2d56ec23e6b1d4c7bf7efbfaa31ed174bd7ddaf22f21c0b9bf"
+      },
+      "candidate_validation_stage": "assignment_acceptance_candidate",
+      "fixture_layer": "B_plus_synthetic_assignment_data"
+    },
+    {
+      "suite": "assignment-channel-prerequisite.integration.test.mjs",
+      "group": "new_candidate_validation",
+      "status": "PASS",
+      "leaf_cases": 16,
+      "tap": {
+        "tests": 17,
+        "pass": 17,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "suite_sha256": {
+        "tests/m1/assignment-channel-prerequisite.integration.test.mjs": "7f7ab9b3e824206e43cca76fe09763ba44c5f7d0d51624afa3c89a96be6b1b65"
+      },
+      "candidate_migration_sha256": {
+        "20260918033251_m1_assignment_adoption_guard.sql": "89bd8e0a1e8ecfaad13077780da576612f81fc34bf94347bfd7ea0104ae654be"
+      },
+      "candidate_validation_stage": "guard_prerequisite_only",
+      "fixture_layer": "B_plus_synthetic_assignment_data"
+    },
+    {
+      "suite": "assignment-runtime.integration.test.mjs",
+      "group": "new_candidate_validation",
+      "status": "PASS",
+      "leaf_cases": 44,
+      "tap": {
+        "tests": 45,
+        "pass": 45,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "suite_sha256": {
+        "tests/m1/assignment-runtime.integration.test.mjs": "ffde95755fb010126991861e908dbb3b322061c1c20713819695c660a0cfae5c"
+      },
+      "candidate_migration_sha256": {
+        "20260918033251_m1_assignment_adoption_guard.sql": "89bd8e0a1e8ecfaad13077780da576612f81fc34bf94347bfd7ea0104ae654be",
+        "20260918033407_m1_assignment_commands.sql": "f8760de6053cdb2d56ec23e6b1d4c7bf7efbfaa31ed174bd7ddaf22f21c0b9bf"
+      },
+      "candidate_validation_stage": "assignment_acceptance_candidate",
+      "fixture_layer": "B_plus_synthetic_assignment_data"
+    },
+    {
+      "suite": "foundation.integration.test.mjs",
+      "group": "certified_foundation_regression",
+      "status": "PASS",
+      "leaf_cases": 26,
+      "tap": {
+        "tests": 27,
+        "pass": 27,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "suite_sha256": {
+        "tests/m1/foundation.integration.test.mjs": "0ae08b7e9d6dd05fe377442a5de5ad26fff5296753484307eb5d05561446dd84"
+      },
+      "candidate_migration_sha256": {},
+      "candidate_validation_stage": null,
+      "fixture_layer": "minimal_synthetic_auth_crm"
+    },
+    {
+      "suite": "installation.integration.test.mjs",
+      "group": "certified_foundation_regression",
+      "status": "PASS",
+      "leaf_cases": 9,
+      "tap": {
+        "tests": 10,
+        "pass": 10,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "suite_sha256": {
+        "tests/m1/installation.integration.test.mjs": "98358e5b31408b8f30b5eb50a70f5f3a1ce7c71fcfa3156374250a7cead284c0"
+      },
+      "candidate_migration_sha256": {},
+      "candidate_validation_stage": null,
+      "fixture_layer": "minimal_synthetic_auth_crm"
+    },
+    {
+      "suite": "schema-baseline-b.integration.test.mjs",
+      "group": "certified_foundation_regression",
+      "status": "PASS",
+      "leaf_cases": 9,
+      "tap": {
+        "tests": 10,
+        "pass": 10,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "suite_sha256": {
+        "tests/m1/schema-baseline-b.integration.test.mjs": "9d329069fc08242962363af5a77edccb7eea25983a511ccaef93a8746e03590d"
+      },
+      "candidate_migration_sha256": {},
+      "candidate_validation_stage": null,
+      "fixture_layer": "schema_only_baseline_b"
+    },
+    {
+      "suite": "security.integration.test.mjs",
+      "group": "certified_foundation_regression",
+      "status": "PASS",
+      "leaf_cases": 10,
+      "tap": {
+        "tests": 11,
+        "pass": 11,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "suite_sha256": {
+        "tests/m1/security.integration.test.mjs": "9aa66d3e7eac29e6edf3ba23782fa18768b33840831ec3a1ca7cf8b0b9689614"
+      },
+      "candidate_migration_sha256": {},
+      "candidate_validation_stage": null,
+      "fixture_layer": "minimal_synthetic_auth_crm"
+    }
+  ],
+  "leaf_cases": 143,
+  "tap_entries_including_parent_suites": 151,
+  "guest_destroyed": true,
+  "external_network_devices": [],
+  "groups": {
+    "new_candidate_validation": 83,
+    "certified_foundation_regression": 54,
+    "historical_diagnostic": 6
+  }
+}

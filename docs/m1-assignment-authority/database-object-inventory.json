@@ -1,0 +1,75 @@
+{
+  "source": "candidate SQL object inventory; execution evidence in validation-20260918",
+  "objects": {
+    "20260918033251_m1_assignment_adoption_guard.sql": {
+      "functions_created_or_replaced": [
+        "private.crm_reject_assignment_adoption_mutation",
+        "private.crm_lock_assignment_adoption_lead",
+        "private.crm_adopt_assignment_lead",
+        "private.crm_assignment_is_adopted",
+        "private.crm_fence_assignment_owner_write",
+        "private.crm_fence_assignment_history_write",
+        "private.crm_fence_assignment_history_truncate",
+        "private.current_user_can_manage_whatsapp",
+        "public.set_whatsapp_conversation_mode"
+      ],
+      "tables_created": [
+        "private.crm_assignment_adoptions"
+      ],
+      "triggers_created": [
+        "crm_assignment_adoptions_immutable",
+        "crm_assignment_adoptions_no_truncate",
+        "leads_assignment_owner_fence",
+        "lead_assignments_runtime_fence",
+        "lead_assignments_runtime_truncate_fence"
+      ],
+      "policies_created": [
+        "crm_assignment_adoptions_owner_only"
+      ],
+      "indexes_created": [],
+      "policies_altered": [],
+      "receipt_columns_added": []
+    },
+    "20260918033407_m1_assignment_commands.sql": {
+      "functions_created_or_replaced": [
+        "private.crm_assignment_authorization",
+        "private.crm_assignment_lock_target",
+        "private.crm_assignment_lock_lead",
+        "private.crm_fence_assignment_owner_write",
+        "private.crm_fence_assignment_history_write",
+        "private.crm_apply_assignment_command",
+        "private.start_contact_sequence_after_assignment",
+        "private.crm_assignment_assert_current_owner",
+        "private.crm_assignment_current_owner_read",
+        "public.complete_contact_task",
+        "public.record_contact_answer_with_transition",
+        "public.record_lead_follow_up",
+        "public.refresh_due_contact_protocols",
+        "private.crm_assignment_guard_commercial_seller",
+        "private.crm_normalize_assignment_command",
+        "private.crm_execute_assignment_command",
+        "public.crm_submit_command"
+      ],
+      "tables_created": [],
+      "triggers_created": [
+        "lead_crm_assignment_current_owner",
+        "sales_quotes_assignment_current_owner",
+        "vehicle_appraisals_assignment_current_owner"
+      ],
+      "policies_created": [],
+      "indexes_created": [
+        "crm_assignment_one_effect_context_idx"
+      ],
+      "policies_altered": [
+        "lead_assignments_read_management_or_owner",
+        "lead_contact_sequences_read_management_or_owner",
+        "lead_contact_tasks_read_management_or_owner"
+      ],
+      "receipt_columns_added": [
+        "execution_xid xid8",
+        "execution_backend_pid integer",
+        "assignment_effect_authorized boolean not null default false"
+      ]
+    }
+  }
+}
