@@ -1,0 +1,135 @@
+{
+  "harness": "crm-m1-unix-seccomp/2",
+  "run_id": "c2f0b0b0-dea9-4a11-83f2-5d93e152b475",
+  "suite": "contact-runtime.integration.test.mjs",
+  "source_manifest": {
+    "sha256": "103c9e96b746004b5034753b3ff722a745778fde3f6591a7d1a07178cde6ad9b",
+    "git_base_revision": "8a331e647eeb574be90cb2a6bd28a7e46f874ae3",
+    "source_has_uncommitted_changes": true
+  },
+  "fixture_layer": "B_plus_synthetic_contact_data",
+  "bootstrap_source": "tests/m1/fixtures/schema-baseline-b/bootstrap.sql",
+  "bootstrap_sha256": "8ea22a1e8b4cd6559732331ca66ac2728d90f58e11ada4f344c398040608c5e6",
+  "cluster_per_suite": true,
+  "bootstrap_user": "supabase_admin",
+  "migration_installation": "runner_installs_all_three",
+  "timeout_scale": 3.0,
+  "status": "FAIL",
+  "remote_database": false,
+  "external_egress": false,
+  "requested_database_major": 17,
+  "requested_uid": 65534,
+  "database_started": true,
+  "migrations_applied": [
+    "20260917154844_m1_runtime_authority_foundation.sql",
+    "20260917154854_m1_private_capabilities.sql",
+    "20260917154905_m1_command_receipts_events.sql"
+  ],
+  "integration_tests_executed": true,
+  "migration_sha256": {
+    "20260917154844_m1_runtime_authority_foundation.sql": "6dbb4e1c6a0c8da22de49424fdf965f46e74e85dad0e822a6201b2ec31f09d49",
+    "20260917154854_m1_private_capabilities.sql": "6154b2dd302d1f5793ea5c9b4151a1423f4f5b956e688ae7089bf8f00b80cd60",
+    "20260917154905_m1_command_receipts_events.sql": "433615402b82cbc5b85cd4f168c0b96ff48658de84cfdadad56b02616f7bf9e7"
+  },
+  "candidate_migration_sha256": {
+    "20260918033251_m1_assignment_adoption_guard.sql": "89bd8e0a1e8ecfaad13077780da576612f81fc34bf94347bfd7ea0104ae654be",
+    "20260918033407_m1_assignment_commands.sql": "f8760de6053cdb2d56ec23e6b1d4c7bf7efbfaa31ed174bd7ddaf22f21c0b9bf",
+    "20260918160432_m1_contact_runtime_foundation.sql": "086dc957893397919add0c44f3efaa0d016ba22ecbb7db4d985725ac1d4bd341",
+    "20260918160433_m1_contact_legacy_fences.sql": "7cb7682300e3bbc67c944da25806a3392b5e8b172d4dd629a21f40e82a369ccf",
+    "20260918160434_m1_contact_commands.sql": "58a5ab694b04be60951f7c5c3d802b0f4d6fab9a73735d7bd565e28604bd22c6"
+  },
+  "candidate_installation": "suite_controlled_verbatim",
+  "candidate_validation_stage": "contact_acceptance_candidate",
+  "postgres_binary_sha256": "23cd174849b273064c47d581b55be596be2f5cf0ee5d3e76c0146e2464bf873a",
+  "guard_source_sha256": "589dc0aece8cee8e104a7c3a8c27d6e13ca858518bdf74d0454e67c90cb53fd9",
+  "guard_binary_sha256": "d48cf6d387092c71323d7e6a24af26c582d7bc0103545cd3614641e9608183f7",
+  "guard_precompiled": true,
+  "suite_sha256": {
+    "tests/m1/contact-runtime.integration.test.mjs": "0e7aec9b18ec2ae8e1044c71cd110bae27a6f2d0f05c4e68c0fa6338809bdc28"
+  },
+  "limits": [
+    "Schema B plus captured overlays and synthetic contact data; A and B candidate DDL is suite-controlled, no production rows or Supabase REST gateway.",
+    "Only contact/next-action laboratory contracts are exercised; no production frontend, sender, webhook, stage authority or rollout certification.",
+    "Database effects occur only in the disposable local cluster."
+  ],
+  "postgres_version": "postgres (PostgreSQL) 17.6",
+  "unix_socket_available": true,
+  "uid_map": [
+    [
+      0,
+      0,
+      4294967295
+    ]
+  ],
+  "gid_map": [
+    [
+      0,
+      0,
+      4294967295
+    ]
+  ],
+  "environment_keys": [
+    "LANG",
+    "LC_ALL",
+    "LD_LIBRARY_PATH",
+    "M1_LIBPQ_PATH",
+    "M1_PYTHON_BIN",
+    "M1_TEST_BOOTSTRAP_USER",
+    "M1_TEST_CANDIDATE_MIGRATIONS",
+    "M1_TEST_DATABASE",
+    "M1_TEST_FIXTURE_DIR",
+    "M1_TEST_ISOLATED",
+    "M1_TEST_MIGRATION_DIR",
+    "M1_TEST_PORT",
+    "M1_TEST_RUN_ID",
+    "M1_TEST_SOCKET_DIR",
+    "M1_TEST_TIMEOUT_SCALE",
+    "PATH",
+    "PGPASSFILE",
+    "PGSERVICEFILE",
+    "PYTHONNOUSERSITE",
+    "TZ"
+  ],
+  "isolation": {
+    "ok": true,
+    "columns": [
+      "listen_addresses",
+      "marker",
+      "unix_socket"
+    ],
+    "rows": [
+      [
+        "",
+        "c2f0b0b0-dea9-4a11-83f2-5d93e152b475",
+        "t"
+      ]
+    ],
+    "affected": "1",
+    "id": 1
+  },
+  "migration_role": {
+    "ok": true,
+    "columns": [
+      "rolname",
+      "rolsuper",
+      "rolcreaterole",
+      "rolbypassrls"
+    ],
+    "rows": [
+      [
+        "postgres",
+        "f",
+        "t",
+        "t"
+      ]
+    ],
+    "affected": "1",
+    "id": 1
+  },
+  "test_timeout_seconds": 2700.0,
+  "test_exit_code": 1,
+  "tap": "TAP version 13\n# Subtest: M1-04B: 80 PostgreSQL acceptance scenarios, isolated synthetic data only\n    # Subtest: DB-B02: missing dependencies and wrong order roll back without B authority\n    ok 1 - DB-B02: missing dependencies and wrong order roll back without B authority\n      ---\n      duration_ms: 253.8062\n      type: 'test'\n      ...\n    # Subtest: DB-B03: each installation prefix is closed and adopts no business row\n    not ok 2 - DB-B03: each installation prefix is closed and adopts no business row\n      ---\n      duration_ms: 1137.30388\n      type: 'test'\n      location: '/tmp/crm-m1-uoubwim7/tests/m1/contact-runtime.integration.test.mjs:201:35'\n      failureType: 'testCodeFailure'\n      error: |-\n        20260918160433_m1_contact_legacy_fences.sql: {\"ok\":false,\"sqlstate\":\"42723\",\"error\":\"ERROR:  function \\\"crm_assignment_guard_commercial_seller\\\" already exists with same argument types\\n\",\"id\":58}\n        \n        false !== true\n        \n      code: 'ERR_ASSERTION'\n      name: 'AssertionError'\n      expected: true\n      actual: false\n      operator: 'strictEqual'\n      stack: |-\n        file:///tmp/crm-m1-uoubwim7/tests/m1/contact-runtime.integration.test.mjs:191:17\n        process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n        async postgres (file:///tmp/crm-m1-uoubwim7/tests/m1/contact-runtime.integration.test.mjs:26:16)\n        async TestContext.<anonymous> (file:///tmp/crm-m1-uoubwim7/tests/m1/contact-runtime.integration.test.mjs:226:24)\n        async Test.run (node:internal/test_runner/test:1389:7)\n        async TestContext.<anonymous> (file:///tmp/crm-m1-uoubwim7/tests/m1/contact-runtime.integration.test.mjs:223:5)\n        async Test.run (node:internal/test_runner/test:1389:7)\n        async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)\n      ...\n    # Subtest: DB-B01: complete ordered installation has validated PostgreSQL catalogs\n    not ok 3 - DB-B01: complete ordered installation has validated PostgreSQL catalogs\n      ---\n      duration_ms: 248.96074\n      type: 'test'\n      location: '/tmp/crm-m1-uoubwim7/tests/m1/contact-runtime.integration.test.mjs:201:35'\n      failureType: 'testCodeFailure'\n      error: |-\n        The expression evaluated to a falsy value:\n        \n          assert.ok(Number(await db.scalar(\"SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='private' AND p.proname LIKE 'crm_%contact%'\"))>=5)\n        \n      code: 'ERR_ASSERTION'\n      name: 'AssertionError'\n      expected: true\n      actual: false\n      operator: '=='\n      stack: |-\n        TestContext.<anonymous> (file:///tmp/crm-m1-uoubwim7/tests/m1/contact-runtime.integration.test.mjs:240:14)\n        process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n        async Test.run (node:internal/test_runner/test:1389:7)\n        async TestContext.<anonymous> (file:///tmp/crm-m1-uoubwim7/tests/m1/contact-runtime.integration.test.mjs:233:5)\n        async Test.run (node:internal/test_runner/test:1389:7)\n        async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)\n      ...\n    # Subtest: DB-B04: owner role, memberships, fixed search paths and closed definer functions\n    not ok 4 - DB-B04: owner role, memberships, fixed search paths and closed definer functions\n      ---\n      duration_ms: 375.16238\n      type: 'test'\n      location: '/tmp/crm-m1-uoubwim7/tests/m1/contact-runtime.integration.test.mjs:201:35'\n      failureType: 'testCodeFailure'\n      error: |-\n        42883: ERROR:  function private.crm_adopt_contact_lead(unknown, unknown, integer, unknown) does not exist\n        LINE 1: SELECT private.crm_adopt_contact_lead('60715aaf-98fb-479a-89...\n                       ^\n        HINT:  No function matches the given name and argument types. You might need to add explicit type casts.\n        \n      code: 'ERR_TEST_FAILURE'\n      stack: |-\n        file:///tmp/crm-m1-uoubwim7/tests/m1/harness/pg-session.mjs:62:44\n        process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n        async PgSession.scalar (file:///tmp/crm-m1-uoubwim7/tests/m1/harness/pg-session.mjs:68:20)\n        async PgSession.json (file:///tmp/crm-m1-uoubwim7/tests/m1/harness/pg-session.mjs:73:19)\n        async postgres (file:///tmp/crm-m1-uoubwim7/tests/m1/contact-runtime.integration.test.mjs:26:16)\n        async prepareB (file:///tmp/crm-m1-uoubwim7/tests/m1/contact-runtime.integration.test.mjs:154:29)\n        async ready (file:///tmp/crm-m1-uoubwim7/tests/m1/contact-runtime.integration.test.mjs:156:99)\n        async TestContext.<anonymous> (file:///tmp/crm-m1-uoubwim7/tests/m1/contact-runtime.integration.test.mjs:249:18)\n        async Test.run (node:internal/test_runner/test:1389:7)\n        async TestContext.<anonymous> (file:///tmp/crm-m1-uoubwim7/tests/m1/contact-runtime.integration.test.mjs:242:5)\n      ...\n    # Subtest: DB-B05: real API roles have no direct table access and FORCE RLS remains enabled\n    not ok 5 - DB-B05: real API roles have no direct table access and FORCE RLS remains enabled\n      ---\n      duration_ms: 503.97878\n      type: 'test'\n      location: '/tmp/crm-m1-uoubwim7/tests/m1/contact-runtime.integration.test.mjs:201:35'\n      failureType: 'testCodeFailure'\n      error: |-\n        42883: ERROR:  function private.crm_adopt_contact_lead(unknown, unknown, integer, unknown) does not exist\n        LINE 1: SELECT private.crm_adopt_contact_lead('f8db7126-c68a-4c79-94...\n                       ^\n        HINT:  No function matches the given name and argument types. You might need to add explicit type casts.\n        \n      code: 'ERR_TEST_FAILURE'\n      stack: |-\n        file:///tmp/crm-m1-uoubwim7/tests/m1/harness/pg-session.mjs:62:44\n        process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n        async PgSession.scalar (file:///tmp/crm-m1-uoubwim7/tests/m1/harness/pg-session.mjs:68:20)\n        async PgSession.json (file:///tmp/crm-m1-uoubwim7/tests/m1/harness/pg-session.mjs:73:19)\n        async postgres (file:///tmp/crm-m1-uoubwim7/tests/m1/contact-runtime.integration.test.mjs:26:16)\n        async prepareB (file:///tmp/crm-m1-uoubwim7/tests/m1/contact-runtime.integration.test.mjs:154:29)\n        async ready (file:///tmp/crm-m1-uoubwim7/tests/m1/contact-runtime.integration.test.mjs:156:99)\n        async TestContext.<anonymous> (file:///tmp/crm-m1-uoubwim7/tests/m1/contact-runtime.integration.test.mjs:271:18)\n        async Test.run (node:internal/test_runner/test:1389:7)\n        async TestContext.<anonymous> (file:///tmp/crm-m1-uoubwim7/tests/m1/contact-runtime.integration.test.mjs:261:5)\n      ...\n    1..5\nnot ok 1 - M1-04B: 80 PostgreSQL acceptance scenarios, isolated synthetic data only\n  ---\n  duration_ms: 4685.55079\n  type: 'test'\n  location: '/tmp/crm-m1-uoubwim7/tests/m1/contact-runtime.integration.test.mjs:196:1'\n  failureType: 'testCodeFailure'\n  error: |-\n    42883: ERROR:  function public.crm_read_contact_work_context(uuid) does not exist\n    \n  code: 'ERR_TEST_FAILURE'\n  stack: |-\n    file:///tmp/crm-m1-uoubwim7/tests/m1/harness/pg-session.mjs:62:44\n    process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    async TestContext.<anonymous> (file:///tmp/crm-m1-uoubwim7/tests/m1/contact-runtime.integration.test.mjs:282:5)\n    async Test.run (node:internal/test_runner/test:1389:7)\n    async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)\n  ...\n# {\"file\":\"20260918160432_m1_contact_runtime_foundation.sql\",\"sha256\":\"086dc957893397919add0c44f3efaa0d016ba22ecbb7db4d985725ac1d4bd341\"}\n1..1\n# tests 6\n# suites 0\n# pass 1\n# fail 5\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 5874.14906\n",
+  "stderr": "",
+  "duration_seconds": 25.593,
+  "temporary_cluster_retained": null
+}

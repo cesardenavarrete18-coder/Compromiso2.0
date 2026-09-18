@@ -1,0 +1,7 @@
+{
+  "supabase/migrations/20260918160432_m1_contact_runtime_foundation.sql": "77ce546027d03fab8bca91671ded6429071269392c2554a13ecfeeb9a4c0f72c",
+  "supabase/migrations/20260918160433_m1_contact_legacy_fences.sql": "e90f8a82f635cb91ebe5a3ccc2a7bb1298b42699f0990026617968d1e6f205c9",
+  "supabase/migrations/20260918160434_m1_contact_commands.sql": "f6ab335396ea25f174a9c1cb368d5c1bc410bf5c41bf75ac7582190ae65b3fae",
+  "tests/m1/contact-runtime.integration.test.mjs": "f656082070d1073c89085dd1cf2167b185d51d9043b0e72642c39623d399e13d",
+  "supabase/functions/_shared/crm-runtime/contact-next-action-contracts.mjs": "3ac8ec216be2917145fffcc579fa8a67907985b28beb12673b700adce1dc5558"
+}

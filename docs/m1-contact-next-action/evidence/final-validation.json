@@ -1,0 +1,36 @@
+{
+  "status": "PASS_LABORATORY_CANDIDATE",
+  "initial_head": "8a331e647eeb574be90cb2a6bd28a7e46f874ae3",
+  "functional_commit": "64edc545db884932aad466c5042c89d3b74f6506",
+  "branch": "feat/m1-runtime-foundation",
+  "production_changes": false,
+  "push": false,
+  "pr": false,
+  "merge": false,
+  "deploy": false,
+  "cutover": false,
+  "m104c_started": false,
+  "formal_certification": "requires_user_decision",
+  "m0": "OPEN",
+  "BL-06": "OPEN_P0",
+  "db_original_unique_cases": 146,
+  "db_contact_cases": 80,
+  "db_extra_coinstalled_executions": 70,
+  "db_integrated_leaf_executions": 296,
+  "pure_cases": 214,
+  "required_tests_blocked": 0,
+  "guest_destroyed": [
+    true,
+    true
+  ],
+  "evidence_sha256": {
+    "evidence/final-db/database.json": "30914fcc5533eeb7376bfd16302cceab94e348cec4e99f8fd1a9510de0823a73",
+    "evidence/final-db/isolation.json": "6ead9a208ba0eafbb3eac96f743bc76a866eaf3e56c5d798fe49e714d6b5fe0a",
+    "evidence/final-db/summary.json": "93da2f5e30ce583a7a40866204c9e8c4b4c4218059e47eb5968c17a400bc8379",
+    "evidence/final-db/vm.json": "16f4bfb2f5032e869e045d6fef1b65bdad94befcd62328344415950d015c02ce",
+    "evidence/final-contact/database.json": "76fb5fbf391d8fe9ccd6165eb1a0c51af920ef79f5b1f6a1ad5bece6d5e49f7a",
+    "evidence/final-contact/isolation.json": "6ead9a208ba0eafbb3eac96f743bc76a866eaf3e56c5d798fe49e714d6b5fe0a",
+    "evidence/final-contact/summary.json": "7c024f434019ae77e36f7c5c5037fcf85fe4cb64b911bb8ebed670dc4850a6e5",
+    "evidence/final-contact/vm.json": "5c62209be42f7e03d11b7c276500b1427b67ef36d37459022c807dee332cf0e0"
+  }
+}

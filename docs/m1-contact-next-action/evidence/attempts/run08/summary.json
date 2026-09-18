@@ -1,0 +1,430 @@
+{
+  "source": "executed PostgreSQL 17 TAP in isolated VM; parents excluded",
+  "status": "PASS",
+  "unique_leaf_cases": 80,
+  "missing_certified_cases": [],
+  "suites": [
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "status": "PASS",
+      "leaf_cases": 80,
+      "tap_counts": {
+        "tests": 81,
+        "pass": 81,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "postgres_version": "postgres (PostgreSQL) 17.6",
+      "fixture_layer": "B_plus_synthetic_contact_data",
+      "source_manifest": {
+        "sha256": "65b8987292dcc06ca1b9380203c3e837b07cd6c6505cdb9cd6983180cd1f5abc",
+        "git_base_revision": "8a331e647eeb574be90cb2a6bd28a7e46f874ae3",
+        "source_has_uncommitted_changes": true
+      }
+    }
+  ],
+  "cases": [
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B02: missing dependencies and wrong order roll back without B authority",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B03: each installation prefix is closed and adopts no business row",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B01: complete ordered installation has validated PostgreSQL catalogs",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B04: owner role, memberships, fixed search paths and closed definer functions",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B05: real API roles have no direct table access and FORCE RLS remains enabled",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B06: runtime rows, gate, JWT/header/GUC never constitute technical adoption",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B07: adoption requires durable Assignment and exact B gate, preserves baseline evidence",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B08: pause is sticky, keeps commercial/channel epochs and seller channel denial",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B09: durable facts, adoptions and terminal history cannot be updated/deleted/truncated",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B10: future gates and FoundationProbe remain non-authoritative",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B11: current owner and management scope, never historical task ownership",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B12: actor, ownership and privileged provenance cannot be injected",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B13: inactive actor and concurrent deactivation are rejected",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B14: foreign task, sequence, action and fact references fail closed",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B15: same command ID and intent yield one effect and replay",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B16: same idempotency key replays only same hash",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B17: new keys cannot duplicate or overwrite stable fact/action identities",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B18: stale aggregate, Assignment and B revisions never partially apply",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B19: replay reevaluates read rights but succeeds through pause for authorized actor",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B20: neither GUC nor another domain receipt grants Contact DML",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B21: no_answer records real declared attempt/credit without stage/channel mutation",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B22: personal WA sent is declared evidence, never delivery or corporate channel proof",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B23: answered plus explicit next action is atomic and preserves commercial stage",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B24: manual skipped records omission, never attempt or last contact",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B25: deadline observation is clock work with no seller contact or productivity attribution",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B26: future/ambiguous times and incompatible channels never receive silent normalization",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B27: late evidence survives and only explicit supervisor review grants delayed credit",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B28: older occurrence does not replace latest contact and remains historical evidence",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B29: supervisor amendment is append-only, compensates credit and never reopens protocol",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B30: one task and fact have at most one credit; inbound response does not invent call credit",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B31: new action has stable identity, revision and explicit date without contact or stage",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B32: reschedule and note editing preserve action identity and protocol history",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B33: factual completion needs no invented date, but ordinary cancellation needs replacement",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B34: explicit cancellation and replacement do not restart protocol or erase on omission",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B35: server clock observes deadline once while getter performs zero writes",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B36: rescheduling an overdue action retains old observation and advances revision",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B37: deep protected snapshot remains identical through contact/action/omission",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B38: opt-out atomically restricts linked customer and removes future work without stage",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B39: paused gate only admits restrictive opt-out without credit or new schedule",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B40: incoherent customer identity fails without repair and no B operation lifts restriction",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B41: 18+2 and historical 6+2 protocol IDs/windows survive adoption and transfer",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B42: fully credited no-response protocol closes factually without cold/Recall/stage",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B43: all omitted yields protocol_incomplete and visible zero registered attempts",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B44: partial counts retain denominator and descriptive majority without future routing",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B45: unknown legacy work or empty/unrecognized plan cannot prove full or zero physical work",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B46: manual agenda explicitly supersedes only future work, preserving credited/omitted history",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B47: response, no_interest, invalid and restriction remain distinct operational causes",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B48: legacy classifier trigger/direct call is contained only for adopted cohort",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B49: no-change clock is terminal without events/version; future windows remain visible",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B50: operational getter is READ ONLY, scoped and exposes evidence/review/clock context",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B51: legacy, A-only and A+B cohorts preserve distinct writer authority",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B52: every legacy result/answer/follow-up overload rejects before any side effect",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B53: mixed supervisor scheduling/status/management cannot partially commit excluded domains",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B54: restart/reconcile/future/Recall writers cannot reset adopted work",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B55: mixed-cohort legacy refresh processes only legacy and preserves B for explicit clock",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B56: service/direct DML/definer do not bypass B fields; excluded notes retain permissions",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B57: insert/delete/cascade/truncate cannot erase or forge adopted CRM/protocol history",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B58: new legacy leads retain initialization without implicit adoption",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B59: excluded appointment/deposit/document fields alone do not create B effects",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B60: reproduced webhook/sales mixed DML is rejected atomically without external functions",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B61: two real sessions with same intent block then commit one logical result",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B62: different simultaneous facts for same task produce one credit and stale loser",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B63: contact versus Transfer serializes both orders without owner/history confusion",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B64: contact/agenda and Acknowledge share aggregate CAS without changing epoch",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B65: reschedule/cancel replacement versus factual completion preserves one consistent outcome",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B66: clock versus late evidence preserves deadline observation and review requirement",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B67: gate pause serializes with command and cannot broaden the DNC exception",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B68: adoption fences old snapshots and direct legacy writers without inverse-lock bypass",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B69: opt-out versus agenda and Transfer stays monotonic and scoped to linked identity",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B70: concurrent supervisor decisions produce one credit/review revision",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B71: failures after fact, credit and agenda roll back the complete command transaction",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B72: backend termination before commit leaves zero partial effects and same intent retries",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B73: commit with lost response is recovered exactly without duplicate timestamps or work",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B74: real 55P03, 40001 and deadlock rollback never create a duplicate intention",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B75: projection/helper failure cannot leak a live evaluating capability into session",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B76: version exhaustion, missing references and uniqueness fail without mutilating history",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B77: event replay reconstructs disposable projections without invoking commands or legacy effects",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B78: compatible technical pause retains adoption/fences/epochs/history and seller channel denial",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B79: Assignment regression boundary remains valid with B installed",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B80: foundation history/closed purposes and private privileges remain protected after B",
+      "status": "PASS"
+    }
+  ]
+}

@@ -1,0 +1,1710 @@
+{
+  "source": "executed PostgreSQL 17 TAP in isolated VM; parents excluded",
+  "status": "PASS",
+  "unique_leaf_cases": 296,
+  "missing_certified_cases": [],
+  "suites": [
+    {
+      "suite": "assignment-boundary.integration.test.mjs",
+      "status": "PASS",
+      "leaf_cases": 6,
+      "tap_counts": {
+        "tests": 7,
+        "pass": 7,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "postgres_version": "postgres (PostgreSQL) 17.6",
+      "fixture_layer": "B_plus_synthetic_boundary_data",
+      "source_manifest": {
+        "sha256": "5cc57905e5457e8eaf7be78b5f91b5b03ae2a588dad41d4e98370c573612322e",
+        "git_base_revision": "8a331e647eeb574be90cb2a6bd28a7e46f874ae3",
+        "source_has_uncommitted_changes": true
+      }
+    },
+    {
+      "suite": "assignment-channel-guard.integration.test.mjs",
+      "status": "PASS",
+      "leaf_cases": 23,
+      "tap_counts": {
+        "tests": 24,
+        "pass": 24,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "postgres_version": "postgres (PostgreSQL) 17.6",
+      "fixture_layer": "B_plus_synthetic_assignment_data",
+      "source_manifest": {
+        "sha256": "5cc57905e5457e8eaf7be78b5f91b5b03ae2a588dad41d4e98370c573612322e",
+        "git_base_revision": "8a331e647eeb574be90cb2a6bd28a7e46f874ae3",
+        "source_has_uncommitted_changes": true
+      }
+    },
+    {
+      "suite": "assignment-channel-prerequisite.integration.test.mjs",
+      "status": "PASS",
+      "leaf_cases": 16,
+      "tap_counts": {
+        "tests": 17,
+        "pass": 17,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "postgres_version": "postgres (PostgreSQL) 17.6",
+      "fixture_layer": "B_plus_synthetic_assignment_data",
+      "source_manifest": {
+        "sha256": "5cc57905e5457e8eaf7be78b5f91b5b03ae2a588dad41d4e98370c573612322e",
+        "git_base_revision": "8a331e647eeb574be90cb2a6bd28a7e46f874ae3",
+        "source_has_uncommitted_changes": true
+      }
+    },
+    {
+      "suite": "assignment-runtime.integration.test.mjs",
+      "status": "PASS",
+      "leaf_cases": 47,
+      "tap_counts": {
+        "tests": 48,
+        "pass": 48,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "postgres_version": "postgres (PostgreSQL) 17.6",
+      "fixture_layer": "B_plus_synthetic_assignment_data",
+      "source_manifest": {
+        "sha256": "5cc57905e5457e8eaf7be78b5f91b5b03ae2a588dad41d4e98370c573612322e",
+        "git_base_revision": "8a331e647eeb574be90cb2a6bd28a7e46f874ae3",
+        "source_has_uncommitted_changes": true
+      }
+    },
+    {
+      "suite": "contact-assignment-regression.integration.test.mjs",
+      "status": "PASS",
+      "leaf_cases": 47,
+      "tap_counts": {
+        "tests": 48,
+        "pass": 48,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "postgres_version": "postgres (PostgreSQL) 17.6",
+      "fixture_layer": "B_plus_post_contact_assignment_regression",
+      "source_manifest": {
+        "sha256": "5cc57905e5457e8eaf7be78b5f91b5b03ae2a588dad41d4e98370c573612322e",
+        "git_base_revision": "8a331e647eeb574be90cb2a6bd28a7e46f874ae3",
+        "source_has_uncommitted_changes": true
+      }
+    },
+    {
+      "suite": "contact-channel-regression.integration.test.mjs",
+      "status": "PASS",
+      "leaf_cases": 23,
+      "tap_counts": {
+        "tests": 24,
+        "pass": 24,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "postgres_version": "postgres (PostgreSQL) 17.6",
+      "fixture_layer": "B_plus_post_contact_assignment_regression",
+      "source_manifest": {
+        "sha256": "5cc57905e5457e8eaf7be78b5f91b5b03ae2a588dad41d4e98370c573612322e",
+        "git_base_revision": "8a331e647eeb574be90cb2a6bd28a7e46f874ae3",
+        "source_has_uncommitted_changes": true
+      }
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "status": "PASS",
+      "leaf_cases": 80,
+      "tap_counts": {
+        "tests": 81,
+        "pass": 81,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "postgres_version": "postgres (PostgreSQL) 17.6",
+      "fixture_layer": "B_plus_synthetic_contact_data",
+      "source_manifest": {
+        "sha256": "5cc57905e5457e8eaf7be78b5f91b5b03ae2a588dad41d4e98370c573612322e",
+        "git_base_revision": "8a331e647eeb574be90cb2a6bd28a7e46f874ae3",
+        "source_has_uncommitted_changes": true
+      }
+    },
+    {
+      "suite": "foundation.integration.test.mjs",
+      "status": "PASS",
+      "leaf_cases": 26,
+      "tap_counts": {
+        "tests": 27,
+        "pass": 27,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "postgres_version": "postgres (PostgreSQL) 17.6",
+      "fixture_layer": "minimal_synthetic_auth_crm",
+      "source_manifest": {
+        "sha256": "5cc57905e5457e8eaf7be78b5f91b5b03ae2a588dad41d4e98370c573612322e",
+        "git_base_revision": "8a331e647eeb574be90cb2a6bd28a7e46f874ae3",
+        "source_has_uncommitted_changes": true
+      }
+    },
+    {
+      "suite": "installation.integration.test.mjs",
+      "status": "PASS",
+      "leaf_cases": 9,
+      "tap_counts": {
+        "tests": 10,
+        "pass": 10,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "postgres_version": "postgres (PostgreSQL) 17.6",
+      "fixture_layer": "minimal_synthetic_auth_crm",
+      "source_manifest": {
+        "sha256": "5cc57905e5457e8eaf7be78b5f91b5b03ae2a588dad41d4e98370c573612322e",
+        "git_base_revision": "8a331e647eeb574be90cb2a6bd28a7e46f874ae3",
+        "source_has_uncommitted_changes": true
+      }
+    },
+    {
+      "suite": "schema-baseline-b.integration.test.mjs",
+      "status": "PASS",
+      "leaf_cases": 9,
+      "tap_counts": {
+        "tests": 10,
+        "pass": 10,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "postgres_version": "postgres (PostgreSQL) 17.6",
+      "fixture_layer": "schema_only_baseline_b",
+      "source_manifest": {
+        "sha256": "5cc57905e5457e8eaf7be78b5f91b5b03ae2a588dad41d4e98370c573612322e",
+        "git_base_revision": "8a331e647eeb574be90cb2a6bd28a7e46f874ae3",
+        "source_has_uncommitted_changes": true
+      }
+    },
+    {
+      "suite": "security.integration.test.mjs",
+      "status": "PASS",
+      "leaf_cases": 10,
+      "tap_counts": {
+        "tests": 11,
+        "pass": 11,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "postgres_version": "postgres (PostgreSQL) 17.6",
+      "fixture_layer": "minimal_synthetic_auth_crm",
+      "source_manifest": {
+        "sha256": "5cc57905e5457e8eaf7be78b5f91b5b03ae2a588dad41d4e98370c573612322e",
+        "git_base_revision": "8a331e647eeb574be90cb2a6bd28a7e46f874ae3",
+        "source_has_uncommitted_changes": true
+      }
+    }
+  ],
+  "cases": [
+    {
+      "suite": "assignment-boundary.integration.test.mjs",
+      "case": "D00: captured helper, controls structure/ACL/RLS/triggers and real B identity are reproduced",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-boundary.integration.test.mjs",
+      "case": "D01: synthetic invitations/users/leads and two actual disabled conversation rows are installed with legacy triggers enabled",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-boundary.integration.test.mjs",
+      "case": "D02: before owner change, target B has neither WhatsApp capability nor lead/control visibility",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-boundary.integration.test.mjs",
+      "case": "D03: PASS_DIAGNOSTIC_OBSERVED_CONFLICT \u2014 A\u2192B owner UPDATE grants B capability while actual channel row/epoch stay identical",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-boundary.integration.test.mjs",
+      "case": "D04: PASS_DIAGNOSTIC_OBSERVED_CONFLICT \u2014 null\u2192B initial owner UPDATE has the same independent channel-permission coupling",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-boundary.integration.test.mjs",
+      "case": "D05: real authenticated role remains unable to access private runtime or activate the installed gateway",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-channel-guard.integration.test.mjs",
+      "case": "G01: precutover legacy seller-owner retains real permission and mode RPC",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-channel-guard.integration.test.mjs",
+      "case": "G02: precutover seller-nonowner is denied by helper, actual control RLS and both mode RPC requests",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-channel-guard.integration.test.mjs",
+      "case": "G03: active admin retains legacy mode RPC behavior",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-channel-guard.integration.test.mjs",
+      "case": "G04: active supervisor retains legacy mode RPC behavior",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-channel-guard.integration.test.mjs",
+      "case": "G05: durable adopted seller-owner is denied even though ownership is unchanged",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-channel-guard.integration.test.mjs",
+      "case": "G06: real runtime AssignLead null\u2192B grants commercial ownership without channel capability",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-channel-guard.integration.test.mjs",
+      "case": "G07: real runtime TransferLead A\u2192B leaves new owner without channel capability",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-channel-guard.integration.test.mjs",
+      "case": "G08: old owner A remains unable to intervene after A\u2192B",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-channel-guard.integration.test.mjs",
+      "case": "G09: real B\u2192A return transfer cannot restore A channel permission",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-channel-guard.integration.test.mjs",
+      "case": "G10: real AcknowledgeLeadAssignment cannot grant channel access or rewrite ownership",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-channel-guard.integration.test.mjs",
+      "case": "G11: real commands preserve channel_authority; the restriction also works without a conversation-state row",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-channel-guard.integration.test.mjs",
+      "case": "G12: authority_epoch remains exactly unchanged across Assign, Transfer, return Transfer and Acknowledge",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-channel-guard.integration.test.mjs",
+      "case": "G13: paused assignment gate cannot restore the seller capability of an adopted lead",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-channel-guard.integration.test.mjs",
+      "case": "G14: real command retry and rollback preserve durable adoption without duplicate or leaked command effects",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-channel-guard.integration.test.mjs",
+      "case": "G15: crm_lead_runtime row without adoption keeps legacy channel behavior despite gate metadata",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-channel-guard.integration.test.mjs",
+      "case": "G16: real gateway rejects caller payloads that forge adoption or actor authority",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-channel-guard.integration.test.mjs",
+      "case": "G17: GUCs, forged JWT metadata and request headers cannot remove server-side adoption or forge role",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-channel-guard.integration.test.mjs",
+      "case": "G18: real authenticated seller cannot mutate adoption, gate, assignment epochs or technical adoption capability",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-channel-guard.integration.test.mjs",
+      "case": "G19: active admin and supervisor preserve actual legacy management capability on adopted leads",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-channel-guard.integration.test.mjs",
+      "case": "G20: inactive seller remains denied on both legacy and adopted assigned leads",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-channel-guard.integration.test.mjs",
+      "case": "G21: an old authenticated seller session cannot intervene after a real ownership transfer commits",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-channel-guard.integration.test.mjs",
+      "case": "G22: direct legacy set_whatsapp_conversation_mode fails for adopted current owner without channel/control/event side effects",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-channel-guard.integration.test.mjs",
+      "case": "G23: helper and actual control/event RLS remain denied across repeated real owner changes; no field or permission silently regrants access",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-channel-prerequisite.integration.test.mjs",
+      "case": "P01: captured legacy channel closure and candidate A install verbatim as non-superuser with zero adoption or authority seeds",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-channel-prerequisite.integration.test.mjs",
+      "case": "P02: legacy owner retains helper/control access and actual mode RPC; nonowner is denied atomically",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-channel-prerequisite.integration.test.mjs",
+      "case": "P03: active admin and supervisor retain actual legacy mode RPC behavior",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-channel-prerequisite.integration.test.mjs",
+      "case": "P04: runtime metadata and even an authoritative gate alone are not durable adoption",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-channel-prerequisite.integration.test.mjs",
+      "case": "P05: controlled adoption records server-derived cutover provenance and denies owner through helper, RLS and the real legacy mode RPC",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-channel-prerequisite.integration.test.mjs",
+      "case": "P06: the restriction needs no conversation state row or channel authority mutation",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-channel-prerequisite.integration.test.mjs",
+      "case": "P07: pausing the gate and retrying the same technical adoption cannot restore seller capability",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-channel-prerequisite.integration.test.mjs",
+      "case": "P08: durable evidence rejects UPDATE/DELETE/TRUNCATE and survives rollback of a later gate transaction",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-channel-prerequisite.integration.test.mjs",
+      "case": "P09: authenticated seller cannot write adoption/runtime/gates, assume owner role or invoke the technical adoption capability",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-channel-prerequisite.integration.test.mjs",
+      "case": "P10: actor metadata, arbitrary GUCs and request-header claims cannot remove the durable restriction",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-channel-prerequisite.integration.test.mjs",
+      "case": "P11: inactive seller is denied on both legacy and adopted ownership",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-channel-prerequisite.integration.test.mjs",
+      "case": "P12: adoption preserves active admin/supervisor behavior and does not touch M1 channel state or epoch",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-channel-prerequisite.integration.test.mjs",
+      "case": "P13: real READ COMMITTED mode RPC holds the lead permission lock; technical adoption waits then revokes the old seller session",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-channel-prerequisite.integration.test.mjs",
+      "case": "P14: real old REPEATABLE READ snapshot cannot use the legacy mode RPC after adoption; serialization failure precedes channel writes",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-channel-prerequisite.integration.test.mjs",
+      "case": "P15: old REPEATABLE READ cannot truncate assignment history inserted and adopted after its snapshot",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-channel-prerequisite.integration.test.mjs",
+      "case": "P16: PostgREST-style READ ONLY transaction can evaluate legacy and adopted helper/control SELECT policies",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-runtime.integration.test.mjs",
+      "case": "A27: installing candidates changes no business rows, activates no gate and grants no API access",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-runtime.integration.test.mjs",
+      "case": "A26: inactive installation retains characterized legacy transfer reset; runtime gate inactive rejects",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-runtime.integration.test.mjs",
+      "case": "A01: genuine initial assignment succeeds without creating a protocol or acquiring a channel",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-runtime.integration.test.mjs",
+      "case": "A02: TransferLead A\u2192B changes future owner with a valid versioned command",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-runtime.integration.test.mjs",
+      "case": "A03: Se\u00f1a and Cierre stages survive transfer without becoming Nuevo",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-runtime.integration.test.mjs",
+      "case": "A04: next action, its source and post-deposit appointment are preserved",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-runtime.integration.test.mjs",
+      "case": "A05: interview facts and historical timestamps are preserved",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-runtime.integration.test.mjs",
+      "case": "A06: deposit amount, effective date and validation are unchanged",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-runtime.integration.test.mjs",
+      "case": "A07: active protocol IDs, started_at and historical seller survive intact",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-runtime.integration.test.mjs",
+      "case": "A08: historical tasks, actors, performed_at and existing activity rows are not reattributed",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-runtime.integration.test.mjs",
+      "case": "A09: transfer creates no protocol and cancels no existing task",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-runtime.integration.test.mjs",
+      "case": "A10: transfer has no start_lead_crm_cycle semantics or new cycle activity",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-runtime.integration.test.mjs",
+      "case": "A11: assignment_epoch increments exactly once",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-runtime.integration.test.mjs",
+      "case": "A12: aggregate_version increments exactly once under the command contract",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-runtime.integration.test.mjs",
+      "case": "A13: exactly one assignment history row and command event identify the actual supervisor",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-runtime.integration.test.mjs",
+      "case": "A14: retries/double click preserve one Assign and Transfer effect; changed destination conflicts",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-runtime.integration.test.mjs",
+      "case": "A15: former owner using an authenticated old identity cannot mutate an inherited pending task",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-runtime.integration.test.mjs",
+      "case": "A16: B resolves the original pending task through the real RPC without rewriting task or sequence provenance",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-runtime.integration.test.mjs",
+      "case": "A17: TransferLead leaves channel authority unchanged",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-runtime.integration.test.mjs",
+      "case": "A18: TransferLead changes no channel authority_epoch",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-runtime.integration.test.mjs",
+      "case": "A19: adopted assignment cannot grant seller WhatsApp capability or mode RPC access",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-runtime.integration.test.mjs",
+      "case": "A20: acknowledge is versioned/idempotent and changes neither owner nor assigned_at",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-runtime.integration.test.mjs",
+      "case": "A21: acknowledge does not fabricate handoff/obligations or change dialogue policy",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-runtime.integration.test.mjs",
+      "case": "A22: two supervisors A\u2192B versus A\u2192C serialize in real sessions with one actionable loser",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-runtime.integration.test.mjs",
+      "case": "A23: an old-owner real follow-up racing an uncommitted transfer cannot overwrite B",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-runtime.integration.test.mjs",
+      "case": "A24: target becoming inactive concurrently rejects atomically after a real profile lock wait",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-runtime.integration.test.mjs",
+      "case": "A25: adopted-domain legacy RPC/direct owner writers are characterized and actually fenced",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-runtime.integration.test.mjs",
+      "case": "X01: B acknowledging an assignment not yet committed loses with an actionable version conflict",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-runtime.integration.test.mjs",
+      "case": "X02: simultaneous supervisor double click serializes the same key into one effect and a replay",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-runtime.integration.test.mjs",
+      "case": "X03: retry from a new session after a committed response is lost returns the durable prior result",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-runtime.integration.test.mjs",
+      "case": "X04: seller cannot self-assign, transfer, forge actor/assigned_by/epoch or acknowledge another owner",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-runtime.integration.test.mjs",
+      "case": "X05: old owner refresh_due_contact_protocols does not advance an adopted protocol still bearing historical A",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-runtime.integration.test.mjs",
+      "case": "X06: adopted current-owner task/sequence/assignment reads work in a genuine read-only authenticated transaction",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-runtime.integration.test.mjs",
+      "case": "X07: historical quote ownership does not let A mutate an adopted opportunity after transfer",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-runtime.integration.test.mjs",
+      "case": "X08: real appraisal RPC passes its old owner check, then a committed transfer makes its eventual write fail atomically",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-runtime.integration.test.mjs",
+      "case": "X09: Assign rejects orphan opportunities with a prior agenda, contact or inherited protocol/history",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-runtime.integration.test.mjs",
+      "case": "X10: Transfer rejects terminal CRM stages and an administrative sales case without altering historical facts",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-runtime.integration.test.mjs",
+      "case": "X11: an actual assignment-history INSERT failure rolls back owner/history/activity/runtime/receipt/event and permits the same-key retry",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-runtime.integration.test.mjs",
+      "case": "F01 extra foundation: certified execution, normalization and canonical hash SQL remain byte-identical after A+B",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-runtime.integration.test.mjs",
+      "case": "F02 extra foundation: added authority stays private and runtime gains no broad legacy DML",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-runtime.integration.test.mjs",
+      "case": "F03 extra foundation: stock FoundationProbe remains compiled closed through the new public gateway",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-runtime.integration.test.mjs",
+      "case": "F04 extra foundation: actual probe commits one effect/event/receipt, replays, rejects key conflict, and retains SQL/JS hash parity",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-runtime.integration.test.mjs",
+      "case": "F05 extra foundation: stale aggregate and assignment versions reject without a synthetic effect",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-runtime.integration.test.mjs",
+      "case": "F06 extra foundation: exception after real SQL effect rolls back effect, receipt, event and aggregate atomically",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-runtime.integration.test.mjs",
+      "case": "F07 extra foundation: test hook is restored closed and no evaluating receipt or orphan event remains",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-runtime.integration.test.mjs",
+      "case": "F08 extra foundation: receipt execution proof is server-derived, terminally disabled and cannot be supplied through the API",
+      "status": "PASS"
+    },
+    {
+      "suite": "assignment-runtime.integration.test.mjs",
+      "case": "F09 extra foundation: receipt proof constraints reject invalid proof, duplicate active proof and undecided COMMIT",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-assignment-regression.integration.test.mjs",
+      "case": "A27: installing candidates changes no business rows, activates no gate and grants no API access",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-assignment-regression.integration.test.mjs",
+      "case": "A26: inactive installation retains characterized legacy transfer reset; runtime gate inactive rejects",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-assignment-regression.integration.test.mjs",
+      "case": "A01: genuine initial assignment succeeds without creating a protocol or acquiring a channel",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-assignment-regression.integration.test.mjs",
+      "case": "A02: TransferLead A\u2192B changes future owner with a valid versioned command",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-assignment-regression.integration.test.mjs",
+      "case": "A03: Se\u00f1a and Cierre stages survive transfer without becoming Nuevo",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-assignment-regression.integration.test.mjs",
+      "case": "A04: next action, its source and post-deposit appointment are preserved",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-assignment-regression.integration.test.mjs",
+      "case": "A05: interview facts and historical timestamps are preserved",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-assignment-regression.integration.test.mjs",
+      "case": "A06: deposit amount, effective date and validation are unchanged",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-assignment-regression.integration.test.mjs",
+      "case": "A07: active protocol IDs, started_at and historical seller survive intact",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-assignment-regression.integration.test.mjs",
+      "case": "A08: historical tasks, actors, performed_at and existing activity rows are not reattributed",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-assignment-regression.integration.test.mjs",
+      "case": "A09: transfer creates no protocol and cancels no existing task",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-assignment-regression.integration.test.mjs",
+      "case": "A10: transfer has no start_lead_crm_cycle semantics or new cycle activity",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-assignment-regression.integration.test.mjs",
+      "case": "A11: assignment_epoch increments exactly once",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-assignment-regression.integration.test.mjs",
+      "case": "A12: aggregate_version increments exactly once under the command contract",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-assignment-regression.integration.test.mjs",
+      "case": "A13: exactly one assignment history row and command event identify the actual supervisor",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-assignment-regression.integration.test.mjs",
+      "case": "A14: retries/double click preserve one Assign and Transfer effect; changed destination conflicts",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-assignment-regression.integration.test.mjs",
+      "case": "A15: former owner using an authenticated old identity cannot mutate an inherited pending task",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-assignment-regression.integration.test.mjs",
+      "case": "A16: B resolves the original pending task through the real RPC without rewriting task or sequence provenance",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-assignment-regression.integration.test.mjs",
+      "case": "A17: TransferLead leaves channel authority unchanged",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-assignment-regression.integration.test.mjs",
+      "case": "A18: TransferLead changes no channel authority_epoch",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-assignment-regression.integration.test.mjs",
+      "case": "A19: adopted assignment cannot grant seller WhatsApp capability or mode RPC access",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-assignment-regression.integration.test.mjs",
+      "case": "A20: acknowledge is versioned/idempotent and changes neither owner nor assigned_at",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-assignment-regression.integration.test.mjs",
+      "case": "A21: acknowledge does not fabricate handoff/obligations or change dialogue policy",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-assignment-regression.integration.test.mjs",
+      "case": "A22: two supervisors A\u2192B versus A\u2192C serialize in real sessions with one actionable loser",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-assignment-regression.integration.test.mjs",
+      "case": "A23: an old-owner real follow-up racing an uncommitted transfer cannot overwrite B",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-assignment-regression.integration.test.mjs",
+      "case": "A24: target becoming inactive concurrently rejects atomically after a real profile lock wait",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-assignment-regression.integration.test.mjs",
+      "case": "A25: adopted-domain legacy RPC/direct owner writers are characterized and actually fenced",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-assignment-regression.integration.test.mjs",
+      "case": "X01: B acknowledging an assignment not yet committed loses with an actionable version conflict",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-assignment-regression.integration.test.mjs",
+      "case": "X02: simultaneous supervisor double click serializes the same key into one effect and a replay",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-assignment-regression.integration.test.mjs",
+      "case": "X03: retry from a new session after a committed response is lost returns the durable prior result",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-assignment-regression.integration.test.mjs",
+      "case": "X04: seller cannot self-assign, transfer, forge actor/assigned_by/epoch or acknowledge another owner",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-assignment-regression.integration.test.mjs",
+      "case": "X05: old owner refresh_due_contact_protocols does not advance an adopted protocol still bearing historical A",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-assignment-regression.integration.test.mjs",
+      "case": "X06: adopted current-owner task/sequence/assignment reads work in a genuine read-only authenticated transaction",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-assignment-regression.integration.test.mjs",
+      "case": "X07: historical quote ownership does not let A mutate an adopted opportunity after transfer",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-assignment-regression.integration.test.mjs",
+      "case": "X08: real appraisal RPC passes its old owner check, then a committed transfer makes its eventual write fail atomically",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-assignment-regression.integration.test.mjs",
+      "case": "X09: Assign rejects orphan opportunities with a prior agenda, contact or inherited protocol/history",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-assignment-regression.integration.test.mjs",
+      "case": "X10: Transfer rejects terminal CRM stages and an administrative sales case without altering historical facts",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-assignment-regression.integration.test.mjs",
+      "case": "X11: an actual assignment-history INSERT failure rolls back owner/history/activity/runtime/receipt/event and permits the same-key retry",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-assignment-regression.integration.test.mjs",
+      "case": "F01 extra foundation: certified execution, normalization and canonical hash SQL remain byte-identical after A+B",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-assignment-regression.integration.test.mjs",
+      "case": "F02 extra foundation: added authority stays private and runtime gains no broad legacy DML",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-assignment-regression.integration.test.mjs",
+      "case": "F03 extra foundation: stock FoundationProbe remains compiled closed through the new public gateway",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-assignment-regression.integration.test.mjs",
+      "case": "F04 extra foundation: actual probe commits one effect/event/receipt, replays, rejects key conflict, and retains SQL/JS hash parity",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-assignment-regression.integration.test.mjs",
+      "case": "F05 extra foundation: stale aggregate and assignment versions reject without a synthetic effect",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-assignment-regression.integration.test.mjs",
+      "case": "F06 extra foundation: exception after real SQL effect rolls back effect, receipt, event and aggregate atomically",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-assignment-regression.integration.test.mjs",
+      "case": "F07 extra foundation: test hook is restored closed and no evaluating receipt or orphan event remains",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-assignment-regression.integration.test.mjs",
+      "case": "F08 extra foundation: receipt execution proof is server-derived, terminally disabled and cannot be supplied through the API",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-assignment-regression.integration.test.mjs",
+      "case": "F09 extra foundation: receipt proof constraints reject invalid proof, duplicate active proof and undecided COMMIT",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-channel-regression.integration.test.mjs",
+      "case": "G01: precutover legacy seller-owner retains real permission and mode RPC",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-channel-regression.integration.test.mjs",
+      "case": "G02: precutover seller-nonowner is denied by helper, actual control RLS and both mode RPC requests",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-channel-regression.integration.test.mjs",
+      "case": "G03: active admin retains legacy mode RPC behavior",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-channel-regression.integration.test.mjs",
+      "case": "G04: active supervisor retains legacy mode RPC behavior",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-channel-regression.integration.test.mjs",
+      "case": "G05: durable adopted seller-owner is denied even though ownership is unchanged",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-channel-regression.integration.test.mjs",
+      "case": "G06: real runtime AssignLead null\u2192B grants commercial ownership without channel capability",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-channel-regression.integration.test.mjs",
+      "case": "G07: real runtime TransferLead A\u2192B leaves new owner without channel capability",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-channel-regression.integration.test.mjs",
+      "case": "G08: old owner A remains unable to intervene after A\u2192B",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-channel-regression.integration.test.mjs",
+      "case": "G09: real B\u2192A return transfer cannot restore A channel permission",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-channel-regression.integration.test.mjs",
+      "case": "G10: real AcknowledgeLeadAssignment cannot grant channel access or rewrite ownership",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-channel-regression.integration.test.mjs",
+      "case": "G11: real commands preserve channel_authority; the restriction also works without a conversation-state row",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-channel-regression.integration.test.mjs",
+      "case": "G12: authority_epoch remains exactly unchanged across Assign, Transfer, return Transfer and Acknowledge",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-channel-regression.integration.test.mjs",
+      "case": "G13: paused assignment gate cannot restore the seller capability of an adopted lead",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-channel-regression.integration.test.mjs",
+      "case": "G14: real command retry and rollback preserve durable adoption without duplicate or leaked command effects",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-channel-regression.integration.test.mjs",
+      "case": "G15: crm_lead_runtime row without adoption keeps legacy channel behavior despite gate metadata",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-channel-regression.integration.test.mjs",
+      "case": "G16: real gateway rejects caller payloads that forge adoption or actor authority",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-channel-regression.integration.test.mjs",
+      "case": "G17: GUCs, forged JWT metadata and request headers cannot remove server-side adoption or forge role",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-channel-regression.integration.test.mjs",
+      "case": "G18: real authenticated seller cannot mutate adoption, gate, assignment epochs or technical adoption capability",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-channel-regression.integration.test.mjs",
+      "case": "G19: active admin and supervisor preserve actual legacy management capability on adopted leads",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-channel-regression.integration.test.mjs",
+      "case": "G20: inactive seller remains denied on both legacy and adopted assigned leads",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-channel-regression.integration.test.mjs",
+      "case": "G21: an old authenticated seller session cannot intervene after a real ownership transfer commits",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-channel-regression.integration.test.mjs",
+      "case": "G22: direct legacy set_whatsapp_conversation_mode fails for adopted current owner without channel/control/event side effects",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-channel-regression.integration.test.mjs",
+      "case": "G23: helper and actual control/event RLS remain denied across repeated real owner changes; no field or permission silently regrants access",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B02: missing dependencies and wrong order roll back without B authority",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B03: each installation prefix is closed and adopts no business row",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B01: complete ordered installation has validated PostgreSQL catalogs",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B04: owner role, memberships, fixed search paths and closed definer functions",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B05: real API roles have no direct table access and FORCE RLS remains enabled",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B06: runtime rows, gate, JWT/header/GUC never constitute technical adoption",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B07: adoption requires durable Assignment and exact B gate, preserves baseline evidence",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B08: pause is sticky, keeps commercial/channel epochs and seller channel denial",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B09: durable facts, adoptions and terminal history cannot be updated/deleted/truncated",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B10: future gates and FoundationProbe remain non-authoritative",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B11: current owner and management scope, never historical task ownership",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B12: actor, ownership and privileged provenance cannot be injected",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B13: inactive actor and concurrent deactivation are rejected",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B14: foreign task, sequence, action and fact references fail closed",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B15: same command ID and intent yield one effect and replay",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B16: same idempotency key replays only same hash",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B17: new keys cannot duplicate or overwrite stable fact/action identities",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B18: stale aggregate, Assignment and B revisions never partially apply",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B19: replay reevaluates read rights but succeeds through pause for authorized actor",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B20: neither GUC nor another domain receipt grants Contact DML",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B21: no_answer records real declared attempt/credit without stage/channel mutation",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B22: personal WA sent is declared evidence, never delivery or corporate channel proof",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B23: answered plus explicit next action is atomic and preserves commercial stage",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B24: manual skipped records omission, never attempt or last contact",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B25: deadline observation is clock work with no seller contact or productivity attribution",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B26: future/ambiguous times and incompatible channels never receive silent normalization",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B27: late evidence survives and only explicit supervisor review grants delayed credit",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B28: older occurrence does not replace latest contact and remains historical evidence",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B29: supervisor amendment is append-only, compensates credit and never reopens protocol",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B30: one task and fact have at most one credit; inbound response does not invent call credit",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B31: new action has stable identity, revision and explicit date without contact or stage",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B32: reschedule and note editing preserve action identity and protocol history",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B33: factual completion needs no invented date, but ordinary cancellation needs replacement",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B34: explicit cancellation and replacement do not restart protocol or erase on omission",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B35: server clock observes deadline once while getter performs zero writes",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B36: rescheduling an overdue action retains old observation and advances revision",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B37: deep protected snapshot remains identical through contact/action/omission",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B38: opt-out atomically restricts linked customer and removes future work without stage",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B39: paused gate only admits restrictive opt-out without credit or new schedule",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B40: incoherent customer identity fails without repair and no B operation lifts restriction",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B41: 18+2 and historical 6+2 protocol IDs/windows survive adoption and transfer",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B42: fully credited no-response protocol closes factually without cold/Recall/stage",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B43: all omitted yields protocol_incomplete and visible zero registered attempts",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B44: partial counts retain denominator and descriptive majority without future routing",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B45: unknown legacy work or empty/unrecognized plan cannot prove full or zero physical work",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B46: manual agenda explicitly supersedes only future work, preserving credited/omitted history",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B47: response, no_interest, invalid and restriction remain distinct operational causes",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B48: legacy classifier trigger/direct call is contained only for adopted cohort",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B49: no-change clock is terminal without events/version; future windows remain visible",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B50: operational getter is READ ONLY, scoped and exposes evidence/review/clock context",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B51: legacy, A-only and A+B cohorts preserve distinct writer authority",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B52: every legacy result/answer/follow-up overload rejects before any side effect",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B53: mixed supervisor scheduling/status/management cannot partially commit excluded domains",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B54: restart/reconcile/future/Recall writers cannot reset adopted work",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B55: mixed-cohort legacy refresh processes only legacy and preserves B for explicit clock",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B56: service/direct DML/definer do not bypass B fields; excluded notes retain permissions",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B57: insert/delete/cascade/truncate cannot erase or forge adopted CRM/protocol history",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B58: new legacy leads retain initialization without implicit adoption",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B59: excluded appointment/deposit/document fields alone do not create B effects",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B60: reproduced webhook/sales mixed DML is rejected atomically without external functions",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B61: two real sessions with same intent block then commit one logical result",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B62: different simultaneous facts for same task produce one credit and stale loser",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B63: contact versus Transfer serializes both orders without owner/history confusion",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B64: contact/agenda and Acknowledge share aggregate CAS without changing epoch",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B65: reschedule/cancel replacement versus factual completion preserves one consistent outcome",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B66: clock versus late evidence preserves deadline observation and review requirement",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B67: gate pause serializes with command and cannot broaden the DNC exception",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B68: adoption fences old snapshots and direct legacy writers without inverse-lock bypass",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B69: opt-out versus agenda and Transfer stays monotonic and scoped to linked identity",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B70: concurrent supervisor decisions produce one credit/review revision",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B71: failures after fact, credit and agenda roll back the complete command transaction",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B72: backend termination before commit leaves zero partial effects and same intent retries",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B73: commit with lost response is recovered exactly without duplicate timestamps or work",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B74: real 55P03, 40001 and deadlock rollback never create a duplicate intention",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B75: projection/helper failure cannot leak a live evaluating capability into session",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B76: version exhaustion, missing references and uniqueness fail without mutilating history",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B77: event replay reconstructs disposable projections without invoking commands or legacy effects",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B78: compatible technical pause retains adoption/fences/epochs/history and seller channel denial",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B79: Assignment regression boundary remains valid with B installed",
+      "status": "PASS"
+    },
+    {
+      "suite": "contact-runtime.integration.test.mjs",
+      "case": "DB-B80: foundation history/closed purposes and private privileges remain protected after B",
+      "status": "PASS"
+    },
+    {
+      "suite": "foundation.integration.test.mjs",
+      "case": "ISOLATION: PostgreSQL17, Unix socket, restricted migrator and six private tables",
+      "status": "PASS"
+    },
+    {
+      "suite": "foundation.integration.test.mjs",
+      "case": "M14: no API role can directly read/write new tables or execute the installed gateway",
+      "status": "PASS"
+    },
+    {
+      "suite": "foundation.integration.test.mjs",
+      "case": "M12: default gates observe; no authoritative/quiescing state can be installed",
+      "status": "PASS"
+    },
+    {
+      "suite": "foundation.integration.test.mjs",
+      "case": "M13: future recovery/internal send purposes cannot become ready or authoritative",
+      "status": "PASS"
+    },
+    {
+      "suite": "foundation.integration.test.mjs",
+      "case": "M15: new conversation structure stays disabled/paused; seller cannot acquire channel authority",
+      "status": "PASS"
+    },
+    {
+      "suite": "foundation.integration.test.mjs",
+      "case": "STOCK-HOOK: even fixture-ready gates cannot activate the installed handler",
+      "status": "PASS"
+    },
+    {
+      "suite": "foundation.integration.test.mjs",
+      "case": "M01: same command_id and same intent have one logical result",
+      "status": "PASS"
+    },
+    {
+      "suite": "foundation.integration.test.mjs",
+      "case": "M02: same idempotency key/hash with a new command UUID replays the original",
+      "status": "PASS"
+    },
+    {
+      "suite": "foundation.integration.test.mjs",
+      "case": "M03: a changed payload under the same key conflicts without another effect",
+      "status": "PASS"
+    },
+    {
+      "suite": "foundation.integration.test.mjs",
+      "case": "M04: stale aggregate/assignment versions reject before applying",
+      "status": "PASS"
+    },
+    {
+      "suite": "foundation.integration.test.mjs",
+      "case": "M05: caller actor/role cannot be supplied in envelope or payload",
+      "status": "PASS"
+    },
+    {
+      "suite": "foundation.integration.test.mjs",
+      "case": "M06: inactive user cannot apply a command or recover an old replay",
+      "status": "PASS"
+    },
+    {
+      "suite": "foundation.integration.test.mjs",
+      "case": "M07: foreign, unassigned and formerly owned scopes are denied without receipt disclosure",
+      "status": "PASS"
+    },
+    {
+      "suite": "foundation.integration.test.mjs",
+      "case": "M08: effect/event/receipt/version commit atomically and SQL hash matches the actual JS contract",
+      "status": "PASS"
+    },
+    {
+      "suite": "foundation.integration.test.mjs",
+      "case": "M09: backend crash before COMMIT leaves no partial receipt/event/effect",
+      "status": "PASS"
+    },
+    {
+      "suite": "foundation.integration.test.mjs",
+      "case": "M10: retry after COMMIT from a fresh connection returns the committed result",
+      "status": "PASS"
+    },
+    {
+      "suite": "foundation.integration.test.mjs",
+      "case": "M11: two real sessions race on one command; observed lock wait, exactly one application",
+      "status": "PASS"
+    },
+    {
+      "suite": "foundation.integration.test.mjs",
+      "case": "FAILPOINT: exception after synthetic DML rolls back every command effect",
+      "status": "PASS"
+    },
+    {
+      "suite": "foundation.integration.test.mjs",
+      "case": "GATE-VECTOR: changing one domain epoch does not borrow authority from the other",
+      "status": "PASS"
+    },
+    {
+      "suite": "foundation.integration.test.mjs",
+      "case": "VERSION-EXHAUSTED: safe integer ceiling cannot overflow into an imprecise JS version",
+      "status": "PASS"
+    },
+    {
+      "suite": "foundation.integration.test.mjs",
+      "case": "BUSINESS-DEDUPE: different keys cannot duplicate the synthetic operation identity",
+      "status": "PASS"
+    },
+    {
+      "suite": "foundation.integration.test.mjs",
+      "case": "DEFERRED-GUARD: evaluating receipts cannot commit",
+      "status": "PASS"
+    },
+    {
+      "suite": "foundation.integration.test.mjs",
+      "case": "APPEND-ONLY: terminal receipts/events/policy reject mutation and TRUNCATE",
+      "status": "PASS"
+    },
+    {
+      "suite": "foundation.integration.test.mjs",
+      "case": "DEFERRED-EVENT: an event cannot later attach to a rejected receipt",
+      "status": "PASS"
+    },
+    {
+      "suite": "foundation.integration.test.mjs",
+      "case": "CONCURRENT-CAS: distinct intents at one version produce one effect and one conflict",
+      "status": "PASS"
+    },
+    {
+      "suite": "foundation.integration.test.mjs",
+      "case": "FINAL-INVARIANTS: no evaluating receipt/orphan event; new channel authority remains closed",
+      "status": "PASS"
+    },
+    {
+      "suite": "installation.integration.test.mjs",
+      "case": "I00: fresh relevant schema only, with no M1 role, gateway or tables",
+      "status": "PASS"
+    },
+    {
+      "suite": "installation.integration.test.mjs",
+      "case": "I01: 02 and 03 without predecessors fail and leave no role, schema grant or object",
+      "status": "PASS"
+    },
+    {
+      "suite": "installation.integration.test.mjs",
+      "case": "I02: 01 preflight rejects an absent required legacy relation before creating anything",
+      "status": "PASS"
+    },
+    {
+      "suite": "installation.integration.test.mjs",
+      "case": "I03: 01 alone commits four empty tables, FORCE RLS and no API permission",
+      "status": "PASS"
+    },
+    {
+      "suite": "installation.integration.test.mjs",
+      "case": "I04: 03 after only 01 fails without making the partial installation usable",
+      "status": "PASS"
+    },
+    {
+      "suite": "installation.integration.test.mjs",
+      "case": "I05: 02 transfers only new ownership and removes temporary CREATE/SET/INHERIT",
+      "status": "PASS"
+    },
+    {
+      "suite": "installation.integration.test.mjs",
+      "case": "I06: a dependency failure in 03 rolls back its temporary membership and schema grants",
+      "status": "PASS"
+    },
+    {
+      "suite": "installation.integration.test.mjs",
+      "case": "I07: 01->02->03 commits six closed tables with validated constraints/indexes and expected trigger graph",
+      "status": "PASS"
+    },
+    {
+      "suite": "installation.integration.test.mjs",
+      "case": "I08: accidentally applying 03 twice fails transactionally, without changing the installed state",
+      "status": "PASS"
+    },
+    {
+      "suite": "schema-baseline-b.integration.test.mjs",
+      "case": "B00: source integrity and real bootstrap identity are prerequisites",
+      "status": "PASS"
+    },
+    {
+      "suite": "schema-baseline-b.integration.test.mjs",
+      "case": "B01: observed tables, columns, constraints, indexes, triggers, policies, functions, sequences and enum match",
+      "status": "PASS"
+    },
+    {
+      "suite": "schema-baseline-b.integration.test.mjs",
+      "case": "B02: selected roles, membership grantors, schemas and default ACLs match",
+      "status": "PASS"
+    },
+    {
+      "suite": "schema-baseline-b.integration.test.mjs",
+      "case": "B03: captured auth.uid implementation honors real JWT claims precedence and malformed claims",
+      "status": "PASS"
+    },
+    {
+      "suite": "schema-baseline-b.integration.test.mjs",
+      "case": "B4: 20260917154844_m1_runtime_authority_foundation.sql applies verbatim as postgres NOSUPERUSER and preserves observed objects",
+      "status": "PASS"
+    },
+    {
+      "suite": "schema-baseline-b.integration.test.mjs",
+      "case": "B5: 20260917154854_m1_private_capabilities.sql applies verbatim as postgres NOSUPERUSER and preserves observed objects",
+      "status": "PASS"
+    },
+    {
+      "suite": "schema-baseline-b.integration.test.mjs",
+      "case": "B6: 20260917154905_m1_command_receipts_events.sql applies verbatim as postgres NOSUPERUSER and preserves observed objects",
+      "status": "PASS"
+    },
+    {
+      "suite": "schema-baseline-b.integration.test.mjs",
+      "case": "B07: six empty runtime tables are closed despite broad observed public-schema default grants",
+      "status": "PASS"
+    },
+    {
+      "suite": "schema-baseline-b.integration.test.mjs",
+      "case": "B08: installed handler remains closed and no legacy capabilities leak to the runtime owner",
+      "status": "PASS"
+    },
+    {
+      "suite": "security.integration.test.mjs",
+      "case": "S16/S19: installed owners, membership options and real API denials",
+      "status": "PASS"
+    },
+    {
+      "suite": "security.integration.test.mjs",
+      "case": "S18: definer/invoker ownership and private helper EXECUTE are explicit",
+      "status": "PASS"
+    },
+    {
+      "suite": "security.integration.test.mjs",
+      "case": "S18/S26: installed probe derives actor through read/lock helpers and cannot mutate legacy",
+      "status": "PASS"
+    },
+    {
+      "suite": "security.integration.test.mjs",
+      "case": "S20/S21/S22: UPDATE, DELETE and TRUNCATE cannot rewrite or remove committed history",
+      "status": "PASS"
+    },
+    {
+      "suite": "security.integration.test.mjs",
+      "case": "S17: FORCE RLS filters the NOLOGIN table owner; disabling FORCE changes the result",
+      "status": "PASS"
+    },
+    {
+      "suite": "security.integration.test.mjs",
+      "case": "S16/S17: RLS still denies an ordinary role with fixture SELECT; BYPASSRLS is not falsely certified",
+      "status": "PASS"
+    },
+    {
+      "suite": "security.integration.test.mjs",
+      "case": "S18/S25: spoofed auxiliary claims do not replace the active profile or current owner",
+      "status": "PASS"
+    },
+    {
+      "suite": "security.integration.test.mjs",
+      "case": "S23-GATE: an in-flight gate change is awaited and rechecked before any effect",
+      "status": "PASS"
+    },
+    {
+      "suite": "security.integration.test.mjs",
+      "case": "S23-LEAD/S25: current ownership is read under a real lead lock after waiting",
+      "status": "PASS"
+    },
+    {
+      "suite": "security.integration.test.mjs",
+      "case": "S24: a real PostgreSQL deadlock and full transaction retry cannot duplicate an intent",
+      "status": "PASS"
+    }
+  ]
+}

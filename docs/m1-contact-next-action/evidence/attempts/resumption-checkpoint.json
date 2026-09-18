@@ -1,0 +1,13 @@
+{
+  "captured_at": "2026-09-18T20:00:23.901112+00:00",
+  "head": "8a331e647eeb574be90cb2a6bd28a7e46f874ae3",
+  "branch": "feat/m1-runtime-foundation",
+  "status": " M tests/m1/harness/README.md\n M tests/m1/harness/candidate_plan.py\n M tests/m1/harness/pack-source.py\n M tests/m1/harness/run-local.py\n?? docs/m1-contact-next-action/evidence/baseline-20260918/database.json\n?? docs/m1-contact-next-action/evidence/baseline-20260918/isolation.json\n?? docs/m1-contact-next-action/evidence/baseline-20260918/pure-regression.json\n?? docs/m1-contact-next-action/evidence/baseline-20260918/summary.json\n?? docs/m1-contact-next-action/evidence/baseline-20260918/vm.json\n?? docs/m1-contact-next-action/implementation.md\n?? docs/m1-contact-next-action/legacy-boundary.md\n?? docs/m1-contact-next-action/test-traceability.md\n?? docs/m1-contact-next-action/validation-and-rollout.md\n?? supabase/functions/_shared/crm-runtime/contact-next-action-contracts.mjs\n?? supabase/migrations/20260918160432_m1_contact_runtime_foundation.sql\n?? supabase/migrations/20260918160433_m1_contact_legacy_fences.sql\n?? supabase/migrations/20260918160434_m1_contact_commands.sql\n?? tests/m1/contact-next-action-contracts.test.mjs\n?? tests/m1/contact-runtime.integration.test.mjs\n?? tests/m1/fixtures/contact-runtime/README.md\n?? tests/m1/fixtures/contact-runtime/fence-baseline-manifest.json\n?? tests/m1/fixtures/contact-runtime/legacy-writers-overlay.sql\n?? tests/m1/fixtures/contact-runtime/legacy-writers-source.json\n?? tests/m1/harness/summarize-evidence.py\n",
+  "sha256": {
+    "supabase/migrations/20260918160432_m1_contact_runtime_foundation.sql": "086dc957893397919add0c44f3efaa0d016ba22ecbb7db4d985725ac1d4bd341",
+    "supabase/migrations/20260918160433_m1_contact_legacy_fences.sql": "66f0b7fdaa83dee807ee3c3644aa5d6d399e9c96dd0bb7d13844a24d4c812391",
+    "supabase/migrations/20260918160434_m1_contact_commands.sql": "f0ce4f27302a8813f7561c02870785c6cf65e641a4a0bbf9e47859721a927401",
+    "tests/m1/contact-runtime.integration.test.mjs": "0f03e5c1e562a4f510bb00f18a65d49a6ccb4ba13bb38b5d55d188eb7b4ef442",
+    "supabase/functions/_shared/crm-runtime/contact-next-action-contracts.mjs": "3ac8ec216be2917145fffcc579fa8a67907985b28beb12673b700adce1dc5558"
+  }
+}

@@ -1,0 +1,255 @@
+M1_VM_ISOLATION={"interfaces": ["lo"], "route": "", "kernel": "Linux version 6.8.0-138-generic (buildd@lcy02-amd64-023) (x86_64-linux-gnu-gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0, GNU ld (GNU Binutils for Ubuntu) 2.42) #138-Ubuntu SMP PREEMPT_DYNAMIC Fri Jul 31 22:41:49 UTC 2026\n", "uid_map": "         0          0 4294967295\n", "initial_environment_keys": ["LANG", "LC_ALL", "PATH"]}
+TAP version 13
+# Subtest: M1-04B: 80 PostgreSQL acceptance scenarios, isolated synthetic data only
+    # Subtest: DB-B02: missing dependencies and wrong order roll back without B authority
+    ok 1 - DB-B02: missing dependencies and wrong order roll back without B authority
+      ---
+      duration_ms: 222.73207
+      type: 'test'
+      ...
+    # Subtest: DB-B03: each installation prefix is closed and adopts no business row
+    ok 2 - DB-B03: each installation prefix is closed and adopts no business row
+      ---
+      duration_ms: 1469.95333
+      type: 'test'
+      ...
+    # Subtest: DB-B01: complete ordered installation has validated PostgreSQL catalogs
+    ok 3 - DB-B01: complete ordered installation has validated PostgreSQL catalogs
+      ---
+      duration_ms: 167.00071
+      type: 'test'
+      ...
+    # Subtest: DB-B04: owner role, memberships, fixed search paths and closed definer functions
+    ok 4 - DB-B04: owner role, memberships, fixed search paths and closed definer functions
+      ---
+      duration_ms: 1033.99134
+      type: 'test'
+      ...
+    # Subtest: DB-B05: real API roles have no direct table access and FORCE RLS remains enabled
+    ok 5 - DB-B05: real API roles have no direct table access and FORCE RLS remains enabled
+      ---
+      duration_ms: 658.5931
+      type: 'test'
+      ...
+    # Subtest: DB-B06: runtime rows, gate, JWT/header/GUC never constitute technical adoption
+    ok 6 - DB-B06: runtime rows, gate, JWT/header/GUC never constitute technical adoption
+      ---
+      duration_ms: 526.23337
+      type: 'test'
+      ...
+    # Subtest: DB-B07: adoption requires durable Assignment and exact B gate, preserves baseline evidence
+    ok 7 - DB-B07: adoption requires durable Assignment and exact B gate, preserves baseline evidence
+      ---
+      duration_ms: 382.83932
+      type: 'test'
+      ...
+    # Subtest: DB-B08: pause is sticky, keeps commercial/channel epochs and seller channel denial
+    ok 8 - DB-B08: pause is sticky, keeps commercial/channel epochs and seller channel denial
+      ---
+      duration_ms: 454.59967
+      type: 'test'
+      ...
+    # Subtest: DB-B09: durable facts, adoptions and terminal history cannot be updated/deleted/truncated
+    ok 9 - DB-B09: durable facts, adoptions and terminal history cannot be updated/deleted/truncated
+      ---
+      duration_ms: 817.22292
+      type: 'test'
+      ...
+    # Subtest: DB-B10: future gates and FoundationProbe remain non-authoritative
+    ok 10 - DB-B10: future gates and FoundationProbe remain non-authoritative
+      ---
+      duration_ms: 567.78462
+      type: 'test'
+      ...
+    # Subtest: DB-B11: current owner and management scope, never historical task ownership
+    ok 11 - DB-B11: current owner and management scope, never historical task ownership
+      ---
+      duration_ms: 1647.36198
+      type: 'test'
+      ...
+    # Subtest: DB-B12: actor, ownership and privileged provenance cannot be injected
+    ok 12 - DB-B12: actor, ownership and privileged provenance cannot be injected
+      ---
+      duration_ms: 998.52303
+      type: 'test'
+      ...
+    # Subtest: DB-B13: inactive actor and concurrent deactivation are rejected
+    ok 13 - DB-B13: inactive actor and concurrent deactivation are rejected
+      ---
+      duration_ms: 1513.01958
+      type: 'test'
+      ...
+    # Subtest: DB-B14: foreign task, sequence, action and fact references fail closed
+    ok 14 - DB-B14: foreign task, sequence, action and fact references fail closed
+      ---
+      duration_ms: 1240.21138
+      type: 'test'
+      ...
+    # Subtest: DB-B15: same command ID and intent yield one effect and replay
+    ok 15 - DB-B15: same command ID and intent yield one effect and replay
+      ---
+      duration_ms: 517.98883
+      type: 'test'
+      ...
+    # Subtest: DB-B16: same idempotency key replays only same hash
+    ok 16 - DB-B16: same idempotency key replays only same hash
+      ---
+      duration_ms: 587.03358
+      type: 'test'
+      ...
+    # Subtest: DB-B17: new keys cannot duplicate or overwrite stable fact/action identities
+    ok 17 - DB-B17: new keys cannot duplicate or overwrite stable fact/action identities
+      ---
+      duration_ms: 1404.31581
+      type: 'test'
+      ...
+    # Subtest: DB-B18: stale aggregate, Assignment and B revisions never partially apply
+    ok 18 - DB-B18: stale aggregate, Assignment and B revisions never partially apply
+      ---
+      duration_ms: 903.76586
+      type: 'test'
+      ...
+    # Subtest: DB-B19: replay reevaluates read rights but succeeds through pause for authorized actor
+    ok 19 - DB-B19: replay reevaluates read rights but succeeds through pause for authorized actor
+      ---
+      duration_ms: 681.00139
+      type: 'test'
+      ...
+    # Subtest: DB-B20: neither GUC nor another domain receipt grants Contact DML
+    ok 20 - DB-B20: neither GUC nor another domain receipt grants Contact DML
+      ---
+      duration_ms: 407.90204
+      type: 'test'
+      ...
+    # Subtest: DB-B21: no_answer records real declared attempt/credit without stage/channel mutation
+    ok 21 - DB-B21: no_answer records real declared attempt/credit without stage/channel mutation
+      ---
+      duration_ms: 618.01973
+      type: 'test'
+      ...
+    # Subtest: DB-B22: personal WA sent is declared evidence, never delivery or corporate channel proof
+    ok 22 - DB-B22: personal WA sent is declared evidence, never delivery or corporate channel proof
+      ---
+      duration_ms: 650.88388
+      type: 'test'
+      ...
+    # Subtest: DB-B23: answered plus explicit next action is atomic and preserves commercial stage
+    ok 23 - DB-B23: answered plus explicit next action is atomic and preserves commercial stage
+      ---
+      duration_ms: 700.69019
+      type: 'test'
+      ...
+    # Subtest: DB-B24: manual skipped records omission, never attempt or last contact
+    ok 24 - DB-B24: manual skipped records omission, never attempt or last contact
+      ---
+      duration_ms: 517.07628
+      type: 'test'
+      ...
+    # Subtest: DB-B25: deadline observation is clock work with no seller contact or productivity attribution
+    ok 25 - DB-B25: deadline observation is clock work with no seller contact or productivity attribution
+      ---
+      duration_ms: 543.15785
+      type: 'test'
+      ...
+    # Subtest: DB-B26: future/ambiguous times and incompatible channels never receive silent normalization
+    ok 26 - DB-B26: future/ambiguous times and incompatible channels never receive silent normalization
+      ---
+      duration_ms: 575.04742
+      type: 'test'
+      ...
+    # Subtest: DB-B27: late evidence survives and only explicit supervisor review grants delayed credit
+    ok 27 - DB-B27: late evidence survives and only explicit supervisor review grants delayed credit
+      ---
+      duration_ms: 2888.15361
+      type: 'test'
+      ...
+    # Subtest: DB-B28: older occurrence does not replace latest contact and remains historical evidence
+    ok 28 - DB-B28: older occurrence does not replace latest contact and remains historical evidence
+      ---
+      duration_ms: 548.78929
+      type: 'test'
+      ...
+    # Subtest: DB-B29: supervisor amendment is append-only, compensates credit and never reopens protocol
+    ok 29 - DB-B29: supervisor amendment is append-only, compensates credit and never reopens protocol
+      ---
+      duration_ms: 844.33377
+      type: 'test'
+      ...
+    # Subtest: DB-B30: one task and fact have at most one credit; inbound response does not invent call credit
+    ok 30 - DB-B30: one task and fact have at most one credit; inbound response does not invent call credit
+      ---
+      duration_ms: 800.33948
+      type: 'test'
+      ...
+    # Subtest: DB-B31: new action has stable identity, revision and explicit date without contact or stage
+    ok 31 - DB-B31: new action has stable identity, revision and explicit date without contact or stage
+      ---
+      duration_ms: 647.74255
+      type: 'test'
+      ...
+    # Subtest: DB-B32: reschedule and note editing preserve action identity and protocol history
+    ok 32 - DB-B32: reschedule and note editing preserve action identity and protocol history
+      ---
+      duration_ms: 1216.24103
+      type: 'test'
+      ...
+    # Subtest: DB-B33: factual completion needs no invented date, but ordinary cancellation needs replacement
+    ok 33 - DB-B33: factual completion needs no invented date, but ordinary cancellation needs replacement
+      ---
+      duration_ms: 573.01878
+      type: 'test'
+      ...
+    # Subtest: DB-B34: explicit cancellation and replacement do not restart protocol or erase on omission
+    ok 34 - DB-B34: explicit cancellation and replacement do not restart protocol or erase on omission
+      ---
+      duration_ms: 971.68102
+      type: 'test'
+      ...
+    # Subtest: DB-B35: server clock observes deadline once while getter performs zero writes
+    ok 35 - DB-B35: server clock observes deadline once while getter performs zero writes
+      ---
+      duration_ms: 593.37269
+      type: 'test'
+      ...
+    # Subtest: DB-B36: rescheduling an overdue action retains old observation and advances revision
+    ok 36 - DB-B36: rescheduling an overdue action retains old observation and advances revision
+      ---
+      duration_ms: 747.06138
+      type: 'test'
+      ...
+    # Subtest: DB-B37: deep protected snapshot remains identical through contact/action/omission
+    ok 37 - DB-B37: deep protected snapshot remains identical through contact/action/omission
+      ---
+      duration_ms: 955.33595
+      type: 'test'
+      ...
+    # Subtest: DB-B38: opt-out atomically restricts linked customer and removes future work without stage
+    ok 38 - DB-B38: opt-out atomically restricts linked customer and removes future work without stage
+      ---
+      duration_ms: 836.90843
+      type: 'test'
+      ...
+    # Subtest: DB-B39: paused gate only admits restrictive opt-out without credit or new schedule
+    ok 39 - DB-B39: paused gate only admits restrictive opt-out without credit or new schedule
+      ---
+      duration_ms: 883.80564
+      type: 'test'
+      ...
+    # Subtest: DB-B40: incoherent customer identity fails without repair and no B operation lifts restriction
+    ok 40 - DB-B40: incoherent customer identity fails without repair and no B operation lifts restriction
+      ---
+      duration_ms: 1215.68204
+      type: 'test'
+      ...
+    # Subtest: DB-B41: 18+2 and historical 6+2 protocol IDs/windows survive adoption and transfer
+    ok 41 - DB-B41: 18+2 and historical 6+2 protocol IDs/windows survive adoption and transfer
+      ---
+      duration_ms: 678.31739
+      type: 'test'
+      ...
+    # Subtest: DB-B42: fully credited no-response protocol closes factually without cold/Recall/stage
+    ok 42 - DB-B42: fully credited no-response protocol closes factually without cold/Recall/stage
+      ---
+      duration_ms: 4081.87904
+      type: 'test'
+      ...

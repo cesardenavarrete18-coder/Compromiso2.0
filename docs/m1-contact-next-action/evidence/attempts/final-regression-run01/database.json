@@ -1,0 +1,1409 @@
+{
+  "harness": "crm-m1-unix-seccomp/2",
+  "status": "FAIL",
+  "cluster_per_suite": true,
+  "fixture_layers": [
+    "B_plus_post_contact_assignment_regression",
+    "B_plus_synthetic_assignment_data",
+    "B_plus_synthetic_boundary_data",
+    "B_plus_synthetic_contact_data",
+    "minimal_synthetic_auth_crm",
+    "schema_only_baseline_b"
+  ],
+  "remote_database": false,
+  "timeout_scale": 3.0,
+  "suites": [
+    {
+      "harness": "crm-m1-unix-seccomp/2",
+      "run_id": "084becc4-ca95-4cb8-9901-845c9a119126",
+      "suite": "assignment-boundary.integration.test.mjs",
+      "source_manifest": {
+        "sha256": "848a6de938558d145ff27e537582b9d36494ae1356719ff42b4654d494107b3a",
+        "git_base_revision": "8a331e647eeb574be90cb2a6bd28a7e46f874ae3",
+        "source_has_uncommitted_changes": true
+      },
+      "fixture_layer": "B_plus_synthetic_boundary_data",
+      "bootstrap_source": "tests/m1/fixtures/schema-baseline-b/bootstrap.sql",
+      "bootstrap_sha256": "8ea22a1e8b4cd6559732331ca66ac2728d90f58e11ada4f344c398040608c5e6",
+      "cluster_per_suite": true,
+      "bootstrap_user": "supabase_admin",
+      "migration_installation": "runner_installs_all_three",
+      "timeout_scale": 3.0,
+      "status": "PASS",
+      "remote_database": false,
+      "external_egress": false,
+      "requested_database_major": 17,
+      "requested_uid": 65534,
+      "database_started": true,
+      "migrations_applied": [
+        "20260917154844_m1_runtime_authority_foundation.sql",
+        "20260917154854_m1_private_capabilities.sql",
+        "20260917154905_m1_command_receipts_events.sql"
+      ],
+      "integration_tests_executed": true,
+      "migration_sha256": {
+        "20260917154844_m1_runtime_authority_foundation.sql": "6dbb4e1c6a0c8da22de49424fdf965f46e74e85dad0e822a6201b2ec31f09d49",
+        "20260917154854_m1_private_capabilities.sql": "6154b2dd302d1f5793ea5c9b4151a1423f4f5b956e688ae7089bf8f00b80cd60",
+        "20260917154905_m1_command_receipts_events.sql": "433615402b82cbc5b85cd4f168c0b96ff48658de84cfdadad56b02616f7bf9e7"
+      },
+      "candidate_migration_sha256": {},
+      "candidate_installation": "none",
+      "candidate_validation_stage": null,
+      "postgres_binary_sha256": "23cd174849b273064c47d581b55be596be2f5cf0ee5d3e76c0146e2464bf873a",
+      "guard_source_sha256": "589dc0aece8cee8e104a7c3a8c27d6e13ca858518bdf74d0454e67c90cb53fd9",
+      "guard_binary_sha256": "d48cf6d387092c71323d7e6a24af26c582d7bc0103545cd3614641e9608183f7",
+      "guard_precompiled": true,
+      "suite_sha256": {
+        "tests/m1/assignment-boundary.integration.test.mjs": "8c7b128e845839ab74efb8493f1850401d7a6e8487d4434e16c1ca9a39911ffb"
+      },
+      "limits": [
+        "Schema B plus synthetic boundary diagnostic data; not M1-04A acceptance, no production rows or Supabase REST gateway.",
+        "No legacy handler, trigger, frontend or external sender is changed or certified.",
+        "Database effects occur only in the disposable local cluster."
+      ],
+      "postgres_version": "postgres (PostgreSQL) 17.6",
+      "unix_socket_available": true,
+      "uid_map": [
+        [
+          0,
+          0,
+          4294967295
+        ]
+      ],
+      "gid_map": [
+        [
+          0,
+          0,
+          4294967295
+        ]
+      ],
+      "environment_keys": [
+        "LANG",
+        "LC_ALL",
+        "LD_LIBRARY_PATH",
+        "M1_LIBPQ_PATH",
+        "M1_PYTHON_BIN",
+        "M1_TEST_BOOTSTRAP_USER",
+        "M1_TEST_DATABASE",
+        "M1_TEST_FIXTURE_DIR",
+        "M1_TEST_ISOLATED",
+        "M1_TEST_MIGRATION_DIR",
+        "M1_TEST_PORT",
+        "M1_TEST_RUN_ID",
+        "M1_TEST_SOCKET_DIR",
+        "M1_TEST_TIMEOUT_SCALE",
+        "PATH",
+        "PGPASSFILE",
+        "PGSERVICEFILE",
+        "PYTHONNOUSERSITE",
+        "TZ"
+      ],
+      "isolation": {
+        "ok": true,
+        "columns": [
+          "listen_addresses",
+          "marker",
+          "unix_socket"
+        ],
+        "rows": [
+          [
+            "",
+            "084becc4-ca95-4cb8-9901-845c9a119126",
+            "t"
+          ]
+        ],
+        "affected": "1",
+        "id": 1
+      },
+      "migration_role": {
+        "ok": true,
+        "columns": [
+          "rolname",
+          "rolsuper",
+          "rolcreaterole",
+          "rolbypassrls"
+        ],
+        "rows": [
+          [
+            "postgres",
+            "f",
+            "t",
+            "t"
+          ]
+        ],
+        "affected": "1",
+        "id": 1
+      },
+      "test_timeout_seconds": 720.0,
+      "tap": "TAP version 13\n# Subtest: DIAGNOSTIC: assignment grants existing WhatsApp capability despite unchanged disabled runtime channel (NOT M1-04A acceptance)\n    # Subtest: D00: captured helper, controls structure/ACL/RLS/triggers and real B identity are reproduced\n    ok 1 - D00: captured helper, controls structure/ACL/RLS/triggers and real B identity are reproduced\n      ---\n      duration_ms: 1128.73272\n      type: 'test'\n      ...\n    # Subtest: D01: synthetic invitations/users/leads and two actual disabled conversation rows are installed with legacy triggers enabled\n    ok 2 - D01: synthetic invitations/users/leads and two actual disabled conversation rows are installed with legacy triggers enabled\n      ---\n      duration_ms: 434.60463\n      type: 'test'\n      ...\n    # Subtest: D02: before owner change, target B has neither WhatsApp capability nor lead/control visibility\n    ok 3 - D02: before owner change, target B has neither WhatsApp capability nor lead/control visibility\n      ---\n      duration_ms: 227.30768\n      type: 'test'\n      ...\n    # Subtest: D03: PASS_DIAGNOSTIC_OBSERVED_CONFLICT \u2014 A\u2192B owner UPDATE grants B capability while actual channel row/epoch stay identical\n    ok 4 - D03: PASS_DIAGNOSTIC_OBSERVED_CONFLICT \u2014 A\u2192B owner UPDATE grants B capability while actual channel row/epoch stay identical\n      ---\n      duration_ms: 271.33901\n      type: 'test'\n      ...\n    # Subtest: D04: PASS_DIAGNOSTIC_OBSERVED_CONFLICT \u2014 null\u2192B initial owner UPDATE has the same independent channel-permission coupling\n    ok 5 - D04: PASS_DIAGNOSTIC_OBSERVED_CONFLICT \u2014 null\u2192B initial owner UPDATE has the same independent channel-permission coupling\n      ---\n      duration_ms: 187.73056\n      type: 'test'\n      ...\n    # Subtest: D05: real authenticated role remains unable to access private runtime or activate the installed gateway\n    ok 6 - D05: real authenticated role remains unable to access private runtime or activate the installed gateway\n      ---\n      duration_ms: 139.34292\n      type: 'test'\n      ...\n    1..6\nok 1 - DIAGNOSTIC: assignment grants existing WhatsApp capability despite unchanged disabled runtime channel (NOT M1-04A acceptance)\n  ---\n  duration_ms: 2580.64275\n  type: 'test'\n  ...\n# {\"classification\":\"PASS_DIAGNOSTIC_OBSERVED_CONFLICT\",\"operation\":\"privileged_local_owner_update_A_to_B_NOT_TransferLead\",\"before\":{\"owner\":\"a1040000-0000-4000-8000-000000000001\",\"seller_b\":{\"lead_count\":0,\"control_count\":0,\"can_manage_whatsapp\":false},\"channel\":{\"authority_epoch\":17,\"dialogue_policy\":\"paused\",\"channel_authority\":\"disabled\"}},\"after\":{\"owner\":\"a1040000-0000-4000-8000-000000000002\",\"seller_b\":{\"lead_count\":1,\"control_count\":1,\"can_manage_whatsapp\":true},\"channel\":{\"authority_epoch\":17,\"dialogue_policy\":\"paused\",\"channel_authority\":\"disabled\"}},\"actual_channel_row_unchanged\":true,\"mode_rpc_called\":false,\"provider_called\":false}\n# {\"classification\":\"PASS_DIAGNOSTIC_OBSERVED_CONFLICT\",\"operation\":\"privileged_local_owner_update_null_to_B_NOT_AssignLead\",\"before\":{\"owner\":null,\"seller_b\":{\"lead_count\":0,\"control_count\":0,\"can_manage_whatsapp\":false},\"channel\":{\"authority_epoch\":23,\"dialogue_policy\":\"paused\",\"channel_authority\":\"disabled\"}},\"after\":{\"owner\":\"a1040000-0000-4000-8000-000000000002\",\"seller_b\":{\"lead_count\":1,\"control_count\":1,\"can_manage_whatsapp\":true},\"channel\":{\"authority_epoch\":23,\"dialogue_policy\":\"paused\",\"channel_authority\":\"disabled\"}},\"actual_channel_row_unchanged\":true,\"mode_rpc_called\":false,\"provider_called\":false}\n1..1\n# tests 7\n# suites 0\n# pass 7\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 3826.54017\n",
+      "stderr": "",
+      "test_exit_code": 0,
+      "duration_seconds": 24.454,
+      "temporary_cluster_retained": null
+    },
+    {
+      "harness": "crm-m1-unix-seccomp/2",
+      "run_id": "30a7993f-0642-4604-b969-17caba2836a8",
+      "suite": "assignment-channel-guard.integration.test.mjs",
+      "source_manifest": {
+        "sha256": "848a6de938558d145ff27e537582b9d36494ae1356719ff42b4654d494107b3a",
+        "git_base_revision": "8a331e647eeb574be90cb2a6bd28a7e46f874ae3",
+        "source_has_uncommitted_changes": true
+      },
+      "fixture_layer": "B_plus_synthetic_assignment_data",
+      "bootstrap_source": "tests/m1/fixtures/schema-baseline-b/bootstrap.sql",
+      "bootstrap_sha256": "8ea22a1e8b4cd6559732331ca66ac2728d90f58e11ada4f344c398040608c5e6",
+      "cluster_per_suite": true,
+      "bootstrap_user": "supabase_admin",
+      "migration_installation": "runner_installs_all_three",
+      "timeout_scale": 3.0,
+      "status": "FAIL",
+      "remote_database": false,
+      "external_egress": false,
+      "requested_database_major": 17,
+      "requested_uid": 65534,
+      "database_started": false,
+      "migrations_applied": [],
+      "integration_tests_executed": false,
+      "migration_sha256": {
+        "20260917154844_m1_runtime_authority_foundation.sql": "6dbb4e1c6a0c8da22de49424fdf965f46e74e85dad0e822a6201b2ec31f09d49",
+        "20260917154854_m1_private_capabilities.sql": "6154b2dd302d1f5793ea5c9b4151a1423f4f5b956e688ae7089bf8f00b80cd60",
+        "20260917154905_m1_command_receipts_events.sql": "433615402b82cbc5b85cd4f168c0b96ff48658de84cfdadad56b02616f7bf9e7"
+      },
+      "candidate_migration_sha256": {
+        "20260918033251_m1_assignment_adoption_guard.sql": "89bd8e0a1e8ecfaad13077780da576612f81fc34bf94347bfd7ea0104ae654be",
+        "20260918033407_m1_assignment_commands.sql": "f8760de6053cdb2d56ec23e6b1d4c7bf7efbfaa31ed174bd7ddaf22f21c0b9bf"
+      },
+      "candidate_installation": "suite_controlled_verbatim",
+      "candidate_validation_stage": "assignment_acceptance_candidate",
+      "postgres_binary_sha256": "23cd174849b273064c47d581b55be596be2f5cf0ee5d3e76c0146e2464bf873a",
+      "guard_source_sha256": "589dc0aece8cee8e104a7c3a8c27d6e13ca858518bdf74d0454e67c90cb53fd9",
+      "guard_binary_sha256": "d48cf6d387092c71323d7e6a24af26c582d7bc0103545cd3614641e9608183f7",
+      "guard_precompiled": true,
+      "suite_sha256": {
+        "tests/m1/assignment-channel-guard.integration.test.mjs": "e84af5e21d5e3eff01da335c794726ecaca4d4459d709152436b7ff3cabcb161"
+      },
+      "limits": [
+        "Schema B plus observed overlays and synthetic assignment data; candidate DDL is suite-controlled, no production rows or Supabase REST gateway.",
+        "Only the selected assignment candidate boundary is exercised; no sender, frontend, production authority or wider CRM certification.",
+        "Database effects occur only in the disposable local cluster."
+      ],
+      "postgres_version": "postgres (PostgreSQL) 17.6",
+      "unix_socket_available": true,
+      "uid_map": [
+        [
+          0,
+          0,
+          4294967295
+        ]
+      ],
+      "gid_map": [
+        [
+          0,
+          0,
+          4294967295
+        ]
+      ],
+      "environment_keys": [
+        "LANG",
+        "LC_ALL",
+        "LD_LIBRARY_PATH",
+        "M1_LIBPQ_PATH",
+        "M1_PYTHON_BIN",
+        "M1_TEST_BOOTSTRAP_USER",
+        "M1_TEST_CANDIDATE_MIGRATIONS",
+        "M1_TEST_DATABASE",
+        "M1_TEST_FIXTURE_DIR",
+        "M1_TEST_ISOLATED",
+        "M1_TEST_MIGRATION_DIR",
+        "M1_TEST_PORT",
+        "M1_TEST_RUN_ID",
+        "M1_TEST_SOCKET_DIR",
+        "M1_TEST_TIMEOUT_SCALE",
+        "PATH",
+        "PGPASSFILE",
+        "PGSERVICEFILE",
+        "PYTHONNOUSERSITE",
+        "TZ"
+      ],
+      "error": "WARNING: password file \"/dev/null\" is not a plain file\nPostgreSQL connection failed: connection to server on socket \"/tmp/crm-m1-6brvnr75/socket/.s.PGSQL.6543\" failed: FATAL:  the database system is starting up\n\n",
+      "duration_seconds": 11.584,
+      "temporary_cluster_retained": null
+    },
+    {
+      "harness": "crm-m1-unix-seccomp/2",
+      "run_id": "669f5173-fcda-4c6a-915e-861c2524441b",
+      "suite": "assignment-channel-prerequisite.integration.test.mjs",
+      "source_manifest": {
+        "sha256": "848a6de938558d145ff27e537582b9d36494ae1356719ff42b4654d494107b3a",
+        "git_base_revision": "8a331e647eeb574be90cb2a6bd28a7e46f874ae3",
+        "source_has_uncommitted_changes": true
+      },
+      "fixture_layer": "B_plus_synthetic_assignment_data",
+      "bootstrap_source": "tests/m1/fixtures/schema-baseline-b/bootstrap.sql",
+      "bootstrap_sha256": "8ea22a1e8b4cd6559732331ca66ac2728d90f58e11ada4f344c398040608c5e6",
+      "cluster_per_suite": true,
+      "bootstrap_user": "supabase_admin",
+      "migration_installation": "runner_installs_all_three",
+      "timeout_scale": 3.0,
+      "status": "PASS",
+      "remote_database": false,
+      "external_egress": false,
+      "requested_database_major": 17,
+      "requested_uid": 65534,
+      "database_started": true,
+      "migrations_applied": [
+        "20260917154844_m1_runtime_authority_foundation.sql",
+        "20260917154854_m1_private_capabilities.sql",
+        "20260917154905_m1_command_receipts_events.sql"
+      ],
+      "integration_tests_executed": true,
+      "migration_sha256": {
+        "20260917154844_m1_runtime_authority_foundation.sql": "6dbb4e1c6a0c8da22de49424fdf965f46e74e85dad0e822a6201b2ec31f09d49",
+        "20260917154854_m1_private_capabilities.sql": "6154b2dd302d1f5793ea5c9b4151a1423f4f5b956e688ae7089bf8f00b80cd60",
+        "20260917154905_m1_command_receipts_events.sql": "433615402b82cbc5b85cd4f168c0b96ff48658de84cfdadad56b02616f7bf9e7"
+      },
+      "candidate_migration_sha256": {
+        "20260918033251_m1_assignment_adoption_guard.sql": "89bd8e0a1e8ecfaad13077780da576612f81fc34bf94347bfd7ea0104ae654be"
+      },
+      "candidate_installation": "suite_controlled_verbatim",
+      "candidate_validation_stage": "guard_prerequisite_only",
+      "postgres_binary_sha256": "23cd174849b273064c47d581b55be596be2f5cf0ee5d3e76c0146e2464bf873a",
+      "guard_source_sha256": "589dc0aece8cee8e104a7c3a8c27d6e13ca858518bdf74d0454e67c90cb53fd9",
+      "guard_binary_sha256": "d48cf6d387092c71323d7e6a24af26c582d7bc0103545cd3614641e9608183f7",
+      "guard_precompiled": true,
+      "suite_sha256": {
+        "tests/m1/assignment-channel-prerequisite.integration.test.mjs": "7f7ab9b3e824206e43cca76fe09763ba44c5f7d0d51624afa3c89a96be6b1b65"
+      },
+      "limits": [
+        "Guard prerequisite evidence only; this does not certify the final command-based guard matrix or M1-04A.",
+        "Only the selected assignment candidate boundary is exercised; no sender, frontend, production authority or wider CRM certification.",
+        "Database effects occur only in the disposable local cluster."
+      ],
+      "postgres_version": "postgres (PostgreSQL) 17.6",
+      "unix_socket_available": true,
+      "uid_map": [
+        [
+          0,
+          0,
+          4294967295
+        ]
+      ],
+      "gid_map": [
+        [
+          0,
+          0,
+          4294967295
+        ]
+      ],
+      "environment_keys": [
+        "LANG",
+        "LC_ALL",
+        "LD_LIBRARY_PATH",
+        "M1_LIBPQ_PATH",
+        "M1_PYTHON_BIN",
+        "M1_TEST_BOOTSTRAP_USER",
+        "M1_TEST_CANDIDATE_MIGRATIONS",
+        "M1_TEST_DATABASE",
+        "M1_TEST_FIXTURE_DIR",
+        "M1_TEST_ISOLATED",
+        "M1_TEST_MIGRATION_DIR",
+        "M1_TEST_PORT",
+        "M1_TEST_RUN_ID",
+        "M1_TEST_SOCKET_DIR",
+        "M1_TEST_TIMEOUT_SCALE",
+        "PATH",
+        "PGPASSFILE",
+        "PGSERVICEFILE",
+        "PYTHONNOUSERSITE",
+        "TZ"
+      ],
+      "isolation": {
+        "ok": true,
+        "columns": [
+          "listen_addresses",
+          "marker",
+          "unix_socket"
+        ],
+        "rows": [
+          [
+            "",
+            "669f5173-fcda-4c6a-915e-861c2524441b",
+            "t"
+          ]
+        ],
+        "affected": "1",
+        "id": 1
+      },
+      "migration_role": {
+        "ok": true,
+        "columns": [
+          "rolname",
+          "rolsuper",
+          "rolcreaterole",
+          "rolbypassrls"
+        ],
+        "rows": [
+          [
+            "postgres",
+            "f",
+            "t",
+            "t"
+          ]
+        ],
+        "affected": "1",
+        "id": 1
+      },
+      "test_timeout_seconds": 720.0,
+      "tap": "TAP version 13\n# Subtest: Assignment channel prerequisite A: real legacy RPC/RLS, durable adoption and old SQL snapshots; NOT full 23-case acceptance\n    # Subtest: P01: captured legacy channel closure and candidate A install verbatim as non-superuser with zero adoption or authority seeds\n    ok 1 - P01: captured legacy channel closure and candidate A install verbatim as non-superuser with zero adoption or authority seeds\n      ---\n      duration_ms: 3079.93292\n      type: 'test'\n      ...\n    # Subtest: P02: legacy owner retains helper/control access and actual mode RPC; nonowner is denied atomically\n    ok 2 - P02: legacy owner retains helper/control access and actual mode RPC; nonowner is denied atomically\n      ---\n      duration_ms: 330.08158\n      type: 'test'\n      ...\n    # Subtest: P03: active admin and supervisor retain actual legacy mode RPC behavior\n    ok 3 - P03: active admin and supervisor retain actual legacy mode RPC behavior\n      ---\n      duration_ms: 218.95579\n      type: 'test'\n      ...\n    # Subtest: P04: runtime metadata and even an authoritative gate alone are not durable adoption\n    ok 4 - P04: runtime metadata and even an authoritative gate alone are not durable adoption\n      ---\n      duration_ms: 146.67592\n      type: 'test'\n      ...\n    # Subtest: P05: controlled adoption records server-derived cutover provenance and denies owner through helper, RLS and the real legacy mode RPC\n    ok 5 - P05: controlled adoption records server-derived cutover provenance and denies owner through helper, RLS and the real legacy mode RPC\n      ---\n      duration_ms: 367.00877\n      type: 'test'\n      ...\n    # Subtest: P06: the restriction needs no conversation state row or channel authority mutation\n    ok 6 - P06: the restriction needs no conversation state row or channel authority mutation\n      ---\n      duration_ms: 217.8186\n      type: 'test'\n      ...\n    # Subtest: P07: pausing the gate and retrying the same technical adoption cannot restore seller capability\n    ok 7 - P07: pausing the gate and retrying the same technical adoption cannot restore seller capability\n      ---\n      duration_ms: 328.0212\n      type: 'test'\n      ...\n    # Subtest: P08: durable evidence rejects UPDATE/DELETE/TRUNCATE and survives rollback of a later gate transaction\n    ok 8 - P08: durable evidence rejects UPDATE/DELETE/TRUNCATE and survives rollback of a later gate transaction\n      ---\n      duration_ms: 244.39563\n      type: 'test'\n      ...\n    # Subtest: P09: authenticated seller cannot write adoption/runtime/gates, assume owner role or invoke the technical adoption capability\n    ok 9 - P09: authenticated seller cannot write adoption/runtime/gates, assume owner role or invoke the technical adoption capability\n      ---\n      duration_ms: 115.97396\n      type: 'test'\n      ...\n    # Subtest: P10: actor metadata, arbitrary GUCs and request-header claims cannot remove the durable restriction\n    ok 10 - P10: actor metadata, arbitrary GUCs and request-header claims cannot remove the durable restriction\n      ---\n      duration_ms: 187.10751\n      type: 'test'\n      ...\n    # Subtest: P11: inactive seller is denied on both legacy and adopted ownership\n    ok 11 - P11: inactive seller is denied on both legacy and adopted ownership\n      ---\n      duration_ms: 267.92747\n      type: 'test'\n      ...\n    # Subtest: P12: adoption preserves active admin/supervisor behavior and does not touch M1 channel state or epoch\n    ok 12 - P12: adoption preserves active admin/supervisor behavior and does not touch M1 channel state or epoch\n      ---\n      duration_ms: 350.27567\n      type: 'test'\n      ...\n    # Subtest: P13: real READ COMMITTED mode RPC holds the lead permission lock; technical adoption waits then revokes the old seller session\n    ok 13 - P13: real READ COMMITTED mode RPC holds the lead permission lock; technical adoption waits then revokes the old seller session\n      ---\n      duration_ms: 1108.75908\n      type: 'test'\n      ...\n    # Subtest: P14: real old REPEATABLE READ snapshot cannot use the legacy mode RPC after adoption; serialization failure precedes channel writes\n    ok 14 - P14: real old REPEATABLE READ snapshot cannot use the legacy mode RPC after adoption; serialization failure precedes channel writes\n      ---\n      duration_ms: 890.97866\n      type: 'test'\n      ...\n    # Subtest: P15: old REPEATABLE READ cannot truncate assignment history inserted and adopted after its snapshot\n    ok 15 - P15: old REPEATABLE READ cannot truncate assignment history inserted and adopted after its snapshot\n      ---\n      duration_ms: 720.65123\n      type: 'test'\n      ...\n    # Subtest: P16: PostgREST-style READ ONLY transaction can evaluate legacy and adopted helper/control SELECT policies\n    ok 16 - P16: PostgREST-style READ ONLY transaction can evaluate legacy and adopted helper/control SELECT policies\n      ---\n      duration_ms: 82.14534\n      type: 'test'\n      ...\n    1..16\nok 1 - Assignment channel prerequisite A: real legacy RPC/RLS, durable adoption and old SQL snapshots; NOT full 23-case acceptance\n  ---\n  duration_ms: 8823.14883\n  type: 'test'\n  ...\n# {\"stage\":\"A_PREREQUISITE_ONLY\",\"candidate\":\"20260918033251_m1_assignment_adoption_guard.sql\",\"baseline\":\"B_plus_observed_channel_and_assignment_schema\",\"synthetic_leads\":10,\"network_provider_calls\":0}\n# {\"stage\":\"A_PREREQUISITE_ONLY\",\"old_snapshot_isolation\":\"repeatable read\",\"actual_mode_rpc_sqlstate\":\"40001\",\"provider_calls\":0,\"after_rollback_seller_denied\":true}\n1..1\n# tests 17\n# suites 0\n# pass 17\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 9691.70634\n",
+      "stderr": "",
+      "test_exit_code": 0,
+      "duration_seconds": 35.815,
+      "temporary_cluster_retained": null
+    },
+    {
+      "harness": "crm-m1-unix-seccomp/2",
+      "run_id": "e8cc7df0-0521-45f6-b126-bf6ece447b4e",
+      "suite": "assignment-runtime.integration.test.mjs",
+      "source_manifest": {
+        "sha256": "848a6de938558d145ff27e537582b9d36494ae1356719ff42b4654d494107b3a",
+        "git_base_revision": "8a331e647eeb574be90cb2a6bd28a7e46f874ae3",
+        "source_has_uncommitted_changes": true
+      },
+      "fixture_layer": "B_plus_synthetic_assignment_data",
+      "bootstrap_source": "tests/m1/fixtures/schema-baseline-b/bootstrap.sql",
+      "bootstrap_sha256": "8ea22a1e8b4cd6559732331ca66ac2728d90f58e11ada4f344c398040608c5e6",
+      "cluster_per_suite": true,
+      "bootstrap_user": "supabase_admin",
+      "migration_installation": "runner_installs_all_three",
+      "timeout_scale": 3.0,
+      "status": "PASS",
+      "remote_database": false,
+      "external_egress": false,
+      "requested_database_major": 17,
+      "requested_uid": 65534,
+      "database_started": true,
+      "migrations_applied": [
+        "20260917154844_m1_runtime_authority_foundation.sql",
+        "20260917154854_m1_private_capabilities.sql",
+        "20260917154905_m1_command_receipts_events.sql"
+      ],
+      "integration_tests_executed": true,
+      "migration_sha256": {
+        "20260917154844_m1_runtime_authority_foundation.sql": "6dbb4e1c6a0c8da22de49424fdf965f46e74e85dad0e822a6201b2ec31f09d49",
+        "20260917154854_m1_private_capabilities.sql": "6154b2dd302d1f5793ea5c9b4151a1423f4f5b956e688ae7089bf8f00b80cd60",
+        "20260917154905_m1_command_receipts_events.sql": "433615402b82cbc5b85cd4f168c0b96ff48658de84cfdadad56b02616f7bf9e7"
+      },
+      "candidate_migration_sha256": {
+        "20260918033251_m1_assignment_adoption_guard.sql": "89bd8e0a1e8ecfaad13077780da576612f81fc34bf94347bfd7ea0104ae654be",
+        "20260918033407_m1_assignment_commands.sql": "f8760de6053cdb2d56ec23e6b1d4c7bf7efbfaa31ed174bd7ddaf22f21c0b9bf"
+      },
+      "candidate_installation": "suite_controlled_verbatim",
+      "candidate_validation_stage": "assignment_acceptance_candidate",
+      "postgres_binary_sha256": "23cd174849b273064c47d581b55be596be2f5cf0ee5d3e76c0146e2464bf873a",
+      "guard_source_sha256": "589dc0aece8cee8e104a7c3a8c27d6e13ca858518bdf74d0454e67c90cb53fd9",
+      "guard_binary_sha256": "d48cf6d387092c71323d7e6a24af26c582d7bc0103545cd3614641e9608183f7",
+      "guard_precompiled": true,
+      "suite_sha256": {
+        "tests/m1/assignment-runtime.integration.test.mjs": "9c3f5fe9f1144664c559e9169a359335e0ce8919011607cb434fe523cb43c0e3"
+      },
+      "limits": [
+        "Schema B plus observed overlays and synthetic assignment data; candidate DDL is suite-controlled, no production rows or Supabase REST gateway.",
+        "Only the selected assignment candidate boundary is exercised; no sender, frontend, production authority or wider CRM certification.",
+        "Database effects occur only in the disposable local cluster."
+      ],
+      "postgres_version": "postgres (PostgreSQL) 17.6",
+      "unix_socket_available": true,
+      "uid_map": [
+        [
+          0,
+          0,
+          4294967295
+        ]
+      ],
+      "gid_map": [
+        [
+          0,
+          0,
+          4294967295
+        ]
+      ],
+      "environment_keys": [
+        "LANG",
+        "LC_ALL",
+        "LD_LIBRARY_PATH",
+        "M1_LIBPQ_PATH",
+        "M1_PYTHON_BIN",
+        "M1_TEST_BOOTSTRAP_USER",
+        "M1_TEST_CANDIDATE_MIGRATIONS",
+        "M1_TEST_DATABASE",
+        "M1_TEST_FIXTURE_DIR",
+        "M1_TEST_ISOLATED",
+        "M1_TEST_MIGRATION_DIR",
+        "M1_TEST_PORT",
+        "M1_TEST_RUN_ID",
+        "M1_TEST_SOCKET_DIR",
+        "M1_TEST_TIMEOUT_SCALE",
+        "PATH",
+        "PGPASSFILE",
+        "PGSERVICEFILE",
+        "PYTHONNOUSERSITE",
+        "TZ"
+      ],
+      "isolation": {
+        "ok": true,
+        "columns": [
+          "listen_addresses",
+          "marker",
+          "unix_socket"
+        ],
+        "rows": [
+          [
+            "",
+            "e8cc7df0-0521-45f6-b126-bf6ece447b4e",
+            "t"
+          ]
+        ],
+        "affected": "1",
+        "id": 1
+      },
+      "migration_role": {
+        "ok": true,
+        "columns": [
+          "rolname",
+          "rolsuper",
+          "rolcreaterole",
+          "rolbypassrls"
+        ],
+        "rows": [
+          [
+            "postgres",
+            "f",
+            "t",
+            "t"
+          ]
+        ],
+        "affected": "1",
+        "id": 1
+      },
+      "test_timeout_seconds": 720.0,
+      "tap": "TAP version 13\n# Subtest: M1-04A: actual assignment/transfer command acceptance (27 required cases)\n    # Subtest: A27: installing candidates changes no business rows, activates no gate and grants no API access\n    ok 1 - A27: installing candidates changes no business rows, activates no gate and grants no API access\n      ---\n      duration_ms: 932.11329\n      type: 'test'\n      ...\n    # Subtest: A26: inactive installation retains characterized legacy transfer reset; runtime gate inactive rejects\n    ok 2 - A26: inactive installation retains characterized legacy transfer reset; runtime gate inactive rejects\n      ---\n      duration_ms: 1106.69269\n      type: 'test'\n      ...\n    # Subtest: A01: genuine initial assignment succeeds without creating a protocol or acquiring a channel\n    ok 3 - A01: genuine initial assignment succeeds without creating a protocol or acquiring a channel\n      ---\n      duration_ms: 309.35968\n      type: 'test'\n      ...\n    # Subtest: A02: TransferLead A\u2192B changes future owner with a valid versioned command\n    ok 4 - A02: TransferLead A\u2192B changes future owner with a valid versioned command\n      ---\n      duration_ms: 556.99057\n      type: 'test'\n      ...\n    # Subtest: A03: Se\u00f1a and Cierre stages survive transfer without becoming Nuevo\n    ok 5 - A03: Se\u00f1a and Cierre stages survive transfer without becoming Nuevo\n      ---\n      duration_ms: 493.81281\n      type: 'test'\n      ...\n    # Subtest: A04: next action, its source and post-deposit appointment are preserved\n    ok 6 - A04: next action, its source and post-deposit appointment are preserved\n      ---\n      duration_ms: 4.38948\n      type: 'test'\n      ...\n    # Subtest: A05: interview facts and historical timestamps are preserved\n    ok 7 - A05: interview facts and historical timestamps are preserved\n      ---\n      duration_ms: 6.00783\n      type: 'test'\n      ...\n    # Subtest: A06: deposit amount, effective date and validation are unchanged\n    ok 8 - A06: deposit amount, effective date and validation are unchanged\n      ---\n      duration_ms: 7.66222\n      type: 'test'\n      ...\n    # Subtest: A07: active protocol IDs, started_at and historical seller survive intact\n    ok 9 - A07: active protocol IDs, started_at and historical seller survive intact\n      ---\n      duration_ms: 5.95382\n      type: 'test'\n      ...\n    # Subtest: A08: historical tasks, actors, performed_at and existing activity rows are not reattributed\n    ok 10 - A08: historical tasks, actors, performed_at and existing activity rows are not reattributed\n      ---\n      duration_ms: 87.30485\n      type: 'test'\n      ...\n    # Subtest: A09: transfer creates no protocol and cancels no existing task\n    ok 11 - A09: transfer creates no protocol and cancels no existing task\n      ---\n      duration_ms: 12.69612\n      type: 'test'\n      ...\n    # Subtest: A10: transfer has no start_lead_crm_cycle semantics or new cycle activity\n    ok 12 - A10: transfer has no start_lead_crm_cycle semantics or new cycle activity\n      ---\n      duration_ms: 23.23808\n      type: 'test'\n      ...\n    # Subtest: A11: assignment_epoch increments exactly once\n    ok 13 - A11: assignment_epoch increments exactly once\n      ---\n      duration_ms: 16.98183\n      type: 'test'\n      ...\n    # Subtest: A12: aggregate_version increments exactly once under the command contract\n    ok 14 - A12: aggregate_version increments exactly once under the command contract\n      ---\n      duration_ms: 20.68017\n      type: 'test'\n      ...\n    # Subtest: A13: exactly one assignment history row and command event identify the actual supervisor\n    ok 15 - A13: exactly one assignment history row and command event identify the actual supervisor\n      ---\n      duration_ms: 82.19798\n      type: 'test'\n      ...\n    # Subtest: A14: retries/double click preserve one Assign and Transfer effect; changed destination conflicts\n    ok 16 - A14: retries/double click preserve one Assign and Transfer effect; changed destination conflicts\n      ---\n      duration_ms: 266.78949\n      type: 'test'\n      ...\n    # Subtest: A15: former owner using an authenticated old identity cannot mutate an inherited pending task\n    ok 17 - A15: former owner using an authenticated old identity cannot mutate an inherited pending task\n      ---\n      duration_ms: 225.88021\n      type: 'test'\n      ...\n    # Subtest: A16: B resolves the original pending task through the real RPC without rewriting task or sequence provenance\n    ok 18 - A16: B resolves the original pending task through the real RPC without rewriting task or sequence provenance\n      ---\n      duration_ms: 222.0368\n      type: 'test'\n      ...\n    # Subtest: A17: TransferLead leaves channel authority unchanged\n    ok 19 - A17: TransferLead leaves channel authority unchanged\n      ---\n      duration_ms: 3.53907\n      type: 'test'\n      ...\n    # Subtest: A18: TransferLead changes no channel authority_epoch\n    ok 20 - A18: TransferLead changes no channel authority_epoch\n      ---\n      duration_ms: 1.5466\n      type: 'test'\n      ...\n    # Subtest: A19: adopted assignment cannot grant seller WhatsApp capability or mode RPC access\n    ok 21 - A19: adopted assignment cannot grant seller WhatsApp capability or mode RPC access\n      ---\n      duration_ms: 198.91492\n      type: 'test'\n      ...\n    # Subtest: A20: acknowledge is versioned/idempotent and changes neither owner nor assigned_at\n    ok 22 - A20: acknowledge is versioned/idempotent and changes neither owner nor assigned_at\n      ---\n      duration_ms: 306.13047\n      type: 'test'\n      ...\n    # Subtest: A21: acknowledge does not fabricate handoff/obligations or change dialogue policy\n    ok 23 - A21: acknowledge does not fabricate handoff/obligations or change dialogue policy\n      ---\n      duration_ms: 63.49368\n      type: 'test'\n      ...\n    # Subtest: A22: two supervisors A\u2192B versus A\u2192C serialize in real sessions with one actionable loser\n    ok 24 - A22: two supervisors A\u2192B versus A\u2192C serialize in real sessions with one actionable loser\n      ---\n      duration_ms: 1917.67444\n      type: 'test'\n      ...\n    # Subtest: A23: an old-owner real follow-up racing an uncommitted transfer cannot overwrite B\n    ok 25 - A23: an old-owner real follow-up racing an uncommitted transfer cannot overwrite B\n      ---\n      duration_ms: 1448.37967\n      type: 'test'\n      ...\n    # Subtest: A24: target becoming inactive concurrently rejects atomically after a real profile lock wait\n    ok 26 - A24: target becoming inactive concurrently rejects atomically after a real profile lock wait\n      ---\n      duration_ms: 1401.10829\n      type: 'test'\n      ...\n    # Subtest: A25: adopted-domain legacy RPC/direct owner writers are characterized and actually fenced\n    ok 27 - A25: adopted-domain legacy RPC/direct owner writers are characterized and actually fenced\n      ---\n      duration_ms: 204.25178\n      type: 'test'\n      ...\n    # Subtest: X01: B acknowledging an assignment not yet committed loses with an actionable version conflict\n    ok 28 - X01: B acknowledging an assignment not yet committed loses with an actionable version conflict\n      ---\n      duration_ms: 1501.56289\n      type: 'test'\n      ...\n    # Subtest: X02: simultaneous supervisor double click serializes the same key into one effect and a replay\n    ok 29 - X02: simultaneous supervisor double click serializes the same key into one effect and a replay\n      ---\n      duration_ms: 1447.32243\n      type: 'test'\n      ...\n    # Subtest: X03: retry from a new session after a committed response is lost returns the durable prior result\n    ok 30 - X03: retry from a new session after a committed response is lost returns the durable prior result\n      ---\n      duration_ms: 1821.11879\n      type: 'test'\n      ...\n    # Subtest: X04: seller cannot self-assign, transfer, forge actor/assigned_by/epoch or acknowledge another owner\n    ok 31 - X04: seller cannot self-assign, transfer, forge actor/assigned_by/epoch or acknowledge another owner\n      ---\n      duration_ms: 598.46373\n      type: 'test'\n      ...\n    # Subtest: X05: old owner refresh_due_contact_protocols does not advance an adopted protocol still bearing historical A\n    ok 32 - X05: old owner refresh_due_contact_protocols does not advance an adopted protocol still bearing historical A\n      ---\n      duration_ms: 413.17915\n      type: 'test'\n      ...\n    # Subtest: X06: adopted current-owner task/sequence/assignment reads work in a genuine read-only authenticated transaction\n    ok 33 - X06: adopted current-owner task/sequence/assignment reads work in a genuine read-only authenticated transaction\n      ---\n      duration_ms: 163.5716\n      type: 'test'\n      ...\n    # Subtest: X07: historical quote ownership does not let A mutate an adopted opportunity after transfer\n    ok 34 - X07: historical quote ownership does not let A mutate an adopted opportunity after transfer\n      ---\n      duration_ms: 402.58444\n      type: 'test'\n      ...\n    # Subtest: X08: real appraisal RPC passes its old owner check, then a committed transfer makes its eventual write fail atomically\n    ok 35 - X08: real appraisal RPC passes its old owner check, then a committed transfer makes its eventual write fail atomically\n      ---\n      duration_ms: 1394.47635\n      type: 'test'\n      ...\n    # Subtest: X09: Assign rejects orphan opportunities with a prior agenda, contact or inherited protocol/history\n    ok 36 - X09: Assign rejects orphan opportunities with a prior agenda, contact or inherited protocol/history\n      ---\n      duration_ms: 776.62994\n      type: 'test'\n      ...\n    # Subtest: X10: Transfer rejects terminal CRM stages and an administrative sales case without altering historical facts\n    ok 37 - X10: Transfer rejects terminal CRM stages and an administrative sales case without altering historical facts\n      ---\n      duration_ms: 1247.46079\n      type: 'test'\n      ...\n    # Subtest: X11: an actual assignment-history INSERT failure rolls back owner/history/activity/runtime/receipt/event and permits the same-key retry\n    ok 38 - X11: an actual assignment-history INSERT failure rolls back owner/history/activity/runtime/receipt/event and permits the same-key retry\n      ---\n      duration_ms: 687.26477\n      type: 'test'\n      ...\n    # Subtest: F01 extra foundation: certified execution, normalization and canonical hash SQL remain byte-identical after A+B\n    ok 39 - F01 extra foundation: certified execution, normalization and canonical hash SQL remain byte-identical after A+B\n      ---\n      duration_ms: 39.56849\n      type: 'test'\n      ...\n    # Subtest: F02 extra foundation: added authority stays private and runtime gains no broad legacy DML\n    ok 40 - F02 extra foundation: added authority stays private and runtime gains no broad legacy DML\n      ---\n      duration_ms: 130.41207\n      type: 'test'\n      ...\n    # Subtest: F03 extra foundation: stock FoundationProbe remains compiled closed through the new public gateway\n    ok 41 - F03 extra foundation: stock FoundationProbe remains compiled closed through the new public gateway\n      ---\n      duration_ms: 243.61375\n      type: 'test'\n      ...\n    # Subtest: F04 extra foundation: actual probe commits one effect/event/receipt, replays, rejects key conflict, and retains SQL/JS hash parity\n    ok 42 - F04 extra foundation: actual probe commits one effect/event/receipt, replays, rejects key conflict, and retains SQL/JS hash parity\n      ---\n      duration_ms: 346.94111\n      type: 'test'\n      ...\n    # Subtest: F05 extra foundation: stale aggregate and assignment versions reject without a synthetic effect\n    ok 43 - F05 extra foundation: stale aggregate and assignment versions reject without a synthetic effect\n      ---\n      duration_ms: 326.07588\n      type: 'test'\n      ...\n    # Subtest: F06 extra foundation: exception after real SQL effect rolls back effect, receipt, event and aggregate atomically\n    ok 44 - F06 extra foundation: exception after real SQL effect rolls back effect, receipt, event and aggregate atomically\n      ---\n      duration_ms: 181.40631\n      type: 'test'\n      ...\n    # Subtest: F07 extra foundation: test hook is restored closed and no evaluating receipt or orphan event remains\n    ok 45 - F07 extra foundation: test hook is restored closed and no evaluating receipt or orphan event remains\n      ---\n      duration_ms: 176.83938\n      type: 'test'\n      ...\n    # Subtest: F08 extra foundation: receipt execution proof is server-derived, terminally disabled and cannot be supplied through the API\n    ok 46 - F08 extra foundation: receipt execution proof is server-derived, terminally disabled and cannot be supplied through the API\n      ---\n      duration_ms: 373.96261\n      type: 'test'\n      ...\n    # Subtest: F09 extra foundation: receipt proof constraints reject invalid proof, duplicate active proof and undecided COMMIT\n    ok 47 - F09 extra foundation: receipt proof constraints reject invalid proof, duplicate active proof and undecided COMMIT\n      ---\n      duration_ms: 257.21074\n      type: 'test'\n      ...\n    1..47\nok 1 - M1-04A: actual assignment/transfer command acceptance (27 required cases)\n  ---\n  duration_ms: 26741.88593\n  type: 'test'\n  ...\n# {\"candidate\":\"20260918033251_m1_assignment_adoption_guard.sql\",\"sha256\":\"89bd8e0a1e8ecfaad13077780da576612f81fc34bf94347bfd7ea0104ae654be\",\"installed_as\":\"postgres\",\"isolated_only\":true}\n# {\"candidate\":\"20260918033407_m1_assignment_commands.sql\",\"sha256\":\"f8760de6053cdb2d56ec23e6b1d4c7bf7efbfaa31ed174bd7ddaf22f21c0b9bf\",\"installed_as\":\"postgres\",\"isolated_only\":true}\n# {\"certified_core_sha256\":\"95200960d359c19cc187dadc5abc1b9dbf4a0a8ae1a55d5585b0b01320efdaa6\",\"compared_functions\":[\"crm_execute_command\",\"crm_normalize_command\",\"crm_canonical_json\",\"crm_json_keys\",\"crm_json_integer\",\"crm_foundation_actor\",\"crm_foundation_scope\",\"crm_apply_foundation_probe\"]}\n1..1\n# tests 48\n# suites 0\n# pass 48\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 27707.51745\n",
+      "stderr": "",
+      "test_exit_code": 0,
+      "duration_seconds": 52.382,
+      "temporary_cluster_retained": null
+    },
+    {
+      "harness": "crm-m1-unix-seccomp/2",
+      "run_id": "8a055250-b7b0-4a54-9af5-61d7854e7a18",
+      "suite": "contact-assignment-regression.integration.test.mjs",
+      "source_manifest": {
+        "sha256": "848a6de938558d145ff27e537582b9d36494ae1356719ff42b4654d494107b3a",
+        "git_base_revision": "8a331e647eeb574be90cb2a6bd28a7e46f874ae3",
+        "source_has_uncommitted_changes": true
+      },
+      "fixture_layer": "B_plus_post_contact_assignment_regression",
+      "bootstrap_source": "tests/m1/fixtures/schema-baseline-b/bootstrap.sql",
+      "bootstrap_sha256": "8ea22a1e8b4cd6559732331ca66ac2728d90f58e11ada4f344c398040608c5e6",
+      "cluster_per_suite": true,
+      "bootstrap_user": "supabase_admin",
+      "migration_installation": "runner_installs_all_three",
+      "timeout_scale": 3.0,
+      "status": "PASS",
+      "remote_database": false,
+      "external_egress": false,
+      "requested_database_major": 17,
+      "requested_uid": 65534,
+      "database_started": true,
+      "migrations_applied": [
+        "20260917154844_m1_runtime_authority_foundation.sql",
+        "20260917154854_m1_private_capabilities.sql",
+        "20260917154905_m1_command_receipts_events.sql"
+      ],
+      "integration_tests_executed": true,
+      "migration_sha256": {
+        "20260917154844_m1_runtime_authority_foundation.sql": "6dbb4e1c6a0c8da22de49424fdf965f46e74e85dad0e822a6201b2ec31f09d49",
+        "20260917154854_m1_private_capabilities.sql": "6154b2dd302d1f5793ea5c9b4151a1423f4f5b956e688ae7089bf8f00b80cd60",
+        "20260917154905_m1_command_receipts_events.sql": "433615402b82cbc5b85cd4f168c0b96ff48658de84cfdadad56b02616f7bf9e7"
+      },
+      "candidate_migration_sha256": {
+        "20260918033251_m1_assignment_adoption_guard.sql": "89bd8e0a1e8ecfaad13077780da576612f81fc34bf94347bfd7ea0104ae654be",
+        "20260918033407_m1_assignment_commands.sql": "f8760de6053cdb2d56ec23e6b1d4c7bf7efbfaa31ed174bd7ddaf22f21c0b9bf",
+        "20260918160432_m1_contact_runtime_foundation.sql": "77ce546027d03fab8bca91671ded6429071269392c2554a13ecfeeb9a4c0f72c",
+        "20260918160433_m1_contact_legacy_fences.sql": "e90f8a82f635cb91ebe5a3ccc2a7bb1298b42699f0990026617968d1e6f205c9",
+        "20260918160434_m1_contact_commands.sql": "f6ab335396ea25f174a9c1cb368d5c1bc410bf5c41bf75ac7582190ae65b3fae"
+      },
+      "candidate_installation": "suite_controlled_verbatim",
+      "candidate_validation_stage": "post_contact_regression",
+      "postgres_binary_sha256": "23cd174849b273064c47d581b55be596be2f5cf0ee5d3e76c0146e2464bf873a",
+      "guard_source_sha256": "589dc0aece8cee8e104a7c3a8c27d6e13ca858518bdf74d0454e67c90cb53fd9",
+      "guard_binary_sha256": "d48cf6d387092c71323d7e6a24af26c582d7bc0103545cd3614641e9608183f7",
+      "guard_precompiled": true,
+      "suite_sha256": {
+        "tests/m1/contact-assignment-regression.integration.test.mjs": "7232c413ac30d1d8d033559ff72768b008454c734dbf3d28d020349c50966c4e"
+      },
+      "limits": [
+        "Schema B plus observed overlays and synthetic assignment data; candidate DDL is suite-controlled, no production rows or Supabase REST gateway.",
+        "Only the selected assignment candidate boundary is exercised; no sender, frontend, production authority or wider CRM certification.",
+        "Database effects occur only in the disposable local cluster."
+      ],
+      "postgres_version": "postgres (PostgreSQL) 17.6",
+      "unix_socket_available": true,
+      "uid_map": [
+        [
+          0,
+          0,
+          4294967295
+        ]
+      ],
+      "gid_map": [
+        [
+          0,
+          0,
+          4294967295
+        ]
+      ],
+      "environment_keys": [
+        "LANG",
+        "LC_ALL",
+        "LD_LIBRARY_PATH",
+        "M1_LIBPQ_PATH",
+        "M1_PYTHON_BIN",
+        "M1_TEST_BOOTSTRAP_USER",
+        "M1_TEST_CANDIDATE_MIGRATIONS",
+        "M1_TEST_CONTACT_REGRESSION_MIGRATIONS",
+        "M1_TEST_DATABASE",
+        "M1_TEST_FIXTURE_DIR",
+        "M1_TEST_ISOLATED",
+        "M1_TEST_MIGRATION_DIR",
+        "M1_TEST_PORT",
+        "M1_TEST_RUN_ID",
+        "M1_TEST_SOCKET_DIR",
+        "M1_TEST_TIMEOUT_SCALE",
+        "PATH",
+        "PGPASSFILE",
+        "PGSERVICEFILE",
+        "PYTHONNOUSERSITE",
+        "TZ"
+      ],
+      "isolation": {
+        "ok": true,
+        "columns": [
+          "listen_addresses",
+          "marker",
+          "unix_socket"
+        ],
+        "rows": [
+          [
+            "",
+            "8a055250-b7b0-4a54-9af5-61d7854e7a18",
+            "t"
+          ]
+        ],
+        "affected": "1",
+        "id": 1
+      },
+      "migration_role": {
+        "ok": true,
+        "columns": [
+          "rolname",
+          "rolsuper",
+          "rolcreaterole",
+          "rolbypassrls"
+        ],
+        "rows": [
+          [
+            "postgres",
+            "f",
+            "t",
+            "t"
+          ]
+        ],
+        "affected": "1",
+        "id": 1
+      },
+      "test_timeout_seconds": 720.0,
+      "tap": "TAP version 13\n# Subtest: M1-04A: actual assignment/transfer command acceptance (27 required cases)\n    # Subtest: A27: installing candidates changes no business rows, activates no gate and grants no API access\n    ok 1 - A27: installing candidates changes no business rows, activates no gate and grants no API access\n      ---\n      duration_ms: 927.92329\n      type: 'test'\n      ...\n    # Subtest: A26: inactive installation retains characterized legacy transfer reset; runtime gate inactive rejects\n    ok 2 - A26: inactive installation retains characterized legacy transfer reset; runtime gate inactive rejects\n      ---\n      duration_ms: 1339.88403\n      type: 'test'\n      ...\n    # Subtest: A01: genuine initial assignment succeeds without creating a protocol or acquiring a channel\n    ok 3 - A01: genuine initial assignment succeeds without creating a protocol or acquiring a channel\n      ---\n      duration_ms: 318.2807\n      type: 'test'\n      ...\n    # Subtest: A02: TransferLead A\u2192B changes future owner with a valid versioned command\n    ok 4 - A02: TransferLead A\u2192B changes future owner with a valid versioned command\n      ---\n      duration_ms: 655.33333\n      type: 'test'\n      ...\n    # Subtest: A03: Se\u00f1a and Cierre stages survive transfer without becoming Nuevo\n    ok 5 - A03: Se\u00f1a and Cierre stages survive transfer without becoming Nuevo\n      ---\n      duration_ms: 594.12812\n      type: 'test'\n      ...\n    # Subtest: A04: next action, its source and post-deposit appointment are preserved\n    ok 6 - A04: next action, its source and post-deposit appointment are preserved\n      ---\n      duration_ms: 4.82429\n      type: 'test'\n      ...\n    # Subtest: A05: interview facts and historical timestamps are preserved\n    ok 7 - A05: interview facts and historical timestamps are preserved\n      ---\n      duration_ms: 2.74729\n      type: 'test'\n      ...\n    # Subtest: A06: deposit amount, effective date and validation are unchanged\n    ok 8 - A06: deposit amount, effective date and validation are unchanged\n      ---\n      duration_ms: 2.32768\n      type: 'test'\n      ...\n    # Subtest: A07: active protocol IDs, started_at and historical seller survive intact\n    ok 9 - A07: active protocol IDs, started_at and historical seller survive intact\n      ---\n      duration_ms: 5.09005\n      type: 'test'\n      ...\n    # Subtest: A08: historical tasks, actors, performed_at and existing activity rows are not reattributed\n    ok 10 - A08: historical tasks, actors, performed_at and existing activity rows are not reattributed\n      ---\n      duration_ms: 78.78175\n      type: 'test'\n      ...\n    # Subtest: A09: transfer creates no protocol and cancels no existing task\n    ok 11 - A09: transfer creates no protocol and cancels no existing task\n      ---\n      duration_ms: 20.42423\n      type: 'test'\n      ...\n    # Subtest: A10: transfer has no start_lead_crm_cycle semantics or new cycle activity\n    ok 12 - A10: transfer has no start_lead_crm_cycle semantics or new cycle activity\n      ---\n      duration_ms: 55.49258\n      type: 'test'\n      ...\n    # Subtest: A11: assignment_epoch increments exactly once\n    ok 13 - A11: assignment_epoch increments exactly once\n      ---\n      duration_ms: 21.76795\n      type: 'test'\n      ...\n    # Subtest: A12: aggregate_version increments exactly once under the command contract\n    ok 14 - A12: aggregate_version increments exactly once under the command contract\n      ---\n      duration_ms: 17.44471\n      type: 'test'\n      ...\n    # Subtest: A13: exactly one assignment history row and command event identify the actual supervisor\n    ok 15 - A13: exactly one assignment history row and command event identify the actual supervisor\n      ---\n      duration_ms: 83.95072\n      type: 'test'\n      ...\n    # Subtest: A14: retries/double click preserve one Assign and Transfer effect; changed destination conflicts\n    ok 16 - A14: retries/double click preserve one Assign and Transfer effect; changed destination conflicts\n      ---\n      duration_ms: 286.47662\n      type: 'test'\n      ...\n    # Subtest: A15: former owner using an authenticated old identity cannot mutate an inherited pending task\n    ok 17 - A15: former owner using an authenticated old identity cannot mutate an inherited pending task\n      ---\n      duration_ms: 207.95435\n      type: 'test'\n      ...\n    # Subtest: A16: B resolves the original pending task through the real RPC without rewriting task or sequence provenance\n    ok 18 - A16: B resolves the original pending task through the real RPC without rewriting task or sequence provenance\n      ---\n      duration_ms: 223.21467\n      type: 'test'\n      ...\n    # Subtest: A17: TransferLead leaves channel authority unchanged\n    ok 19 - A17: TransferLead leaves channel authority unchanged\n      ---\n      duration_ms: 3.10825\n      type: 'test'\n      ...\n    # Subtest: A18: TransferLead changes no channel authority_epoch\n    ok 20 - A18: TransferLead changes no channel authority_epoch\n      ---\n      duration_ms: 1.63632\n      type: 'test'\n      ...\n    # Subtest: A19: adopted assignment cannot grant seller WhatsApp capability or mode RPC access\n    ok 21 - A19: adopted assignment cannot grant seller WhatsApp capability or mode RPC access\n      ---\n      duration_ms: 186.92518\n      type: 'test'\n      ...\n    # Subtest: A20: acknowledge is versioned/idempotent and changes neither owner nor assigned_at\n    ok 22 - A20: acknowledge is versioned/idempotent and changes neither owner nor assigned_at\n      ---\n      duration_ms: 351.02349\n      type: 'test'\n      ...\n    # Subtest: A21: acknowledge does not fabricate handoff/obligations or change dialogue policy\n    ok 23 - A21: acknowledge does not fabricate handoff/obligations or change dialogue policy\n      ---\n      duration_ms: 60.51245\n      type: 'test'\n      ...\n    # Subtest: A22: two supervisors A\u2192B versus A\u2192C serialize in real sessions with one actionable loser\n    ok 24 - A22: two supervisors A\u2192B versus A\u2192C serialize in real sessions with one actionable loser\n      ---\n      duration_ms: 1757.44217\n      type: 'test'\n      ...\n    # Subtest: A23: an old-owner real follow-up racing an uncommitted transfer cannot overwrite B\n    ok 25 - A23: an old-owner real follow-up racing an uncommitted transfer cannot overwrite B\n      ---\n      duration_ms: 1533.9285\n      type: 'test'\n      ...\n    # Subtest: A24: target becoming inactive concurrently rejects atomically after a real profile lock wait\n    ok 26 - A24: target becoming inactive concurrently rejects atomically after a real profile lock wait\n      ---\n      duration_ms: 1405.96884\n      type: 'test'\n      ...\n    # Subtest: A25: adopted-domain legacy RPC/direct owner writers are characterized and actually fenced\n    ok 27 - A25: adopted-domain legacy RPC/direct owner writers are characterized and actually fenced\n      ---\n      duration_ms: 189.80504\n      type: 'test'\n      ...\n    # Subtest: X01: B acknowledging an assignment not yet committed loses with an actionable version conflict\n    ok 28 - X01: B acknowledging an assignment not yet committed loses with an actionable version conflict\n      ---\n      duration_ms: 1506.36953\n      type: 'test'\n      ...\n    # Subtest: X02: simultaneous supervisor double click serializes the same key into one effect and a replay\n    ok 29 - X02: simultaneous supervisor double click serializes the same key into one effect and a replay\n      ---\n      duration_ms: 1453.74977\n      type: 'test'\n      ...\n    # Subtest: X03: retry from a new session after a committed response is lost returns the durable prior result\n    ok 30 - X03: retry from a new session after a committed response is lost returns the durable prior result\n      ---\n      duration_ms: 1778.49514\n      type: 'test'\n      ...\n    # Subtest: X04: seller cannot self-assign, transfer, forge actor/assigned_by/epoch or acknowledge another owner\n    ok 31 - X04: seller cannot self-assign, transfer, forge actor/assigned_by/epoch or acknowledge another owner\n      ---\n      duration_ms: 689.30754\n      type: 'test'\n      ...\n    # Subtest: X05: old owner refresh_due_contact_protocols does not advance an adopted protocol still bearing historical A\n    ok 32 - X05: old owner refresh_due_contact_protocols does not advance an adopted protocol still bearing historical A\n      ---\n      duration_ms: 411.14866\n      type: 'test'\n      ...\n    # Subtest: X06: adopted current-owner task/sequence/assignment reads work in a genuine read-only authenticated transaction\n    ok 33 - X06: adopted current-owner task/sequence/assignment reads work in a genuine read-only authenticated transaction\n      ---\n      duration_ms: 138.15648\n      type: 'test'\n      ...\n    # Subtest: X07: historical quote ownership does not let A mutate an adopted opportunity after transfer\n    ok 34 - X07: historical quote ownership does not let A mutate an adopted opportunity after transfer\n      ---\n      duration_ms: 414.44836\n      type: 'test'\n      ...\n    # Subtest: X08: real appraisal RPC passes its old owner check, then a committed transfer makes its eventual write fail atomically\n    ok 35 - X08: real appraisal RPC passes its old owner check, then a committed transfer makes its eventual write fail atomically\n      ---\n      duration_ms: 1245.84404\n      type: 'test'\n      ...\n    # Subtest: X09: Assign rejects orphan opportunities with a prior agenda, contact or inherited protocol/history\n    ok 36 - X09: Assign rejects orphan opportunities with a prior agenda, contact or inherited protocol/history\n      ---\n      duration_ms: 805.98621\n      type: 'test'\n      ...\n    # Subtest: X10: Transfer rejects terminal CRM stages and an administrative sales case without altering historical facts\n    ok 37 - X10: Transfer rejects terminal CRM stages and an administrative sales case without altering historical facts\n      ---\n      duration_ms: 1383.58919\n      type: 'test'\n      ...\n    # Subtest: X11: an actual assignment-history INSERT failure rolls back owner/history/activity/runtime/receipt/event and permits the same-key retry\n    ok 38 - X11: an actual assignment-history INSERT failure rolls back owner/history/activity/runtime/receipt/event and permits the same-key retry\n      ---\n      duration_ms: 669.80076\n      type: 'test'\n      ...\n    # Subtest: F01 extra foundation: certified execution, normalization and canonical hash SQL remain byte-identical after A+B\n    ok 39 - F01 extra foundation: certified execution, normalization and canonical hash SQL remain byte-identical after A+B\n      ---\n      duration_ms: 34.48907\n      type: 'test'\n      ...\n    # Subtest: F02 extra foundation: added authority stays private and runtime gains no broad legacy DML\n    ok 40 - F02 extra foundation: added authority stays private and runtime gains no broad legacy DML\n      ---\n      duration_ms: 128.16581\n      type: 'test'\n      ...\n    # Subtest: F03 extra foundation: stock FoundationProbe remains compiled closed through the new public gateway\n    ok 41 - F03 extra foundation: stock FoundationProbe remains compiled closed through the new public gateway\n      ---\n      duration_ms: 261.30078\n      type: 'test'\n      ...\n    # Subtest: F04 extra foundation: actual probe commits one effect/event/receipt, replays, rejects key conflict, and retains SQL/JS hash parity\n    ok 42 - F04 extra foundation: actual probe commits one effect/event/receipt, replays, rejects key conflict, and retains SQL/JS hash parity\n      ---\n      duration_ms: 409.52841\n      type: 'test'\n      ...\n    # Subtest: F05 extra foundation: stale aggregate and assignment versions reject without a synthetic effect\n    ok 43 - F05 extra foundation: stale aggregate and assignment versions reject without a synthetic effect\n      ---\n      duration_ms: 369.78241\n      type: 'test'\n      ...\n    # Subtest: F06 extra foundation: exception after real SQL effect rolls back effect, receipt, event and aggregate atomically\n    ok 44 - F06 extra foundation: exception after real SQL effect rolls back effect, receipt, event and aggregate atomically\n      ---\n      duration_ms: 186.30683\n      type: 'test'\n      ...\n    # Subtest: F07 extra foundation: test hook is restored closed and no evaluating receipt or orphan event remains\n    ok 45 - F07 extra foundation: test hook is restored closed and no evaluating receipt or orphan event remains\n      ---\n      duration_ms: 194.64434\n      type: 'test'\n      ...\n    # Subtest: F08 extra foundation: receipt execution proof is server-derived, terminally disabled and cannot be supplied through the API\n    ok 46 - F08 extra foundation: receipt execution proof is server-derived, terminally disabled and cannot be supplied through the API\n      ---\n      duration_ms: 346.67558\n      type: 'test'\n      ...\n    # Subtest: F09 extra foundation: receipt proof constraints reject invalid proof, duplicate active proof and undecided COMMIT\n    ok 47 - F09 extra foundation: receipt proof constraints reject invalid proof, duplicate active proof and undecided COMMIT\n      ---\n      duration_ms: 270.78724\n      type: 'test'\n      ...\n    1..47\nok 1 - M1-04A: actual assignment/transfer command acceptance (27 required cases)\n  ---\n  duration_ms: 27228.32787\n  type: 'test'\n  ...\n# {\"candidate\":\"20260918033251_m1_assignment_adoption_guard.sql\",\"sha256\":\"89bd8e0a1e8ecfaad13077780da576612f81fc34bf94347bfd7ea0104ae654be\",\"installed_as\":\"postgres\",\"isolated_only\":true}\n# {\"candidate\":\"20260918033407_m1_assignment_commands.sql\",\"sha256\":\"f8760de6053cdb2d56ec23e6b1d4c7bf7efbfaa31ed174bd7ddaf22f21c0b9bf\",\"installed_as\":\"postgres\",\"isolated_only\":true}\n# {\"contact_regression_migration\":\"20260918160432_m1_contact_runtime_foundation.sql\",\"sha256\":\"77ce546027d03fab8bca91671ded6429071269392c2554a13ecfeeb9a4c0f72c\",\"installed_as\":\"postgres\"}\n# {\"contact_regression_migration\":\"20260918160433_m1_contact_legacy_fences.sql\",\"sha256\":\"e90f8a82f635cb91ebe5a3ccc2a7bb1298b42699f0990026617968d1e6f205c9\",\"installed_as\":\"postgres\"}\n# {\"contact_regression_migration\":\"20260918160434_m1_contact_commands.sql\",\"sha256\":\"f6ab335396ea25f174a9c1cb368d5c1bc410bf5c41bf75ac7582190ae65b3fae\",\"installed_as\":\"postgres\"}\n# {\"certified_core_sha256\":\"95200960d359c19cc187dadc5abc1b9dbf4a0a8ae1a55d5585b0b01320efdaa6\",\"compared_functions\":[\"crm_execute_command\",\"crm_normalize_command\",\"crm_canonical_json\",\"crm_json_keys\",\"crm_json_integer\",\"crm_foundation_actor\",\"crm_foundation_scope\",\"crm_apply_foundation_probe\"]}\n1..1\n# tests 48\n# suites 0\n# pass 48\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 28408.13966\n",
+      "stderr": "",
+      "test_exit_code": 0,
+      "duration_seconds": 54.08,
+      "temporary_cluster_retained": null
+    },
+    {
+      "harness": "crm-m1-unix-seccomp/2",
+      "run_id": "4cece19d-0197-4973-9abf-ed8e719944b9",
+      "suite": "contact-channel-regression.integration.test.mjs",
+      "source_manifest": {
+        "sha256": "848a6de938558d145ff27e537582b9d36494ae1356719ff42b4654d494107b3a",
+        "git_base_revision": "8a331e647eeb574be90cb2a6bd28a7e46f874ae3",
+        "source_has_uncommitted_changes": true
+      },
+      "fixture_layer": "B_plus_post_contact_assignment_regression",
+      "bootstrap_source": "tests/m1/fixtures/schema-baseline-b/bootstrap.sql",
+      "bootstrap_sha256": "8ea22a1e8b4cd6559732331ca66ac2728d90f58e11ada4f344c398040608c5e6",
+      "cluster_per_suite": true,
+      "bootstrap_user": "supabase_admin",
+      "migration_installation": "runner_installs_all_three",
+      "timeout_scale": 3.0,
+      "status": "PASS",
+      "remote_database": false,
+      "external_egress": false,
+      "requested_database_major": 17,
+      "requested_uid": 65534,
+      "database_started": true,
+      "migrations_applied": [
+        "20260917154844_m1_runtime_authority_foundation.sql",
+        "20260917154854_m1_private_capabilities.sql",
+        "20260917154905_m1_command_receipts_events.sql"
+      ],
+      "integration_tests_executed": true,
+      "migration_sha256": {
+        "20260917154844_m1_runtime_authority_foundation.sql": "6dbb4e1c6a0c8da22de49424fdf965f46e74e85dad0e822a6201b2ec31f09d49",
+        "20260917154854_m1_private_capabilities.sql": "6154b2dd302d1f5793ea5c9b4151a1423f4f5b956e688ae7089bf8f00b80cd60",
+        "20260917154905_m1_command_receipts_events.sql": "433615402b82cbc5b85cd4f168c0b96ff48658de84cfdadad56b02616f7bf9e7"
+      },
+      "candidate_migration_sha256": {
+        "20260918033251_m1_assignment_adoption_guard.sql": "89bd8e0a1e8ecfaad13077780da576612f81fc34bf94347bfd7ea0104ae654be",
+        "20260918033407_m1_assignment_commands.sql": "f8760de6053cdb2d56ec23e6b1d4c7bf7efbfaa31ed174bd7ddaf22f21c0b9bf",
+        "20260918160432_m1_contact_runtime_foundation.sql": "77ce546027d03fab8bca91671ded6429071269392c2554a13ecfeeb9a4c0f72c",
+        "20260918160433_m1_contact_legacy_fences.sql": "e90f8a82f635cb91ebe5a3ccc2a7bb1298b42699f0990026617968d1e6f205c9",
+        "20260918160434_m1_contact_commands.sql": "f6ab335396ea25f174a9c1cb368d5c1bc410bf5c41bf75ac7582190ae65b3fae"
+      },
+      "candidate_installation": "suite_controlled_verbatim",
+      "candidate_validation_stage": "post_contact_regression",
+      "postgres_binary_sha256": "23cd174849b273064c47d581b55be596be2f5cf0ee5d3e76c0146e2464bf873a",
+      "guard_source_sha256": "589dc0aece8cee8e104a7c3a8c27d6e13ca858518bdf74d0454e67c90cb53fd9",
+      "guard_binary_sha256": "d48cf6d387092c71323d7e6a24af26c582d7bc0103545cd3614641e9608183f7",
+      "guard_precompiled": true,
+      "suite_sha256": {
+        "tests/m1/contact-channel-regression.integration.test.mjs": "412f34f6c2d680b9220479c7341f28790065eafcf51bf10e61267b40ac007bd0"
+      },
+      "limits": [
+        "Schema B plus observed overlays and synthetic assignment data; candidate DDL is suite-controlled, no production rows or Supabase REST gateway.",
+        "Only the selected assignment candidate boundary is exercised; no sender, frontend, production authority or wider CRM certification.",
+        "Database effects occur only in the disposable local cluster."
+      ],
+      "postgres_version": "postgres (PostgreSQL) 17.6",
+      "unix_socket_available": true,
+      "uid_map": [
+        [
+          0,
+          0,
+          4294967295
+        ]
+      ],
+      "gid_map": [
+        [
+          0,
+          0,
+          4294967295
+        ]
+      ],
+      "environment_keys": [
+        "LANG",
+        "LC_ALL",
+        "LD_LIBRARY_PATH",
+        "M1_LIBPQ_PATH",
+        "M1_PYTHON_BIN",
+        "M1_TEST_BOOTSTRAP_USER",
+        "M1_TEST_CANDIDATE_MIGRATIONS",
+        "M1_TEST_CONTACT_REGRESSION_MIGRATIONS",
+        "M1_TEST_DATABASE",
+        "M1_TEST_FIXTURE_DIR",
+        "M1_TEST_ISOLATED",
+        "M1_TEST_MIGRATION_DIR",
+        "M1_TEST_PORT",
+        "M1_TEST_RUN_ID",
+        "M1_TEST_SOCKET_DIR",
+        "M1_TEST_TIMEOUT_SCALE",
+        "PATH",
+        "PGPASSFILE",
+        "PGSERVICEFILE",
+        "PYTHONNOUSERSITE",
+        "TZ"
+      ],
+      "isolation": {
+        "ok": true,
+        "columns": [
+          "listen_addresses",
+          "marker",
+          "unix_socket"
+        ],
+        "rows": [
+          [
+            "",
+            "4cece19d-0197-4973-9abf-ed8e719944b9",
+            "t"
+          ]
+        ],
+        "affected": "1",
+        "id": 1
+      },
+      "migration_role": {
+        "ok": true,
+        "columns": [
+          "rolname",
+          "rolsuper",
+          "rolcreaterole",
+          "rolbypassrls"
+        ],
+        "rows": [
+          [
+            "postgres",
+            "f",
+            "t",
+            "t"
+          ]
+        ],
+        "affected": "1",
+        "id": 1
+      },
+      "test_timeout_seconds": 720.0,
+      "tap": "TAP version 13\n# Subtest: Assignment channel guard: 23 real PostgreSQL cases using actual A+B commands, legacy mode RPC and control RLS\n    # Subtest: G01: precutover legacy seller-owner retains real permission and mode RPC\n    ok 1 - G01: precutover legacy seller-owner retains real permission and mode RPC\n      ---\n      duration_ms: 141.5091\n      type: 'test'\n      ...\n    # Subtest: G02: precutover seller-nonowner is denied by helper, actual control RLS and both mode RPC requests\n    ok 2 - G02: precutover seller-nonowner is denied by helper, actual control RLS and both mode RPC requests\n      ---\n      duration_ms: 166.68401\n      type: 'test'\n      ...\n    # Subtest: G03: active admin retains legacy mode RPC behavior\n    ok 3 - G03: active admin retains legacy mode RPC behavior\n      ---\n      duration_ms: 100.25867\n      type: 'test'\n      ...\n    # Subtest: G04: active supervisor retains legacy mode RPC behavior\n    ok 4 - G04: active supervisor retains legacy mode RPC behavior\n      ---\n      duration_ms: 112.48488\n      type: 'test'\n      ...\n    # Subtest: G05: durable adopted seller-owner is denied even though ownership is unchanged\n    ok 5 - G05: durable adopted seller-owner is denied even though ownership is unchanged\n      ---\n      duration_ms: 257.98245\n      type: 'test'\n      ...\n    # Subtest: G06: real runtime AssignLead null\u2192B grants commercial ownership without channel capability\n    ok 6 - G06: real runtime AssignLead null\u2192B grants commercial ownership without channel capability\n      ---\n      duration_ms: 534.08981\n      type: 'test'\n      ...\n    # Subtest: G07: real runtime TransferLead A\u2192B leaves new owner without channel capability\n    ok 7 - G07: real runtime TransferLead A\u2192B leaves new owner without channel capability\n      ---\n      duration_ms: 365.54833\n      type: 'test'\n      ...\n    # Subtest: G08: old owner A remains unable to intervene after A\u2192B\n    ok 8 - G08: old owner A remains unable to intervene after A\u2192B\n      ---\n      duration_ms: 133.72958\n      type: 'test'\n      ...\n    # Subtest: G09: real B\u2192A return transfer cannot restore A channel permission\n    ok 9 - G09: real B\u2192A return transfer cannot restore A channel permission\n      ---\n      duration_ms: 389.83932\n      type: 'test'\n      ...\n    # Subtest: G10: real AcknowledgeLeadAssignment cannot grant channel access or rewrite ownership\n    ok 10 - G10: real AcknowledgeLeadAssignment cannot grant channel access or rewrite ownership\n      ---\n      duration_ms: 250.00238\n      type: 'test'\n      ...\n    # Subtest: G11: real commands preserve channel_authority; the restriction also works without a conversation-state row\n    ok 11 - G11: real commands preserve channel_authority; the restriction also works without a conversation-state row\n      ---\n      duration_ms: 214.20788\n      type: 'test'\n      ...\n    # Subtest: G12: authority_epoch remains exactly unchanged across Assign, Transfer, return Transfer and Acknowledge\n    ok 12 - G12: authority_epoch remains exactly unchanged across Assign, Transfer, return Transfer and Acknowledge\n      ---\n      duration_ms: 41.26074\n      type: 'test'\n      ...\n    # Subtest: G13: paused assignment gate cannot restore the seller capability of an adopted lead\n    ok 13 - G13: paused assignment gate cannot restore the seller capability of an adopted lead\n      ---\n      duration_ms: 273.52385\n      type: 'test'\n      ...\n    # Subtest: G14: real command retry and rollback preserve durable adoption without duplicate or leaked command effects\n    ok 14 - G14: real command retry and rollback preserve durable adoption without duplicate or leaked command effects\n      ---\n      duration_ms: 435.0781\n      type: 'test'\n      ...\n    # Subtest: G15: crm_lead_runtime row without adoption keeps legacy channel behavior despite gate metadata\n    ok 15 - G15: crm_lead_runtime row without adoption keeps legacy channel behavior despite gate metadata\n      ---\n      duration_ms: 102.25231\n      type: 'test'\n      ...\n    # Subtest: G16: real gateway rejects caller payloads that forge adoption or actor authority\n    ok 16 - G16: real gateway rejects caller payloads that forge adoption or actor authority\n      ---\n      duration_ms: 241.65538\n      type: 'test'\n      ...\n    # Subtest: G17: GUCs, forged JWT metadata and request headers cannot remove server-side adoption or forge role\n    ok 17 - G17: GUCs, forged JWT metadata and request headers cannot remove server-side adoption or forge role\n      ---\n      duration_ms: 65.89369\n      type: 'test'\n      ...\n    # Subtest: G18: real authenticated seller cannot mutate adoption, gate, assignment epochs or technical adoption capability\n    ok 18 - G18: real authenticated seller cannot mutate adoption, gate, assignment epochs or technical adoption capability\n      ---\n      duration_ms: 181.52937\n      type: 'test'\n      ...\n    # Subtest: G19: active admin and supervisor preserve actual legacy management capability on adopted leads\n    ok 19 - G19: active admin and supervisor preserve actual legacy management capability on adopted leads\n      ---\n      duration_ms: 325.08948\n      type: 'test'\n      ...\n    # Subtest: G20: inactive seller remains denied on both legacy and adopted assigned leads\n    ok 20 - G20: inactive seller remains denied on both legacy and adopted assigned leads\n      ---\n      duration_ms: 273.41968\n      type: 'test'\n      ...\n    # Subtest: G21: an old authenticated seller session cannot intervene after a real ownership transfer commits\n    ok 21 - G21: an old authenticated seller session cannot intervene after a real ownership transfer commits\n      ---\n      duration_ms: 839.72058\n      type: 'test'\n      ...\n    # Subtest: G22: direct legacy set_whatsapp_conversation_mode fails for adopted current owner without channel/control/event side effects\n    ok 22 - G22: direct legacy set_whatsapp_conversation_mode fails for adopted current owner without channel/control/event side effects\n      ---\n      duration_ms: 168.75862\n      type: 'test'\n      ...\n    # Subtest: G23: helper and actual control/event RLS remain denied across repeated real owner changes; no field or permission silently regrants access\n    ok 23 - G23: helper and actual control/event RLS remain denied across repeated real owner changes; no field or permission silently regrants access\n      ---\n      duration_ms: 952.08412\n      type: 'test'\n      ...\n    1..23\nok 1 - Assignment channel guard: 23 real PostgreSQL cases using actual A+B commands, legacy mode RPC and control RLS\n  ---\n  duration_ms: 11784.54871\n  type: 'test'\n  ...\n# {\"contact_regression_migration\":\"20260918160432_m1_contact_runtime_foundation.sql\",\"sha256\":\"77ce546027d03fab8bca91671ded6429071269392c2554a13ecfeeb9a4c0f72c\",\"installed_as\":\"postgres\"}\n# {\"contact_regression_migration\":\"20260918160433_m1_contact_legacy_fences.sql\",\"sha256\":\"e90f8a82f635cb91ebe5a3ccc2a7bb1298b42699f0990026617968d1e6f205c9\",\"installed_as\":\"postgres\"}\n# {\"contact_regression_migration\":\"20260918160434_m1_contact_commands.sql\",\"sha256\":\"f6ab335396ea25f174a9c1cb368d5c1bc410bf5c41bf75ac7582190ae65b3fae\",\"installed_as\":\"postgres\"}\n# {\"cases\":23,\"assignment_path\":\"actual public.crm_submit_command with candidates A+B\",\"seller_channel_capability_after_owner_changes\":false,\"actual_control_RLS_rows\":0,\"channel_authority\":\"disabled\",\"authority_epoch\":17,\"channel_state_unchanged\":true,\"provider_calls\":0}\n1..1\n# tests 24\n# suites 0\n# pass 24\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 12678.89241\n",
+      "stderr": "",
+      "test_exit_code": 0,
+      "duration_seconds": 36.704,
+      "temporary_cluster_retained": null
+    },
+    {
+      "harness": "crm-m1-unix-seccomp/2",
+      "run_id": "973faa7d-366c-4b3c-83c2-6115d938efd7",
+      "suite": "contact-runtime.integration.test.mjs",
+      "source_manifest": {
+        "sha256": "848a6de938558d145ff27e537582b9d36494ae1356719ff42b4654d494107b3a",
+        "git_base_revision": "8a331e647eeb574be90cb2a6bd28a7e46f874ae3",
+        "source_has_uncommitted_changes": true
+      },
+      "fixture_layer": "B_plus_synthetic_contact_data",
+      "bootstrap_source": "tests/m1/fixtures/schema-baseline-b/bootstrap.sql",
+      "bootstrap_sha256": "8ea22a1e8b4cd6559732331ca66ac2728d90f58e11ada4f344c398040608c5e6",
+      "cluster_per_suite": true,
+      "bootstrap_user": "supabase_admin",
+      "migration_installation": "runner_installs_all_three",
+      "timeout_scale": 3.0,
+      "status": "PASS",
+      "remote_database": false,
+      "external_egress": false,
+      "requested_database_major": 17,
+      "requested_uid": 65534,
+      "database_started": true,
+      "migrations_applied": [
+        "20260917154844_m1_runtime_authority_foundation.sql",
+        "20260917154854_m1_private_capabilities.sql",
+        "20260917154905_m1_command_receipts_events.sql"
+      ],
+      "integration_tests_executed": true,
+      "migration_sha256": {
+        "20260917154844_m1_runtime_authority_foundation.sql": "6dbb4e1c6a0c8da22de49424fdf965f46e74e85dad0e822a6201b2ec31f09d49",
+        "20260917154854_m1_private_capabilities.sql": "6154b2dd302d1f5793ea5c9b4151a1423f4f5b956e688ae7089bf8f00b80cd60",
+        "20260917154905_m1_command_receipts_events.sql": "433615402b82cbc5b85cd4f168c0b96ff48658de84cfdadad56b02616f7bf9e7"
+      },
+      "candidate_migration_sha256": {
+        "20260918033251_m1_assignment_adoption_guard.sql": "89bd8e0a1e8ecfaad13077780da576612f81fc34bf94347bfd7ea0104ae654be",
+        "20260918033407_m1_assignment_commands.sql": "f8760de6053cdb2d56ec23e6b1d4c7bf7efbfaa31ed174bd7ddaf22f21c0b9bf",
+        "20260918160432_m1_contact_runtime_foundation.sql": "77ce546027d03fab8bca91671ded6429071269392c2554a13ecfeeb9a4c0f72c",
+        "20260918160433_m1_contact_legacy_fences.sql": "e90f8a82f635cb91ebe5a3ccc2a7bb1298b42699f0990026617968d1e6f205c9",
+        "20260918160434_m1_contact_commands.sql": "f6ab335396ea25f174a9c1cb368d5c1bc410bf5c41bf75ac7582190ae65b3fae"
+      },
+      "candidate_installation": "suite_controlled_verbatim",
+      "candidate_validation_stage": "contact_acceptance_candidate",
+      "postgres_binary_sha256": "23cd174849b273064c47d581b55be596be2f5cf0ee5d3e76c0146e2464bf873a",
+      "guard_source_sha256": "589dc0aece8cee8e104a7c3a8c27d6e13ca858518bdf74d0454e67c90cb53fd9",
+      "guard_binary_sha256": "d48cf6d387092c71323d7e6a24af26c582d7bc0103545cd3614641e9608183f7",
+      "guard_precompiled": true,
+      "suite_sha256": {
+        "tests/m1/contact-runtime.integration.test.mjs": "918b6680fccadc67d232347bbd85f4d6140df050903bba1144bf95c10b9e1f92"
+      },
+      "limits": [
+        "Schema B plus captured overlays and synthetic contact data; A and B candidate DDL is suite-controlled, no production rows or Supabase REST gateway.",
+        "Only contact/next-action laboratory contracts are exercised; no production frontend, sender, webhook, stage authority or rollout certification.",
+        "Database effects occur only in the disposable local cluster."
+      ],
+      "postgres_version": "postgres (PostgreSQL) 17.6",
+      "unix_socket_available": true,
+      "uid_map": [
+        [
+          0,
+          0,
+          4294967295
+        ]
+      ],
+      "gid_map": [
+        [
+          0,
+          0,
+          4294967295
+        ]
+      ],
+      "environment_keys": [
+        "LANG",
+        "LC_ALL",
+        "LD_LIBRARY_PATH",
+        "M1_LIBPQ_PATH",
+        "M1_PYTHON_BIN",
+        "M1_TEST_BOOTSTRAP_USER",
+        "M1_TEST_CANDIDATE_MIGRATIONS",
+        "M1_TEST_DATABASE",
+        "M1_TEST_FIXTURE_DIR",
+        "M1_TEST_ISOLATED",
+        "M1_TEST_MIGRATION_DIR",
+        "M1_TEST_PORT",
+        "M1_TEST_RUN_ID",
+        "M1_TEST_SOCKET_DIR",
+        "M1_TEST_TIMEOUT_SCALE",
+        "PATH",
+        "PGPASSFILE",
+        "PGSERVICEFILE",
+        "PYTHONNOUSERSITE",
+        "TZ"
+      ],
+      "isolation": {
+        "ok": true,
+        "columns": [
+          "listen_addresses",
+          "marker",
+          "unix_socket"
+        ],
+        "rows": [
+          [
+            "",
+            "973faa7d-366c-4b3c-83c2-6115d938efd7",
+            "t"
+          ]
+        ],
+        "affected": "1",
+        "id": 1
+      },
+      "migration_role": {
+        "ok": true,
+        "columns": [
+          "rolname",
+          "rolsuper",
+          "rolcreaterole",
+          "rolbypassrls"
+        ],
+        "rows": [
+          [
+            "postgres",
+            "f",
+            "t",
+            "t"
+          ]
+        ],
+        "affected": "1",
+        "id": 1
+      },
+      "test_timeout_seconds": 2700.0,
+      "tap": "TAP version 13\n# Subtest: M1-04B: 80 PostgreSQL acceptance scenarios, isolated synthetic data only\n    # Subtest: DB-B02: missing dependencies and wrong order roll back without B authority\n    ok 1 - DB-B02: missing dependencies and wrong order roll back without B authority\n      ---\n      duration_ms: 198.66411\n      type: 'test'\n      ...\n    # Subtest: DB-B03: each installation prefix is closed and adopts no business row\n    ok 2 - DB-B03: each installation prefix is closed and adopts no business row\n      ---\n      duration_ms: 1557.67678\n      type: 'test'\n      ...\n    # Subtest: DB-B01: complete ordered installation has validated PostgreSQL catalogs\n    ok 3 - DB-B01: complete ordered installation has validated PostgreSQL catalogs\n      ---\n      duration_ms: 139.25413\n      type: 'test'\n      ...\n    # Subtest: DB-B04: owner role, memberships, fixed search paths and closed definer functions\n    ok 4 - DB-B04: owner role, memberships, fixed search paths and closed definer functions\n      ---\n      duration_ms: 1038.90931\n      type: 'test'\n      ...\n    # Subtest: DB-B05: real API roles have no direct table access and FORCE RLS remains enabled\n    ok 5 - DB-B05: real API roles have no direct table access and FORCE RLS remains enabled\n      ---\n      duration_ms: 487.18686\n      type: 'test'\n      ...\n    # Subtest: DB-B06: runtime rows, gate, JWT/header/GUC never constitute technical adoption\n    ok 6 - DB-B06: runtime rows, gate, JWT/header/GUC never constitute technical adoption\n      ---\n      duration_ms: 409.86855\n      type: 'test'\n      ...\n    # Subtest: DB-B07: adoption requires durable Assignment and exact B gate, preserves baseline evidence\n    ok 7 - DB-B07: adoption requires durable Assignment and exact B gate, preserves baseline evidence\n      ---\n      duration_ms: 327.80431\n      type: 'test'\n      ...\n    # Subtest: DB-B08: pause is sticky, keeps commercial/channel epochs and seller channel denial\n    ok 8 - DB-B08: pause is sticky, keeps commercial/channel epochs and seller channel denial\n      ---\n      duration_ms: 399.37399\n      type: 'test'\n      ...\n    # Subtest: DB-B09: durable facts, adoptions and terminal history cannot be updated/deleted/truncated\n    ok 9 - DB-B09: durable facts, adoptions and terminal history cannot be updated/deleted/truncated\n      ---\n      duration_ms: 740.88634\n      type: 'test'\n      ...\n    # Subtest: DB-B10: future gates and FoundationProbe remain non-authoritative\n    ok 10 - DB-B10: future gates and FoundationProbe remain non-authoritative\n      ---\n      duration_ms: 505.88707\n      type: 'test'\n      ...\n    # Subtest: DB-B11: current owner and management scope, never historical task ownership\n    ok 11 - DB-B11: current owner and management scope, never historical task ownership\n      ---\n      duration_ms: 1448.23593\n      type: 'test'\n      ...\n    # Subtest: DB-B12: actor, ownership and privileged provenance cannot be injected\n    ok 12 - DB-B12: actor, ownership and privileged provenance cannot be injected\n      ---\n      duration_ms: 844.48433\n      type: 'test'\n      ...\n    # Subtest: DB-B13: inactive actor and concurrent deactivation are rejected\n    ok 13 - DB-B13: inactive actor and concurrent deactivation are rejected\n      ---\n      duration_ms: 1332.16518\n      type: 'test'\n      ...\n    # Subtest: DB-B14: foreign task, sequence, action and fact references fail closed\n    ok 14 - DB-B14: foreign task, sequence, action and fact references fail closed\n      ---\n      duration_ms: 1080.03609\n      type: 'test'\n      ...\n    # Subtest: DB-B15: same command ID and intent yield one effect and replay\n    ok 15 - DB-B15: same command ID and intent yield one effect and replay\n      ---\n      duration_ms: 459.99657\n      type: 'test'\n      ...\n    # Subtest: DB-B16: same idempotency key replays only same hash\n    ok 16 - DB-B16: same idempotency key replays only same hash\n      ---\n      duration_ms: 553.44775\n      type: 'test'\n      ...\n    # Subtest: DB-B17: new keys cannot duplicate or overwrite stable fact/action identities\n    ok 17 - DB-B17: new keys cannot duplicate or overwrite stable fact/action identities\n      ---\n      duration_ms: 1153.05501\n      type: 'test'\n      ...\n    # Subtest: DB-B18: stale aggregate, Assignment and B revisions never partially apply\n    ok 18 - DB-B18: stale aggregate, Assignment and B revisions never partially apply\n      ---\n      duration_ms: 869.95035\n      type: 'test'\n      ...\n    # Subtest: DB-B19: replay reevaluates read rights but succeeds through pause for authorized actor\n    ok 19 - DB-B19: replay reevaluates read rights but succeeds through pause for authorized actor\n      ---\n      duration_ms: 651.70424\n      type: 'test'\n      ...\n    # Subtest: DB-B20: neither GUC nor another domain receipt grants Contact DML\n    ok 20 - DB-B20: neither GUC nor another domain receipt grants Contact DML\n      ---\n      duration_ms: 425.04051\n      type: 'test'\n      ...\n    # Subtest: DB-B21: no_answer records real declared attempt/credit without stage/channel mutation\n    ok 21 - DB-B21: no_answer records real declared attempt/credit without stage/channel mutation\n      ---\n      duration_ms: 527.61974\n      type: 'test'\n      ...\n    # Subtest: DB-B22: personal WA sent is declared evidence, never delivery or corporate channel proof\n    ok 22 - DB-B22: personal WA sent is declared evidence, never delivery or corporate channel proof\n      ---\n      duration_ms: 620.9852\n      type: 'test'\n      ...\n    # Subtest: DB-B23: answered plus explicit next action is atomic and preserves commercial stage\n    ok 23 - DB-B23: answered plus explicit next action is atomic and preserves commercial stage\n      ---\n      duration_ms: 689.9517\n      type: 'test'\n      ...\n    # Subtest: DB-B24: manual skipped records omission, never attempt or last contact\n    ok 24 - DB-B24: manual skipped records omission, never attempt or last contact\n      ---\n      duration_ms: 418.36623\n      type: 'test'\n      ...\n    # Subtest: DB-B25: deadline observation is clock work with no seller contact or productivity attribution\n    ok 25 - DB-B25: deadline observation is clock work with no seller contact or productivity attribution\n      ---\n      duration_ms: 549.12609\n      type: 'test'\n      ...\n    # Subtest: DB-B26: future/ambiguous times and incompatible channels never receive silent normalization\n    ok 26 - DB-B26: future/ambiguous times and incompatible channels never receive silent normalization\n      ---\n      duration_ms: 536.59601\n      type: 'test'\n      ...\n    # Subtest: DB-B27: late evidence survives and only explicit supervisor review grants delayed credit\n    ok 27 - DB-B27: late evidence survives and only explicit supervisor review grants delayed credit\n      ---\n      duration_ms: 2840.95924\n      type: 'test'\n      ...\n    # Subtest: DB-B28: older occurrence does not replace latest contact and remains historical evidence\n    ok 28 - DB-B28: older occurrence does not replace latest contact and remains historical evidence\n      ---\n      duration_ms: 531.48751\n      type: 'test'\n      ...\n    # Subtest: DB-B29: supervisor amendment is append-only, compensates credit and never reopens protocol\n    ok 29 - DB-B29: supervisor amendment is append-only, compensates credit and never reopens protocol\n      ---\n      duration_ms: 835.28371\n      type: 'test'\n      ...\n    # Subtest: DB-B30: one task and fact have at most one credit; inbound response does not invent call credit\n    ok 30 - DB-B30: one task and fact have at most one credit; inbound response does not invent call credit\n      ---\n      duration_ms: 768.73033\n      type: 'test'\n      ...\n    # Subtest: DB-B31: new action has stable identity, revision and explicit date without contact or stage\n    ok 31 - DB-B31: new action has stable identity, revision and explicit date without contact or stage\n      ---\n      duration_ms: 636.02841\n      type: 'test'\n      ...\n    # Subtest: DB-B32: reschedule and note editing preserve action identity and protocol history\n    ok 32 - DB-B32: reschedule and note editing preserve action identity and protocol history\n      ---\n      duration_ms: 1226.16103\n      type: 'test'\n      ...\n    # Subtest: DB-B33: factual completion needs no invented date, but ordinary cancellation needs replacement\n    ok 33 - DB-B33: factual completion needs no invented date, but ordinary cancellation needs replacement\n      ---\n      duration_ms: 566.41875\n      type: 'test'\n      ...\n    # Subtest: DB-B34: explicit cancellation and replacement do not restart protocol or erase on omission\n    ok 34 - DB-B34: explicit cancellation and replacement do not restart protocol or erase on omission\n      ---\n      duration_ms: 958.77194\n      type: 'test'\n      ...\n    # Subtest: DB-B35: server clock observes deadline once while getter performs zero writes\n    ok 35 - DB-B35: server clock observes deadline once while getter performs zero writes\n      ---\n      duration_ms: 601.16994\n      type: 'test'\n      ...\n    # Subtest: DB-B36: rescheduling an overdue action retains old observation and advances revision\n    ok 36 - DB-B36: rescheduling an overdue action retains old observation and advances revision\n      ---\n      duration_ms: 851.66954\n      type: 'test'\n      ...\n    # Subtest: DB-B37: deep protected snapshot remains identical through contact/action/omission\n    ok 37 - DB-B37: deep protected snapshot remains identical through contact/action/omission\n      ---\n      duration_ms: 966.72731\n      type: 'test'\n      ...\n    # Subtest: DB-B38: opt-out atomically restricts linked customer and removes future work without stage\n    ok 38 - DB-B38: opt-out atomically restricts linked customer and removes future work without stage\n      ---\n      duration_ms: 800.11284\n      type: 'test'\n      ...\n    # Subtest: DB-B39: paused gate only admits restrictive opt-out without credit or new schedule\n    ok 39 - DB-B39: paused gate only admits restrictive opt-out without credit or new schedule\n      ---\n      duration_ms: 963.99521\n      type: 'test'\n      ...\n    # Subtest: DB-B40: incoherent customer identity fails without repair and no B operation lifts restriction\n    ok 40 - DB-B40: incoherent customer identity fails without repair and no B operation lifts restriction\n      ---\n      duration_ms: 1235.30686\n      type: 'test'\n      ...\n    # Subtest: DB-B41: 18+2 and historical 6+2 protocol IDs/windows survive adoption and transfer\n    ok 41 - DB-B41: 18+2 and historical 6+2 protocol IDs/windows survive adoption and transfer\n      ---\n      duration_ms: 652.9624\n      type: 'test'\n      ...\n    # Subtest: DB-B42: fully credited no-response protocol closes factually without cold/Recall/stage\n    ok 42 - DB-B42: fully credited no-response protocol closes factually without cold/Recall/stage\n      ---\n      duration_ms: 4103.87297\n      type: 'test'\n      ...\n    # Subtest: DB-B43: all omitted yields protocol_incomplete and visible zero registered attempts\n    ok 43 - DB-B43: all omitted yields protocol_incomplete and visible zero registered attempts\n      ---\n      duration_ms: 568.65075\n      type: 'test'\n      ...\n    # Subtest: DB-B44: partial counts retain denominator and descriptive majority without future routing\n    ok 44 - DB-B44: partial counts retain denominator and descriptive majority without future routing\n      ---\n      duration_ms: 7606.81919\n      type: 'test'\n      ...\n    # Subtest: DB-B45: unknown legacy work or empty/unrecognized plan cannot prove full or zero physical work\n    ok 45 - DB-B45: unknown legacy work or empty/unrecognized plan cannot prove full or zero physical work\n      ---\n      duration_ms: 808.7221\n      type: 'test'\n      ...\n    # Subtest: DB-B46: manual agenda explicitly supersedes only future work, preserving credited/omitted history\n    ok 46 - DB-B46: manual agenda explicitly supersedes only future work, preserving credited/omitted history\n      ---\n      duration_ms: 999.88027\n      type: 'test'\n      ...\n    # Subtest: DB-B47: response, no_interest, invalid and restriction remain distinct operational causes\n    ok 47 - DB-B47: response, no_interest, invalid and restriction remain distinct operational causes\n      ---\n      duration_ms: 1968.30381\n      type: 'test'\n      ...\n    # Subtest: DB-B48: legacy classifier trigger/direct call is contained only for adopted cohort\n    ok 48 - DB-B48: legacy classifier trigger/direct call is contained only for adopted cohort\n      ---\n      duration_ms: 901.25043\n      type: 'test'\n      ...\n    # Subtest: DB-B49: no-change clock is terminal without events/version; future windows remain visible\n    ok 49 - DB-B49: no-change clock is terminal without events/version; future windows remain visible\n      ---\n      duration_ms: 378.52939\n      type: 'test'\n      ...\n    # Subtest: DB-B50: operational getter is READ ONLY, scoped and exposes evidence/review/clock context\n    ok 50 - DB-B50: operational getter is READ ONLY, scoped and exposes evidence/review/clock context\n      ---\n      duration_ms: 938.76107\n      type: 'test'\n      ...\n    # Subtest: DB-B51: legacy, A-only and A+B cohorts preserve distinct writer authority\n    ok 51 - DB-B51: legacy, A-only and A+B cohorts preserve distinct writer authority\n      ---\n      duration_ms: 840.85097\n      type: 'test'\n      ...\n    # Subtest: DB-B52: every legacy result/answer/follow-up overload rejects before any side effect\n    ok 52 - DB-B52: every legacy result/answer/follow-up overload rejects before any side effect\n      ---\n      duration_ms: 460.54456\n      type: 'test'\n      ...\n    # Subtest: DB-B53: mixed supervisor scheduling/status/management cannot partially commit excluded domains\n    ok 53 - DB-B53: mixed supervisor scheduling/status/management cannot partially commit excluded domains\n      ---\n      duration_ms: 329.82161\n      type: 'test'\n      ...\n    # Subtest: DB-B54: restart/reconcile/future/Recall writers cannot reset adopted work\n    ok 54 - DB-B54: restart/reconcile/future/Recall writers cannot reset adopted work\n      ---\n      duration_ms: 316.63274\n      type: 'test'\n      ...\n    # Subtest: DB-B55: mixed-cohort legacy refresh processes only legacy and preserves B for explicit clock\n    ok 55 - DB-B55: mixed-cohort legacy refresh processes only legacy and preserves B for explicit clock\n      ---\n      duration_ms: 820.72466\n      type: 'test'\n      ...\n    # Subtest: DB-B56: service/direct DML/definer do not bypass B fields; excluded notes retain permissions\n    ok 56 - DB-B56: service/direct DML/definer do not bypass B fields; excluded notes retain permissions\n      ---\n      duration_ms: 308.33889\n      type: 'test'\n      ...\n    # Subtest: DB-B57: insert/delete/cascade/truncate cannot erase or forge adopted CRM/protocol history\n    ok 57 - DB-B57: insert/delete/cascade/truncate cannot erase or forge adopted CRM/protocol history\n      ---\n      duration_ms: 346.16108\n      type: 'test'\n      ...\n    # Subtest: DB-B58: new legacy leads retain initialization without implicit adoption\n    ok 58 - DB-B58: new legacy leads retain initialization without implicit adoption\n      ---\n      duration_ms: 192.44976\n      type: 'test'\n      ...\n    # Subtest: DB-B59: excluded appointment/deposit/document fields alone do not create B effects\n    ok 59 - DB-B59: excluded appointment/deposit/document fields alone do not create B effects\n      ---\n      duration_ms: 260.19898\n      type: 'test'\n      ...\n    # Subtest: DB-B60: reproduced webhook/sales mixed DML is rejected atomically without external functions\n    ok 60 - DB-B60: reproduced webhook/sales mixed DML is rejected atomically without external functions\n      ---\n      duration_ms: 275.15586\n      type: 'test'\n      ...\n    # Subtest: DB-B61: two real sessions with same intent block then commit one logical result\n    ok 61 - DB-B61: two real sessions with same intent block then commit one logical result\n      ---\n      duration_ms: 1819.3135\n      type: 'test'\n      ...\n    # Subtest: DB-B62: different simultaneous facts for same task produce one credit and stale loser\n    ok 62 - DB-B62: different simultaneous facts for same task produce one credit and stale loser\n      ---\n      duration_ms: 1946.75931\n      type: 'test'\n      ...\n    # Subtest: DB-B63: contact versus Transfer serializes both orders without owner/history confusion\n    ok 63 - DB-B63: contact versus Transfer serializes both orders without owner/history confusion\n      ---\n      duration_ms: 3341.57562\n      type: 'test'\n      ...\n    # Subtest: DB-B64: contact/agenda and Acknowledge share aggregate CAS without changing epoch\n    ok 64 - DB-B64: contact/agenda and Acknowledge share aggregate CAS without changing epoch\n      ---\n      duration_ms: 3094.18567\n      type: 'test'\n      ...\n    # Subtest: DB-B65: reschedule/cancel replacement versus factual completion preserves one consistent outcome\n    ok 65 - DB-B65: reschedule/cancel replacement versus factual completion preserves one consistent outcome\n      ---\n      duration_ms: 4848.45923\n      type: 'test'\n      ...\n    # Subtest: DB-B66: clock versus late evidence preserves deadline observation and review requirement\n    ok 66 - DB-B66: clock versus late evidence preserves deadline observation and review requirement\n      ---\n      duration_ms: 4327.83073\n      type: 'test'\n      ...\n    # Subtest: DB-B67: gate pause serializes with command and cannot broaden the DNC exception\n    ok 67 - DB-B67: gate pause serializes with command and cannot broaden the DNC exception\n      ---\n      duration_ms: 1577.45203\n      type: 'test'\n      ...\n    # Subtest: DB-B68: adoption fences old snapshots and direct legacy writers without inverse-lock bypass\n    ok 68 - DB-B68: adoption fences old snapshots and direct legacy writers without inverse-lock bypass\n      ---\n      duration_ms: 5019.92247\n      type: 'test'\n      ...\n    # Subtest: DB-B69: opt-out versus agenda and Transfer stays monotonic and scoped to linked identity\n    ok 69 - DB-B69: opt-out versus agenda and Transfer stays monotonic and scoped to linked identity\n      ---\n      duration_ms: 4580.45765\n      type: 'test'\n      ...\n    # Subtest: DB-B70: concurrent supervisor decisions produce one credit/review revision\n    ok 70 - DB-B70: concurrent supervisor decisions produce one credit/review revision\n      ---\n      duration_ms: 4466.65058\n      type: 'test'\n      ...\n    # Subtest: DB-B71: failures after fact, credit and agenda roll back the complete command transaction\n    ok 71 - DB-B71: failures after fact, credit and agenda roll back the complete command transaction\n      ---\n      duration_ms: 2553.3099\n      type: 'test'\n      ...\n    # Subtest: DB-B72: backend termination before commit leaves zero partial effects and same intent retries\n    ok 72 - DB-B72: backend termination before commit leaves zero partial effects and same intent retries\n      ---\n      duration_ms: 1660.12065\n      type: 'test'\n      ...\n    # Subtest: DB-B73: commit with lost response is recovered exactly without duplicate timestamps or work\n    ok 73 - DB-B73: commit with lost response is recovered exactly without duplicate timestamps or work\n      ---\n      duration_ms: 1572.63042\n      type: 'test'\n      ...\n    # Subtest: DB-B74: real 55P03, 40001 and deadlock rollback never create a duplicate intention\n    ok 74 - DB-B74: real 55P03, 40001 and deadlock rollback never create a duplicate intention\n      ---\n      duration_ms: 6164.55334\n      type: 'test'\n      ...\n    # Subtest: DB-B75: projection/helper failure cannot leak a live evaluating capability into session\n    ok 75 - DB-B75: projection/helper failure cannot leak a live evaluating capability into session\n      ---\n      duration_ms: 604.90361\n      type: 'test'\n      ...\n    # Subtest: DB-B76: version exhaustion, missing references and uniqueness fail without mutilating history\n    ok 76 - DB-B76: version exhaustion, missing references and uniqueness fail without mutilating history\n      ---\n      duration_ms: 658.08942\n      type: 'test'\n      ...\n    # Subtest: DB-B77: event replay reconstructs disposable projections without invoking commands or legacy effects\n    ok 77 - DB-B77: event replay reconstructs disposable projections without invoking commands or legacy effects\n      ---\n      duration_ms: 1253.47077\n      type: 'test'\n      ...\n    # Subtest: DB-B78: compatible technical pause retains adoption/fences/epochs/history and seller channel denial\n    ok 78 - DB-B78: compatible technical pause retains adoption/fences/epochs/history and seller channel denial\n      ---\n      duration_ms: 736.14653\n      type: 'test'\n      ...\n    # Subtest: DB-B79: Assignment regression boundary remains valid with B installed\n    ok 79 - DB-B79: Assignment regression boundary remains valid with B installed\n      ---\n      duration_ms: 751.19369\n      type: 'test'\n      ...\n    # Subtest: DB-B80: foundation history/closed purposes and private privileges remain protected after B\n    ok 80 - DB-B80: foundation history/closed purposes and private privileges remain protected after B\n      ---\n      duration_ms: 416.28658\n      type: 'test'\n      ...\n    1..80\nok 1 - M1-04B: 80 PostgreSQL acceptance scenarios, isolated synthetic data only\n  ---\n  duration_ms: 108342.35795\n  type: 'test'\n  ...\n# {\"file\":\"20260918160432_m1_contact_runtime_foundation.sql\",\"sha256\":\"77ce546027d03fab8bca91671ded6429071269392c2554a13ecfeeb9a4c0f72c\"}\n# {\"file\":\"20260918160433_m1_contact_legacy_fences.sql\",\"sha256\":\"e90f8a82f635cb91ebe5a3ccc2a7bb1298b42699f0990026617968d1e6f205c9\"}\n# {\"file\":\"20260918160434_m1_contact_commands.sql\",\"sha256\":\"f6ab335396ea25f174a9c1cb368d5c1bc410bf5c41bf75ac7582190ae65b3fae\"}\n# M1_CONTACT_CATALOG={\"tables\":[{\"acl\":[\"crm_runtime_owner=arwdDxtm/crm_runtime_owner\",\"postgres=ar/crm_runtime_owner\"],\"rls\":true,\"name\":\"crm_contact_facts\",\"owner\":\"crm_runtime_owner\",\"force_rls\":true},{\"acl\":[\"crm_runtime_owner=arwdDxtm/crm_runtime_owner\",\"postgres=r/crm_runtime_owner\"],\"rls\":true,\"name\":\"crm_contact_next_action_adoptions\",\"owner\":\"crm_runtime_owner\",\"force_rls\":true},{\"acl\":[\"crm_runtime_owner=arwdDxtm/crm_runtime_owner\",\"postgres=rw/crm_runtime_owner\"],\"rls\":true,\"name\":\"crm_contact_runtime\",\"owner\":\"crm_runtime_owner\",\"force_rls\":true},{\"acl\":[\"crm_runtime_owner=arwdDxtm/crm_runtime_owner\",\"postgres=arw/crm_runtime_owner\"],\"rls\":true,\"name\":\"crm_contact_task_credits\",\"owner\":\"crm_runtime_owner\",\"force_rls\":true},{\"acl\":[\"crm_runtime_owner=arwdDxtm/crm_runtime_owner\",\"postgres=arw/crm_runtime_owner\"],\"rls\":true,\"name\":\"crm_next_actions\",\"owner\":\"crm_runtime_owner\",\"force_rls\":true}],\"policies\":[{\"cmd\":\"ALL\",\"qual\":\"true\",\"roles\":[\"crm_runtime_owner\"],\"tablename\":\"crm_contact_facts\",\"permissive\":\"PERMISSIVE\",\"policyname\":\"crm_contact_facts_owner_only\",\"schemaname\":\"private\",\"with_check\":\"true\"},{\"cmd\":\"ALL\",\"qual\":\"true\",\"roles\":[\"crm_runtime_owner\"],\"tablename\":\"crm_contact_next_action_adoptions\",\"permissive\":\"PERMISSIVE\",\"policyname\":\"crm_contact_adoptions_owner_only\",\"schemaname\":\"private\",\"with_check\":\"true\"},{\"cmd\":\"ALL\",\"qual\":\"true\",\"roles\":[\"crm_runtime_owner\"],\"tablename\":\"crm_contact_runtime\",\"permissive\":\"PERMISSIVE\",\"policyname\":\"crm_contact_runtime_owner_only\",\"schemaname\":\"private\",\"with_check\":\"true\"},{\"cmd\":\"ALL\",\"qual\":\"true\",\"roles\":[\"crm_runtime_owner\"],\"tablename\":\"crm_contact_task_credits\",\"permissive\":\"PERMISSIVE\",\"policyname\":\"crm_contact_task_credits_owner_only\",\"schemaname\":\"private\",\"with_check\":\"true\"},{\"cmd\":\"ALL\",\"qual\":\"true\",\"roles\":[\"crm_runtime_owner\"],\"tablename\":\"crm_next_actions\",\"permissive\":\"PERMISSIVE\",\"policyname\":\"crm_next_actions_owner_only\",\"schemaname\":\"private\",\"with_check\":\"true\"}],\"triggers\":[{\"name\":\"contact_message_templates_set_updated_at\",\"table\":\"contact_message_templates\",\"enabled\":\"O\",\"definition\":\"CREATE TRIGGER contact_message_templates_set_updated_at BEFORE UPDATE ON public.contact_message_templates FOR EACH ROW EXECUTE FUNCTION private.set_updated_at()\"},{\"name\":\"a00_crm_contact_customer_restriction\",\"table\":\"customers\",\"enabled\":\"O\",\"definition\":\"CREATE TRIGGER a00_crm_contact_customer_restriction BEFORE DELETE OR UPDATE ON public.customers FOR EACH ROW EXECUTE FUNCTION private.crm_contact_guard_customer_restriction()\"},{\"name\":\"a00_crm_contact_truncate\",\"table\":\"customers\",\"enabled\":\"O\",\"definition\":\"CREATE TRIGGER a00_crm_contact_truncate BEFORE TRUNCATE ON public.customers FOR EACH STATEMENT EXECUTE FUNCTION private.crm_contact_guard_legacy_truncate()\"},{\"name\":\"a00_crm_contact_fence\",\"table\":\"lead_contact_sequences\",\"enabled\":\"O\",\"definition\":\"CREATE TRIGGER a00_crm_contact_fence BEFORE INSERT OR DELETE OR UPDATE ON public.lead_contact_sequences FOR EACH ROW EXECUTE FUNCTION private.crm_contact_guard_legacy_rows()\"},{\"name\":\"a00_crm_contact_truncate\",\"table\":\"lead_contact_sequences\",\"enabled\":\"O\",\"definition\":\"CREATE TRIGGER a00_crm_contact_truncate BEFORE TRUNCATE ON public.lead_contact_sequences FOR EACH STATEMENT EXECUTE FUNCTION private.crm_contact_guard_legacy_truncate()\"},{\"name\":\"lead_contact_sequences_classify_exhausted\",\"table\":\"lead_contact_sequences\",\"enabled\":\"O\",\"definition\":\"CREATE TRIGGER lead_contact_sequences_classify_exhausted AFTER UPDATE OF status ON public.lead_contact_sequences FOR EACH ROW WHEN (((old.status IS DISTINCT FROM new.status) AND (new.status = 'completed'::text))) EXECUTE FUNCTION private.classify_completed_contact_protocol()\"},{\"name\":\"lead_contact_sequences_set_updated_at\",\"table\":\"lead_contact_sequences\",\"enabled\":\"O\",\"definition\":\"CREATE TRIGGER lead_contact_sequences_set_updated_at BEFORE UPDATE ON public.lead_contact_sequences FOR EACH ROW EXECUTE FUNCTION private.set_updated_at()\"},{\"name\":\"a00_crm_contact_fence\",\"table\":\"lead_contact_tasks\",\"enabled\":\"O\",\"definition\":\"CREATE TRIGGER a00_crm_contact_fence BEFORE INSERT OR DELETE OR UPDATE ON public.lead_contact_tasks FOR EACH ROW EXECUTE FUNCTION private.crm_contact_guard_legacy_rows()\"},{\"name\":\"a00_crm_contact_truncate\",\"table\":\"lead_contact_tasks\",\"enabled\":\"O\",\"definition\":\"CREATE TRIGGER a00_crm_contact_truncate BEFORE TRUNCATE ON public.lead_contact_tasks FOR EACH STATEMENT EXECUTE FUNCTION private.crm_contact_guard_legacy_truncate()\"},{\"name\":\"lead_contact_tasks_set_updated_at\",\"table\":\"lead_contact_tasks\",\"enabled\":\"O\",\"definition\":\"CREATE TRIGGER lead_contact_tasks_set_updated_at BEFORE UPDATE ON public.lead_contact_tasks FOR EACH ROW EXECUTE FUNCTION private.set_updated_at()\"},{\"name\":\"a00_crm_contact_fence\",\"table\":\"lead_crm\",\"enabled\":\"O\",\"definition\":\"CREATE TRIGGER a00_crm_contact_fence BEFORE INSERT OR DELETE OR UPDATE ON public.lead_crm FOR EACH ROW EXECUTE FUNCTION private.crm_contact_guard_legacy_rows()\"},{\"name\":\"a00_crm_contact_truncate\",\"table\":\"lead_crm\",\"enabled\":\"O\",\"definition\":\"CREATE TRIGGER a00_crm_contact_truncate BEFORE TRUNCATE ON public.lead_crm FOR EACH STATEMENT EXECUTE FUNCTION private.crm_contact_guard_legacy_truncate()\"},{\"name\":\"lead_crm_en_gestion_next_contact\",\"table\":\"lead_crm\",\"enabled\":\"O\",\"definition\":\"CREATE TRIGGER lead_crm_en_gestion_next_contact BEFORE INSERT OR UPDATE OF status, next_contact_at ON public.lead_crm FOR EACH ROW EXECUTE FUNCTION private.enforce_en_gestion_next_contact()\"},{\"name\":\"lead_crm_sync_contact_sequence\",\"table\":\"lead_crm\",\"enabled\":\"O\",\"definition\":\"CREATE TRIGGER lead_crm_sync_contact_sequence AFTER UPDATE OF status ON public.lead_crm FOR EACH ROW WHEN ((old.status IS DISTINCT FROM new.status)) EXECUTE FUNCTION private.sync_contact_sequence_with_status()\"},{\"name\":\"a00_crm_contact_restriction\",\"table\":\"leads\",\"enabled\":\"O\",\"definition\":\"CREATE TRIGGER a00_crm_contact_restriction BEFORE DELETE OR UPDATE ON public.leads FOR EACH ROW EXECUTE FUNCTION private.crm_contact_guard_lead_restriction()\"},{\"name\":\"a00_crm_contact_truncate\",\"table\":\"leads\",\"enabled\":\"O\",\"definition\":\"CREATE TRIGGER a00_crm_contact_truncate BEFORE TRUNCATE ON public.leads FOR EACH STATEMENT EXECUTE FUNCTION private.crm_contact_guard_legacy_truncate()\"},{\"name\":\"leads_start_contact_sequence\",\"table\":\"leads\",\"enabled\":\"O\",\"definition\":\"CREATE TRIGGER leads_start_contact_sequence AFTER INSERT OR UPDATE OF assigned_seller_user_id ON public.leads FOR EACH ROW EXECUTE FUNCTION private.start_contact_sequence_after_assignment()\"},{\"name\":\"crm_contact_facts_immutable\",\"table\":\"private.crm_contact_facts\",\"enabled\":\"O\",\"definition\":\"CREATE TRIGGER crm_contact_facts_immutable BEFORE DELETE OR UPDATE ON private.crm_contact_facts FOR EACH ROW EXECUTE FUNCTION private.crm_contact_reject_immutable()\"},{\"name\":\"crm_contact_facts_no_truncate\",\"table\":\"private.crm_contact_facts\",\"enabled\":\"O\",\"definition\":\"CREATE TRIGGER crm_contact_facts_no_truncate BEFORE TRUNCATE ON private.crm_contact_facts FOR EACH STATEMENT EXECUTE FUNCTION private.crm_contact_reject_immutable()\"},{\"name\":\"crm_contact_facts_references\",\"table\":\"private.crm_contact_facts\",\"enabled\":\"O\",\"definition\":\"CREATE TRIGGER crm_contact_facts_references BEFORE INSERT ON private.crm_contact_facts FOR EACH ROW EXECUTE FUNCTION private.crm_contact_validate_references()\"},{\"name\":\"crm_contact_adoptions_immutable\",\"table\":\"private.crm_contact_next_action_adoptions\",\"enabled\":\"O\",\"definition\":\"CREATE TRIGGER crm_contact_adoptions_immutable BEFORE DELETE OR UPDATE ON private.crm_contact_next_action_adoptions FOR EACH ROW EXECUTE FUNCTION private.crm_contact_reject_immutable()\"},{\"name\":\"crm_contact_adoptions_no_truncate\",\"table\":\"private.crm_contact_next_action_adoptions\",\"enabled\":\"O\",\"definition\":\"CREATE TRIGGER crm_contact_adoptions_no_truncate BEFORE TRUNCATE ON private.crm_contact_next_action_adoptions FOR EACH STATEMENT EXECUTE FUNCTION private.crm_contact_reject_immutable()\"},{\"name\":\"crm_contact_runtime_no_delete\",\"table\":\"private.crm_contact_runtime\",\"enabled\":\"O\",\"definition\":\"CREATE TRIGGER crm_contact_runtime_no_delete BEFORE DELETE ON private.crm_contact_runtime FOR EACH ROW EXECUTE FUNCTION private.crm_contact_reject_immutable()\"},{\"name\":\"crm_contact_runtime_no_truncate\",\"table\":\"private.crm_contact_runtime\",\"enabled\":\"O\",\"definition\":\"CREATE TRIGGER crm_contact_runtime_no_truncate BEFORE TRUNCATE ON private.crm_contact_runtime FOR EACH STATEMENT EXECUTE FUNCTION private.crm_contact_reject_immutable()\"},{\"name\":\"crm_contact_runtime_references\",\"table\":\"private.crm_contact_runtime\",\"enabled\":\"O\",\"definition\":\"CREATE TRIGGER crm_contact_runtime_references BEFORE INSERT OR UPDATE ON private.crm_contact_runtime FOR EACH ROW EXECUTE FUNCTION private.crm_contact_validate_references()\"},{\"name\":\"crm_contact_credits_no_delete\",\"table\":\"private.crm_contact_task_credits\",\"enabled\":\"O\",\"definition\":\"CREATE TRIGGER crm_contact_credits_no_delete BEFORE DELETE ON private.crm_contact_task_credits FOR EACH ROW EXECUTE FUNCTION private.crm_contact_reject_immutable()\"},{\"name\":\"crm_contact_credits_no_truncate\",\"table\":\"private.crm_contact_task_credits\",\"enabled\":\"O\",\"definition\":\"CREATE TRIGGER crm_contact_credits_no_truncate BEFORE TRUNCATE ON private.crm_contact_task_credits FOR EACH STATEMENT EXECUTE FUNCTION private.crm_contact_reject_immutable()\"},{\"name\":\"crm_contact_credits_references\",\"table\":\"private.crm_contact_task_credits\",\"enabled\":\"O\",\"definition\":\"CREATE TRIGGER crm_contact_credits_references BEFORE INSERT OR UPDATE ON private.crm_contact_task_credits FOR EACH ROW EXECUTE FUNCTION private.crm_contact_validate_references()\"},{\"name\":\"crm_next_actions_no_delete\",\"table\":\"private.crm_next_actions\",\"enabled\":\"O\",\"definition\":\"CREATE TRIGGER crm_next_actions_no_delete BEFORE DELETE ON private.crm_next_actions FOR EACH ROW EXECUTE FUNCTION private.crm_contact_reject_immutable()\"},{\"name\":\"crm_next_actions_no_truncate\",\"table\":\"private.crm_next_actions\",\"enabled\":\"O\",\"definition\":\"CREATE TRIGGER crm_next_actions_no_truncate BEFORE TRUNCATE ON private.crm_next_actions FOR EACH STATEMENT EXECUTE FUNCTION private.crm_contact_reject_immutable()\"}],\"functions\":[{\"acl\":[\"postgres=X/postgres\",\"service_role=X/postgres\"],\"name\":\"public.complete_contact_task\",\"owner\":\"postgres\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"complete_contact_task(uuid,text,text)\",\"prosrc_md5\":\"b6a199088be3d97e5f2b6a8263d49f8c\",\"volatility\":\"v\",\"security_definer\":true},{\"acl\":[\"postgres=X/postgres\",\"authenticated=X/postgres\",\"service_role=X/postgres\"],\"name\":\"public.complete_contact_task_with_follow_up\",\"owner\":\"postgres\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"complete_contact_task_with_follow_up(uuid,text,text,timestamp with time zone,text)\",\"prosrc_md5\":\"613d969d19408af407e57ffefefc7825\",\"volatility\":\"v\",\"security_definer\":true},{\"acl\":[\"crm_runtime_owner=X/crm_runtime_owner\"],\"name\":\"public.crm_read_contact_work_context\",\"owner\":\"crm_runtime_owner\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"crm_read_contact_work_context(uuid)\",\"prosrc_md5\":\"351594708f7e44f220ff0ccf3d6cd9c1\",\"volatility\":\"s\",\"security_definer\":true},{\"acl\":[\"crm_runtime_owner=X/crm_runtime_owner\"],\"name\":\"public.crm_submit_command\",\"owner\":\"crm_runtime_owner\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"crm_submit_command(jsonb)\",\"prosrc_md5\":\"69c5ab5537a7e6bdae1f467f04ca184c\",\"volatility\":\"v\",\"security_definer\":true},{\"acl\":[\"postgres=X/postgres\"],\"name\":\"private.cancel_lead_contact_protocol\",\"owner\":\"postgres\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"private.cancel_lead_contact_protocol(uuid,text)\",\"prosrc_md5\":\"6c4911b7f722e8c4f95addd08c6c48a1\",\"volatility\":\"v\",\"security_definer\":true},{\"acl\":[\"postgres=X/postgres\"],\"name\":\"private.classify_completed_contact_protocol\",\"owner\":\"postgres\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"private.classify_completed_contact_protocol()\",\"prosrc_md5\":\"0f70a98a52966d225db5eacb9a68be24\",\"volatility\":\"v\",\"security_definer\":true},{\"acl\":[\"postgres=X/postgres\"],\"name\":\"private.classify_exhausted_contact_protocol\",\"owner\":\"postgres\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"private.classify_exhausted_contact_protocol(uuid,uuid,text)\",\"prosrc_md5\":\"9ef0b21292dd9b256ef933a32b04434d\",\"volatility\":\"v\",\"security_definer\":true},{\"acl\":[\"postgres=X/postgres\"],\"name\":\"private.create_lead_contact_sequence\",\"owner\":\"postgres\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"private.create_lead_contact_sequence(uuid,uuid,timestamp with time zone)\",\"prosrc_md5\":\"9fd500d39fa5267d3dcb41ed679181f4\",\"volatility\":\"v\",\"security_definer\":true},{\"acl\":[\"crm_runtime_owner=X/crm_runtime_owner\",\"postgres=X/crm_runtime_owner\"],\"name\":\"private.crm_adopt_assignment_lead\",\"owner\":\"crm_runtime_owner\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"private.crm_adopt_assignment_lead(uuid,uuid,bigint,text)\",\"prosrc_md5\":\"016176680a6eb02f0197b5eb509ad599\",\"volatility\":\"v\",\"security_definer\":true},{\"acl\":[\"crm_runtime_owner=X/crm_runtime_owner\",\"postgres=X/crm_runtime_owner\"],\"name\":\"private.crm_adopt_contact_lead\",\"owner\":\"crm_runtime_owner\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"private.crm_adopt_contact_lead(uuid,uuid,bigint,text)\",\"prosrc_md5\":\"3bcd7aa17b78d599a1de9f1cb3b9d6ec\",\"volatility\":\"v\",\"security_definer\":true},{\"acl\":[\"postgres=X/postgres\",\"crm_runtime_owner=X/postgres\"],\"name\":\"private.crm_apply_assignment_command\",\"owner\":\"postgres\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"private.crm_apply_assignment_command(uuid,uuid)\",\"prosrc_md5\":\"9747b56f10165a10931d46b3b0e6bd26\",\"volatility\":\"v\",\"security_definer\":true},{\"acl\":[\"postgres=X/postgres\",\"crm_runtime_owner=X/postgres\"],\"name\":\"private.crm_apply_contact_command\",\"owner\":\"postgres\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"private.crm_apply_contact_command(uuid,uuid)\",\"prosrc_md5\":\"3a91f0c8468e4cb2829b411044f4a1f8\",\"volatility\":\"v\",\"security_definer\":true},{\"acl\":[\"crm_runtime_owner=X/crm_runtime_owner\"],\"name\":\"private.crm_apply_foundation_probe\",\"owner\":\"crm_runtime_owner\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"private.crm_apply_foundation_probe(uuid,uuid,jsonb,jsonb)\",\"prosrc_md5\":\"ea471bf1daeab6865fb8199d15c9b5b4\",\"volatility\":\"v\",\"security_definer\":false},{\"acl\":[\"postgres=X/postgres\"],\"name\":\"private.crm_assignment_assert_current_owner\",\"owner\":\"postgres\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"private.crm_assignment_assert_current_owner(uuid)\",\"prosrc_md5\":\"ca477f3fdaaeb191e4d828632231b6a9\",\"volatility\":\"v\",\"security_definer\":true},{\"acl\":[\"crm_runtime_owner=X/crm_runtime_owner\",\"postgres=X/crm_runtime_owner\"],\"name\":\"private.crm_assignment_authorization\",\"owner\":\"crm_runtime_owner\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"private.crm_assignment_authorization(uuid)\",\"prosrc_md5\":\"0e5f3b8a576ac4f9d48abe8680d03571\",\"volatility\":\"v\",\"security_definer\":true},{\"acl\":[\"postgres=X/postgres\",\"authenticated=X/postgres\"],\"name\":\"private.crm_assignment_current_owner_read\",\"owner\":\"postgres\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"private.crm_assignment_current_owner_read(uuid)\",\"prosrc_md5\":\"d8b93d3e556882e7617fdc4c23de4cdc\",\"volatility\":\"s\",\"security_definer\":true},{\"acl\":[\"postgres=X/postgres\"],\"name\":\"private.crm_assignment_guard_commercial_seller\",\"owner\":\"postgres\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"private.crm_assignment_guard_commercial_seller()\",\"prosrc_md5\":\"36be76de1872b76682c0554db9dbd7d7\",\"volatility\":\"v\",\"security_definer\":true},{\"acl\":[\"crm_runtime_owner=X/crm_runtime_owner\",\"postgres=X/crm_runtime_owner\"],\"name\":\"private.crm_assignment_is_adopted\",\"owner\":\"crm_runtime_owner\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"private.crm_assignment_is_adopted(uuid)\",\"prosrc_md5\":\"4e12d52bbbedd902c81d614a20e4feab\",\"volatility\":\"s\",\"security_definer\":true},{\"acl\":[\"postgres=X/postgres\",\"crm_runtime_owner=X/postgres\"],\"name\":\"private.crm_assignment_lock_lead\",\"owner\":\"postgres\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"private.crm_assignment_lock_lead(uuid)\",\"prosrc_md5\":\"92f71ce78f59793f8471e49c79caeb68\",\"volatility\":\"v\",\"security_definer\":true},{\"acl\":[\"postgres=X/postgres\",\"crm_runtime_owner=X/postgres\"],\"name\":\"private.crm_assignment_lock_target\",\"owner\":\"postgres\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"private.crm_assignment_lock_target(uuid)\",\"prosrc_md5\":\"86bfd5353cc6f05b4b7e9b5fcd69e370\",\"volatility\":\"v\",\"security_definer\":true},{\"acl\":[\"crm_runtime_owner=X/crm_runtime_owner\"],\"name\":\"private.crm_canonical_json\",\"owner\":\"crm_runtime_owner\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"private.crm_canonical_json(jsonb,integer)\",\"prosrc_md5\":\"d37838ec103037dac3e6ae804b25e544\",\"volatility\":\"i\",\"security_definer\":false},{\"acl\":[\"postgres=X/postgres\",\"crm_runtime_owner=X/postgres\"],\"name\":\"private.crm_contact_adoption_snapshot\",\"owner\":\"postgres\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"private.crm_contact_adoption_snapshot(uuid)\",\"prosrc_md5\":\"6858359e09ebb07f23580e7002d8f504\",\"volatility\":\"v\",\"security_definer\":true},{\"acl\":[\"postgres=X/postgres\",\"crm_runtime_owner=X/postgres\"],\"name\":\"private.crm_contact_apply_restriction\",\"owner\":\"postgres\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"private.crm_contact_apply_restriction(uuid)\",\"prosrc_md5\":\"064e5bfc86ea6c76ed84b3163ab94f9c\",\"volatility\":\"v\",\"security_definer\":true},{\"acl\":[\"postgres=X/postgres\"],\"name\":\"private.crm_contact_assert_legacy_writer\",\"owner\":\"postgres\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"private.crm_contact_assert_legacy_writer(uuid,text)\",\"prosrc_md5\":\"1ec3cd28969d35b6a9ffc46aed1bea25\",\"volatility\":\"v\",\"security_definer\":true},{\"acl\":[\"crm_runtime_owner=X/crm_runtime_owner\",\"postgres=X/crm_runtime_owner\"],\"name\":\"private.crm_contact_authorization\",\"owner\":\"crm_runtime_owner\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"private.crm_contact_authorization(uuid)\",\"prosrc_md5\":\"82ce1f7e7dfd013211fee2919e9829a6\",\"volatility\":\"v\",\"security_definer\":true},{\"acl\":[\"postgres=X/postgres\",\"crm_runtime_owner=X/postgres\"],\"name\":\"private.crm_contact_close_protocol\",\"owner\":\"postgres\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"private.crm_contact_close_protocol(uuid,uuid,text)\",\"prosrc_md5\":\"99eb2032e559fdf58cdc98d9b5643198\",\"volatility\":\"v\",\"security_definer\":true},{\"acl\":[\"postgres=X/postgres\",\"crm_runtime_owner=X/postgres\"],\"name\":\"private.crm_contact_credit_fact\",\"owner\":\"postgres\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"private.crm_contact_credit_fact(uuid,uuid,uuid,boolean)\",\"prosrc_md5\":\"4f790c8e13080c78be57efc3b6307844\",\"volatility\":\"v\",\"security_definer\":true},{\"acl\":[\"postgres=X/postgres\",\"crm_runtime_owner=X/postgres\"],\"name\":\"private.crm_contact_emit\",\"owner\":\"postgres\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"private.crm_contact_emit(uuid,uuid,text,jsonb)\",\"prosrc_md5\":\"d3021638f4ef619e6bdc09a29dd3cbac\",\"volatility\":\"v\",\"security_definer\":true},{\"acl\":[\"postgres=X/postgres\"],\"name\":\"private.crm_contact_guard_customer_restriction\",\"owner\":\"postgres\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"private.crm_contact_guard_customer_restriction()\",\"prosrc_md5\":\"81ada37b93564a975c0432ce75fe415b\",\"volatility\":\"v\",\"security_definer\":true},{\"acl\":[\"postgres=X/postgres\"],\"name\":\"private.crm_contact_guard_lead_restriction\",\"owner\":\"postgres\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"private.crm_contact_guard_lead_restriction()\",\"prosrc_md5\":\"b01d22c03463b53be0db71a338b95721\",\"volatility\":\"v\",\"security_definer\":true},{\"acl\":[\"postgres=X/postgres\"],\"name\":\"private.crm_contact_guard_legacy_rows\",\"owner\":\"postgres\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"private.crm_contact_guard_legacy_rows()\",\"prosrc_md5\":\"f4c138c702d6f1325f5c9124bc4535d5\",\"volatility\":\"v\",\"security_definer\":true},{\"acl\":[\"postgres=X/postgres\"],\"name\":\"private.crm_contact_guard_legacy_truncate\",\"owner\":\"postgres\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"private.crm_contact_guard_legacy_truncate()\",\"prosrc_md5\":\"79ac59180576f2f71fe8ea4dfb50a5e9\",\"volatility\":\"v\",\"security_definer\":true},{\"acl\":[\"crm_runtime_owner=X/crm_runtime_owner\",\"postgres=X/crm_runtime_owner\"],\"name\":\"private.crm_contact_is_adopted\",\"owner\":\"crm_runtime_owner\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"private.crm_contact_is_adopted(uuid)\",\"prosrc_md5\":\"5b112bd45b2d80f60e9def8626076474\",\"volatility\":\"s\",\"security_definer\":true},{\"acl\":[\"crm_runtime_owner=X/crm_runtime_owner\"],\"name\":\"private.crm_contact_json_shape\",\"owner\":\"crm_runtime_owner\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"private.crm_contact_json_shape(jsonb,text[],text[])\",\"prosrc_md5\":\"bb281a1fc830e449bbe7f52b59403f5a\",\"volatility\":\"i\",\"security_definer\":false},{\"acl\":[\"crm_runtime_owner=X/crm_runtime_owner\"],\"name\":\"private.crm_contact_normalize_action_ref\",\"owner\":\"crm_runtime_owner\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"private.crm_contact_normalize_action_ref(jsonb)\",\"prosrc_md5\":\"7b2e7fa46c3d5a93eba92f158df15f49\",\"volatility\":\"i\",\"security_definer\":false},{\"acl\":[\"crm_runtime_owner=X/crm_runtime_owner\"],\"name\":\"private.crm_contact_normalize_fact\",\"owner\":\"crm_runtime_owner\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"private.crm_contact_normalize_fact(jsonb,boolean)\",\"prosrc_md5\":\"a4acddeb19db6000ee4d6803e908255c\",\"volatility\":\"i\",\"security_definer\":false},{\"acl\":[\"crm_runtime_owner=X/crm_runtime_owner\"],\"name\":\"private.crm_contact_normalize_new_action\",\"owner\":\"crm_runtime_owner\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"private.crm_contact_normalize_new_action(jsonb)\",\"prosrc_md5\":\"093dc3a2545092641a3ecdef9269338a\",\"volatility\":\"i\",\"security_definer\":false},{\"acl\":[\"crm_runtime_owner=X/crm_runtime_owner\"],\"name\":\"private.crm_contact_normalize_payload\",\"owner\":\"crm_runtime_owner\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"private.crm_contact_normalize_payload(text,jsonb)\",\"prosrc_md5\":\"0cc2d54fd8dfc244aa70a49beb9972dc\",\"volatility\":\"i\",\"security_definer\":false},{\"acl\":[\"crm_runtime_owner=X/crm_runtime_owner\"],\"name\":\"private.crm_contact_normalize_uuid\",\"owner\":\"crm_runtime_owner\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"private.crm_contact_normalize_uuid(jsonb)\",\"prosrc_md5\":\"f693880e0d6d13d3a938c662776f63d5\",\"volatility\":\"i\",\"security_definer\":false},{\"acl\":[\"postgres=X/postgres\",\"crm_runtime_owner=X/postgres\"],\"name\":\"private.crm_contact_parent_barrier\",\"owner\":\"postgres\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"private.crm_contact_parent_barrier(uuid)\",\"prosrc_md5\":\"49ec53001811f82134d0290256db9265\",\"volatility\":\"v\",\"security_definer\":true},{\"acl\":[\"postgres=X/postgres\",\"crm_runtime_owner=X/postgres\"],\"name\":\"private.crm_contact_read_legacy\",\"owner\":\"postgres\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"private.crm_contact_read_legacy(uuid)\",\"prosrc_md5\":\"10c92f1a91f146a34c5f94e247255005\",\"volatility\":\"s\",\"security_definer\":true},{\"acl\":[\"postgres=X/postgres\"],\"name\":\"private.crm_contact_refresh_projection\",\"owner\":\"postgres\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"private.crm_contact_refresh_projection(uuid,uuid)\",\"prosrc_md5\":\"6125b3955fbbc15ef07f499ac7be03c9\",\"volatility\":\"v\",\"security_definer\":true},{\"acl\":[\"crm_runtime_owner=X/crm_runtime_owner\"],\"name\":\"private.crm_contact_reject_immutable\",\"owner\":\"crm_runtime_owner\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"private.crm_contact_reject_immutable()\",\"prosrc_md5\":\"115a66c3088aafe5ff8953df87cdfe2a\",\"volatility\":\"v\",\"security_definer\":false},{\"acl\":[\"crm_runtime_owner=X/crm_runtime_owner\",\"postgres=X/crm_runtime_owner\"],\"name\":\"private.crm_contact_review_revision\",\"owner\":\"crm_runtime_owner\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"private.crm_contact_review_revision(uuid)\",\"prosrc_md5\":\"25f2d4237cccb35c11a149b4f72ba50c\",\"volatility\":\"s\",\"security_definer\":true},{\"acl\":[\"postgres=X/postgres\",\"crm_runtime_owner=X/postgres\"],\"name\":\"private.crm_contact_schedule_action\",\"owner\":\"postgres\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"private.crm_contact_schedule_action(uuid,uuid,jsonb)\",\"prosrc_md5\":\"9a684e53d4dae7684f09a7082ea4cd6c\",\"volatility\":\"v\",\"security_definer\":true},{\"acl\":[\"postgres=X/postgres\"],\"name\":\"private.crm_contact_validate_references\",\"owner\":\"postgres\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"private.crm_contact_validate_references()\",\"prosrc_md5\":\"e56cfe43a1f55d04c271003a8be8868b\",\"volatility\":\"v\",\"security_definer\":true},{\"acl\":[\"crm_runtime_owner=X/crm_runtime_owner\"],\"name\":\"private.crm_contact_validate_text\",\"owner\":\"crm_runtime_owner\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"private.crm_contact_validate_text(jsonb,boolean)\",\"prosrc_md5\":\"4601864ef8d314ed144fa696bf6c487d\",\"volatility\":\"i\",\"security_definer\":false},{\"acl\":[\"crm_runtime_owner=X/crm_runtime_owner\"],\"name\":\"private.crm_contact_validate_timestamp\",\"owner\":\"crm_runtime_owner\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"private.crm_contact_validate_timestamp(jsonb)\",\"prosrc_md5\":\"c56fb91d104b1818b09c5f879bd6c59c\",\"volatility\":\"i\",\"security_definer\":false},{\"acl\":[\"crm_runtime_owner=X/crm_runtime_owner\"],\"name\":\"private.crm_contact_validate_timezone\",\"owner\":\"crm_runtime_owner\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"private.crm_contact_validate_timezone(jsonb)\",\"prosrc_md5\":\"19e51ab70f008fbcf254e6424360906a\",\"volatility\":\"i\",\"security_definer\":false},{\"acl\":[\"crm_runtime_owner=X/crm_runtime_owner\"],\"name\":\"private.crm_event_append_only_guard\",\"owner\":\"crm_runtime_owner\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"private.crm_event_append_only_guard()\",\"prosrc_md5\":\"6c69cba1444a75180d3722839d961c11\",\"volatility\":\"v\",\"security_definer\":false},{\"acl\":[\"crm_runtime_owner=X/crm_runtime_owner\"],\"name\":\"private.crm_execute_assignment_command\",\"owner\":\"crm_runtime_owner\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"private.crm_execute_assignment_command(jsonb)\",\"prosrc_md5\":\"dc778e8aeb26adaade6c302de1d26f8a\",\"volatility\":\"v\",\"security_definer\":false},{\"acl\":[\"crm_runtime_owner=X/crm_runtime_owner\"],\"name\":\"private.crm_execute_command\",\"owner\":\"crm_runtime_owner\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"private.crm_execute_command(jsonb)\",\"prosrc_md5\":\"eeab15267c6b1b07bf78cc53d30addee\",\"volatility\":\"v\",\"security_definer\":false},{\"acl\":[\"crm_runtime_owner=X/crm_runtime_owner\"],\"name\":\"private.crm_execute_contact_command\",\"owner\":\"crm_runtime_owner\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"private.crm_execute_contact_command(jsonb)\",\"prosrc_md5\":\"20703d3b4d690d1b85bbe232cdd3fc99\",\"volatility\":\"v\",\"security_definer\":false},{\"acl\":[\"postgres=X/postgres\"],\"name\":\"private.crm_fence_assignment_history_truncate\",\"owner\":\"postgres\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"private.crm_fence_assignment_history_truncate()\",\"prosrc_md5\":\"0712d5cceeef7c958206d52db3fc1909\",\"volatility\":\"v\",\"security_definer\":true},{\"acl\":[\"postgres=X/postgres\"],\"name\":\"private.crm_fence_assignment_history_write\",\"owner\":\"postgres\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"private.crm_fence_assignment_history_write()\",\"prosrc_md5\":\"615cb72b8a9c36ad4c4d72a9ffc86336\",\"volatility\":\"v\",\"security_definer\":true},{\"acl\":[\"postgres=X/postgres\"],\"name\":\"private.crm_fence_assignment_owner_write\",\"owner\":\"postgres\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"private.crm_fence_assignment_owner_write()\",\"prosrc_md5\":\"c9864a884c88c211a130ea2ab864de8c\",\"volatility\":\"v\",\"security_definer\":true},{\"acl\":[\"postgres=X/postgres\",\"crm_runtime_owner=X/postgres\"],\"name\":\"private.crm_foundation_actor\",\"owner\":\"postgres\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"private.crm_foundation_actor(boolean)\",\"prosrc_md5\":\"18cb9091c8af6a41432b4a83c1cc4ccf\",\"volatility\":\"v\",\"security_definer\":true},{\"acl\":[\"postgres=X/postgres\",\"crm_runtime_owner=X/postgres\"],\"name\":\"private.crm_foundation_scope\",\"owner\":\"postgres\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"private.crm_foundation_scope(uuid)\",\"prosrc_md5\":\"bc115db0f054c667848e1b632299d18d\",\"volatility\":\"v\",\"security_definer\":true},{\"acl\":[\"crm_runtime_owner=X/crm_runtime_owner\"],\"name\":\"private.crm_history_no_truncate\",\"owner\":\"crm_runtime_owner\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"private.crm_history_no_truncate()\",\"prosrc_md5\":\"35e65e68548b610ee325c3527e1d3a06\",\"volatility\":\"v\",\"security_definer\":false},{\"acl\":[\"crm_runtime_owner=X/crm_runtime_owner\"],\"name\":\"private.crm_json_integer\",\"owner\":\"crm_runtime_owner\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"private.crm_json_integer(jsonb,boolean)\",\"prosrc_md5\":\"b1fa66ebdf0f3f62d0877d0fbf92bac9\",\"volatility\":\"i\",\"security_definer\":false},{\"acl\":[\"crm_runtime_owner=X/crm_runtime_owner\"],\"name\":\"private.crm_json_keys\",\"owner\":\"crm_runtime_owner\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"private.crm_json_keys(jsonb,text[])\",\"prosrc_md5\":\"b53f9001e20daa4b4f6eb8c97f9ee154\",\"volatility\":\"i\",\"security_definer\":false},{\"acl\":[\"postgres=X/postgres\",\"crm_runtime_owner=X/postgres\"],\"name\":\"private.crm_lock_assignment_adoption_lead\",\"owner\":\"postgres\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"private.crm_lock_assignment_adoption_lead(uuid)\",\"prosrc_md5\":\"cdf02b981fb4bdda6a8a2b0ac2f20fd2\",\"volatility\":\"v\",\"security_definer\":true},{\"acl\":[\"crm_runtime_owner=X/crm_runtime_owner\"],\"name\":\"private.crm_normalize_assignment_command\",\"owner\":\"crm_runtime_owner\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"private.crm_normalize_assignment_command(jsonb)\",\"prosrc_md5\":\"7bf0d34985f34ff47d8c0e7932e84177\",\"volatility\":\"i\",\"security_definer\":false},{\"acl\":[\"crm_runtime_owner=X/crm_runtime_owner\"],\"name\":\"private.crm_normalize_command\",\"owner\":\"crm_runtime_owner\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"private.crm_normalize_command(jsonb)\",\"prosrc_md5\":\"8d3befe79aed6f625d730158e61c2f58\",\"volatility\":\"i\",\"security_definer\":false},{\"acl\":[\"crm_runtime_owner=X/crm_runtime_owner\"],\"name\":\"private.crm_normalize_contact_command\",\"owner\":\"crm_runtime_owner\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"private.crm_normalize_contact_command(jsonb)\",\"prosrc_md5\":\"34356cd0b635bc4630e603ebe37506b7\",\"volatility\":\"i\",\"security_definer\":false},{\"acl\":[\"crm_runtime_owner=X/crm_runtime_owner\"],\"name\":\"private.crm_receipt_decided_guard\",\"owner\":\"crm_runtime_owner\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"private.crm_receipt_decided_guard()\",\"prosrc_md5\":\"9274f4e4ae20c1b6607dcee5cd0bd599\",\"volatility\":\"v\",\"security_definer\":true},{\"acl\":[\"crm_runtime_owner=X/crm_runtime_owner\"],\"name\":\"private.crm_receipt_terminal_guard\",\"owner\":\"crm_runtime_owner\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"private.crm_receipt_terminal_guard()\",\"prosrc_md5\":\"5008aecdf985d25a4284bbebd79cd389\",\"volatility\":\"v\",\"security_definer\":false},{\"acl\":[\"crm_runtime_owner=X/crm_runtime_owner\"],\"name\":\"private.crm_reject_assignment_adoption_mutation\",\"owner\":\"crm_runtime_owner\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"private.crm_reject_assignment_adoption_mutation()\",\"prosrc_md5\":\"e37ebf5481b21316b6b47c1064d94216\",\"volatility\":\"v\",\"security_definer\":false},{\"acl\":[\"crm_runtime_owner=X/crm_runtime_owner\"],\"name\":\"private.crm_reject_policy_mutation\",\"owner\":\"crm_runtime_owner\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"private.crm_reject_policy_mutation()\",\"prosrc_md5\":\"e2fb7dd7ac35e43e280e4b955fbe0e32\",\"volatility\":\"v\",\"security_definer\":false},{\"acl\":[\"postgres=X/postgres\"],\"name\":\"private.crm_transition_allowed\",\"owner\":\"postgres\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"private.crm_transition_allowed(text,text)\",\"prosrc_md5\":\"4d4f8c176d4ff3e168d6ba7cd7610604\",\"volatility\":\"i\",\"security_definer\":false},{\"acl\":[\"postgres=X/postgres\"],\"name\":\"private.enforce_en_gestion_next_contact\",\"owner\":\"postgres\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"private.enforce_en_gestion_next_contact()\",\"prosrc_md5\":\"61f78c5fb5cb32f836a1b551f9bf15b5\",\"volatility\":\"v\",\"security_definer\":true},{\"acl\":[\"postgres=X/postgres\"],\"name\":\"private.ensure_lead_customer\",\"owner\":\"postgres\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"private.ensure_lead_customer()\",\"prosrc_md5\":\"cf20272eadbe699032c34cb1513b2324\",\"volatility\":\"v\",\"security_definer\":true},{\"acl\":[\"postgres=X/postgres\"],\"name\":\"private.keep_protocol_deadlines_out_of_manual_agenda\",\"owner\":\"postgres\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"private.keep_protocol_deadlines_out_of_manual_agenda()\",\"prosrc_md5\":\"71323128d6d5c532f7300f3886197945\",\"volatility\":\"v\",\"security_definer\":true},{\"acl\":[\"postgres=X/postgres\"],\"name\":\"private.sync_contact_sequence_with_status\",\"owner\":\"postgres\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"private.sync_contact_sequence_with_status()\",\"prosrc_md5\":\"8461a031d8871be37d8a10872964fecd\",\"volatility\":\"v\",\"security_definer\":true},{\"acl\":[\"postgres=X/postgres\"],\"name\":\"private.sync_protocol_next_action\",\"owner\":\"postgres\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"private.sync_protocol_next_action(uuid,uuid)\",\"prosrc_md5\":\"e1e309f6453ebfa6edbfc27f06a915ea\",\"volatility\":\"v\",\"security_definer\":true},{\"acl\":[\"postgres=X/postgres\",\"authenticated=X/postgres\",\"service_role=X/postgres\"],\"name\":\"public.reconcile_lead_contact_protocol\",\"owner\":\"postgres\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"reconcile_lead_contact_protocol(uuid)\",\"prosrc_md5\":\"4c588d65edf4663c689e04bbc176a8f9\",\"volatility\":\"v\",\"security_definer\":true},{\"acl\":[\"postgres=X/postgres\",\"authenticated=X/postgres\",\"service_role=X/postgres\"],\"name\":\"public.record_contact_answer_with_transition\",\"owner\":\"postgres\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"record_contact_answer_with_transition(uuid,text,text,text,timestamp with time zone,text,text,timestamp with time zone,text,numeric,text,timestamp with time zone,text,text,text)\",\"prosrc_md5\":\"57c7aa09646baa2bc49f68db3c5f04bb\",\"volatility\":\"v\",\"security_definer\":true},{\"acl\":[\"postgres=X/postgres\",\"authenticated=X/postgres\",\"service_role=X/postgres\"],\"name\":\"public.record_contact_answer_with_transition\",\"owner\":\"postgres\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"record_contact_answer_with_transition(uuid,text,text,timestamp with time zone,text,text,timestamp with time zone,text,numeric,text,timestamp with time zone,text,text,text)\",\"prosrc_md5\":\"71682f3716f39dbd562343f1665ee2a3\",\"volatility\":\"v\",\"security_definer\":true},{\"acl\":[\"postgres=X/postgres\",\"authenticated=X/postgres\",\"service_role=X/postgres\"],\"name\":\"public.record_contact_task_result\",\"owner\":\"postgres\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"record_contact_task_result(uuid,text,text,timestamp with time zone)\",\"prosrc_md5\":\"fd3e34a236571ff83b525aa999f6ba6d\",\"volatility\":\"v\",\"security_definer\":true},{\"acl\":[\"postgres=X/postgres\",\"authenticated=X/postgres\",\"service_role=X/postgres\"],\"name\":\"public.record_lead_follow_up\",\"owner\":\"postgres\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"record_lead_follow_up(uuid,text,text,timestamp with time zone,text,text,timestamp with time zone,text,numeric,text,text,text,text,text)\",\"prosrc_md5\":\"55b0b6d85e74276aeafb6829c247395b\",\"volatility\":\"v\",\"security_definer\":true},{\"acl\":[\"postgres=X/postgres\",\"authenticated=X/postgres\",\"service_role=X/postgres\"],\"name\":\"public.record_recall_attempt\",\"owner\":\"postgres\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"record_recall_attempt(uuid,text,text,timestamp with time zone,text,timestamp with time zone,text)\",\"prosrc_md5\":\"3a8a669f28c28842d6d29cef6e0d4df7\",\"volatility\":\"v\",\"security_definer\":true},{\"acl\":[\"postgres=X/postgres\",\"authenticated=X/postgres\",\"service_role=X/postgres\"],\"name\":\"public.refresh_due_contact_protocols\",\"owner\":\"postgres\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"refresh_due_contact_protocols()\",\"prosrc_md5\":\"e0265b8164b88b0b41c1c3f958015cbc\",\"volatility\":\"v\",\"security_definer\":true},{\"acl\":[\"postgres=X/postgres\",\"authenticated=X/postgres\",\"service_role=X/postgres\"],\"name\":\"public.restart_lead_contact_sequence\",\"owner\":\"postgres\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"restart_lead_contact_sequence(uuid)\",\"prosrc_md5\":\"fc317586410837f8d01eb6384e459184\",\"volatility\":\"v\",\"security_definer\":true},{\"acl\":[\"postgres=X/postgres\",\"authenticated=X/postgres\",\"service_role=X/postgres\"],\"name\":\"public.start_no_contact_protocol_from_future\",\"owner\":\"postgres\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"start_no_contact_protocol_from_future(uuid)\",\"prosrc_md5\":\"a50ed4eaff8c78458ec490639eb121f3\",\"volatility\":\"v\",\"security_definer\":true},{\"acl\":[\"postgres=X/postgres\",\"authenticated=X/postgres\",\"service_role=X/postgres\"],\"name\":\"public.supervisor_manage_lead\",\"owner\":\"postgres\",\"config\":[\"search_path=\\\\\"\\\\\"\"],\"signature\":\"supervisor_manage_lead(uuid,text,text,text,text,timestamp with time zone,text,text,text)\",\"prosrc_md5\":\"6ea951780d93fa553c46d9296428c552\",\"volatility\":\"v\",\"security_definer\":true}]}\n# Original146 DB IDs executed separately; this scenario is a post-B authority assertion, not a duplicate count.\n# Certified foundation oracle remains separately executed, unchanged.\n1..1\n# tests 81\n# suites 0\n# pass 81\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 109292.35217\n",
+      "stderr": "",
+      "test_exit_code": 0,
+      "duration_seconds": 133.309,
+      "temporary_cluster_retained": null
+    },
+    {
+      "harness": "crm-m1-unix-seccomp/2",
+      "run_id": "0efeaa4f-c318-4a0f-aea6-ef49437ca778",
+      "suite": "foundation.integration.test.mjs",
+      "source_manifest": {
+        "sha256": "848a6de938558d145ff27e537582b9d36494ae1356719ff42b4654d494107b3a",
+        "git_base_revision": "8a331e647eeb574be90cb2a6bd28a7e46f874ae3",
+        "source_has_uncommitted_changes": true
+      },
+      "fixture_layer": "minimal_synthetic_auth_crm",
+      "bootstrap_source": "tests/m1/fixtures/bootstrap.sql",
+      "bootstrap_sha256": "9b907e47b5de7aee4b80947ec19aef34440a128cfd86a8b0b7077eadcac7caae",
+      "cluster_per_suite": true,
+      "bootstrap_user": "m1_test_admin",
+      "migration_installation": "runner_installs_all_three",
+      "timeout_scale": 3.0,
+      "status": "PASS",
+      "remote_database": false,
+      "external_egress": false,
+      "requested_database_major": 17,
+      "requested_uid": 65534,
+      "database_started": true,
+      "migrations_applied": [
+        "20260917154844_m1_runtime_authority_foundation.sql",
+        "20260917154854_m1_private_capabilities.sql",
+        "20260917154905_m1_command_receipts_events.sql"
+      ],
+      "integration_tests_executed": true,
+      "migration_sha256": {
+        "20260917154844_m1_runtime_authority_foundation.sql": "6dbb4e1c6a0c8da22de49424fdf965f46e74e85dad0e822a6201b2ec31f09d49",
+        "20260917154854_m1_private_capabilities.sql": "6154b2dd302d1f5793ea5c9b4151a1423f4f5b956e688ae7089bf8f00b80cd60",
+        "20260917154905_m1_command_receipts_events.sql": "433615402b82cbc5b85cd4f168c0b96ff48658de84cfdadad56b02616f7bf9e7"
+      },
+      "candidate_migration_sha256": {},
+      "candidate_installation": "none",
+      "candidate_validation_stage": null,
+      "postgres_binary_sha256": "23cd174849b273064c47d581b55be596be2f5cf0ee5d3e76c0146e2464bf873a",
+      "guard_source_sha256": "589dc0aece8cee8e104a7c3a8c27d6e13ca858518bdf74d0454e67c90cb53fd9",
+      "guard_binary_sha256": "d48cf6d387092c71323d7e6a24af26c582d7bc0103545cd3614641e9608183f7",
+      "guard_precompiled": true,
+      "suite_sha256": {
+        "tests/m1/foundation.integration.test.mjs": "0ae08b7e9d6dd05fe377442a5de5ad26fff5296753484307eb5d05561446dd84"
+      },
+      "limits": [
+        "Synthetic auth/profiles/leads fixture; not a full production schema or Supabase REST gateway.",
+        "No legacy handler, trigger, frontend or external sender is changed or certified.",
+        "Database effects occur only in the disposable local cluster."
+      ],
+      "postgres_version": "postgres (PostgreSQL) 17.6",
+      "unix_socket_available": true,
+      "uid_map": [
+        [
+          0,
+          0,
+          4294967295
+        ]
+      ],
+      "gid_map": [
+        [
+          0,
+          0,
+          4294967295
+        ]
+      ],
+      "environment_keys": [
+        "LANG",
+        "LC_ALL",
+        "LD_LIBRARY_PATH",
+        "M1_LIBPQ_PATH",
+        "M1_PYTHON_BIN",
+        "M1_TEST_BOOTSTRAP_USER",
+        "M1_TEST_DATABASE",
+        "M1_TEST_FIXTURE_DIR",
+        "M1_TEST_ISOLATED",
+        "M1_TEST_MIGRATION_DIR",
+        "M1_TEST_PORT",
+        "M1_TEST_RUN_ID",
+        "M1_TEST_SOCKET_DIR",
+        "M1_TEST_TIMEOUT_SCALE",
+        "PATH",
+        "PGPASSFILE",
+        "PGSERVICEFILE",
+        "PYTHONNOUSERSITE",
+        "TZ"
+      ],
+      "isolation": {
+        "ok": true,
+        "columns": [
+          "listen_addresses",
+          "marker",
+          "unix_socket"
+        ],
+        "rows": [
+          [
+            "",
+            "0efeaa4f-c318-4a0f-aea6-ef49437ca778",
+            "t"
+          ]
+        ],
+        "affected": "1",
+        "id": 1
+      },
+      "migration_role": {
+        "ok": true,
+        "columns": [
+          "rolname",
+          "rolsuper",
+          "rolcreaterole",
+          "rolbypassrls"
+        ],
+        "rows": [
+          [
+            "postgres",
+            "f",
+            "t",
+            "t"
+          ]
+        ],
+        "affected": "1",
+        "id": 1
+      },
+      "test_timeout_seconds": 720.0,
+      "tap": "TAP version 13\n# Subtest: M1-01/02/03: isolated PostgreSQL foundation\n    # Subtest: ISOLATION: PostgreSQL17, Unix socket, restricted migrator and six private tables\n    ok 1 - ISOLATION: PostgreSQL17, Unix socket, restricted migrator and six private tables\n      ---\n      duration_ms: 633.60522\n      type: 'test'\n      ...\n    # Subtest: M14: no API role can directly read/write new tables or execute the installed gateway\n    ok 2 - M14: no API role can directly read/write new tables or execute the installed gateway\n      ---\n      duration_ms: 244.2989\n      type: 'test'\n      ...\n    # Subtest: M12: default gates observe; no authoritative/quiescing state can be installed\n    ok 3 - M12: default gates observe; no authoritative/quiescing state can be installed\n      ---\n      duration_ms: 93.19014\n      type: 'test'\n      ...\n    # Subtest: M13: future recovery/internal send purposes cannot become ready or authoritative\n    ok 4 - M13: future recovery/internal send purposes cannot become ready or authoritative\n      ---\n      duration_ms: 87.83638\n      type: 'test'\n      ...\n    # Subtest: M15: new conversation structure stays disabled/paused; seller cannot acquire channel authority\n    ok 5 - M15: new conversation structure stays disabled/paused; seller cannot acquire channel authority\n      ---\n      duration_ms: 63.73458\n      type: 'test'\n      ...\n    # Subtest: STOCK-HOOK: even fixture-ready gates cannot activate the installed handler\n    ok 6 - STOCK-HOOK: even fixture-ready gates cannot activate the installed handler\n      ---\n      duration_ms: 300.85305\n      type: 'test'\n      ...\n    # Subtest: M01: same command_id and same intent have one logical result\n    ok 7 - M01: same command_id and same intent have one logical result\n      ---\n      duration_ms: 193.62542\n      type: 'test'\n      ...\n    # Subtest: M02: same idempotency key/hash with a new command UUID replays the original\n    ok 8 - M02: same idempotency key/hash with a new command UUID replays the original\n      ---\n      duration_ms: 173.4004\n      type: 'test'\n      ...\n    # Subtest: M03: a changed payload under the same key conflicts without another effect\n    ok 9 - M03: a changed payload under the same key conflicts without another effect\n      ---\n      duration_ms: 182.37366\n      type: 'test'\n      ...\n    # Subtest: M04: stale aggregate/assignment versions reject before applying\n    ok 10 - M04: stale aggregate/assignment versions reject before applying\n      ---\n      duration_ms: 206.45024\n      type: 'test'\n      ...\n    # Subtest: M05: caller actor/role cannot be supplied in envelope or payload\n    ok 11 - M05: caller actor/role cannot be supplied in envelope or payload\n      ---\n      duration_ms: 173.54072\n      type: 'test'\n      ...\n    # Subtest: M06: inactive user cannot apply a command or recover an old replay\n    ok 12 - M06: inactive user cannot apply a command or recover an old replay\n      ---\n      duration_ms: 208.35911\n      type: 'test'\n      ...\n    # Subtest: M07: foreign, unassigned and formerly owned scopes are denied without receipt disclosure\n    ok 13 - M07: foreign, unassigned and formerly owned scopes are denied without receipt disclosure\n      ---\n      duration_ms: 366.47287\n      type: 'test'\n      ...\n    # Subtest: M08: effect/event/receipt/version commit atomically and SQL hash matches the actual JS contract\n    ok 14 - M08: effect/event/receipt/version commit atomically and SQL hash matches the actual JS contract\n      ---\n      duration_ms: 231.82826\n      type: 'test'\n      ...\n    # Subtest: M09: backend crash before COMMIT leaves no partial receipt/event/effect\n    ok 15 - M09: backend crash before COMMIT leaves no partial receipt/event/effect\n      ---\n      duration_ms: 936.65008\n      type: 'test'\n      ...\n    # Subtest: M10: retry after COMMIT from a fresh connection returns the committed result\n    ok 16 - M10: retry after COMMIT from a fresh connection returns the committed result\n      ---\n      duration_ms: 792.79608\n      type: 'test'\n      ...\n    # Subtest: M11: two real sessions race on one command; observed lock wait, exactly one application\n    ok 17 - M11: two real sessions race on one command; observed lock wait, exactly one application\n      ---\n      duration_ms: 1146.45684\n      type: 'test'\n      ...\n    # Subtest: FAILPOINT: exception after synthetic DML rolls back every command effect\n    ok 18 - FAILPOINT: exception after synthetic DML rolls back every command effect\n      ---\n      duration_ms: 124.1109\n      type: 'test'\n      ...\n    # Subtest: GATE-VECTOR: changing one domain epoch does not borrow authority from the other\n    ok 19 - GATE-VECTOR: changing one domain epoch does not borrow authority from the other\n      ---\n      duration_ms: 102.3914\n      type: 'test'\n      ...\n    # Subtest: VERSION-EXHAUSTED: safe integer ceiling cannot overflow into an imprecise JS version\n    ok 20 - VERSION-EXHAUSTED: safe integer ceiling cannot overflow into an imprecise JS version\n      ---\n      duration_ms: 116.05498\n      type: 'test'\n      ...\n    # Subtest: BUSINESS-DEDUPE: different keys cannot duplicate the synthetic operation identity\n    ok 21 - BUSINESS-DEDUPE: different keys cannot duplicate the synthetic operation identity\n      ---\n      duration_ms: 144.89828\n      type: 'test'\n      ...\n    # Subtest: DEFERRED-GUARD: evaluating receipts cannot commit\n    ok 22 - DEFERRED-GUARD: evaluating receipts cannot commit\n      ---\n      duration_ms: 149.73196\n      type: 'test'\n      ...\n    # Subtest: APPEND-ONLY: terminal receipts/events/policy reject mutation and TRUNCATE\n    ok 23 - APPEND-ONLY: terminal receipts/events/policy reject mutation and TRUNCATE\n      ---\n      duration_ms: 129.20853\n      type: 'test'\n      ...\n    # Subtest: DEFERRED-EVENT: an event cannot later attach to a rejected receipt\n    ok 24 - DEFERRED-EVENT: an event cannot later attach to a rejected receipt\n      ---\n      duration_ms: 218.13041\n      type: 'test'\n      ...\n    # Subtest: CONCURRENT-CAS: distinct intents at one version produce one effect and one conflict\n    ok 25 - CONCURRENT-CAS: distinct intents at one version produce one effect and one conflict\n      ---\n      duration_ms: 1090.3385\n      type: 'test'\n      ...\n    # Subtest: FINAL-INVARIANTS: no evaluating receipt/orphan event; new channel authority remains closed\n    ok 26 - FINAL-INVARIANTS: no evaluating receipt/orphan event; new channel authority remains closed\n      ---\n      duration_ms: 38.84685\n      type: 'test'\n      ...\n    1..26\nok 1 - M1-01/02/03: isolated PostgreSQL foundation\n  ---\n  duration_ms: 8522.45067\n  type: 'test'\n  ...\n1..1\n# tests 27\n# suites 0\n# pass 27\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 9591.19679\n",
+      "stderr": "",
+      "test_exit_code": 0,
+      "duration_seconds": 29.357,
+      "temporary_cluster_retained": null
+    },
+    {
+      "harness": "crm-m1-unix-seccomp/2",
+      "run_id": "374c7ec2-cec3-4a03-9381-fe33c617001e",
+      "suite": "installation.integration.test.mjs",
+      "source_manifest": {
+        "sha256": "848a6de938558d145ff27e537582b9d36494ae1356719ff42b4654d494107b3a",
+        "git_base_revision": "8a331e647eeb574be90cb2a6bd28a7e46f874ae3",
+        "source_has_uncommitted_changes": true
+      },
+      "fixture_layer": "minimal_synthetic_auth_crm",
+      "bootstrap_source": "tests/m1/fixtures/bootstrap.sql",
+      "bootstrap_sha256": "9b907e47b5de7aee4b80947ec19aef34440a128cfd86a8b0b7077eadcac7caae",
+      "cluster_per_suite": true,
+      "bootstrap_user": "m1_test_admin",
+      "migration_installation": "suite_controlled_verbatim",
+      "timeout_scale": 3.0,
+      "status": "PASS",
+      "remote_database": false,
+      "external_egress": false,
+      "requested_database_major": 17,
+      "requested_uid": 65534,
+      "database_started": true,
+      "migrations_applied": [],
+      "integration_tests_executed": true,
+      "migration_sha256": {
+        "20260917154844_m1_runtime_authority_foundation.sql": "6dbb4e1c6a0c8da22de49424fdf965f46e74e85dad0e822a6201b2ec31f09d49",
+        "20260917154854_m1_private_capabilities.sql": "6154b2dd302d1f5793ea5c9b4151a1423f4f5b956e688ae7089bf8f00b80cd60",
+        "20260917154905_m1_command_receipts_events.sql": "433615402b82cbc5b85cd4f168c0b96ff48658de84cfdadad56b02616f7bf9e7"
+      },
+      "candidate_migration_sha256": {},
+      "candidate_installation": "none",
+      "candidate_validation_stage": null,
+      "postgres_binary_sha256": "23cd174849b273064c47d581b55be596be2f5cf0ee5d3e76c0146e2464bf873a",
+      "guard_source_sha256": "589dc0aece8cee8e104a7c3a8c27d6e13ca858518bdf74d0454e67c90cb53fd9",
+      "guard_binary_sha256": "d48cf6d387092c71323d7e6a24af26c582d7bc0103545cd3614641e9608183f7",
+      "guard_precompiled": true,
+      "suite_sha256": {
+        "tests/m1/installation.integration.test.mjs": "98358e5b31408b8f30b5eb50a70f5f3a1ce7c71fcfa3156374250a7cead284c0"
+      },
+      "limits": [
+        "Synthetic auth/profiles/leads fixture; not a full production schema or Supabase REST gateway.",
+        "No legacy handler, trigger, frontend or external sender is changed or certified.",
+        "Database effects occur only in the disposable local cluster."
+      ],
+      "postgres_version": "postgres (PostgreSQL) 17.6",
+      "unix_socket_available": true,
+      "uid_map": [
+        [
+          0,
+          0,
+          4294967295
+        ]
+      ],
+      "gid_map": [
+        [
+          0,
+          0,
+          4294967295
+        ]
+      ],
+      "environment_keys": [
+        "LANG",
+        "LC_ALL",
+        "LD_LIBRARY_PATH",
+        "M1_LIBPQ_PATH",
+        "M1_PYTHON_BIN",
+        "M1_TEST_BOOTSTRAP_USER",
+        "M1_TEST_DATABASE",
+        "M1_TEST_FIXTURE_DIR",
+        "M1_TEST_ISOLATED",
+        "M1_TEST_MIGRATION_DIR",
+        "M1_TEST_PORT",
+        "M1_TEST_RUN_ID",
+        "M1_TEST_SOCKET_DIR",
+        "M1_TEST_TIMEOUT_SCALE",
+        "PATH",
+        "PGPASSFILE",
+        "PGSERVICEFILE",
+        "PYTHONNOUSERSITE",
+        "TZ"
+      ],
+      "isolation": {
+        "ok": true,
+        "columns": [
+          "listen_addresses",
+          "marker",
+          "unix_socket"
+        ],
+        "rows": [
+          [
+            "",
+            "374c7ec2-cec3-4a03-9381-fe33c617001e",
+            "t"
+          ]
+        ],
+        "affected": "1",
+        "id": 1
+      },
+      "migration_role": {
+        "ok": true,
+        "columns": [
+          "rolname",
+          "rolsuper",
+          "rolcreaterole",
+          "rolbypassrls"
+        ],
+        "rows": [
+          [
+            "postgres",
+            "f",
+            "t",
+            "t"
+          ]
+        ],
+        "affected": "1",
+        "id": 1
+      },
+      "test_timeout_seconds": 720.0,
+      "tap": "TAP version 13\n# Subtest: M1 installation: exact files, clean failures and closed partial states\n    # Subtest: I00: fresh relevant schema only, with no M1 role, gateway or tables\n    ok 1 - I00: fresh relevant schema only, with no M1 role, gateway or tables\n      ---\n      duration_ms: 68.40865\n      type: 'test'\n      ...\n    # Subtest: I01: 02 and 03 without predecessors fail and leave no role, schema grant or object\n    ok 2 - I01: 02 and 03 without predecessors fail and leave no role, schema grant or object\n      ---\n      duration_ms: 222.69296\n      type: 'test'\n      ...\n    # Subtest: I02: 01 preflight rejects an absent required legacy relation before creating anything\n    ok 3 - I02: 01 preflight rejects an absent required legacy relation before creating anything\n      ---\n      duration_ms: 136.14301\n      type: 'test'\n      ...\n    # Subtest: I03: 01 alone commits four empty tables, FORCE RLS and no API permission\n    ok 4 - I03: 01 alone commits four empty tables, FORCE RLS and no API permission\n      ---\n      duration_ms: 518.78656\n      type: 'test'\n      ...\n    # Subtest: I04: 03 after only 01 fails without making the partial installation usable\n    ok 5 - I04: 03 after only 01 fails without making the partial installation usable\n      ---\n      duration_ms: 260.90622\n      type: 'test'\n      ...\n    # Subtest: I05: 02 transfers only new ownership and removes temporary CREATE/SET/INHERIT\n    ok 6 - I05: 02 transfers only new ownership and removes temporary CREATE/SET/INHERIT\n      ---\n      duration_ms: 431.32664\n      type: 'test'\n      ...\n    # Subtest: I06: a dependency failure in 03 rolls back its temporary membership and schema grants\n    ok 7 - I06: a dependency failure in 03 rolls back its temporary membership and schema grants\n      ---\n      duration_ms: 368.18719\n      type: 'test'\n      ...\n    # Subtest: I07: 01->02->03 commits six closed tables with validated constraints/indexes and expected trigger graph\n    ok 8 - I07: 01->02->03 commits six closed tables with validated constraints/indexes and expected trigger graph\n      ---\n      duration_ms: 729.02497\n      type: 'test'\n      ...\n    # Subtest: I08: accidentally applying 03 twice fails transactionally, without changing the installed state\n    ok 9 - I08: accidentally applying 03 twice fails transactionally, without changing the installed state\n      ---\n      duration_ms: 417.46631\n      type: 'test'\n      ...\n    1..9\nok 1 - M1 installation: exact files, clean failures and closed partial states\n  ---\n  duration_ms: 3898.07902\n  type: 'test'\n  ...\n1..1\n# tests 10\n# suites 0\n# pass 10\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 4628.84464\n",
+      "stderr": "",
+      "test_exit_code": 0,
+      "duration_seconds": 19.674,
+      "temporary_cluster_retained": null
+    },
+    {
+      "harness": "crm-m1-unix-seccomp/2",
+      "run_id": "9b0ebdf1-ed48-400c-afb4-7203b43323b6",
+      "suite": "schema-baseline-b.integration.test.mjs",
+      "source_manifest": {
+        "sha256": "848a6de938558d145ff27e537582b9d36494ae1356719ff42b4654d494107b3a",
+        "git_base_revision": "8a331e647eeb574be90cb2a6bd28a7e46f874ae3",
+        "source_has_uncommitted_changes": true
+      },
+      "fixture_layer": "schema_only_baseline_b",
+      "bootstrap_source": "tests/m1/fixtures/schema-baseline-b/bootstrap.sql",
+      "bootstrap_sha256": "8ea22a1e8b4cd6559732331ca66ac2728d90f58e11ada4f344c398040608c5e6",
+      "cluster_per_suite": true,
+      "bootstrap_user": "supabase_admin",
+      "migration_installation": "suite_controlled_verbatim",
+      "timeout_scale": 3.0,
+      "status": "PASS",
+      "remote_database": false,
+      "external_egress": false,
+      "requested_database_major": 17,
+      "requested_uid": 65534,
+      "database_started": true,
+      "migrations_applied": [],
+      "integration_tests_executed": true,
+      "migration_sha256": {
+        "20260917154844_m1_runtime_authority_foundation.sql": "6dbb4e1c6a0c8da22de49424fdf965f46e74e85dad0e822a6201b2ec31f09d49",
+        "20260917154854_m1_private_capabilities.sql": "6154b2dd302d1f5793ea5c9b4151a1423f4f5b956e688ae7089bf8f00b80cd60",
+        "20260917154905_m1_command_receipts_events.sql": "433615402b82cbc5b85cd4f168c0b96ff48658de84cfdadad56b02616f7bf9e7"
+      },
+      "candidate_migration_sha256": {},
+      "candidate_installation": "none",
+      "candidate_validation_stage": null,
+      "postgres_binary_sha256": "23cd174849b273064c47d581b55be596be2f5cf0ee5d3e76c0146e2464bf873a",
+      "guard_source_sha256": "589dc0aece8cee8e104a7c3a8c27d6e13ca858518bdf74d0454e67c90cb53fd9",
+      "guard_binary_sha256": "d48cf6d387092c71323d7e6a24af26c582d7bc0103545cd3614641e9608183f7",
+      "guard_precompiled": true,
+      "suite_sha256": {
+        "tests/m1/schema-baseline-b.integration.test.mjs": "9d329069fc08242962363af5a77edccb7eea25983a511ccaef93a8746e03590d"
+      },
+      "limits": [
+        "Schema-only baseline B: coverage is limited to its explicit manifest; no production rows or Supabase REST gateway.",
+        "No legacy handler, trigger, frontend or external sender is changed or certified.",
+        "Database effects occur only in the disposable local cluster."
+      ],
+      "postgres_version": "postgres (PostgreSQL) 17.6",
+      "unix_socket_available": true,
+      "uid_map": [
+        [
+          0,
+          0,
+          4294967295
+        ]
+      ],
+      "gid_map": [
+        [
+          0,
+          0,
+          4294967295
+        ]
+      ],
+      "environment_keys": [
+        "LANG",
+        "LC_ALL",
+        "LD_LIBRARY_PATH",
+        "M1_LIBPQ_PATH",
+        "M1_PYTHON_BIN",
+        "M1_TEST_BOOTSTRAP_USER",
+        "M1_TEST_DATABASE",
+        "M1_TEST_FIXTURE_DIR",
+        "M1_TEST_ISOLATED",
+        "M1_TEST_MIGRATION_DIR",
+        "M1_TEST_PORT",
+        "M1_TEST_RUN_ID",
+        "M1_TEST_SOCKET_DIR",
+        "M1_TEST_TIMEOUT_SCALE",
+        "PATH",
+        "PGPASSFILE",
+        "PGSERVICEFILE",
+        "PYTHONNOUSERSITE",
+        "TZ"
+      ],
+      "isolation": {
+        "ok": true,
+        "columns": [
+          "listen_addresses",
+          "marker",
+          "unix_socket"
+        ],
+        "rows": [
+          [
+            "",
+            "9b0ebdf1-ed48-400c-afb4-7203b43323b6",
+            "t"
+          ]
+        ],
+        "affected": "1",
+        "id": 1
+      },
+      "migration_role": {
+        "ok": true,
+        "columns": [
+          "rolname",
+          "rolsuper",
+          "rolcreaterole",
+          "rolbypassrls"
+        ],
+        "rows": [
+          [
+            "postgres",
+            "f",
+            "t",
+            "t"
+          ]
+        ],
+        "affected": "1",
+        "id": 1
+      },
+      "test_timeout_seconds": 720.0,
+      "tap": "TAP version 13\n# Subtest: B: observed relevant schema, exact M1 DDL, unchanged legacy catalogs and closed authority\n    # Subtest: B00: source integrity and real bootstrap identity are prerequisites\n    ok 1 - B00: source integrity and real bootstrap identity are prerequisites\n      ---\n      duration_ms: 604.36527\n      type: 'test'\n      ...\n    # Subtest: B01: observed tables, columns, constraints, indexes, triggers, policies, functions, sequences and enum match\n    ok 2 - B01: observed tables, columns, constraints, indexes, triggers, policies, functions, sequences and enum match\n      ---\n      duration_ms: 2475.5793\n      type: 'test'\n      ...\n    # Subtest: B02: selected roles, membership grantors, schemas and default ACLs match\n    ok 3 - B02: selected roles, membership grantors, schemas and default ACLs match\n      ---\n      duration_ms: 94.85623\n      type: 'test'\n      ...\n    # Subtest: B03: captured auth.uid implementation honors real JWT claims precedence and malformed claims\n    ok 4 - B03: captured auth.uid implementation honors real JWT claims precedence and malformed claims\n      ---\n      duration_ms: 75.90761\n      type: 'test'\n      ...\n    # Subtest: B4: 20260917154844_m1_runtime_authority_foundation.sql applies verbatim as postgres NOSUPERUSER and preserves observed objects\n    ok 5 - B4: 20260917154844_m1_runtime_authority_foundation.sql applies verbatim as postgres NOSUPERUSER and preserves observed objects\n      ---\n      duration_ms: 1645.95379\n      type: 'test'\n      ...\n    # Subtest: B5: 20260917154854_m1_private_capabilities.sql applies verbatim as postgres NOSUPERUSER and preserves observed objects\n    ok 6 - B5: 20260917154854_m1_private_capabilities.sql applies verbatim as postgres NOSUPERUSER and preserves observed objects\n      ---\n      duration_ms: 964.56519\n      type: 'test'\n      ...\n    # Subtest: B6: 20260917154905_m1_command_receipts_events.sql applies verbatim as postgres NOSUPERUSER and preserves observed objects\n    ok 7 - B6: 20260917154905_m1_command_receipts_events.sql applies verbatim as postgres NOSUPERUSER and preserves observed objects\n      ---\n      duration_ms: 1334.45296\n      type: 'test'\n      ...\n    # Subtest: B07: six empty runtime tables are closed despite broad observed public-schema default grants\n    ok 8 - B07: six empty runtime tables are closed despite broad observed public-schema default grants\n      ---\n      duration_ms: 278.52986\n      type: 'test'\n      ...\n    # Subtest: B08: installed handler remains closed and no legacy capabilities leak to the runtime owner\n    ok 9 - B08: installed handler remains closed and no legacy capabilities leak to the runtime owner\n      ---\n      duration_ms: 1007.4038\n      type: 'test'\n      ...\n    1..9\nok 1 - B: observed relevant schema, exact M1 DDL, unchanged legacy catalogs and closed authority\n  ---\n  duration_ms: 8684.54939\n  type: 'test'\n  ...\n1..1\n# tests 10\n# suites 0\n# pass 10\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 9725.91436\n",
+      "stderr": "",
+      "test_exit_code": 0,
+      "duration_seconds": 31.943,
+      "temporary_cluster_retained": null
+    },
+    {
+      "harness": "crm-m1-unix-seccomp/2",
+      "run_id": "329644ab-9b85-4c05-bd2c-d6b357149b90",
+      "suite": "security.integration.test.mjs",
+      "source_manifest": {
+        "sha256": "848a6de938558d145ff27e537582b9d36494ae1356719ff42b4654d494107b3a",
+        "git_base_revision": "8a331e647eeb574be90cb2a6bd28a7e46f874ae3",
+        "source_has_uncommitted_changes": true
+      },
+      "fixture_layer": "minimal_synthetic_auth_crm",
+      "bootstrap_source": "tests/m1/fixtures/bootstrap.sql",
+      "bootstrap_sha256": "9b907e47b5de7aee4b80947ec19aef34440a128cfd86a8b0b7077eadcac7caae",
+      "cluster_per_suite": true,
+      "bootstrap_user": "m1_test_admin",
+      "migration_installation": "runner_installs_all_three",
+      "timeout_scale": 3.0,
+      "status": "PASS",
+      "remote_database": false,
+      "external_egress": false,
+      "requested_database_major": 17,
+      "requested_uid": 65534,
+      "database_started": true,
+      "migrations_applied": [
+        "20260917154844_m1_runtime_authority_foundation.sql",
+        "20260917154854_m1_private_capabilities.sql",
+        "20260917154905_m1_command_receipts_events.sql"
+      ],
+      "integration_tests_executed": true,
+      "migration_sha256": {
+        "20260917154844_m1_runtime_authority_foundation.sql": "6dbb4e1c6a0c8da22de49424fdf965f46e74e85dad0e822a6201b2ec31f09d49",
+        "20260917154854_m1_private_capabilities.sql": "6154b2dd302d1f5793ea5c9b4151a1423f4f5b956e688ae7089bf8f00b80cd60",
+        "20260917154905_m1_command_receipts_events.sql": "433615402b82cbc5b85cd4f168c0b96ff48658de84cfdadad56b02616f7bf9e7"
+      },
+      "candidate_migration_sha256": {},
+      "candidate_installation": "none",
+      "candidate_validation_stage": null,
+      "postgres_binary_sha256": "23cd174849b273064c47d581b55be596be2f5cf0ee5d3e76c0146e2464bf873a",
+      "guard_source_sha256": "589dc0aece8cee8e104a7c3a8c27d6e13ca858518bdf74d0454e67c90cb53fd9",
+      "guard_binary_sha256": "d48cf6d387092c71323d7e6a24af26c582d7bc0103545cd3614641e9608183f7",
+      "guard_precompiled": true,
+      "suite_sha256": {
+        "tests/m1/security.integration.test.mjs": "9aa66d3e7eac29e6edf3ba23782fa18768b33840831ec3a1ca7cf8b0b9689614"
+      },
+      "limits": [
+        "Synthetic auth/profiles/leads fixture; not a full production schema or Supabase REST gateway.",
+        "No legacy handler, trigger, frontend or external sender is changed or certified.",
+        "Database effects occur only in the disposable local cluster."
+      ],
+      "postgres_version": "postgres (PostgreSQL) 17.6",
+      "unix_socket_available": true,
+      "uid_map": [
+        [
+          0,
+          0,
+          4294967295
+        ]
+      ],
+      "gid_map": [
+        [
+          0,
+          0,
+          4294967295
+        ]
+      ],
+      "environment_keys": [
+        "LANG",
+        "LC_ALL",
+        "LD_LIBRARY_PATH",
+        "M1_LIBPQ_PATH",
+        "M1_PYTHON_BIN",
+        "M1_TEST_BOOTSTRAP_USER",
+        "M1_TEST_DATABASE",
+        "M1_TEST_FIXTURE_DIR",
+        "M1_TEST_ISOLATED",
+        "M1_TEST_MIGRATION_DIR",
+        "M1_TEST_PORT",
+        "M1_TEST_RUN_ID",
+        "M1_TEST_SOCKET_DIR",
+        "M1_TEST_TIMEOUT_SCALE",
+        "PATH",
+        "PGPASSFILE",
+        "PGSERVICEFILE",
+        "PYTHONNOUSERSITE",
+        "TZ"
+      ],
+      "isolation": {
+        "ok": true,
+        "columns": [
+          "listen_addresses",
+          "marker",
+          "unix_socket"
+        ],
+        "rows": [
+          [
+            "",
+            "329644ab-9b85-4c05-bd2c-d6b357149b90",
+            "t"
+          ]
+        ],
+        "affected": "1",
+        "id": 1
+      },
+      "migration_role": {
+        "ok": true,
+        "columns": [
+          "rolname",
+          "rolsuper",
+          "rolcreaterole",
+          "rolbypassrls"
+        ],
+        "rows": [
+          [
+            "postgres",
+            "f",
+            "t",
+            "t"
+          ]
+        ],
+        "affected": "1",
+        "id": 1
+      },
+      "test_timeout_seconds": 720.0,
+      "tap": "TAP version 13\n# Subtest: M1 security: real roles, forced RLS and transactional locks\n    # Subtest: S16/S19: installed owners, membership options and real API denials\n    ok 1 - S16/S19: installed owners, membership options and real API denials\n      ---\n      duration_ms: 947.75244\n      type: 'test'\n      ...\n    # Subtest: S18: definer/invoker ownership and private helper EXECUTE are explicit\n    ok 2 - S18: definer/invoker ownership and private helper EXECUTE are explicit\n      ---\n      duration_ms: 120.41581\n      type: 'test'\n      ...\n    # Subtest: S18/S26: installed probe derives actor through read/lock helpers and cannot mutate legacy\n    ok 3 - S18/S26: installed probe derives actor through read/lock helpers and cannot mutate legacy\n      ---\n      duration_ms: 368.58244\n      type: 'test'\n      ...\n    # Subtest: S20/S21/S22: UPDATE, DELETE and TRUNCATE cannot rewrite or remove committed history\n    ok 4 - S20/S21/S22: UPDATE, DELETE and TRUNCATE cannot rewrite or remove committed history\n      ---\n      duration_ms: 257.90904\n      type: 'test'\n      ...\n    # Subtest: S17: FORCE RLS filters the NOLOGIN table owner; disabling FORCE changes the result\n    ok 5 - S17: FORCE RLS filters the NOLOGIN table owner; disabling FORCE changes the result\n      ---\n      duration_ms: 413.76608\n      type: 'test'\n      ...\n    # Subtest: S16/S17: RLS still denies an ordinary role with fixture SELECT; BYPASSRLS is not falsely certified\n    ok 6 - S16/S17: RLS still denies an ordinary role with fixture SELECT; BYPASSRLS is not falsely certified\n      ---\n      duration_ms: 52.53897\n      type: 'test'\n      ...\n    # Subtest: S18/S25: spoofed auxiliary claims do not replace the active profile or current owner\n    ok 7 - S18/S25: spoofed auxiliary claims do not replace the active profile or current owner\n      ---\n      duration_ms: 155.54089\n      type: 'test'\n      ...\n    # Subtest: S23-GATE: an in-flight gate change is awaited and rechecked before any effect\n    ok 8 - S23-GATE: an in-flight gate change is awaited and rechecked before any effect\n      ---\n      duration_ms: 1017.0258\n      type: 'test'\n      ...\n    # Subtest: S23-LEAD/S25: current ownership is read under a real lead lock after waiting\n    ok 9 - S23-LEAD/S25: current ownership is read under a real lead lock after waiting\n      ---\n      duration_ms: 981.19411\n      type: 'test'\n      ...\n    # Subtest: S24: a real PostgreSQL deadlock and full transaction retry cannot duplicate an intent\n    ok 10 - S24: a real PostgreSQL deadlock and full transaction retry cannot duplicate an intent\n      ---\n      duration_ms: 1243.03557\n      type: 'test'\n      ...\n    1..10\nok 1 - M1 security: real roles, forced RLS and transactional locks\n  ---\n  duration_ms: 5892.14813\n  type: 'test'\n  ...\n1..1\n# tests 11\n# suites 0\n# pass 11\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 6783.95896\n",
+      "stderr": "",
+      "test_exit_code": 0,
+      "duration_seconds": 28.092,
+      "temporary_cluster_retained": null
+    }
+  ],
+  "integration_tests_executed": true
+}

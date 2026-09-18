@@ -1,0 +1,1536 @@
+{
+  "tables": [
+    {
+      "acl": [
+        "crm_runtime_owner=arwdDxtm/crm_runtime_owner",
+        "postgres=ar/crm_runtime_owner"
+      ],
+      "rls": true,
+      "name": "crm_contact_facts",
+      "owner": "crm_runtime_owner",
+      "force_rls": true
+    },
+    {
+      "acl": [
+        "crm_runtime_owner=arwdDxtm/crm_runtime_owner",
+        "postgres=r/crm_runtime_owner"
+      ],
+      "rls": true,
+      "name": "crm_contact_next_action_adoptions",
+      "owner": "crm_runtime_owner",
+      "force_rls": true
+    },
+    {
+      "acl": [
+        "crm_runtime_owner=arwdDxtm/crm_runtime_owner",
+        "postgres=rw/crm_runtime_owner"
+      ],
+      "rls": true,
+      "name": "crm_contact_runtime",
+      "owner": "crm_runtime_owner",
+      "force_rls": true
+    },
+    {
+      "acl": [
+        "crm_runtime_owner=arwdDxtm/crm_runtime_owner",
+        "postgres=arw/crm_runtime_owner"
+      ],
+      "rls": true,
+      "name": "crm_contact_task_credits",
+      "owner": "crm_runtime_owner",
+      "force_rls": true
+    },
+    {
+      "acl": [
+        "crm_runtime_owner=arwdDxtm/crm_runtime_owner",
+        "postgres=arw/crm_runtime_owner"
+      ],
+      "rls": true,
+      "name": "crm_next_actions",
+      "owner": "crm_runtime_owner",
+      "force_rls": true
+    }
+  ],
+  "policies": [
+    {
+      "cmd": "ALL",
+      "qual": "true",
+      "roles": [
+        "crm_runtime_owner"
+      ],
+      "tablename": "crm_contact_facts",
+      "permissive": "PERMISSIVE",
+      "policyname": "crm_contact_facts_owner_only",
+      "schemaname": "private",
+      "with_check": "true"
+    },
+    {
+      "cmd": "ALL",
+      "qual": "true",
+      "roles": [
+        "crm_runtime_owner"
+      ],
+      "tablename": "crm_contact_next_action_adoptions",
+      "permissive": "PERMISSIVE",
+      "policyname": "crm_contact_adoptions_owner_only",
+      "schemaname": "private",
+      "with_check": "true"
+    },
+    {
+      "cmd": "ALL",
+      "qual": "true",
+      "roles": [
+        "crm_runtime_owner"
+      ],
+      "tablename": "crm_contact_runtime",
+      "permissive": "PERMISSIVE",
+      "policyname": "crm_contact_runtime_owner_only",
+      "schemaname": "private",
+      "with_check": "true"
+    },
+    {
+      "cmd": "ALL",
+      "qual": "true",
+      "roles": [
+        "crm_runtime_owner"
+      ],
+      "tablename": "crm_contact_task_credits",
+      "permissive": "PERMISSIVE",
+      "policyname": "crm_contact_task_credits_owner_only",
+      "schemaname": "private",
+      "with_check": "true"
+    },
+    {
+      "cmd": "ALL",
+      "qual": "true",
+      "roles": [
+        "crm_runtime_owner"
+      ],
+      "tablename": "crm_next_actions",
+      "permissive": "PERMISSIVE",
+      "policyname": "crm_next_actions_owner_only",
+      "schemaname": "private",
+      "with_check": "true"
+    }
+  ],
+  "triggers": [
+    {
+      "name": "contact_message_templates_set_updated_at",
+      "table": "contact_message_templates",
+      "enabled": "O",
+      "definition": "CREATE TRIGGER contact_message_templates_set_updated_at BEFORE UPDATE ON public.contact_message_templates FOR EACH ROW EXECUTE FUNCTION private.set_updated_at()"
+    },
+    {
+      "name": "a00_crm_contact_customer_restriction",
+      "table": "customers",
+      "enabled": "O",
+      "definition": "CREATE TRIGGER a00_crm_contact_customer_restriction BEFORE DELETE OR UPDATE ON public.customers FOR EACH ROW EXECUTE FUNCTION private.crm_contact_guard_customer_restriction()"
+    },
+    {
+      "name": "a00_crm_contact_truncate",
+      "table": "customers",
+      "enabled": "O",
+      "definition": "CREATE TRIGGER a00_crm_contact_truncate BEFORE TRUNCATE ON public.customers FOR EACH STATEMENT EXECUTE FUNCTION private.crm_contact_guard_legacy_truncate()"
+    },
+    {
+      "name": "a00_crm_contact_fence",
+      "table": "lead_contact_sequences",
+      "enabled": "O",
+      "definition": "CREATE TRIGGER a00_crm_contact_fence BEFORE INSERT OR DELETE OR UPDATE ON public.lead_contact_sequences FOR EACH ROW EXECUTE FUNCTION private.crm_contact_guard_legacy_rows()"
+    },
+    {
+      "name": "a00_crm_contact_truncate",
+      "table": "lead_contact_sequences",
+      "enabled": "O",
+      "definition": "CREATE TRIGGER a00_crm_contact_truncate BEFORE TRUNCATE ON public.lead_contact_sequences FOR EACH STATEMENT EXECUTE FUNCTION private.crm_contact_guard_legacy_truncate()"
+    },
+    {
+      "name": "lead_contact_sequences_classify_exhausted",
+      "table": "lead_contact_sequences",
+      "enabled": "O",
+      "definition": "CREATE TRIGGER lead_contact_sequences_classify_exhausted AFTER UPDATE OF status ON public.lead_contact_sequences FOR EACH ROW WHEN (((old.status IS DISTINCT FROM new.status) AND (new.status = 'completed'::text))) EXECUTE FUNCTION private.classify_completed_contact_protocol()"
+    },
+    {
+      "name": "lead_contact_sequences_set_updated_at",
+      "table": "lead_contact_sequences",
+      "enabled": "O",
+      "definition": "CREATE TRIGGER lead_contact_sequences_set_updated_at BEFORE UPDATE ON public.lead_contact_sequences FOR EACH ROW EXECUTE FUNCTION private.set_updated_at()"
+    },
+    {
+      "name": "a00_crm_contact_fence",
+      "table": "lead_contact_tasks",
+      "enabled": "O",
+      "definition": "CREATE TRIGGER a00_crm_contact_fence BEFORE INSERT OR DELETE OR UPDATE ON public.lead_contact_tasks FOR EACH ROW EXECUTE FUNCTION private.crm_contact_guard_legacy_rows()"
+    },
+    {
+      "name": "a00_crm_contact_truncate",
+      "table": "lead_contact_tasks",
+      "enabled": "O",
+      "definition": "CREATE TRIGGER a00_crm_contact_truncate BEFORE TRUNCATE ON public.lead_contact_tasks FOR EACH STATEMENT EXECUTE FUNCTION private.crm_contact_guard_legacy_truncate()"
+    },
+    {
+      "name": "lead_contact_tasks_set_updated_at",
+      "table": "lead_contact_tasks",
+      "enabled": "O",
+      "definition": "CREATE TRIGGER lead_contact_tasks_set_updated_at BEFORE UPDATE ON public.lead_contact_tasks FOR EACH ROW EXECUTE FUNCTION private.set_updated_at()"
+    },
+    {
+      "name": "a00_crm_contact_fence",
+      "table": "lead_crm",
+      "enabled": "O",
+      "definition": "CREATE TRIGGER a00_crm_contact_fence BEFORE INSERT OR DELETE OR UPDATE ON public.lead_crm FOR EACH ROW EXECUTE FUNCTION private.crm_contact_guard_legacy_rows()"
+    },
+    {
+      "name": "a00_crm_contact_truncate",
+      "table": "lead_crm",
+      "enabled": "O",
+      "definition": "CREATE TRIGGER a00_crm_contact_truncate BEFORE TRUNCATE ON public.lead_crm FOR EACH STATEMENT EXECUTE FUNCTION private.crm_contact_guard_legacy_truncate()"
+    },
+    {
+      "name": "lead_crm_en_gestion_next_contact",
+      "table": "lead_crm",
+      "enabled": "O",
+      "definition": "CREATE TRIGGER lead_crm_en_gestion_next_contact BEFORE INSERT OR UPDATE OF status, next_contact_at ON public.lead_crm FOR EACH ROW EXECUTE FUNCTION private.enforce_en_gestion_next_contact()"
+    },
+    {
+      "name": "lead_crm_sync_contact_sequence",
+      "table": "lead_crm",
+      "enabled": "O",
+      "definition": "CREATE TRIGGER lead_crm_sync_contact_sequence AFTER UPDATE OF status ON public.lead_crm FOR EACH ROW WHEN ((old.status IS DISTINCT FROM new.status)) EXECUTE FUNCTION private.sync_contact_sequence_with_status()"
+    },
+    {
+      "name": "a00_crm_contact_restriction",
+      "table": "leads",
+      "enabled": "O",
+      "definition": "CREATE TRIGGER a00_crm_contact_restriction BEFORE DELETE OR UPDATE ON public.leads FOR EACH ROW EXECUTE FUNCTION private.crm_contact_guard_lead_restriction()"
+    },
+    {
+      "name": "a00_crm_contact_truncate",
+      "table": "leads",
+      "enabled": "O",
+      "definition": "CREATE TRIGGER a00_crm_contact_truncate BEFORE TRUNCATE ON public.leads FOR EACH STATEMENT EXECUTE FUNCTION private.crm_contact_guard_legacy_truncate()"
+    },
+    {
+      "name": "leads_start_contact_sequence",
+      "table": "leads",
+      "enabled": "O",
+      "definition": "CREATE TRIGGER leads_start_contact_sequence AFTER INSERT OR UPDATE OF assigned_seller_user_id ON public.leads FOR EACH ROW EXECUTE FUNCTION private.start_contact_sequence_after_assignment()"
+    },
+    {
+      "name": "crm_contact_facts_immutable",
+      "table": "private.crm_contact_facts",
+      "enabled": "O",
+      "definition": "CREATE TRIGGER crm_contact_facts_immutable BEFORE DELETE OR UPDATE ON private.crm_contact_facts FOR EACH ROW EXECUTE FUNCTION private.crm_contact_reject_immutable()"
+    },
+    {
+      "name": "crm_contact_facts_no_truncate",
+      "table": "private.crm_contact_facts",
+      "enabled": "O",
+      "definition": "CREATE TRIGGER crm_contact_facts_no_truncate BEFORE TRUNCATE ON private.crm_contact_facts FOR EACH STATEMENT EXECUTE FUNCTION private.crm_contact_reject_immutable()"
+    },
+    {
+      "name": "crm_contact_facts_references",
+      "table": "private.crm_contact_facts",
+      "enabled": "O",
+      "definition": "CREATE TRIGGER crm_contact_facts_references BEFORE INSERT ON private.crm_contact_facts FOR EACH ROW EXECUTE FUNCTION private.crm_contact_validate_references()"
+    },
+    {
+      "name": "crm_contact_adoptions_immutable",
+      "table": "private.crm_contact_next_action_adoptions",
+      "enabled": "O",
+      "definition": "CREATE TRIGGER crm_contact_adoptions_immutable BEFORE DELETE OR UPDATE ON private.crm_contact_next_action_adoptions FOR EACH ROW EXECUTE FUNCTION private.crm_contact_reject_immutable()"
+    },
+    {
+      "name": "crm_contact_adoptions_no_truncate",
+      "table": "private.crm_contact_next_action_adoptions",
+      "enabled": "O",
+      "definition": "CREATE TRIGGER crm_contact_adoptions_no_truncate BEFORE TRUNCATE ON private.crm_contact_next_action_adoptions FOR EACH STATEMENT EXECUTE FUNCTION private.crm_contact_reject_immutable()"
+    },
+    {
+      "name": "crm_contact_runtime_no_delete",
+      "table": "private.crm_contact_runtime",
+      "enabled": "O",
+      "definition": "CREATE TRIGGER crm_contact_runtime_no_delete BEFORE DELETE ON private.crm_contact_runtime FOR EACH ROW EXECUTE FUNCTION private.crm_contact_reject_immutable()"
+    },
+    {
+      "name": "crm_contact_runtime_no_truncate",
+      "table": "private.crm_contact_runtime",
+      "enabled": "O",
+      "definition": "CREATE TRIGGER crm_contact_runtime_no_truncate BEFORE TRUNCATE ON private.crm_contact_runtime FOR EACH STATEMENT EXECUTE FUNCTION private.crm_contact_reject_immutable()"
+    },
+    {
+      "name": "crm_contact_runtime_references",
+      "table": "private.crm_contact_runtime",
+      "enabled": "O",
+      "definition": "CREATE TRIGGER crm_contact_runtime_references BEFORE INSERT OR UPDATE ON private.crm_contact_runtime FOR EACH ROW EXECUTE FUNCTION private.crm_contact_validate_references()"
+    },
+    {
+      "name": "crm_contact_credits_no_delete",
+      "table": "private.crm_contact_task_credits",
+      "enabled": "O",
+      "definition": "CREATE TRIGGER crm_contact_credits_no_delete BEFORE DELETE ON private.crm_contact_task_credits FOR EACH ROW EXECUTE FUNCTION private.crm_contact_reject_immutable()"
+    },
+    {
+      "name": "crm_contact_credits_no_truncate",
+      "table": "private.crm_contact_task_credits",
+      "enabled": "O",
+      "definition": "CREATE TRIGGER crm_contact_credits_no_truncate BEFORE TRUNCATE ON private.crm_contact_task_credits FOR EACH STATEMENT EXECUTE FUNCTION private.crm_contact_reject_immutable()"
+    },
+    {
+      "name": "crm_contact_credits_references",
+      "table": "private.crm_contact_task_credits",
+      "enabled": "O",
+      "definition": "CREATE TRIGGER crm_contact_credits_references BEFORE INSERT OR UPDATE ON private.crm_contact_task_credits FOR EACH ROW EXECUTE FUNCTION private.crm_contact_validate_references()"
+    },
+    {
+      "name": "crm_next_actions_no_delete",
+      "table": "private.crm_next_actions",
+      "enabled": "O",
+      "definition": "CREATE TRIGGER crm_next_actions_no_delete BEFORE DELETE ON private.crm_next_actions FOR EACH ROW EXECUTE FUNCTION private.crm_contact_reject_immutable()"
+    },
+    {
+      "name": "crm_next_actions_no_truncate",
+      "table": "private.crm_next_actions",
+      "enabled": "O",
+      "definition": "CREATE TRIGGER crm_next_actions_no_truncate BEFORE TRUNCATE ON private.crm_next_actions FOR EACH STATEMENT EXECUTE FUNCTION private.crm_contact_reject_immutable()"
+    }
+  ],
+  "functions": [
+    {
+      "acl": [
+        "postgres=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "name": "public.complete_contact_task",
+      "owner": "postgres",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "complete_contact_task(uuid,text,text)",
+      "prosrc_md5": "b6a199088be3d97e5f2b6a8263d49f8c",
+      "volatility": "v",
+      "security_definer": true
+    },
+    {
+      "acl": [
+        "postgres=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "name": "public.complete_contact_task_with_follow_up",
+      "owner": "postgres",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "complete_contact_task_with_follow_up(uuid,text,text,timestamp with time zone,text)",
+      "prosrc_md5": "613d969d19408af407e57ffefefc7825",
+      "volatility": "v",
+      "security_definer": true
+    },
+    {
+      "acl": [
+        "crm_runtime_owner=X/crm_runtime_owner"
+      ],
+      "name": "public.crm_read_contact_work_context",
+      "owner": "crm_runtime_owner",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "crm_read_contact_work_context(uuid)",
+      "prosrc_md5": "351594708f7e44f220ff0ccf3d6cd9c1",
+      "volatility": "s",
+      "security_definer": true
+    },
+    {
+      "acl": [
+        "crm_runtime_owner=X/crm_runtime_owner"
+      ],
+      "name": "public.crm_submit_command",
+      "owner": "crm_runtime_owner",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "crm_submit_command(jsonb)",
+      "prosrc_md5": "69c5ab5537a7e6bdae1f467f04ca184c",
+      "volatility": "v",
+      "security_definer": true
+    },
+    {
+      "acl": [
+        "postgres=X/postgres"
+      ],
+      "name": "private.cancel_lead_contact_protocol",
+      "owner": "postgres",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "private.cancel_lead_contact_protocol(uuid,text)",
+      "prosrc_md5": "6c4911b7f722e8c4f95addd08c6c48a1",
+      "volatility": "v",
+      "security_definer": true
+    },
+    {
+      "acl": [
+        "postgres=X/postgres"
+      ],
+      "name": "private.classify_completed_contact_protocol",
+      "owner": "postgres",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "private.classify_completed_contact_protocol()",
+      "prosrc_md5": "0f70a98a52966d225db5eacb9a68be24",
+      "volatility": "v",
+      "security_definer": true
+    },
+    {
+      "acl": [
+        "postgres=X/postgres"
+      ],
+      "name": "private.classify_exhausted_contact_protocol",
+      "owner": "postgres",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "private.classify_exhausted_contact_protocol(uuid,uuid,text)",
+      "prosrc_md5": "9ef0b21292dd9b256ef933a32b04434d",
+      "volatility": "v",
+      "security_definer": true
+    },
+    {
+      "acl": [
+        "postgres=X/postgres"
+      ],
+      "name": "private.create_lead_contact_sequence",
+      "owner": "postgres",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "private.create_lead_contact_sequence(uuid,uuid,timestamp with time zone)",
+      "prosrc_md5": "9fd500d39fa5267d3dcb41ed679181f4",
+      "volatility": "v",
+      "security_definer": true
+    },
+    {
+      "acl": [
+        "crm_runtime_owner=X/crm_runtime_owner",
+        "postgres=X/crm_runtime_owner"
+      ],
+      "name": "private.crm_adopt_assignment_lead",
+      "owner": "crm_runtime_owner",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "private.crm_adopt_assignment_lead(uuid,uuid,bigint,text)",
+      "prosrc_md5": "016176680a6eb02f0197b5eb509ad599",
+      "volatility": "v",
+      "security_definer": true
+    },
+    {
+      "acl": [
+        "crm_runtime_owner=X/crm_runtime_owner",
+        "postgres=X/crm_runtime_owner"
+      ],
+      "name": "private.crm_adopt_contact_lead",
+      "owner": "crm_runtime_owner",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "private.crm_adopt_contact_lead(uuid,uuid,bigint,text)",
+      "prosrc_md5": "3bcd7aa17b78d599a1de9f1cb3b9d6ec",
+      "volatility": "v",
+      "security_definer": true
+    },
+    {
+      "acl": [
+        "postgres=X/postgres",
+        "crm_runtime_owner=X/postgres"
+      ],
+      "name": "private.crm_apply_assignment_command",
+      "owner": "postgres",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "private.crm_apply_assignment_command(uuid,uuid)",
+      "prosrc_md5": "9747b56f10165a10931d46b3b0e6bd26",
+      "volatility": "v",
+      "security_definer": true
+    },
+    {
+      "acl": [
+        "postgres=X/postgres",
+        "crm_runtime_owner=X/postgres"
+      ],
+      "name": "private.crm_apply_contact_command",
+      "owner": "postgres",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "private.crm_apply_contact_command(uuid,uuid)",
+      "prosrc_md5": "3a91f0c8468e4cb2829b411044f4a1f8",
+      "volatility": "v",
+      "security_definer": true
+    },
+    {
+      "acl": [
+        "crm_runtime_owner=X/crm_runtime_owner"
+      ],
+      "name": "private.crm_apply_foundation_probe",
+      "owner": "crm_runtime_owner",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "private.crm_apply_foundation_probe(uuid,uuid,jsonb,jsonb)",
+      "prosrc_md5": "ea471bf1daeab6865fb8199d15c9b5b4",
+      "volatility": "v",
+      "security_definer": false
+    },
+    {
+      "acl": [
+        "postgres=X/postgres"
+      ],
+      "name": "private.crm_assignment_assert_current_owner",
+      "owner": "postgres",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "private.crm_assignment_assert_current_owner(uuid)",
+      "prosrc_md5": "ca477f3fdaaeb191e4d828632231b6a9",
+      "volatility": "v",
+      "security_definer": true
+    },
+    {
+      "acl": [
+        "crm_runtime_owner=X/crm_runtime_owner",
+        "postgres=X/crm_runtime_owner"
+      ],
+      "name": "private.crm_assignment_authorization",
+      "owner": "crm_runtime_owner",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "private.crm_assignment_authorization(uuid)",
+      "prosrc_md5": "0e5f3b8a576ac4f9d48abe8680d03571",
+      "volatility": "v",
+      "security_definer": true
+    },
+    {
+      "acl": [
+        "postgres=X/postgres",
+        "authenticated=X/postgres"
+      ],
+      "name": "private.crm_assignment_current_owner_read",
+      "owner": "postgres",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "private.crm_assignment_current_owner_read(uuid)",
+      "prosrc_md5": "d8b93d3e556882e7617fdc4c23de4cdc",
+      "volatility": "s",
+      "security_definer": true
+    },
+    {
+      "acl": [
+        "postgres=X/postgres"
+      ],
+      "name": "private.crm_assignment_guard_commercial_seller",
+      "owner": "postgres",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "private.crm_assignment_guard_commercial_seller()",
+      "prosrc_md5": "36be76de1872b76682c0554db9dbd7d7",
+      "volatility": "v",
+      "security_definer": true
+    },
+    {
+      "acl": [
+        "crm_runtime_owner=X/crm_runtime_owner",
+        "postgres=X/crm_runtime_owner"
+      ],
+      "name": "private.crm_assignment_is_adopted",
+      "owner": "crm_runtime_owner",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "private.crm_assignment_is_adopted(uuid)",
+      "prosrc_md5": "4e12d52bbbedd902c81d614a20e4feab",
+      "volatility": "s",
+      "security_definer": true
+    },
+    {
+      "acl": [
+        "postgres=X/postgres",
+        "crm_runtime_owner=X/postgres"
+      ],
+      "name": "private.crm_assignment_lock_lead",
+      "owner": "postgres",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "private.crm_assignment_lock_lead(uuid)",
+      "prosrc_md5": "92f71ce78f59793f8471e49c79caeb68",
+      "volatility": "v",
+      "security_definer": true
+    },
+    {
+      "acl": [
+        "postgres=X/postgres",
+        "crm_runtime_owner=X/postgres"
+      ],
+      "name": "private.crm_assignment_lock_target",
+      "owner": "postgres",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "private.crm_assignment_lock_target(uuid)",
+      "prosrc_md5": "86bfd5353cc6f05b4b7e9b5fcd69e370",
+      "volatility": "v",
+      "security_definer": true
+    },
+    {
+      "acl": [
+        "crm_runtime_owner=X/crm_runtime_owner"
+      ],
+      "name": "private.crm_canonical_json",
+      "owner": "crm_runtime_owner",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "private.crm_canonical_json(jsonb,integer)",
+      "prosrc_md5": "d37838ec103037dac3e6ae804b25e544",
+      "volatility": "i",
+      "security_definer": false
+    },
+    {
+      "acl": [
+        "postgres=X/postgres",
+        "crm_runtime_owner=X/postgres"
+      ],
+      "name": "private.crm_contact_adoption_snapshot",
+      "owner": "postgres",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "private.crm_contact_adoption_snapshot(uuid)",
+      "prosrc_md5": "6858359e09ebb07f23580e7002d8f504",
+      "volatility": "v",
+      "security_definer": true
+    },
+    {
+      "acl": [
+        "postgres=X/postgres",
+        "crm_runtime_owner=X/postgres"
+      ],
+      "name": "private.crm_contact_apply_restriction",
+      "owner": "postgres",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "private.crm_contact_apply_restriction(uuid)",
+      "prosrc_md5": "064e5bfc86ea6c76ed84b3163ab94f9c",
+      "volatility": "v",
+      "security_definer": true
+    },
+    {
+      "acl": [
+        "postgres=X/postgres"
+      ],
+      "name": "private.crm_contact_assert_legacy_writer",
+      "owner": "postgres",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "private.crm_contact_assert_legacy_writer(uuid,text)",
+      "prosrc_md5": "1ec3cd28969d35b6a9ffc46aed1bea25",
+      "volatility": "v",
+      "security_definer": true
+    },
+    {
+      "acl": [
+        "crm_runtime_owner=X/crm_runtime_owner",
+        "postgres=X/crm_runtime_owner"
+      ],
+      "name": "private.crm_contact_authorization",
+      "owner": "crm_runtime_owner",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "private.crm_contact_authorization(uuid)",
+      "prosrc_md5": "82ce1f7e7dfd013211fee2919e9829a6",
+      "volatility": "v",
+      "security_definer": true
+    },
+    {
+      "acl": [
+        "postgres=X/postgres",
+        "crm_runtime_owner=X/postgres"
+      ],
+      "name": "private.crm_contact_close_protocol",
+      "owner": "postgres",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "private.crm_contact_close_protocol(uuid,uuid,text)",
+      "prosrc_md5": "99eb2032e559fdf58cdc98d9b5643198",
+      "volatility": "v",
+      "security_definer": true
+    },
+    {
+      "acl": [
+        "postgres=X/postgres",
+        "crm_runtime_owner=X/postgres"
+      ],
+      "name": "private.crm_contact_credit_fact",
+      "owner": "postgres",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "private.crm_contact_credit_fact(uuid,uuid,uuid,boolean)",
+      "prosrc_md5": "4f790c8e13080c78be57efc3b6307844",
+      "volatility": "v",
+      "security_definer": true
+    },
+    {
+      "acl": [
+        "postgres=X/postgres",
+        "crm_runtime_owner=X/postgres"
+      ],
+      "name": "private.crm_contact_emit",
+      "owner": "postgres",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "private.crm_contact_emit(uuid,uuid,text,jsonb)",
+      "prosrc_md5": "d3021638f4ef619e6bdc09a29dd3cbac",
+      "volatility": "v",
+      "security_definer": true
+    },
+    {
+      "acl": [
+        "postgres=X/postgres"
+      ],
+      "name": "private.crm_contact_guard_customer_restriction",
+      "owner": "postgres",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "private.crm_contact_guard_customer_restriction()",
+      "prosrc_md5": "81ada37b93564a975c0432ce75fe415b",
+      "volatility": "v",
+      "security_definer": true
+    },
+    {
+      "acl": [
+        "postgres=X/postgres"
+      ],
+      "name": "private.crm_contact_guard_lead_restriction",
+      "owner": "postgres",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "private.crm_contact_guard_lead_restriction()",
+      "prosrc_md5": "b01d22c03463b53be0db71a338b95721",
+      "volatility": "v",
+      "security_definer": true
+    },
+    {
+      "acl": [
+        "postgres=X/postgres"
+      ],
+      "name": "private.crm_contact_guard_legacy_rows",
+      "owner": "postgres",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "private.crm_contact_guard_legacy_rows()",
+      "prosrc_md5": "f4c138c702d6f1325f5c9124bc4535d5",
+      "volatility": "v",
+      "security_definer": true
+    },
+    {
+      "acl": [
+        "postgres=X/postgres"
+      ],
+      "name": "private.crm_contact_guard_legacy_truncate",
+      "owner": "postgres",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "private.crm_contact_guard_legacy_truncate()",
+      "prosrc_md5": "79ac59180576f2f71fe8ea4dfb50a5e9",
+      "volatility": "v",
+      "security_definer": true
+    },
+    {
+      "acl": [
+        "crm_runtime_owner=X/crm_runtime_owner",
+        "postgres=X/crm_runtime_owner"
+      ],
+      "name": "private.crm_contact_is_adopted",
+      "owner": "crm_runtime_owner",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "private.crm_contact_is_adopted(uuid)",
+      "prosrc_md5": "5b112bd45b2d80f60e9def8626076474",
+      "volatility": "s",
+      "security_definer": true
+    },
+    {
+      "acl": [
+        "crm_runtime_owner=X/crm_runtime_owner"
+      ],
+      "name": "private.crm_contact_json_shape",
+      "owner": "crm_runtime_owner",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "private.crm_contact_json_shape(jsonb,text[],text[])",
+      "prosrc_md5": "bb281a1fc830e449bbe7f52b59403f5a",
+      "volatility": "i",
+      "security_definer": false
+    },
+    {
+      "acl": [
+        "crm_runtime_owner=X/crm_runtime_owner"
+      ],
+      "name": "private.crm_contact_normalize_action_ref",
+      "owner": "crm_runtime_owner",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "private.crm_contact_normalize_action_ref(jsonb)",
+      "prosrc_md5": "7b2e7fa46c3d5a93eba92f158df15f49",
+      "volatility": "i",
+      "security_definer": false
+    },
+    {
+      "acl": [
+        "crm_runtime_owner=X/crm_runtime_owner"
+      ],
+      "name": "private.crm_contact_normalize_fact",
+      "owner": "crm_runtime_owner",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "private.crm_contact_normalize_fact(jsonb,boolean)",
+      "prosrc_md5": "a4acddeb19db6000ee4d6803e908255c",
+      "volatility": "i",
+      "security_definer": false
+    },
+    {
+      "acl": [
+        "crm_runtime_owner=X/crm_runtime_owner"
+      ],
+      "name": "private.crm_contact_normalize_new_action",
+      "owner": "crm_runtime_owner",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "private.crm_contact_normalize_new_action(jsonb)",
+      "prosrc_md5": "093dc3a2545092641a3ecdef9269338a",
+      "volatility": "i",
+      "security_definer": false
+    },
+    {
+      "acl": [
+        "crm_runtime_owner=X/crm_runtime_owner"
+      ],
+      "name": "private.crm_contact_normalize_payload",
+      "owner": "crm_runtime_owner",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "private.crm_contact_normalize_payload(text,jsonb)",
+      "prosrc_md5": "0cc2d54fd8dfc244aa70a49beb9972dc",
+      "volatility": "i",
+      "security_definer": false
+    },
+    {
+      "acl": [
+        "crm_runtime_owner=X/crm_runtime_owner"
+      ],
+      "name": "private.crm_contact_normalize_uuid",
+      "owner": "crm_runtime_owner",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "private.crm_contact_normalize_uuid(jsonb)",
+      "prosrc_md5": "f693880e0d6d13d3a938c662776f63d5",
+      "volatility": "i",
+      "security_definer": false
+    },
+    {
+      "acl": [
+        "postgres=X/postgres",
+        "crm_runtime_owner=X/postgres"
+      ],
+      "name": "private.crm_contact_parent_barrier",
+      "owner": "postgres",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "private.crm_contact_parent_barrier(uuid)",
+      "prosrc_md5": "49ec53001811f82134d0290256db9265",
+      "volatility": "v",
+      "security_definer": true
+    },
+    {
+      "acl": [
+        "postgres=X/postgres",
+        "crm_runtime_owner=X/postgres"
+      ],
+      "name": "private.crm_contact_read_legacy",
+      "owner": "postgres",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "private.crm_contact_read_legacy(uuid)",
+      "prosrc_md5": "10c92f1a91f146a34c5f94e247255005",
+      "volatility": "s",
+      "security_definer": true
+    },
+    {
+      "acl": [
+        "postgres=X/postgres"
+      ],
+      "name": "private.crm_contact_refresh_projection",
+      "owner": "postgres",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "private.crm_contact_refresh_projection(uuid,uuid)",
+      "prosrc_md5": "6125b3955fbbc15ef07f499ac7be03c9",
+      "volatility": "v",
+      "security_definer": true
+    },
+    {
+      "acl": [
+        "crm_runtime_owner=X/crm_runtime_owner"
+      ],
+      "name": "private.crm_contact_reject_immutable",
+      "owner": "crm_runtime_owner",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "private.crm_contact_reject_immutable()",
+      "prosrc_md5": "115a66c3088aafe5ff8953df87cdfe2a",
+      "volatility": "v",
+      "security_definer": false
+    },
+    {
+      "acl": [
+        "crm_runtime_owner=X/crm_runtime_owner",
+        "postgres=X/crm_runtime_owner"
+      ],
+      "name": "private.crm_contact_review_revision",
+      "owner": "crm_runtime_owner",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "private.crm_contact_review_revision(uuid)",
+      "prosrc_md5": "25f2d4237cccb35c11a149b4f72ba50c",
+      "volatility": "s",
+      "security_definer": true
+    },
+    {
+      "acl": [
+        "postgres=X/postgres",
+        "crm_runtime_owner=X/postgres"
+      ],
+      "name": "private.crm_contact_schedule_action",
+      "owner": "postgres",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "private.crm_contact_schedule_action(uuid,uuid,jsonb)",
+      "prosrc_md5": "9a684e53d4dae7684f09a7082ea4cd6c",
+      "volatility": "v",
+      "security_definer": true
+    },
+    {
+      "acl": [
+        "postgres=X/postgres"
+      ],
+      "name": "private.crm_contact_validate_references",
+      "owner": "postgres",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "private.crm_contact_validate_references()",
+      "prosrc_md5": "e56cfe43a1f55d04c271003a8be8868b",
+      "volatility": "v",
+      "security_definer": true
+    },
+    {
+      "acl": [
+        "crm_runtime_owner=X/crm_runtime_owner"
+      ],
+      "name": "private.crm_contact_validate_text",
+      "owner": "crm_runtime_owner",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "private.crm_contact_validate_text(jsonb,boolean)",
+      "prosrc_md5": "4601864ef8d314ed144fa696bf6c487d",
+      "volatility": "i",
+      "security_definer": false
+    },
+    {
+      "acl": [
+        "crm_runtime_owner=X/crm_runtime_owner"
+      ],
+      "name": "private.crm_contact_validate_timestamp",
+      "owner": "crm_runtime_owner",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "private.crm_contact_validate_timestamp(jsonb)",
+      "prosrc_md5": "c56fb91d104b1818b09c5f879bd6c59c",
+      "volatility": "i",
+      "security_definer": false
+    },
+    {
+      "acl": [
+        "crm_runtime_owner=X/crm_runtime_owner"
+      ],
+      "name": "private.crm_contact_validate_timezone",
+      "owner": "crm_runtime_owner",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "private.crm_contact_validate_timezone(jsonb)",
+      "prosrc_md5": "19e51ab70f008fbcf254e6424360906a",
+      "volatility": "i",
+      "security_definer": false
+    },
+    {
+      "acl": [
+        "crm_runtime_owner=X/crm_runtime_owner"
+      ],
+      "name": "private.crm_event_append_only_guard",
+      "owner": "crm_runtime_owner",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "private.crm_event_append_only_guard()",
+      "prosrc_md5": "6c69cba1444a75180d3722839d961c11",
+      "volatility": "v",
+      "security_definer": false
+    },
+    {
+      "acl": [
+        "crm_runtime_owner=X/crm_runtime_owner"
+      ],
+      "name": "private.crm_execute_assignment_command",
+      "owner": "crm_runtime_owner",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "private.crm_execute_assignment_command(jsonb)",
+      "prosrc_md5": "dc778e8aeb26adaade6c302de1d26f8a",
+      "volatility": "v",
+      "security_definer": false
+    },
+    {
+      "acl": [
+        "crm_runtime_owner=X/crm_runtime_owner"
+      ],
+      "name": "private.crm_execute_command",
+      "owner": "crm_runtime_owner",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "private.crm_execute_command(jsonb)",
+      "prosrc_md5": "eeab15267c6b1b07bf78cc53d30addee",
+      "volatility": "v",
+      "security_definer": false
+    },
+    {
+      "acl": [
+        "crm_runtime_owner=X/crm_runtime_owner"
+      ],
+      "name": "private.crm_execute_contact_command",
+      "owner": "crm_runtime_owner",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "private.crm_execute_contact_command(jsonb)",
+      "prosrc_md5": "20703d3b4d690d1b85bbe232cdd3fc99",
+      "volatility": "v",
+      "security_definer": false
+    },
+    {
+      "acl": [
+        "postgres=X/postgres"
+      ],
+      "name": "private.crm_fence_assignment_history_truncate",
+      "owner": "postgres",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "private.crm_fence_assignment_history_truncate()",
+      "prosrc_md5": "0712d5cceeef7c958206d52db3fc1909",
+      "volatility": "v",
+      "security_definer": true
+    },
+    {
+      "acl": [
+        "postgres=X/postgres"
+      ],
+      "name": "private.crm_fence_assignment_history_write",
+      "owner": "postgres",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "private.crm_fence_assignment_history_write()",
+      "prosrc_md5": "615cb72b8a9c36ad4c4d72a9ffc86336",
+      "volatility": "v",
+      "security_definer": true
+    },
+    {
+      "acl": [
+        "postgres=X/postgres"
+      ],
+      "name": "private.crm_fence_assignment_owner_write",
+      "owner": "postgres",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "private.crm_fence_assignment_owner_write()",
+      "prosrc_md5": "c9864a884c88c211a130ea2ab864de8c",
+      "volatility": "v",
+      "security_definer": true
+    },
+    {
+      "acl": [
+        "postgres=X/postgres",
+        "crm_runtime_owner=X/postgres"
+      ],
+      "name": "private.crm_foundation_actor",
+      "owner": "postgres",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "private.crm_foundation_actor(boolean)",
+      "prosrc_md5": "18cb9091c8af6a41432b4a83c1cc4ccf",
+      "volatility": "v",
+      "security_definer": true
+    },
+    {
+      "acl": [
+        "postgres=X/postgres",
+        "crm_runtime_owner=X/postgres"
+      ],
+      "name": "private.crm_foundation_scope",
+      "owner": "postgres",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "private.crm_foundation_scope(uuid)",
+      "prosrc_md5": "bc115db0f054c667848e1b632299d18d",
+      "volatility": "v",
+      "security_definer": true
+    },
+    {
+      "acl": [
+        "crm_runtime_owner=X/crm_runtime_owner"
+      ],
+      "name": "private.crm_history_no_truncate",
+      "owner": "crm_runtime_owner",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "private.crm_history_no_truncate()",
+      "prosrc_md5": "35e65e68548b610ee325c3527e1d3a06",
+      "volatility": "v",
+      "security_definer": false
+    },
+    {
+      "acl": [
+        "crm_runtime_owner=X/crm_runtime_owner"
+      ],
+      "name": "private.crm_json_integer",
+      "owner": "crm_runtime_owner",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "private.crm_json_integer(jsonb,boolean)",
+      "prosrc_md5": "b1fa66ebdf0f3f62d0877d0fbf92bac9",
+      "volatility": "i",
+      "security_definer": false
+    },
+    {
+      "acl": [
+        "crm_runtime_owner=X/crm_runtime_owner"
+      ],
+      "name": "private.crm_json_keys",
+      "owner": "crm_runtime_owner",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "private.crm_json_keys(jsonb,text[])",
+      "prosrc_md5": "b53f9001e20daa4b4f6eb8c97f9ee154",
+      "volatility": "i",
+      "security_definer": false
+    },
+    {
+      "acl": [
+        "postgres=X/postgres",
+        "crm_runtime_owner=X/postgres"
+      ],
+      "name": "private.crm_lock_assignment_adoption_lead",
+      "owner": "postgres",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "private.crm_lock_assignment_adoption_lead(uuid)",
+      "prosrc_md5": "cdf02b981fb4bdda6a8a2b0ac2f20fd2",
+      "volatility": "v",
+      "security_definer": true
+    },
+    {
+      "acl": [
+        "crm_runtime_owner=X/crm_runtime_owner"
+      ],
+      "name": "private.crm_normalize_assignment_command",
+      "owner": "crm_runtime_owner",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "private.crm_normalize_assignment_command(jsonb)",
+      "prosrc_md5": "7bf0d34985f34ff47d8c0e7932e84177",
+      "volatility": "i",
+      "security_definer": false
+    },
+    {
+      "acl": [
+        "crm_runtime_owner=X/crm_runtime_owner"
+      ],
+      "name": "private.crm_normalize_command",
+      "owner": "crm_runtime_owner",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "private.crm_normalize_command(jsonb)",
+      "prosrc_md5": "8d3befe79aed6f625d730158e61c2f58",
+      "volatility": "i",
+      "security_definer": false
+    },
+    {
+      "acl": [
+        "crm_runtime_owner=X/crm_runtime_owner"
+      ],
+      "name": "private.crm_normalize_contact_command",
+      "owner": "crm_runtime_owner",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "private.crm_normalize_contact_command(jsonb)",
+      "prosrc_md5": "34356cd0b635bc4630e603ebe37506b7",
+      "volatility": "i",
+      "security_definer": false
+    },
+    {
+      "acl": [
+        "crm_runtime_owner=X/crm_runtime_owner"
+      ],
+      "name": "private.crm_receipt_decided_guard",
+      "owner": "crm_runtime_owner",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "private.crm_receipt_decided_guard()",
+      "prosrc_md5": "9274f4e4ae20c1b6607dcee5cd0bd599",
+      "volatility": "v",
+      "security_definer": true
+    },
+    {
+      "acl": [
+        "crm_runtime_owner=X/crm_runtime_owner"
+      ],
+      "name": "private.crm_receipt_terminal_guard",
+      "owner": "crm_runtime_owner",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "private.crm_receipt_terminal_guard()",
+      "prosrc_md5": "5008aecdf985d25a4284bbebd79cd389",
+      "volatility": "v",
+      "security_definer": false
+    },
+    {
+      "acl": [
+        "crm_runtime_owner=X/crm_runtime_owner"
+      ],
+      "name": "private.crm_reject_assignment_adoption_mutation",
+      "owner": "crm_runtime_owner",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "private.crm_reject_assignment_adoption_mutation()",
+      "prosrc_md5": "e37ebf5481b21316b6b47c1064d94216",
+      "volatility": "v",
+      "security_definer": false
+    },
+    {
+      "acl": [
+        "crm_runtime_owner=X/crm_runtime_owner"
+      ],
+      "name": "private.crm_reject_policy_mutation",
+      "owner": "crm_runtime_owner",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "private.crm_reject_policy_mutation()",
+      "prosrc_md5": "e2fb7dd7ac35e43e280e4b955fbe0e32",
+      "volatility": "v",
+      "security_definer": false
+    },
+    {
+      "acl": [
+        "postgres=X/postgres"
+      ],
+      "name": "private.crm_transition_allowed",
+      "owner": "postgres",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "private.crm_transition_allowed(text,text)",
+      "prosrc_md5": "4d4f8c176d4ff3e168d6ba7cd7610604",
+      "volatility": "i",
+      "security_definer": false
+    },
+    {
+      "acl": [
+        "postgres=X/postgres"
+      ],
+      "name": "private.enforce_en_gestion_next_contact",
+      "owner": "postgres",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "private.enforce_en_gestion_next_contact()",
+      "prosrc_md5": "61f78c5fb5cb32f836a1b551f9bf15b5",
+      "volatility": "v",
+      "security_definer": true
+    },
+    {
+      "acl": [
+        "postgres=X/postgres"
+      ],
+      "name": "private.ensure_lead_customer",
+      "owner": "postgres",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "private.ensure_lead_customer()",
+      "prosrc_md5": "cf20272eadbe699032c34cb1513b2324",
+      "volatility": "v",
+      "security_definer": true
+    },
+    {
+      "acl": [
+        "postgres=X/postgres"
+      ],
+      "name": "private.keep_protocol_deadlines_out_of_manual_agenda",
+      "owner": "postgres",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "private.keep_protocol_deadlines_out_of_manual_agenda()",
+      "prosrc_md5": "71323128d6d5c532f7300f3886197945",
+      "volatility": "v",
+      "security_definer": true
+    },
+    {
+      "acl": [
+        "postgres=X/postgres"
+      ],
+      "name": "private.sync_contact_sequence_with_status",
+      "owner": "postgres",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "private.sync_contact_sequence_with_status()",
+      "prosrc_md5": "8461a031d8871be37d8a10872964fecd",
+      "volatility": "v",
+      "security_definer": true
+    },
+    {
+      "acl": [
+        "postgres=X/postgres"
+      ],
+      "name": "private.sync_protocol_next_action",
+      "owner": "postgres",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "private.sync_protocol_next_action(uuid,uuid)",
+      "prosrc_md5": "e1e309f6453ebfa6edbfc27f06a915ea",
+      "volatility": "v",
+      "security_definer": true
+    },
+    {
+      "acl": [
+        "postgres=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "name": "public.reconcile_lead_contact_protocol",
+      "owner": "postgres",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "reconcile_lead_contact_protocol(uuid)",
+      "prosrc_md5": "4c588d65edf4663c689e04bbc176a8f9",
+      "volatility": "v",
+      "security_definer": true
+    },
+    {
+      "acl": [
+        "postgres=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "name": "public.record_contact_answer_with_transition",
+      "owner": "postgres",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "record_contact_answer_with_transition(uuid,text,text,text,timestamp with time zone,text,text,timestamp with time zone,text,numeric,text,timestamp with time zone,text,text,text)",
+      "prosrc_md5": "57c7aa09646baa2bc49f68db3c5f04bb",
+      "volatility": "v",
+      "security_definer": true
+    },
+    {
+      "acl": [
+        "postgres=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "name": "public.record_contact_answer_with_transition",
+      "owner": "postgres",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "record_contact_answer_with_transition(uuid,text,text,timestamp with time zone,text,text,timestamp with time zone,text,numeric,text,timestamp with time zone,text,text,text)",
+      "prosrc_md5": "71682f3716f39dbd562343f1665ee2a3",
+      "volatility": "v",
+      "security_definer": true
+    },
+    {
+      "acl": [
+        "postgres=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "name": "public.record_contact_task_result",
+      "owner": "postgres",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "record_contact_task_result(uuid,text,text,timestamp with time zone)",
+      "prosrc_md5": "fd3e34a236571ff83b525aa999f6ba6d",
+      "volatility": "v",
+      "security_definer": true
+    },
+    {
+      "acl": [
+        "postgres=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "name": "public.record_lead_follow_up",
+      "owner": "postgres",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "record_lead_follow_up(uuid,text,text,timestamp with time zone,text,text,timestamp with time zone,text,numeric,text,text,text,text,text)",
+      "prosrc_md5": "55b0b6d85e74276aeafb6829c247395b",
+      "volatility": "v",
+      "security_definer": true
+    },
+    {
+      "acl": [
+        "postgres=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "name": "public.record_recall_attempt",
+      "owner": "postgres",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "record_recall_attempt(uuid,text,text,timestamp with time zone,text,timestamp with time zone,text)",
+      "prosrc_md5": "3a8a669f28c28842d6d29cef6e0d4df7",
+      "volatility": "v",
+      "security_definer": true
+    },
+    {
+      "acl": [
+        "postgres=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "name": "public.refresh_due_contact_protocols",
+      "owner": "postgres",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "refresh_due_contact_protocols()",
+      "prosrc_md5": "e0265b8164b88b0b41c1c3f958015cbc",
+      "volatility": "v",
+      "security_definer": true
+    },
+    {
+      "acl": [
+        "postgres=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "name": "public.restart_lead_contact_sequence",
+      "owner": "postgres",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "restart_lead_contact_sequence(uuid)",
+      "prosrc_md5": "fc317586410837f8d01eb6384e459184",
+      "volatility": "v",
+      "security_definer": true
+    },
+    {
+      "acl": [
+        "postgres=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "name": "public.start_no_contact_protocol_from_future",
+      "owner": "postgres",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "start_no_contact_protocol_from_future(uuid)",
+      "prosrc_md5": "a50ed4eaff8c78458ec490639eb121f3",
+      "volatility": "v",
+      "security_definer": true
+    },
+    {
+      "acl": [
+        "postgres=X/postgres",
+        "authenticated=X/postgres",
+        "service_role=X/postgres"
+      ],
+      "name": "public.supervisor_manage_lead",
+      "owner": "postgres",
+      "config": [
+        "search_path=\"\""
+      ],
+      "signature": "supervisor_manage_lead(uuid,text,text,text,text,timestamp with time zone,text,text,text)",
+      "prosrc_md5": "6ea951780d93fa553c46d9296428c552",
+      "volatility": "v",
+      "security_definer": true
+    }
+  ]
+}
